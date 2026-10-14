@@ -26,8 +26,10 @@ not_found_handling = "single-page-application"
 html_handling = "auto-trailing-slash"
 
 # ─────────────────────────────────────────────────────────────────────
-# VARIABLES PÚBLICAS
+# BUILD
 # ─────────────────────────────────────────────────────────────────────
+[build]
+command = "pnpm build"
 [vars]
 ENVIRONMENT = "development"
 APP_NAME = "ARK TOOLS"
