@@ -1,0 +1,84 @@
+#:schema node_modules/wrangler/config-schema.json
+
+name = "ark-tools"
+main = "src/index.ts"
+compatibility_date = "2024-10-11"
+compatibility_flags = ["nodejs_compat"]
+
+# ─────────────────────────────────────────────────────────────────────
+# OBSERVABILITY
+# ─────────────────────────────────────────────────────────────────────
+[observability]
+enabled = true
+head_sampling_rate = 1.0
+
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+# ─────────────────────────────────────────────────────────────────────
+# ASSETS (SPA)
+# ─────────────────────────────────────────────────────────────────────
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+html_handling = "auto-trailing-slash"
+
+# ─────────────────────────────────────────────────────────────────────
+# VARIABLES PÚBLICAS
+# ─────────────────────────────────────────────────────────────────────
+[vars]
+ENVIRONMENT = "development"
+APP_NAME = "ARK TOOLS"
+APP_VERSION = "1.0.0"
+APP_URL = "http://localhost:8787"
+COMPANY_NAME = "Substrate Holdings LLC"
+COMPANY_EMAIL = "noah@arksystems.site"
+SUPPORT_URL = "https://wa.me/5219990000000"
+
+# ─────────────────────────────────────────────────────────────────────
+# KV NAMESPACE (para historial de cálculos, feature flags)
+# ─────────────────────────────────────────────────────────────────────
+# [[kv_namespaces]]
+# binding = "ARK_TOOLS_KV"
+# id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# ─────────────────────────────────────────────────────────────────────
+# D1 DATABASE (para persistencia de cálculos, cuando migremos a SaaS)
+# ─────────────────────────────────────────────────────────────────────
+# [[d1_databases]]
+# binding = "ARK_TOOLS_DB"
+# database_name = "ark_tools_production"
+# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+# migrations_dir = "migrations"
+
+# ─────────────────────────────────────────────────────────────────────
+# R2 BUCKET (para exportaciones de Excel/PDF generadas)
+# ─────────────────────────────────────────────────────────────────────
+# [[r2_buckets]]
+# binding = "ARK_TOOLS_R2"
+# bucket_name = "ark-tools-exports"
+
+# ─────────────────────────────────────────────────────────────────────
+# RATE LIMITING (para proteger endpoints de IA o cálculos masivos)
+# ─────────────────────────────────────────────────────────────────────
+# [[unsafe.bindings]]
+# name = "RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "1001"
+# simple = { limit = 60, period = 60 }
+
+# ─────────────────────────────────────────────────────────────────────
+# ENTORNOS
+# ─────────────────────────────────────────────────────────────────────
+[env.staging]
+name = "ark-tools-staging"
+vars = { ENVIRONMENT = "staging", APP_URL = "https://staging.tools.arksystems.site" }
+
+[env.production]
+name = "ark-tools-production"
+routes = [
+  { pattern = "tools.arksystems.site", custom_domain = true }
+]
+vars = { ENVIRONMENT = "production", APP_URL = "https://tools.arksystems.site" }

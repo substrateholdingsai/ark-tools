@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build
+dist/
+.wrangler/
+.wrangler.tmp/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+.vitest/
+
+# TypeScript
+*.tsbuildinfo

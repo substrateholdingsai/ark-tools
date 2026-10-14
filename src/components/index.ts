@@ -1,0 +1,19 @@
+/**
+ * ARK TOOLS — Componentes Compuestos
+ *
+ * Punto de entrada para componentes de layout y composición.
+ * Uso: import { Header, ToolCard } from '@/components';
+ */
+
+// Atómicos (re-export)
+export * from './ui';
+
+// Compuestos
+export { Logo } from './Logo';
+export { Header } from './Header';
+export { Footer } from './Footer';
+export { ToolCard } from './ToolCard';
+export { CategorySection } from './CategorySection';
+
+// Tipos
+export type { NavItem } from './Header';

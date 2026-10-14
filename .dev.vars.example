@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────
+# ARK TOOLS — Variables de desarrollo local
+# Copiar a `.dev.vars` y llenar con valores reales.
+# NO commitear este archivo. Solo `.dev.vars.example`.
+# ─────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────
+# CLIP DEVELOPERS (API CHECKOUT & LINKS DE PAGO)
+# Obtén tus API Keys en: https://developer.clip.mx/docs/getting-started
+# ─────────────────────────────────────────────────────────────────────
+CLIP_API_KEY=test_api_key_xxxxxxxxxxxxxxxx
+CLIP_API_SECRET=test_api_secret_xxxxxxxxxxxxxxxx
+CLIP_ENVIRONMENT=sandbox # 'sandbox' | 'production'
+
+# Si en el futuro se integra IA para borradores
+# OPENAI_API_KEY=sk-...
+
+# Si en el futuro se integra Stripe para planes Pro
+# STRIPE_SECRET_KEY=sk_test_...
+# STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Si en el futuro se integra analytics
+# POSTHOG_API_KEY=phc_...
