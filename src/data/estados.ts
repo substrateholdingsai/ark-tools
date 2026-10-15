@@ -1,10 +1,3 @@
-// Datos de 32 estados (ISN)
-export interface EstadoISN {
-  id: string;
-  nombre: string;
-  tasa?: number;
-}
-
-export const estados: EstadoISN[] = [];
-
-export default estados;
+// Re-export desde ISN (fuente única de verdad para estados)
+export { ESTADOS, getEstadoById } from '@/tools/isn/data/estados';
+export type { Estado } from '@/tools/isn/types';

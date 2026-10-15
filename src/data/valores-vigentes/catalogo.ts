@@ -24,7 +24,8 @@ export const UMA = {
     vigenteDesde: '2026-02-01',
     vigenteHasta: '2027-01-31',
     criticidad: 'critico',
-    notas: 'Verificar publicación en DOF a inicios de febrero.',
+    esProyeccion: true,
+    notas: 'Verificar publicación en DOF a inicios de febrero. Valor 2025: 113.14.',
   } satisfies ValorFiscal,
 
   mensual2026: {
@@ -37,6 +38,7 @@ export const UMA = {
     vigenteDesde: '2026-02-01',
     vigenteHasta: '2027-01-31',
     criticidad: 'critico',
+    esProyeccion: true,
   } satisfies ValorFiscal,
 } as const;
 
@@ -52,6 +54,8 @@ export const SALARIO_MINIMO = {
     vigenteDesde: '2026-01-01',
     vigenteHasta: '2026-12-31',
     criticidad: 'critico',
+    esProyeccion: true,
+    notas: 'Valor 2025. Verificar publicación oficial 2026 en DOF.',
   } satisfies ValorFiscal,
 
   frontera2026: {
@@ -64,6 +68,8 @@ export const SALARIO_MINIMO = {
     vigenteDesde: '2026-01-01',
     vigenteHasta: '2026-12-31',
     criticidad: 'critico',
+    esProyeccion: true,
+    notas: 'Valor 2025. Verificar publicación oficial 2026 en DOF.',
   } satisfies ValorFiscal,
 } as const;
 
@@ -79,6 +85,8 @@ export const TOPES_LSS = {
     vigenteDesde: '2026-02-01',
     vigenteHasta: '2027-01-31',
     criticidad: 'critico',
+    esProyeccion: true,
+    notas: 'Derivado de UMA 2025 (113.14). Actualizar cuando UMA 2026 sea oficial.',
   } satisfies ValorFiscal,
 } as const;
 
@@ -106,6 +114,8 @@ export const TARIFA_ISR = {
     vigenteDesde: '2026-01-01',
     vigenteHasta: '2026-12-31',
     criticidad: 'critico',
+    esProyeccion: true,
+    notas: 'Tarifa 2025 (Anexo 8 RMF 2025). Verificar Anexo 8 RMF 2026 cuando se publique.',
   } satisfies ValorFiscal,
 } as const;
 
@@ -123,7 +133,8 @@ export const ISN_META = {
     vigenteDesde: '2026-01-01',
     vigenteHasta: '2026-12-31',
     criticidad: 'critico',
-    notas: 'Verificar reformas fiscales estatales en el DOF y periódicos oficiales.',
+    esProyeccion: true,
+    notas: 'Verificar reformas fiscales estatales en el DOF y periódicos oficiales. Tasas 2025 usadas como base.',
   } satisfies ValorFiscal,
 } as const;
 

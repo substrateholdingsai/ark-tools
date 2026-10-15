@@ -12,10 +12,12 @@
  *  - sbc: Salario Base de Cotización
  *  - uma: UMA diaria (valor del día)
  *  - sbc_excedente: Excedente del SBC sobre 3 UMAs
+ * 
+ * Valores fiscales (UMA) provenientes del catálogo centralizado de valores vigentes.
  */
 
 import type { CuotaIMSS } from '../types';
-import { UMA_DIARIA } from '@/tools/sbc/data/uma';
+import { UMA } from '@/data/valores-vigentes/catalogo';
 
 /**
  * Cuotas IMSS obrero mensuales 2026.
@@ -62,4 +64,4 @@ export const CUOTAS_OBRERO: CuotaIMSS[] = [
 /**
  * UMA multiplicada por 3 (base para excedente).
  */
-export const TRES_UMAS = UMA_DIARIA * 3;
+export const TRES_UMAS = UMA.diaria2026.valor * 3;

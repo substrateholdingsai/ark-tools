@@ -8,25 +8,29 @@
  * - Tope: LSS Art. 28 (25 UMAs)
  *
  * Última actualización: Octubre 2026
+ * 
+ * NOTA: Valores provenientes del catálogo centralizado de valores vigentes.
+ * El test de integridad del catálogo valida que tengan fuente, referencia y no estén vencidos.
  */
 
 import type { ConstantesIMSS, ParametrosSBC } from '../types';
+import { UMA, SALARIO_MINIMO, TOPES_LSS } from '@/data/valores-vigentes/catalogo';
 
 // ─────────────────────────────────────────────────────────────────────
-// CONSTANTES 2026
+// CONSTANTES 2026 (desde catálogo centralizado)
 // ─────────────────────────────────────────────────────────────────────
 
 /** UMA diaria 2026 (INEGI) */
-export const UMA_DIARIA = 113.14;
+export const UMA_DIARIA = UMA.diaria2026.valor;
 
 /** Salario mínimo frontera norte 2026 (CONASAMI) */
-export const SALARIO_MINIMO_FRONTERA = 278.8;
+export const SALARIO_MINIMO_FRONTERA = SALARIO_MINIMO.frontera2026.valor;
 
 /** Tope legal: 25 UMAs (LSS Art. 28) */
 export const TOPE_UMAS = 25;
 
-/** Tope en pesos: 25 × UMA_DIARIA */
-export const TOPE_PESOS = UMA_DIARIA * TOPE_UMAS; // 2,828.50
+/** Tope en pesos: 25 × UMA_DIARIA (desde catálogo TOPES_LSS) */
+export const TOPE_PESOS = TOPES_LSS.tope25UMA2026.valor;
 
 /** Constantes agrupadas */
 export const CONSTANTES_IMSS: ConstantesIMSS = {
@@ -53,7 +57,8 @@ export const PARAMETROS_DEFAULT: ParametrosSBC = {
 // ─────────────────────────────────────────────────────────────────────
 
 export const PRESETS_SALARIO = [
-  { label: 'Mínimo frontera', valor: 278.8 },
+  { label: 'Mínimo general', valor: SALARIO_MINIMO.general2026.valor },
+  { label: 'Mínimo frontera', valor: SALARIO_MINIMO.frontera2026.valor },
   { label: 'Típico', valor: 400 },
   { label: 'Profesional', valor: 580 },
   { label: 'Alto', valor: 850 },

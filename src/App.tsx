@@ -30,6 +30,8 @@ import { ConversorXML } from './tools/xml-excel';
 import { ValidadorXML } from './tools/xml-validador';
 import { GeneradorSPEI } from './tools/spei';
 import { CalculadoraLeasing } from './tools/leasing';
+import { GuiaSATIMSS } from './tools/guia-sat-imss';
+import { AlertasVigencia } from '@/data/valores-vigentes';
 
 type ToolId =
   | 'dashboard'
@@ -91,6 +93,8 @@ export function App() {
         return <CalculadoraLeasing onBack={goToDashboard} />;
 
       case 'guia-sat-imss':
+        return <GuiaSATIMSS onBack={goToDashboard} />;
+
       case 'mapa-activos':
         return <PlaceholderTool name={activeTool} onBack={goToDashboard} />;
 
@@ -109,6 +113,8 @@ export function App() {
         }}
         navItems={navItems}
       />
+
+      <AlertasVigencia />
 
       <main>{renderTool()}</main>
 
@@ -230,9 +236,9 @@ function Dashboard({ onSelectTool }: DashboardProps) {
           icon={Scale}
           title="Guía SAT/IMSS"
           description="8 pasos para responder a un requerimiento. Checklists, plazos y fundamentos."
-          badge="PRÓXIMAMENTE"
-          badgeVariant="muted"
-          disabled
+          badge="NUEVO"
+          badgeVariant="gold"
+          onSelect={() => onSelectTool('guia-sat-imss')}
         />
         <ToolCard
           icon={Sparkles}

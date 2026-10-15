@@ -7,6 +7,15 @@
  */
 
 import type { Estado } from '../types';
+import { UMA, TOPES_LSS } from '@/data/valores-vigentes/catalogo';
+
+/**
+ * Valores fiscales centralizados — reemplaza hardcodes
+ * El test de integridad del catálogo ya valida que UMA.diaria2026
+ * y TOPES_LSS.tope25UMA2026 tengan fuente, referencia y no estén vencidos.
+ */
+export const UMA_DIARIA = UMA.diaria2026.valor;
+export const TOPE_25_UMA = TOPES_LSS.tope25UMA2026.valor;
 
 export const ESTADOS: Estado[] = [
   { id: 'AGS', nombre: 'Aguascalientes', corto: 'Ags', tasa: 2.0, vigencia: '2026', articulo: 'Art. 12 LHE' },

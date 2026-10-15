@@ -10,22 +10,22 @@
  */
 
 import type { RangoISR, RangoSubsidio } from '../types';
+import { TARIFA_ISR } from '@/data/valores-vigentes/catalogo';
 
 /**
- * Tabla ISR mensual 2026.
+ * Tabla ISR mensual 2026 — fuente centralizada en catálogo de valores vigentes.
+ * El test de integridad del catálogo valida que TARIFA_ISR.mensual2026
+ * tenga fuente, referencia y no esté vencida.
+ * 
+ * Conversión: el catálogo usa `tasa` (decimal, ej. 0.0192) y el tipo local
+ * usa `tasaExcedente` (porcentaje, ej. 1.92).
  */
-export const TABLA_ISR_MENSUAL: RangoISR[] = [
-  { limiteInferior: 0.01,      limiteSuperior: 746.04,   cuotaFija: 0,        tasaExcedente: 1.92  },
-  { limiteInferior: 746.05,    limiteSuperior: 6328.07,  cuotaFija: 14.32,    tasaExcedente: 6.40  },
-  { limiteInferior: 6328.08,   limiteSuperior: 11125.00, cuotaFija: 371.48,   tasaExcedente: 10.88 },
-  { limiteInferior: 11125.01,  limiteSuperior: 12932.00, cuotaFija: 893.33,   tasaExcedente: 16.00 },
-  { limiteInferior: 12932.01,  limiteSuperior: 15487.00, cuotaFija: 1182.45,  tasaExcedente: 17.92 },
-  { limiteInferior: 15487.01,  limiteSuperior: 31236.00, cuotaFija: 1640.18,  tasaExcedente: 21.36 },
-  { limiteInferior: 31236.01,  limiteSuperior: 49233.00, cuotaFija: 5004.12,  tasaExcedente: 23.52 },
-  { limiteInferior: 49233.01,  limiteSuperior: 93900.00, cuotaFija: 9236.89,  tasaExcedente: 30.00 },
-  { limiteInferior: 93900.01,  limiteSuperior: 125000.00,cuotaFija: 22641.19, tasaExcedente: 32.00 },
-  { limiteInferior: 125000.01, limiteSuperior: null,     cuotaFija: 32594.00, tasaExcedente: 35.00 },
-];
+export const TABLA_ISR_MENSUAL: RangoISR[] = TARIFA_ISR.mensual2026.valor.map(r => ({
+  limiteInferior: r.limiteInferior,
+  limiteSuperior: r.limiteSuperior,
+  cuotaFija: r.cuotaFija,
+  tasaExcedente: r.tasa * 100,
+}));
 
 /**
  * Tabla de subsidio al empleo mensual 2026.
