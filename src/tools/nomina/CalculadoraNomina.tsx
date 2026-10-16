@@ -9,8 +9,10 @@
  *   4. ResultadoNomina      — Card dorada con el sueldo neto final
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ArrowLeft, Calculator, BookOpen, AlertCircle } from 'lucide-react';
+import { useExpediente } from '@/context/ExpedienteContext';
+import { ExpedienteToolBanner } from '@/components/ExpedienteToolBanner';
 import {
   PeriodoSelector,
   SueldoInput,
@@ -32,6 +34,30 @@ export function CalculadoraNomina({ onBack }: CalculadoraNominaProps) {
   // ESTADO
   // ─────────────────────────────────────────────────────────────
   const [parametros, setParametros] = useState<ParametrosNomina>(PARAMETROS_DEFAULT);
+  const { activeClient } = useExpediente();
+
+  // Auto-hidratar con datos del cliente/trabajador activo
+  useEffect(() => {
+    if (activeClient) {
+      setParametros((prev) => {
+        const dias = prev.diasPeriodo || 15;
+        const sueldoEstimado =
+          activeClient.salario_diario > 0
+            ? Math.round(activeClient.salario_diario * dias * 100) / 100
+            : prev.sueldoBruto;
+        const sbc =
+          activeClient.salario_diario_integrado > 0
+            ? activeClient.salario_diario_integrado
+            : prev.sbcDiario;
+
+        return {
+          ...prev,
+          sueldoBruto: sueldoEstimado,
+          sbcDiario: sbc,
+        };
+      });
+    }
+  }, [activeClient]);
 
   // ─────────────────────────────────────────────────────────────
   // CÁLCULOS DERIVADOS
@@ -119,6 +145,16 @@ export function CalculadoraNomina({ onBack }: CalculadoraNominaProps) {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Sincronización con Expediente Único (Sprint 9) */}
+      <div className="mb-6">
+        <ExpedienteToolBanner
+          toolId="nomina"
+          titulo={`Cálculo de Nómina (${parametros.periodo.toUpperCase()})`}
+          inputs={parametros as unknown as Record<string, unknown>}
+          outputs={resultado as unknown as Record<string, unknown>}
+        />
       </div>
 
       {/* Grid Principal de 2 Columnas */}

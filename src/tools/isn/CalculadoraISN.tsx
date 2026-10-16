@@ -23,6 +23,8 @@ import {
   PercepcionesTable,
   ResumenISN,
 } from './components';
+import { useExpediente } from '@/context/ExpedienteContext';
+import { ExpedienteToolBanner } from '@/components/ExpedienteToolBanner';
 import { CONCEPTOS_DEFAULT, getEstadoById, ESTADO_DEFAULT_ID } from './data/estados';
 import { calcularResultadoISN, formatearMXN } from './lib/calcularISN';
 import { descargarCSV } from './lib/exportarCSV';
@@ -59,6 +61,24 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
     () => calcularResultadoISN(conceptos, estado),
     [conceptos, estado]
   );
+
+  const { activeClient } = useExpediente();
+
+  // Auto-hidratar con datos del cliente/empresa activa
+  useEffect(() => {
+    if (activeClient && activeClient.salario_diario > 0) {
+      const nominaMensual = Math.round(activeClient.salario_diario * 30 * 100) / 100;
+      setConceptos([
+        {
+          id: 1,
+          concepto: `Nómina (${activeClient.nombre})`,
+          gravado: nominaMensual,
+          exento: 0,
+        },
+      ]);
+      setBaseGravableStr(String(nominaMensual));
+    }
+  }, [activeClient]);
 
   // ─────────────────────────────────────────────────────────────
   // EFECTOS
@@ -181,7 +201,7 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
       )}
 
       {/* Header */}
-      <header className="mb-8">
+      <header className="mb-6">
         <h1 className="font-playfair font-black text-[36px] md:text-[44px] leading-[0.95] tracking-[-0.03em] text-ink">
           Calculadora ISN 2026
         </h1>
@@ -190,6 +210,16 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
           cálculo en tiempo real y exportación a Excel.
         </p>
       </header>
+
+      {/* Sincronización con Expediente Único (Sprint 9) */}
+      <div className="mb-8">
+        <ExpedienteToolBanner
+          toolId="isn"
+          titulo={`Determinación de ISN — ${estado.nombre}`}
+          inputs={{ estado: estado.id, baseGravable: baseGravableStr, conceptos }}
+          outputs={resultado as unknown as Record<string, unknown>}
+        />
+      </div>
 
       {/* Grid de dos columnas: entrada + resultado */}
       <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-8 items-start">

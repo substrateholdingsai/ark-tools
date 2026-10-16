@@ -12,8 +12,10 @@
  * - Art. 486 (Tope legal de 2×SMG para prima de antigüedad)
  */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ArrowLeft, Sparkles, Scale, Info } from 'lucide-react';
+import { useExpediente } from '@/context/ExpedienteContext';
+import { ExpedienteToolBanner } from '@/components/ExpedienteToolBanner';
 import {
   ParametrosFiniquitoCard,
   AntiguedadCard,
@@ -89,8 +91,22 @@ export function CalculadoraFiniquitos({ onBack }: CalculadoraFiniquitosProps) {
     return false;
   }, [entrada.tipoBaja, antiguedadPreview]);
 
+  const { activeClient } = useExpediente();
+
+  // Auto-hidratar con datos del cliente/trabajador activo
+  useEffect(() => {
+    if (activeClient) {
+      setEntrada((prev) => ({
+        ...prev,
+        salarioDiario: activeClient.salario_diario > 0 ? activeClient.salario_diario : prev.salarioDiario,
+        sdi: activeClient.salario_diario_integrado > 0 ? activeClient.salario_diario_integrado : prev.sdi,
+        fechaIngreso: activeClient.fecha_ingreso || prev.fechaIngreso,
+      }));
+    }
+  }, [activeClient]);
+
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-8 animate-fadeIn">
+    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6 animate-fadeIn">
       {/* Botón de regreso y encabezado */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line pb-6">
         <div className="flex items-center gap-4">
@@ -124,6 +140,15 @@ export function CalculadoraFiniquitos({ onBack }: CalculadoraFiniquitosProps) {
           <span>Vacaciones Dignas 2023 · Tope 2×SMG Art. 486</span>
         </div>
       </div>
+
+      {/* Sincronización con Expediente Único (Sprint 9) */}
+      <ExpedienteToolBanner
+        toolId="finiquitos"
+        titulo={`Cálculo de ${entrada.tipoBaja === 'liquidacion' ? 'Liquidación' : 'Finiquito'} LFT`}
+        inputs={entrada as unknown as Record<string, unknown>}
+        outputs={resultadoCalculo.ok ? (resultadoCalculo.valor as unknown as Record<string, unknown>) : {}}
+        disabled={!resultadoCalculo.ok}
+      />
 
       {/* Grid principal de la herramienta: Entrada + Resultado */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

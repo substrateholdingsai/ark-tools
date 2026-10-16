@@ -9,7 +9,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from './AuthContext';
+import AuthContext from './AuthContext';
 import {
   apiClient,
   type ClientRecord,
@@ -71,7 +71,9 @@ const STORAGE_EXPEDIENTES_CACHE = 'ark_tools_expedientes_cache';
 const ExpedienteContext = createContext<ExpedienteContextType | undefined>(undefined);
 
 export function ExpedienteProvider({ children }: { children: React.ReactNode }) {
-  const { tenantId: authTenantId, getToken } = useAuth();
+  const auth = useContext(AuthContext);
+  const authTenantId = auth?.tenantId;
+  const getToken = auth?.getToken ?? (async () => null);
   const tenantId = authTenantId || 'default-tenant';
 
   const [activeClient, setActiveClientState] = useState<ClientRecord | null>(() => {
@@ -426,10 +428,43 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
   return <ExpedienteContext.Provider value={value}>{children}</ExpedienteContext.Provider>;
 }
 
+const defaultExpedienteContext: ExpedienteContextType = {
+  activeClient: null,
+  clients: [],
+  expedientes: [],
+  isLoadingClients: false,
+  isLoadingExpedientes: false,
+  error: null,
+  tenantId: 'default-tenant',
+  setActiveClient: () => {},
+  createClient: async () => ({
+    id: 'fallback-client',
+    tenant_id: 'default-tenant',
+    user_id: null,
+    parent_id: null,
+    tipo: 'trabajador',
+    nombre: '',
+    rfc: null,
+    curp: null,
+    nss: null,
+    salario_diario: 0,
+    salario_diario_integrado: 0,
+    fecha_ingreso: null,
+    factor_integracion: 1.049315,
+    estado: 'activo',
+    metadata: null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }),
+  updateClient: async (_, updates) => updates as ClientRecord,
+  deleteClient: async () => {},
+  refreshClients: async () => {},
+  saveCalculoExpediente: async () => null,
+  refreshExpedientes: async () => {},
+  getPrefillForTool: () => null,
+};
+
 export function useExpediente(): ExpedienteContextType {
   const context = useContext(ExpedienteContext);
-  if (!context) {
-    throw new Error('useExpediente debe ser utilizado dentro de un ExpedienteProvider');
-  }
-  return context;
+  return context || defaultExpedienteContext;
 }

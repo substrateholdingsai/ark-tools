@@ -19,6 +19,7 @@ export { AuthGate } from './AuthGate';
 export { LandingPage } from './LandingPage';
 export { AiAssistantWidget } from './AiAssistantWidget';
 export { ExpedienteSelector } from './ExpedienteSelector';
+export { ExpedienteToolBanner } from './ExpedienteToolBanner';
 
 
 // Tipos

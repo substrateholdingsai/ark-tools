@@ -14,8 +14,10 @@
  *   - resultado: calculado con useMemo
  */
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { useExpediente } from '@/context/ExpedienteContext';
+import { ExpedienteToolBanner } from '@/components/ExpedienteToolBanner';
 import {
   ParametrosCard,
   RangoVisual,
@@ -37,6 +39,17 @@ export function CalculadoraSBC({ onBack }: CalculadoraSBCProps) {
   // ESTADO
   // ─────────────────────────────────────────────────────────────
   const [parametros, setParametros] = useState<ParametrosSBC>(PARAMETROS_DEFAULT);
+  const { activeClient } = useExpediente();
+
+  // Auto-hidratar con datos del cliente/trabajador activo
+  useEffect(() => {
+    if (activeClient && activeClient.salario_diario > 0) {
+      setParametros((prev) => ({
+        ...prev,
+        salarioDiario: activeClient.salario_diario,
+      }));
+    }
+  }, [activeClient]);
 
   // ─────────────────────────────────────────────────────────────
   // CÁLCULOS DERIVADOS
@@ -103,7 +116,7 @@ export function CalculadoraSBC({ onBack }: CalculadoraSBCProps) {
       )}
 
       {/* Header */}
-      <header className="mb-8">
+      <header className="mb-6">
         <h1 className="font-playfair font-black text-[36px] md:text-[44px] leading-[0.95] tracking-[-0.03em] text-ink">
           Calculadora SBC 2026
         </h1>
@@ -113,6 +126,16 @@ export function CalculadoraSBC({ onBack }: CalculadoraSBCProps) {
           Art. 27 y 28.
         </p>
       </header>
+
+      {/* Sincronización con Expediente Único (Sprint 9) */}
+      <div className="mb-8">
+        <ExpedienteToolBanner
+          toolId="sbc"
+          titulo="Determinación de Salario Base de Cotización (SBC)"
+          inputs={parametros as unknown as Record<string, unknown>}
+          outputs={resultado as unknown as Record<string, unknown>}
+        />
+      </div>
 
       {/* Grid de dos columnas: entrada + resultado */}
       <div className="grid lg:grid-cols-[1.1fr_0.9fr] gap-6 lg:gap-8 items-start">
