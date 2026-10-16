@@ -861,5 +861,5 @@ ark-tools/
 - **Total de pruebas unitarias y de integración:** **244 pasadas en 31 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
-- **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)**
+- **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)** (`ark-tools-production`, Versión: `60f52575-2acf-4e33-ace7-67b3d9a5d462`)
 - **Estado general:** **Plataforma 100% completa, sistema operativo contable con expedientes únicos, procesamiento de nómina masiva y papeles de trabajo oficiales auditables.**
