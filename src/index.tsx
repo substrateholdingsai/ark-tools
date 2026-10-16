@@ -7,6 +7,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { AuthProvider } from './context/AuthContext';
+import { ExpedienteProvider } from './context/ExpedienteContext';
 import { App } from './App';
 import './styles/ark-system.css';
 
@@ -21,7 +22,9 @@ if (!rootElement) {
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <AuthProvider>
-      <App />
+      <ExpedienteProvider>
+        <App />
+      </ExpedienteProvider>
     </AuthProvider>
   </React.StrictMode>
 );

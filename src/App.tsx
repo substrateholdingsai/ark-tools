@@ -29,6 +29,7 @@ import {
   ToolSkeleton,
   LandingPage,
   AiAssistantWidget,
+  ExpedienteSelector,
 } from './components';
 import type { NavItem } from './components';
 
@@ -192,6 +193,9 @@ export function App() {
             }}
             navItems={navItems}
           />
+
+          {/* Selector y Catálogo de Expediente Único (Sprint 9) */}
+          <ExpedienteSelector />
 
           <AlertasVigencia />
 
