@@ -32,6 +32,43 @@ export interface WatchlistEntry {
   created_at: string;
 }
 
+export type TipoCliente = 'empresa' | 'trabajador' | 'persona_fisica';
+export type EstadoCliente = 'activo' | 'inactivo' | 'archivado';
+
+export interface ClientRecord {
+  id: string;
+  tenant_id: string;
+  user_id: string | null;
+  parent_id: string | null;
+  tipo: TipoCliente;
+  nombre: string;
+  rfc: string | null;
+  curp: string | null;
+  nss: string | null;
+  salario_diario: number;
+  salario_diario_integrado: number;
+  fecha_ingreso: string | null;
+  factor_integracion: number;
+  estado: EstadoCliente;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExpedienteRecord {
+  id: string;
+  client_id: string;
+  tenant_id: string;
+  tool_id: string;
+  titulo: string | null;
+  input_hash: string;
+  inputs: Record<string, unknown>;
+  outputs: Record<string, unknown>;
+  catalog_version: string;
+  created_by: string | null;
+  created_at: string;
+}
+
 interface ApiErrorResponse {
   error?: string;
   message?: string;
@@ -266,6 +303,185 @@ export const apiClient = {
         tools_executed?: string[];
         result: string;
       };
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 5. EXPEDIENTE ÚNICO: CLIENTES (SPRINT 9)
+  // ─────────────────────────────────────────────────────────────────
+  clients: {
+    async list(
+      params: { tenant_id: string; q?: string; tipo?: string; estado?: string },
+      token?: string | null
+    ): Promise<ClientRecord[]> {
+      const q = new URLSearchParams();
+      q.set('tenant_id', params.tenant_id);
+      if (params.q) q.set('q', params.q);
+      if (params.tipo) q.set('tipo', params.tipo);
+      if (params.estado) q.set('estado', params.estado);
+
+      const res = await fetch(`/api/clients?${q.toString()}`, {
+        headers: getHeaders(token),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al listar clientes');
+      }
+      const data = (await res.json()) as { clients?: ClientRecord[] };
+      return data.clients || [];
+    },
+
+    async get(id: string, tenantId: string, token?: string | null): Promise<ClientRecord> {
+      const res = await fetch(`/api/clients/${encodeURIComponent(id)}?tenant_id=${encodeURIComponent(tenantId)}`, {
+        headers: getHeaders(token),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al obtener cliente');
+      }
+      const data = (await res.json()) as { client: ClientRecord };
+      return data.client;
+    },
+
+    async create(
+      payload: Partial<ClientRecord> & {
+        tenant_id: string;
+        nombre: string;
+      },
+      token?: string | null
+    ): Promise<ClientRecord> {
+      const res = await fetch('/api/clients', {
+        method: 'POST',
+        headers: getHeaders(token),
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al crear cliente');
+      }
+      const data = (await res.json()) as { client: ClientRecord };
+      return data.client;
+    },
+
+    async update(
+      id: string,
+      payload: Partial<ClientRecord> & { tenant_id: string },
+      token?: string | null
+    ): Promise<ClientRecord> {
+      const res = await fetch(`/api/clients/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        headers: getHeaders(token),
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al actualizar cliente');
+      }
+      const data = (await res.json()) as { client: ClientRecord };
+      return data.client;
+    },
+
+    async delete(
+      id: string,
+      tenantId: string,
+      token?: string | null
+    ): Promise<{ success: boolean; message: string }> {
+      const res = await fetch(`/api/clients/${encodeURIComponent(id)}?tenant_id=${encodeURIComponent(tenantId)}`, {
+        method: 'DELETE',
+        headers: getHeaders(token),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al eliminar cliente');
+      }
+      return (await res.json()) as { success: boolean; message: string };
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // 6. EXPEDIENTE ÚNICO: EXPEDIENTES / HISTORIAL DE CÁLCULOS (SPRINT 9)
+  // ─────────────────────────────────────────────────────────────────
+  expedientes: {
+    async list(
+      params: { tenant_id: string; client_id?: string; tool_id?: string; limit?: number; offset?: number },
+      token?: string | null
+    ): Promise<ExpedienteRecord[]> {
+      const q = new URLSearchParams();
+      q.set('tenant_id', params.tenant_id);
+      if (params.client_id) q.set('client_id', params.client_id);
+      if (params.tool_id) q.set('tool_id', params.tool_id);
+      if (params.limit) q.set('limit', String(params.limit));
+      if (params.offset) q.set('offset', String(params.offset));
+
+      const res = await fetch(`/api/expedientes?${q.toString()}`, {
+        headers: getHeaders(token),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al listar expedientes');
+      }
+      const data = (await res.json()) as { expedientes?: ExpedienteRecord[] };
+      return data.expedientes || [];
+    },
+
+    async get(id: string, tenantId: string, token?: string | null): Promise<ExpedienteRecord> {
+      const res = await fetch(
+        `/api/expedientes/${encodeURIComponent(id)}?tenant_id=${encodeURIComponent(tenantId)}`,
+        {
+          headers: getHeaders(token),
+        }
+      );
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al obtener expediente');
+      }
+      const data = (await res.json()) as { expediente: ExpedienteRecord };
+      return data.expediente;
+    },
+
+    async save(
+      payload: {
+        tenant_id: string;
+        client_id: string;
+        tool_id: string;
+        titulo?: string;
+        inputs: Record<string, unknown>;
+        outputs: Record<string, unknown>;
+        catalog_version?: string;
+        created_by?: string | null;
+        force?: boolean;
+      },
+      token?: string | null
+    ): Promise<{ expediente: ExpedienteRecord; deduplicated?: boolean }> {
+      const res = await fetch('/api/expedientes', {
+        method: 'POST',
+        headers: getHeaders(token),
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al guardar expediente');
+      }
+      return (await res.json()) as { expediente: ExpedienteRecord; deduplicated?: boolean };
+    },
+
+    async delete(
+      id: string,
+      tenantId: string,
+      token?: string | null
+    ): Promise<{ success: boolean; message: string }> {
+      const res = await fetch(
+        `/api/expedientes/${encodeURIComponent(id)}?tenant_id=${encodeURIComponent(tenantId)}`,
+        {
+          method: 'DELETE',
+          headers: getHeaders(token),
+        }
+      );
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al eliminar expediente');
+      }
+      return (await res.json()) as { success: boolean; message: string };
     },
   },
 };

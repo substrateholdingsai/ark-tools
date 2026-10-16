@@ -8,6 +8,7 @@
  */
 
 import type { Env } from '../index';
+import { handleExpedienteApiRequest } from './d1Api.expediente';
 
 /**
  * Calcula el hash SHA-256 inmutable para el ledger
@@ -33,6 +34,8 @@ export async function handleD1ApiRequest(
       url.pathname.startsWith('/api/guia/') ||
       url.pathname.startsWith('/api/ledger') ||
       url.pathname.startsWith('/api/activos/') ||
+      url.pathname.startsWith('/api/clients') ||
+      url.pathname.startsWith('/api/expedientes') ||
       url.pathname === '/api/auth/sync'
     ) {
       return Response.json(
@@ -44,6 +47,14 @@ export async function handleD1ApiRequest(
       );
     }
     return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 0. EXPEDIENTE ÚNICO Y CLIENTES (SPRINT 9)
+  // ═══════════════════════════════════════════════════════════════════
+  const expedienteResponse = await handleExpedienteApiRequest(request, env, corsHeaders);
+  if (expedienteResponse) {
+    return expedienteResponse;
   }
 
   // ═══════════════════════════════════════════════════════════════════
