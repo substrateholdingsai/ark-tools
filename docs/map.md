@@ -1,6 +1,6 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.2 (Suite Completa 11/11 + Multi-Tenant + Workers AI)  
+**Versión:** 1.3 (Suite Completa 11/11 + Multi-Tenant + Expediente Único + Workers AI)  
 **Fecha:** Octubre 2026  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
@@ -12,21 +12,22 @@
 
 | Métrica | Estado |
 |---|---|
+| **Expediente Único & Catálogo** | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF) |
 | **Autenticación & AuthGate** | 100% Operativo con Auth Nativo Soberano (Zero-Dependency) |
-| **Multi-Tenancy** | Despachos y organizaciones con `AuthContext` + D1 Database (`ark_tools_db`) |
-| **Base de Datos Cloudflare D1** | `ark_tools_db` en producción (5 tablas migradas con aislamiento por `tenant_id`) |
+| **Multi-Tenancy** | Despachos y organizaciones con `AuthContext` + D1 Database (`ark_tools_db`) con aislamiento estricto por `tenant_id` |
+| **Base de Datos Cloudflare D1** | `ark_tools_db` en producción (7 tablas migradas: `users`, `tenants`, `guia_progress`, `arkangel_ledger`, `activos_watchlist`, `clients`, `expedientes`) |
 | **Cloudflare Workers AI** | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1 y streaming SSE) |
-| **Persistencia & API REST** | Endpoints `/api/auth/sync`, `/api/guia/progress`, `/api/ledger` (SHA-256), `/api/activos/watchlist` y `/api/ai/*` |
+| **Persistencia & API REST** | Endpoints `/api/clients`, `/api/expedientes`, `/api/auth/sync`, `/api/guia/progress`, `/api/ledger` (SHA-256), `/api/activos/watchlist` y `/api/ai/*` |
 | **Copy & Transparencia Legal** | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF) y cero cajas negras |
 | **Mesa de Ayuda & Soporte** | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site) |
 | **Landing Pública** | LandingPage interactiva con sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login |
-| **Pruebas unitarias e integración** | 200 pasadas en 25 suites (100% éxito) |
+| **Pruebas unitarias e integración** | 212 pasadas en 26 suites (100% éxito) |
 | **Auditoría DOF Catálogo** | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones) |
 | **Typecheck (TypeScript)** | 0 errores en modo estricto (100% limpio) |
 | **Build Vite (SPA)** | 100% funcional con bundle ultraligero sin dependencias externas |
 | **Deploy Cloudflare Workers** | Activo y sincronizado en [https://tools.arksystems.site](https://tools.arksystems.site) |
-| **Git & Repositorio** | Sincronizado en rama `main` (Commit `6dc12e6`) en GitHub |
-| **Herramientas en Producción** | 11 de 11 operativas (ISN, SBC, Nómina, Finiquitos y Liquidaciones, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) — SUITE 100% CERRADA |
+| **Git & Repositorio** | Sincronizado en rama `main` en GitHub |
+| **Herramientas en Producción** | 11 de 11 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos y Liquidaciones, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) — SUITE 100% CERRADA |
 
 ---
 
@@ -684,29 +685,73 @@ ark-tools/
 #### 3. Suite de Pruebas y Control de Calidad
 - 7 pruebas unitarias del motor en `src/tools/finiquitos/lib/calcularFiniquito.test.ts`.
 - 6 pruebas de integración y UI en `src/tools/finiquitos/CalculadoraFiniquitos.test.tsx` (montaje, navegación `onBack`, cambio de tabs, cálculo sugerido de SDI, desglose y exportaciones CSV/portapapeles).
-- **Total Suite:** **200 pruebas unitarias y de integración pasando al 100% en 25 suites**.
-- **Typecheck:** 0 errores en TypeScript estricto (`tsc --noEmit`).
-- **Compilación Vite:** Bundle generado limpiamente en 23s sin errores.
-- **Auditoría DOF:** 6/6 valores oficiales vigentes verificados (`pnpm verify:catalogo`).
 
 ---
 
-## 5. Resumen General del Proyecto (Suite Completa 11/11 + Multi-Tenant + Workers AI + Copy Institucional)
+### Sprint 9 — Expediente Único ARK TOOLS (Completado)
+
+**Objetivo:** Convertir las 11 calculadoras en un sistema operativo de despacho donde un cliente seleccionado alimenta todas las herramientas, archiva historial inmutable con sello SHA-256 y versión oficial DOF, y permite facturar por expediente.
+
+#### 1. Migración D1 Multi-Tenant
+- **`migrations/0002_expediente_unico.sql`**:
+  - Tabla `clients`: `id`, `tenant_id`, `user_id`, `parent_id`, `tipo` (`empresa`, `trabajador`, `persona_fisica`), `nombre`, `rfc`, `curp`, `nss`, `salario_diario`, `salario_diario_integrado`, `fecha_ingreso`, `factor_integracion`, `estado`, `metadata` JSON, `created_at`, `updated_at`.
+  - Tabla `expedientes`: `id`, `client_id`, `tenant_id`, `tool_id`, `titulo`, `input_hash` (SHA-256 determinista), `inputs` JSON, `outputs` JSON, `catalog_version` oficial DOF, `created_by`, `created_at`.
+  - Columnas `client_id` añadidas a `arkangel_ledger`, `activos_watchlist` y `guia_progress`.
+  - Índices por `tenant_id`, `nombre`, `client_id`, `tool_id` e `input_hash`.
+  - Aplicada exitosamente en Cloudflare D1 producción (`ark_tools_db`).
+
+#### 2. Backend D1 REST API y Criptografía
+- **`src/server/d1Api.expediente.ts`**:
+  - `computeDeterministicHash`: Función SHA-256 canónica que normaliza llaves anidadas de forma recursiva para evitar divergencias de serialización.
+  - Sello oficial `CURRENT_CATALOG_VERSION = 'DOF-2026-UMA117.31-SMG315.04-TOPESBC2932.75'`.
+  - Deduplicación inteligente: si un cálculo idéntico se repite para el mismo cliente en 24h, retorna el expediente existente con `deduplicated: true` evitando spam en D1.
+  - Aislamiento estricto por `tenant_id` con barrera 403 ante clientes ajenos.
+  - Endpoints `/api/clients` (GET con búsqueda LIKE, POST, PUT, DELETE) y `/api/expedientes` (GET, POST con validación de pertenencia, DELETE).
+- **`src/server/d1Api.expediente.test.ts`**:
+  - 12 pruebas unitarias cubriendo ordenamiento determinista, validaciones de esquema, seguridad multi-tenant y deduplicación.
+
+#### 3. Frontend Context & SDK Tipado
+- **`src/lib/apiClient.ts`**: Métodos tipados para `clients` y `expedientes`.
+- **`src/context/ExpedienteContext.tsx`**:
+  - `ExpedienteProvider` y hook `useExpediente()`.
+  - Persistencia y resiliencia offline en `localStorage`.
+  - Mapeo `getPrefillForTool(toolId)` para SBC, Nómina, Finiquitos e ISN.
+
+#### 4. Componentes UI de Expediente
+- **`src/components/ExpedienteSelector.tsx`**:
+  - Barra persistente superior debajo del Header con estado de cliente activo o modo libre.
+  - Modal de búsqueda predictiva y filtrado por tipo de entidad.
+  - Modal "+ Nuevo Cliente" con cálculo sugerido de SDI (×1.0493).
+  - Modal "Historial de Expediente" con timeline de cálculos, sellos SHA-256 copiables y visor de inputs/outputs.
+- **`src/components/ExpedienteToolBanner.tsx`**:
+  - Banner interactivo montado en las 4 herramientas principales.
+  - Botón de sellado con un clic ("Archivar en Expediente") y confirmación visual con copia rápida del hash SHA-256.
+
+#### 5. Hidratación Automática en Herramientas
+- **Calculadora de Finiquitos**: Auto-prefill de Salario Diario, SDI y Fecha de Ingreso; archivado sellado.
+- **Calculadora SBC**: Auto-prefill de Salario Diario y sugerencia de días; archivado sellado.
+- **Calculadora Nómina**: Auto-prefill de Sueldo Bruto y SBC Diario según periodicidad; archivado sellado.
+- **Calculadora ISN**: Auto-prefill de empresa, base de nómina y estado; archivado sellado.
+
+---
+
+## 5. Resumen General del Proyecto (Suite Completa 11/11 + Multi-Tenant + Expediente Único + Workers AI)
 
 | Categoría | Herramientas / Módulos | Estado |
 |---|---|---|
-| **Fiscal / Laboral** | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos y Liquidaciones LFT | ✅ 100% Operativas (4/4) |
+| **Fiscal / Laboral** | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos y Liquidaciones LFT | ✅ 100% Conectadas a Expediente Único (4/4) |
 | **SAT** | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0) | ✅ 100% Operativas (2/2) |
 | **Cobros** | Generador Links de Pago Clip, Calculadora de Leasing Tecnológico | ✅ 100% Operativas (2/2) |
 | **Compliance** | Guía SAT/IMSS, Auditoría Legal de Cobranza, Mapa de Activos Virtuales | ✅ 100% Operativas + Persistencia D1 (3/3) |
 | **Multi-Tenancy** | Auth Nativo Soberano + Despachos + D1 Database (`ark_tools_db`) | ✅ 100% En Producción |
+| **Expediente Único** | Catálogo Clientes/Trabajadores, Auto-Prefill, Sello SHA-256 + Versión DOF | ✅ 100% Operativo en Producción |
 | **Workers AI** | Binding `[ai]`, Agentic Tool-Calling con D1 y LFT, Streaming SSE, Llama 3.3 70B | ✅ 100% Integrado y Probado |
 | **Copy & Confianza** | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica | ✅ 100% En Producción |
 | **Core Global** | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage | ✅ 100% Operativo |
 
 - **Total de herramientas en plataforma:** **11 de 11 (100% Suite Completa Cerrada)**
-- **Total de pruebas unitarias y de integración:** **200 pasadas en 25 suites (100% éxito)**
+- **Total de pruebas unitarias y de integración:** **212 pasadas en 26 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
 - **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)**
-- **Estado general:** **Plataforma 100% completa, validada, con fundamentación legal y lista para despliegue.**
+- **Estado general:** **Plataforma 100% completa, convertida en sistema operativo de despacho con expediente único auditable.**
