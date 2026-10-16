@@ -348,6 +348,69 @@ export async function handleExpedienteApiRequest(
   // 2. EXPEDIENTES (/api/expedientes)
   // ═══════════════════════════════════════════════════════════════════
 
+  // GET /api/expedientes/verify — Verificación pública de autenticidad por hash SHA-256
+  if (url.pathname === '/api/expedientes/verify' && request.method === 'GET') {
+    try {
+      const hash = url.searchParams.get('hash')?.trim().toLowerCase();
+      if (!hash || hash.length !== 64) {
+        return Response.json(
+          { error: 'Hash SHA-256 inválido o no proporcionado (debe contener 64 caracteres)' },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      const row = await db
+        .prepare(
+          `SELECT e.*, c.nombre as client_nombre, c.rfc as client_rfc, c.tipo as client_tipo, t.name as tenant_name
+           FROM expedientes e
+           LEFT JOIN clients c ON e.client_id = c.id
+           LEFT JOIN tenants t ON e.tenant_id = t.id
+           WHERE LOWER(e.input_hash) = ?
+           ORDER BY e.created_at DESC LIMIT 1`
+        )
+        .bind(hash)
+        .first<Record<string, unknown>>();
+
+      if (!row) {
+        return Response.json(
+          {
+            verified: false,
+            message: 'No se encontró ningún cálculo con este sello criptográfico en ARK TOOLS',
+          },
+          { status: 404, headers: corsHeaders }
+        );
+      }
+
+      return Response.json(
+        {
+          verified: true,
+          certificado: {
+            input_hash: String(row.input_hash),
+            tool_id: String(row.tool_id),
+            titulo: row.titulo ? String(row.titulo) : null,
+            catalog_version: String(row.catalog_version),
+            created_at: String(row.created_at),
+            despacho: row.tenant_name ? String(row.tenant_name) : 'Despacho Acreditado ARK TOOLS',
+            cliente: {
+              nombre: row.client_nombre ? String(row.client_nombre) : 'Cliente Registrado',
+              rfc: row.client_rfc ? String(row.client_rfc) : null,
+              tipo: row.client_tipo ? String(row.client_tipo) : 'trabajador',
+            },
+            inputs: JSON.parse(String(row.inputs || '{}')) as Record<string, unknown>,
+            outputs: JSON.parse(String(row.outputs || '{}')) as Record<string, unknown>,
+          },
+        },
+        { headers: corsHeaders }
+      );
+    } catch (err) {
+      console.error('[API Expediente Verify Error]', err);
+      return Response.json(
+        { error: 'Error al verificar cálculo', details: String(err) },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+  }
+
   // GET /api/expedientes — Consultar historial de cálculos por cliente y tenant
   if (url.pathname === '/api/expedientes' && request.method === 'GET') {
     try {

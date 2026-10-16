@@ -298,6 +298,10 @@ export function useAuth(): AuthContextType {
   return context;
 }
 
+export function useOptionalAuth(): AuthContextType | null {
+  return useContext(AuthContext) ?? null;
+}
+
 export function SignedIn({ children }: { children: React.ReactNode }) {
   const { isSignedIn } = useAuth();
   return isSignedIn ? <>{children}</> : null;

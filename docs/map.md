@@ -1,6 +1,6 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.3 (Suite Completa 11/11 + Multi-Tenant + Expediente Único + Workers AI)  
+**Versión:** 1.4 (Suite Completa 11/11 + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR)  
 **Fecha:** Octubre 2026  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
@@ -12,16 +12,18 @@
 
 | Métrica | Estado |
 |---|---|
+| **Papel de Trabajo Oficial (PDF/QR)** | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública) |
+| **Verificación Pública de Expedientes** | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores) |
 | **Expediente Único & Catálogo** | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF) |
 | **Autenticación & AuthGate** | 100% Operativo con Auth Nativo Soberano (Zero-Dependency) |
 | **Multi-Tenancy** | Despachos y organizaciones con `AuthContext` + D1 Database (`ark_tools_db`) con aislamiento estricto por `tenant_id` |
 | **Base de Datos Cloudflare D1** | `ark_tools_db` en producción (7 tablas migradas: `users`, `tenants`, `guia_progress`, `arkangel_ledger`, `activos_watchlist`, `clients`, `expedientes`) |
 | **Cloudflare Workers AI** | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1 y streaming SSE) |
-| **Persistencia & API REST** | Endpoints `/api/clients`, `/api/expedientes`, `/api/auth/sync`, `/api/guia/progress`, `/api/ledger` (SHA-256), `/api/activos/watchlist` y `/api/ai/*` |
-| **Copy & Transparencia Legal** | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF) y cero cajas negras |
+| **Persistencia & API REST** | Endpoints `/api/clients`, `/api/expedientes` (+ `/verify`), `/api/auth/sync`, `/api/guia/progress`, `/api/ledger` (SHA-256), `/api/activos/watchlist` y `/api/ai/*` |
+| **Copy & Transparencia Legal** | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28) y cero cajas negras |
 | **Mesa de Ayuda & Soporte** | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site) |
 | **Landing Pública** | LandingPage interactiva con sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login |
-| **Pruebas unitarias e integración** | 212 pasadas en 26 suites (100% éxito) |
+| **Pruebas unitarias e integración** | 215 pasadas en 27 suites (100% éxito) |
 | **Auditoría DOF Catálogo** | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones) |
 | **Typecheck (TypeScript)** | 0 errores en modo estricto (100% limpio) |
 | **Build Vite (SPA)** | 100% funcional con bundle ultraligero sin dependencias externas |
@@ -74,9 +76,11 @@ ark-tools/
 │   ├── lib/
 │   │   ├── cn.ts                     ✅ Utilidad twMerge + clsx
 │   │   ├── useTenant.ts              ✅ Contexto del tenant activo
-│   │   └── apiClient.ts              ✅ Cliente SDK frontend tipado para D1 (guía, ledger, watchlist, clients, expedientes)
+│   │   ├── numeroALetras.ts          ✅ Conversor de importes a moneda nacional en texto (Art. 28 CFF)
+│   │   ├── numeroALetras.test.ts     ✅ 3 tests unitarios pasados
+│   │   └── apiClient.ts              ✅ Cliente SDK frontend tipado para D1 (guía, ledger, watchlist, clients, expedientes, verify)
 │   ├── styles/
-│   │   └── ark-system.css            ✅ Estilos base, fuentes, variables y componentes físicos
+│   │   └── ark-system.css            ✅ Estilos base, fuentes, variables y componentes físicos (@media print)
 │   ├── components/
 │   │   ├── ui/                       ✅ Componentes Atómicos (100%)
 │   │   ├── Logo.tsx                  ✅ Cubo isométrico 3D ARK con diamante
@@ -84,6 +88,8 @@ ark-tools/
 │   │   ├── Footer.tsx                ✅ Footer institucional con privacidad de XMLs, soporte directo, 3 columnas y disclaimer legal
 │   │   ├── ExpedienteSelector.tsx    ✅ Barra persistente de cliente activo, búsqueda predictiva y modal de nuevo cliente
 │   │   ├── ExpedienteToolBanner.tsx  ✅ Banner interactivo en herramientas para archivar con sello SHA-256
+│   │   ├── PapelDeTrabajoModal.tsx   ✅ Cédula oficial tamaño Carta para impresión PDF con Sello QR y desglose
+│   │   ├── VerificacionPublicaModal.tsx ✅ Validador público de expedientes sellados vía QR (/api/expedientes/verify)
 │   │   ├── ToolCard.tsx              ✅ Tarjetas con hover dorado, badge y CTA
 │   │   ├── CategorySection.tsx       ✅ Agrupador de categorías (Fiscal, SAT, Cobros, etc. — 1 a 4 cols)
 │   │   ├── ToolSkeleton.tsx          ✅ Skeleton loader animado para lazy imports
@@ -741,10 +747,48 @@ ark-tools/
 
 ---
 
-## 5. Resumen General del Proyecto (Suite Completa 11/11 + Multi-Tenant + Expediente Único + Workers AI)
+### 4.3 Sprint 10 — Papel de Trabajo Oficial en PDF con Sello QR y Verificación Pública
+
+**Objetivo:** Transformar los expedientes digitales en cédulas contables y papeles de trabajo impresos con validez fiscal y laboral formal (Art. 28 CFF, LISR, LFT, LSS), incorporando sello digital criptográfico SHA-256 inmutable, código QR y verificación pública sin login para terceros y auditores.
+
+#### 1. Conversor de Moneda a Letras
+- **`src/lib/numeroALetras.ts`**:
+  - Conversión precisa de importes a texto legal formal en Pesos Mexicanos (ej: `"(TRES MIL QUINIENTOS VEINTICUATRO PESOS 50/100 M.N.)"`).
+  - Manejo de millones, miles, centenas y regla específica para un millón ("UN MILLÓN DE PESOS").
+- **`src/lib/numeroALetras.test.ts`**:
+  - 3 pruebas unitarias exhaustivas con importes estándar, centavos y cifras millonarias.
+
+#### 2. Cédula y Papel de Trabajo para Impresión PDF
+- **`src/components/PapelDeTrabajoModal.tsx`**:
+  - Diseño institucional tamaño Carta (`letter`) con tipografía ejecutiva y contraste nítido.
+  - Estilos específicos `@media print` que aíslan la cédula eliminando barras de navegación, botones y fondos innecesarios.
+  - Cabecera con datos del despacho contable (multi-tenant), cliente/trabajador, RFC, CURP, NSS, fecha de emisión y número de folio.
+  - Tablas formales de parámetros de entrada, base de cotización/salario y desglose analítico de conceptos calculados con fundamentos legales explícitos.
+  - Cifra total destacada con desglose en letras obligatorio bajo Art. 28 del CFF.
+  - Sello digital de integridad SHA-256 e información de versión de tablas oficiales DOF.
+  - Código QR vectorial de alta definición generado con biblioteca `qrcode`.
+  - Bloque de firmas autógrafas para Contador Auditor y Representante / Trabajador.
+
+#### 3. Endpoint y Portal de Verificación Pública
+- **`src/server/d1Api.expediente.ts`**:
+  - Endpoint público `GET /api/expedientes/verify?hash={hash}` sin requerir autenticación previa.
+  - Consulta en Cloudflare D1 comparando el hash recibido con el registro archivado y extrayendo metadatos no sensibles de auditoría.
+- **`src/components/VerificacionPublicaModal.tsx`**:
+  - Portal modal de verificación pública que se activa automáticamente al visitar `tools.arksystems.site/?verify={hash}`.
+  - Muestra insignia de autenticidad verificada por Cloudflare D1, fecha de emisión original, despacho emisor, versión de tablas DOF y resumen de conceptos.
+
+#### 4. Integración en Banner de Herramientas e Historial
+- **`ExpedienteToolBanner.tsx`**: Botón "Papel de Trabajo (PDF)" disponible de inmediato tras archivar cualquier cálculo.
+- **`ExpedienteSelector.tsx`**: Botón "Papel de Trabajo" disponible en cada cálculo archivado dentro del modal "Historial de Expediente".
+- Integración en `App.tsx` para responder a solicitudes con parámetro `?verify={hash}`.
+
+---
+
+## 5. Resumen General del Proyecto (Suite Completa 11/11 + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
 
 | Categoría | Herramientas / Módulos | Estado |
 |---|---|---|
+| **Papel de Trabajo (PDF/QR)** | Cédula institucional Carta, `@media print`, Sello SHA-256, Importe en Letras, QR y Verificación Pública | ✅ 100% Operativo en Producción |
 | **Fiscal / Laboral** | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos y Liquidaciones LFT | ✅ 100% Conectadas a Expediente Único (4/4) |
 | **SAT** | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0) | ✅ 100% Operativas (2/2) |
 | **Cobros** | Generador Links de Pago Clip, Calculadora de Leasing Tecnológico | ✅ 100% Operativas (2/2) |
@@ -756,8 +800,8 @@ ark-tools/
 | **Core Global** | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage | ✅ 100% Operativo |
 
 - **Total de herramientas en plataforma:** **11 de 11 (100% Suite Completa Cerrada)**
-- **Total de pruebas unitarias y de integración:** **212 pasadas en 26 suites (100% éxito)**
+- **Total de pruebas unitarias y de integración:** **215 pasadas en 27 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
 - **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)**
-- **Estado general:** **Plataforma 100% completa, convertida en sistema operativo de despacho con expediente único auditable.**
+- **Estado general:** **Plataforma 100% completa, sistema operativo contable con expedientes únicos y papeles de trabajo oficiales auditables.**

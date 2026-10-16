@@ -69,6 +69,22 @@ export interface ExpedienteRecord {
   created_at: string;
 }
 
+export interface CertificadoVerificacion {
+  input_hash: string;
+  tool_id: string;
+  titulo: string | null;
+  catalog_version: string;
+  created_at: string;
+  despacho: string;
+  cliente: {
+    nombre: string;
+    rfc: string | null;
+    tipo: string;
+  };
+  inputs: Record<string, unknown>;
+  outputs: Record<string, unknown>;
+}
+
 interface ApiErrorResponse {
   error?: string;
   message?: string;
@@ -482,6 +498,13 @@ export const apiClient = {
         throw new Error(error.error || error.message || 'Error al eliminar expediente');
       }
       return (await res.json()) as { success: boolean; message: string };
+    },
+
+    async verify(
+      hash: string
+    ): Promise<{ verified: boolean; certificado?: CertificadoVerificacion; message?: string }> {
+      const res = await fetch(`/api/expedientes/verify?hash=${encodeURIComponent(hash)}`);
+      return (await res.json()) as { verified: boolean; certificado?: CertificadoVerificacion; message?: string };
     },
   },
 };

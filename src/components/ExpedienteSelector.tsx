@@ -23,10 +23,13 @@ import {
   ShieldCheck,
   Calendar,
   Copy,
+  FileText,
 } from 'lucide-react';
 import { useExpediente, type CreateClientInput } from '@/context/ExpedienteContext';
+import { useOptionalAuth } from '@/context/AuthContext';
 import type { ClientRecord, ExpedienteRecord, TipoCliente } from '@/lib/apiClient';
 import { GlassButton } from './ui/GlassButton';
+import { PapelDeTrabajoModal } from './PapelDeTrabajoModal';
 
 export function ExpedienteSelector() {
   const {
@@ -638,8 +641,11 @@ function ExpedienteHistoryModal({
   isLoading,
   onClose,
 }: ExpedienteHistoryModalProps) {
+  const auth = useOptionalAuth();
+  const tenantName = auth?.tenantName || 'Despacho Contable Especializado';
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [copiedHash, setCopiedHash] = useState<string | null>(null);
+  const [selectedExpediente, setSelectedExpediente] = useState<ExpedienteRecord | null>(null);
 
   const copyHash = (hash: string) => {
     void navigator.clipboard.writeText(hash);
@@ -720,13 +726,23 @@ function ExpedienteHistoryModal({
                       </div>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(isExpanded ? null : exp.id)}
-                      className="text-xs text-navy font-semibold hover:underline cursor-pointer"
-                    >
-                      {isExpanded ? 'Ocultar Detalle' : 'Ver Detalle'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedExpediente(exp)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-navy text-white text-[11px] font-semibold hover:bg-navy/90 cursor-pointer shadow-2xs"
+                      >
+                        <FileText size={12} className="text-gold" />
+                        <span>Papel de Trabajo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : exp.id)}
+                        className="text-xs text-navy font-semibold hover:underline cursor-pointer"
+                      >
+                        {isExpanded ? 'Ocultar Detalle' : 'Ver Detalle'}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Hash SHA-256 */}
@@ -784,6 +800,16 @@ function ExpedienteHistoryModal({
           </button>
         </div>
       </div>
+
+      {selectedExpediente && (
+        <PapelDeTrabajoModal
+          isOpen={Boolean(selectedExpediente)}
+          onClose={() => setSelectedExpediente(null)}
+          despachoName={tenantName || 'Despacho Contable Especializado'}
+          client={client}
+          expediente={selectedExpediente}
+        />
+      )}
     </div>
   );
 }

@@ -30,6 +30,7 @@ import {
   LandingPage,
   AiAssistantWidget,
   ExpedienteSelector,
+  VerificacionPublicaModal,
 } from './components';
 import type { NavItem } from './components';
 
@@ -89,6 +90,11 @@ const navItems: NavItem[] = [
 // ═════════════════════════════════════════════════════════════════
 export function App() {
   const [activeTool, setActiveTool] = useState<ToolId>('dashboard');
+  const [verifyHash, setVerifyHash] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('verify') || params.get('hash') || null;
+  });
   const { isSignedIn, userId, email, fullName, tenantId, tenantName, organization, getToken } =
     useAuth();
 
@@ -207,6 +213,23 @@ export function App() {
           <AiAssistantWidget />
         </div>
       </SignedIn>
+
+      {/* Modal Público de Verificación Criptográfica de Papel de Trabajo (QR) */}
+      {verifyHash && (
+        <VerificacionPublicaModal
+          hash={verifyHash}
+          isOpen={Boolean(verifyHash)}
+          onClose={() => {
+            setVerifyHash(null);
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('verify');
+              url.searchParams.delete('hash');
+              window.history.replaceState({}, '', url.toString());
+            }
+          }}
+        />
+      )}
     </>
   );
 }
