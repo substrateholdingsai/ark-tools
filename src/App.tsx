@@ -16,6 +16,7 @@ import {
   Scale,
   Globe,
   ShieldAlert,
+  Users,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -56,6 +57,9 @@ const MapaActivos = lazy(
 const CalculadoraFiniquitos = lazy(
   () => import('@/tools/finiquitos'),
 );
+const CierreNomina = lazy(
+  () => import('@/tools/cierre-nomina').then((m) => ({ default: m.CierreNomina })),
+);
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -66,6 +70,7 @@ export type ToolId =
   | 'sbc'
   | 'nomina'
   | 'finiquitos'
+  | 'cierre-nomina'
   | 'xml-excel'
   | 'validador'
   | 'spei'
@@ -146,6 +151,13 @@ export function App() {
         return (
           <Suspense fallback={<ToolSkeleton />}>
             <CalculadoraFiniquitos onBack={goToDashboard} />
+          </Suspense>
+        );
+
+      case 'cierre-nomina':
+        return (
+          <Suspense fallback={<ToolSkeleton />}>
+            <CierreNomina onBack={goToDashboard} />
           </Suspense>
         );
 
@@ -331,6 +343,14 @@ function Dashboard({ onSelectTool }: DashboardProps) {
           badge="NUEVO"
           badgeVariant="gold"
           onSelect={() => onSelectTool('finiquitos')}
+        />
+        <ToolCard
+          icon={Users}
+          title="Cierre de Nómina Masivo"
+          description="Procesamiento en lote por período. Retenciones SAT, cuotas IMSS, ISN estatal y Cédula con Sello QR."
+          badge="BATCH DOF"
+          badgeVariant="gold"
+          onSelect={() => onSelectTool('cierre-nomina')}
         />
       </CategorySection>
 

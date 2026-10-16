@@ -1,6 +1,6 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.4 (Suite Completa 11/11 + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR)  
+**Versión:** 1.5 (Suite de 12 Herramientas + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR)  
 **Fecha:** Octubre 2026  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
@@ -12,6 +12,7 @@
 
 | Métrica | Estado |
 |---|---|
+| **Cierre de Nómina Masivo (Batch DOF)** | 100% Operativo (Ingesta CSV/Excel, cálculo simultáneo de retenciones SAT, IMSS Obrero, ISN, Cédula Concentradora y Dispersión Bancaria) |
 | **Papel de Trabajo Oficial (PDF/QR)** | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública) |
 | **Verificación Pública de Expedientes** | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores) |
 | **Expediente Único & Catálogo** | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF) |
@@ -23,13 +24,13 @@
 | **Copy & Transparencia Legal** | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28) y cero cajas negras |
 | **Mesa de Ayuda & Soporte** | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site) |
 | **Landing Pública** | LandingPage interactiva con sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login |
-| **Pruebas unitarias e integración** | 215 pasadas en 27 suites (100% éxito) |
+| **Pruebas unitarias e integración** | 244 pasadas en 31 suites (100% éxito) |
 | **Auditoría DOF Catálogo** | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones) |
 | **Typecheck (TypeScript)** | 0 errores en modo estricto (100% limpio) |
 | **Build Vite (SPA)** | 100% funcional con bundle ultraligero sin dependencias externas |
 | **Deploy Cloudflare Workers** | Activo y sincronizado en [https://tools.arksystems.site](https://tools.arksystems.site) |
 | **Git & Repositorio** | Sincronizado en rama `main` en GitHub |
-| **Herramientas en Producción** | 11 de 11 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos y Liquidaciones, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) — SUITE 100% CERRADA |
+| **Herramientas en Producción** | 12 de 12 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos y Liquidaciones, Cierre de Nómina Masivo, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) — SUITE 100% CERRADA |
 
 ---
 
@@ -213,13 +214,26 @@ ark-tools/
 │       │   ├── MapaActivos.test.tsx  ✅ 6 tests de integración y UI pasados
 │       │   └── index.ts              ✅ Barrel export
 │       │
-│       └── finiquitos/               ✅ 100% COMPLETADA Y DESPLEGADA (11/11)
-│           ├── types.ts              ✅ Tipos LFT (Arts. 50, 76, 79, 80, 87, 162, 486)
-│           ├── lib/calcularFiniquito.ts ✅ Motor de finiquito/liquidación (Vacaciones Dignas 2023, tope 2xSMG)
-│           ├── lib/calcularFiniquito.test.ts ✅ 7 tests unitarios pasados (100% éxito)
-│           ├── components/           ✅ ParametrosFiniquitoCard, AntiguedadCard, DesgloseFiniquitoTable, ResultadoFiniquitoCard
-│           ├── CalculadoraFiniquitos.tsx ✅ Componente principal interactivo con exportaciones CSV/TXT
-│           ├── CalculadoraFiniquitos.test.tsx ✅ 6 tests de integración y UI pasados (100% éxito)
+│       ├── finiquitos/               ✅ 100% COMPLETADA Y DESPLEGADA (11/11)
+│       │   ├── types.ts              ✅ Tipos LFT (Arts. 50, 76, 79, 80, 87, 162, 486)
+│       │   ├── lib/calcularFiniquito.ts ✅ Motor de finiquito/liquidación (Vacaciones Dignas 2023, tope 2xSMG)
+│       │   ├── lib/calcularFiniquito.test.ts ✅ 7 tests unitarios pasados (100% éxito)
+│       │   ├── components/           ✅ ParametrosFiniquitoCard, AntiguedadCard, DesgloseFiniquitoTable, ResultadoFiniquitoCard
+│       │   ├── CalculadoraFiniquitos.tsx ✅ Componente principal interactivo con exportaciones CSV/TXT
+│       │   ├── CalculadoraFiniquitos.test.tsx ✅ 6 tests de integración y UI pasados (100% éxito)
+│       │   └── index.ts              ✅ Barrel export completo
+│       │
+│       └── cierre-nomina/            ✅ 100% COMPLETADA Y DESPLEGADA (12/12)
+│           ├── types.ts              ✅ Tipos para procesamiento en lote, resumen y dispersión
+│           ├── lib/parserPlantilla.ts ✅ Parser CSV/TSV, normalización RFC/NSS y Vacaciones LFT
+│           ├── lib/parserPlantilla.test.ts ✅ 18 tests unitarios pasados (100% éxito)
+│           ├── lib/calcularCierreNomina.ts ✅ Motor batch paralelo, topes LSS, retenciones y SHA-256
+│           ├── lib/calcularCierreNomina.test.ts ✅ 4 tests unitarios pasados (100% éxito)
+│           ├── lib/exportarCierre.ts ✅ Exportador Cédula Concentradora CSV y Layout Dispersión
+│           ├── lib/exportarCierre.test.ts ✅ 3 tests unitarios pasados (100% éxito)
+│           ├── components/           ✅ CedulaConcentradoraModal (Carta horizontal, QR, firmas)
+│           ├── CierreNomina.tsx      ✅ Pantalla interactiva principal con carga masiva y KPIs
+│           ├── CierreNomina.test.tsx ✅ 4 tests de UI e integración pasados (100% éxito)
 │           └── index.ts              ✅ Barrel export completo
 ```
 
@@ -784,10 +798,54 @@ ark-tools/
 
 ---
 
-## 5. Resumen General del Proyecto (Suite Completa 11/11 + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
+### 4.4 Sprint 11 — Cierre de Nómina Masivo, Motor Batch y Cédula Concentradora (SUA/SIPARE & Dispersión Ready)
+
+**Objetivo:** Permitir el procesamiento masivo de plantillas completas de trabajadores (CSV/Excel) por período (quincenal, semanal o mensual), determinando simultáneamente retenciones de ISR (Art. 96 LISR), subsidio al empleo 2026, cuotas IMSS obrero (LSS Art. 27/28 tope 25 UMAs), ISN estatal y emitiendo la Cédula Concentradora Oficial con Sello QR y archivo de dispersión bancaria.
+
+#### 1. Tipado e Ingesta de Plantillas
+- **`src/tools/cierre-nomina/types.ts`**:
+  - `TrabajadorFilaInput`, `ParametrosCierreNomina`, `ResultadoTrabajadorNomina`, `ResumenCierreNomina`, `CierreNominaCompleto`.
+- **`src/tools/cierre-nomina/lib/parserPlantilla.ts`**:
+  - Detección automática de delimitadores (`,`, `;`, `\t`).
+  - Mapeo de alias de columnas (`Nombre`, `Salario Diario`, `Ingreso`, `RFC`, etc.).
+  - Conversión monetaria limpia (`parsearNumero`).
+  - Lógica del Art. 76 LFT (Reforma de Vacaciones Dignas: 1er año 12 días hasta 32 días).
+  - Generador de plantilla oficial descargable con 5 trabajadores representativos.
+- **`src/tools/cierre-nomina/lib/parserPlantilla.test.ts`**: 18 pruebas unitarias (100% pasadas).
+
+#### 2. Motor de Procesamiento en Lote (Batch Calculator)
+- **`src/tools/cierre-nomina/lib/calcularCierreNomina.ts`**:
+  - Cálculo simultáneo por colaborador: factor de integración, SBC topado a 25 UMAs ($2,932.75), retención ISR, subsidio, IMSS obrero, ISN estatal y sueldo neto.
+  - Conversión a texto legal en pesos mexicanos (`numeroALetras`, conforme al Art. 28 CFF).
+  - Sello digital criptográfico determinista `computeBatchHash` (SHA-256) y estampa `DOF-2026-UMA117.31-SMG315.04-TOPESBC2932.75`.
+- **`src/tools/cierre-nomina/lib/calcularCierreNomina.test.ts`**: 4 pruebas unitarias (100% pasadas).
+
+#### 3. Exportadores y Cédula Concentradora
+- **`src/tools/cierre-nomina/lib/exportarCierre.ts`**:
+  - Exportador Cédula Concentradora CSV con BOM UTF-8 y fórmulas de totales.
+  - Layout de dispersión bancaria para transferencias en portales bancarios empresariales.
+  - `descargarArchivo` para descarga inmediata en navegador.
+- **`src/tools/cierre-nomina/lib/exportarCierre.test.ts`**: 3 pruebas unitarias (100% pasadas).
+- **`src/tools/cierre-nomina/components/CedulaConcentradoraModal.tsx`**:
+  - Formato institucional Carta horizontal (`@media print`) para guardar en PDF con 1 clic.
+  - 5 Tarjetas ejecutivas (Bruto, Retención ISR, IMSS Obrero, ISN Estatal, Neto a Dispersar).
+  - Tabla analítica de nómina, sello SHA-256, código QR de verificación pública y firmas autógrafas (*Elaboró*, *Revisó*, *Autorizó*).
+
+#### 4. Pantalla Principal e Integración en la Suite
+- **`src/tools/cierre-nomina/CierreNomina.tsx`**:
+  - Pantalla interactiva con configuración de período, estado para ISN, drag & drop de plantillas CSV y carga rápida de muestra de 5 colaboradores.
+  - Tabla previa de colaboradores con edición y eliminación rápida.
+  - Resumen ejecutivo y archivado directo en el Expediente Único de la empresa cliente activa.
+- **`src/tools/cierre-nomina/CierreNomina.test.tsx`**: 4 pruebas de integración y UI (100% pasadas).
+- **`src/App.tsx`**: Integración en el enrutador principal con carga diferida (`React.lazy`) y tarjeta destacada en la categoría Fiscal (`BATCH DOF`).
+
+---
+
+## 5. Resumen General del Proyecto (Suite de 12 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
 
 | Categoría | Herramientas / Módulos | Estado |
 |---|---|---|
+| **Cierre de Nómina Masivo** | Motor Batch DOF 2026, Ingesta CSV/Excel, Cédula Concentradora Carta, Layout Dispersión, Sello QR | ✅ 100% Operativo en Producción (Herramienta #12) |
 | **Papel de Trabajo (PDF/QR)** | Cédula institucional Carta, `@media print`, Sello SHA-256, Importe en Letras, QR y Verificación Pública | ✅ 100% Operativo en Producción |
 | **Fiscal / Laboral** | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos y Liquidaciones LFT | ✅ 100% Conectadas a Expediente Único (4/4) |
 | **SAT** | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0) | ✅ 100% Operativas (2/2) |
@@ -799,9 +857,9 @@ ark-tools/
 | **Copy & Confianza** | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica | ✅ 100% En Producción |
 | **Core Global** | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage | ✅ 100% Operativo |
 
-- **Total de herramientas en plataforma:** **11 de 11 (100% Suite Completa Cerrada)**
-- **Total de pruebas unitarias y de integración:** **215 pasadas en 27 suites (100% éxito)**
+- **Total de herramientas en plataforma:** **12 de 12 (100% Operativas)**
+- **Total de pruebas unitarias y de integración:** **244 pasadas en 31 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
 - **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)**
-- **Estado general:** **Plataforma 100% completa, sistema operativo contable con expedientes únicos y papeles de trabajo oficiales auditables.**
+- **Estado general:** **Plataforma 100% completa, sistema operativo contable con expedientes únicos, procesamiento de nómina masiva y papeles de trabajo oficiales auditables.**
