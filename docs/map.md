@@ -20,10 +20,12 @@
 | **Copy & Transparencia Legal** | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF) y cero cajas negras |
 | **Mesa de Ayuda & Soporte** | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site) |
 | **Landing Pública** | LandingPage interactiva con sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login |
-| **Pruebas unitarias e integración** | 193 pasadas en 24 suites (100% éxito) |
+| **Pruebas unitarias e integración** | 194 pasadas en 24 suites (100% éxito) |
+| **Auditoría DOF Catálogo** | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones) |
 | **Typecheck (TypeScript)** | 0 errores en modo estricto (100% limpio) |
 | **Build Vite (SPA)** | 100% funcional con bundle ultraligero sin dependencias externas |
 | **Deploy Cloudflare Workers** | Activo y sincronizado en [https://tools.arksystems.site](https://tools.arksystems.site) |
+| **Git & Repositorio** | Sincronizado en rama `main` (Commit `5a6099a`) en GitHub |
 | **Herramientas en Producción** | 10 de 10 operativas (ISN, SBC, Nómina, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) |
 
 ---
@@ -36,6 +38,8 @@ ark-tools/
 ├── docs/
 │   ├── design-system.md              ✅ Completo (Especificación visual ARK)
 │   └── map.md                        ✅ Este documento
+├── scripts/
+│   └── verificar-catalogo.ts         ✅ CLI auditoría DOF de vigencias fiscales (pnpm verify:catalogo)
 ├── migrations/
 │   └── 0001_initial_schema.sql       ✅ D1 Multi-Tenant (users, tenants, guia, ledger, watchlist)
 ├── public/ & index.html              ✅ Montaje de React y fuentes Google
@@ -84,12 +88,12 @@ ark-tools/
 
 │   │
 │   ├── data/ (Datos globales de referencia)
-│   │   ├── valores-vigentes/         ✅ Catálogo centralizado de valores fiscales
-│   │   │   ├── catalogo.ts           ✅ UMA, Salario Mínimo, Topes LSS, Tarifa ISR, ISN Meta
+│   │   ├── valores-vigentes/         ✅ Catálogo centralizado de valores fiscales DOF 2026
+│   │   │   ├── catalogo.ts           ✅ UMA ($117.31/$3,566.22), SMG ($315.04/$440.87), Tope 25 UMA SBC ($2,932.75), Tarifa ISR 2026 (DOF)
 │   │   │   ├── hooks.ts              ✅ useValorFiscal, useEstadoCatalogo
-│   │   │   ├── vigencia.ts           ✅ Motor de evaluación de vigencia y alertas
+│   │   │   ├── vigencia.ts           ✅ Motor de evaluación de vigencia y alertas preventivas
 │   │   │   ├── AlertasVigencia.tsx   ✅ Banner global de valores próximos a vencer
-│   │   │   ├── tipos.ts              ✅ Tipos ValorFiscal, ConfigVigencia
+│   │   │   ├── tipos.ts              ✅ Tipos ValorFiscal (fuente DOF, urlDOF, criticidad), ConfigVigencia
 │   │   │   └── index.ts              ✅ Barrel export completo
 │   │   ├── estados.ts                ✅ Re-export desde ISN (fuente única de verdad)
 │   │   ├── conductas.ts              ✅ Catálogo de Activos Virtuales (12 conductas, autoridades, hitos, umbrales)
@@ -599,16 +603,19 @@ ark-tools/
   3. *ISN Estatal*: Leyes de Hacienda Estatales de las 32 entidades con delimitación estricta de base gravable.
   4. *Prevención Fiscal*: CFF Art. 69-B contra listas negras del SAT de operaciones simuladas (EFOS/EDOS).
 - **Banner en Dashboard (`App.tsx`)**:
-  - Recordatorio visible de certeza para papeles de trabajo y métricas oficiales vigentes DOF 2026: UMA ($113.14), SMG ($278.80) y Tope SBC (25 UMAs / $2,828.50).
+  - Recordatorio visible de certeza para papeles de trabajo y métricas oficiales vigentes DOF 2026: UMA ($117.31 diario / $3,566.22 mensual), SMG ($315.04 general / $440.87 frontera) y Tope SBC (25 UMAs / $2,932.75).
 
 #### 4. Configuración de Entorno en Cloudflare (`wrangler.toml`)
 - Actualización de variables de entorno de producción y desarrollo:
   - `COMPANY_EMAIL`: `pavel@arksystems.site`
   - `SUPPORT_URL`: `https://wa.me/525657062511`
 
-#### 5. Verificación y Despliegue en Edge
+#### 5. Verificación, Control de Calidad y Git Sync
 - **Typecheck**: 0 errores en TypeScript (`tsc --noEmit`).
-- **Testing**: 193 pruebas unitarias y de integración pasando al 100% en 24 suites.
+- **Testing**: 194 pruebas unitarias y de integración pasando al 100% en 24 suites (`vitest run`).
+- **Auditoría de Catálogo Oficial DOF**: `pnpm verify:catalogo` ejecutando auditoría CLI exitosa (6/6 valores oficiales vigentes sin proyecciones ni vencimientos).
+- **Compilación SPA**: `pnpm build` generado en 37s sin errores para producción.
+- **Git Commit & Push**: Cambios confirmados con el commit `5a6099a` (`feat: sprint 7 - workers ai, multi-tenant d1, auditor cobranza, finiquitos y footer institucional`) y sincronizados en la rama `main` en GitHub (`origin/main`).
 - **Deploy**: Desplegado en Cloudflare Workers (`Version ID: 90c90496-fc07-4237-9565-7172041bcc5e`) en [https://tools.arksystems.site](https://tools.arksystems.site).
 
 ---
@@ -626,7 +633,9 @@ ark-tools/
 | **Copy & Confianza** | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica | ✅ 100% En Producción |
 | **Core Global** | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage | ✅ 100% Operativo |
 
-- **Total de pruebas unitarias y de integración:** **193 pasadas en 24 suites (100% éxito)**
+- **Total de pruebas unitarias y de integración:** **194 pasadas en 24 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
+- **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
 - **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)**
+- **Sincronización Git:** Rama `main` actualizada y limpia (`working tree clean`) en GitHub
 - **Estado general:** **Plataforma completa, validada, con fundamentación legal y desplegada en producción.**
