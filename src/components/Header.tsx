@@ -2,11 +2,19 @@
  * Header
  *
  * Header sticky con logo, navegación y controles multi-tenant nativos.
- * Se adapta a mobile (sin nav) y desktop (con nav completa).
+ * Incluye navegación por categorías adaptable a móvil y escritorio.
  */
 
 import { useState, useRef, useEffect } from 'react';
-import { Building2, ChevronDown, LogOut, Plus, Check, MessageSquare } from 'lucide-react';
+import {
+  ArrowLeft,
+  Building2,
+  ChevronDown,
+  LogOut,
+  Plus,
+  Check,
+  MessageSquare,
+} from 'lucide-react';
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/cn';
 import { Logo } from './Logo';
@@ -19,6 +27,7 @@ export interface NavItem {
 interface HeaderProps {
   /** Herramienta activa (para resaltar en nav) */
   activeTool?: string | null;
+  currentToolLabel?: string;
   /** Callback al hacer click en un item de nav */
   onNavigate?: (id: string) => void;
   /** Items de navegación */
@@ -37,6 +46,7 @@ const defaultNavItems: NavItem[] = [
 
 export function Header({
   activeTool,
+  currentToolLabel,
   onNavigate,
   navItems = defaultNavItems,
   className,
@@ -77,62 +87,83 @@ export function Header({
     setOrgOpen(false);
   };
 
-  const userInitials = (user?.fullName || user?.email || 'U')
-    .slice(0, 2)
-    .toUpperCase();
+  const userInitials = (user?.fullName || user?.email || 'U').slice(0, 2).toUpperCase();
 
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-line',
+        'sticky top-0 z-50 border-b border-line bg-white/80 backdrop-blur-xl',
         className
       )}
       style={{ paddingTop: 'var(--safe-area-inset-top)' }}
     >
-      <div className="mx-auto max-w-[1280px] px-6 md:px-10 h-[68px] flex items-center justify-between gap-4">
+      <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between gap-2 px-4 md:h-[68px] md:gap-4 md:px-10">
         {/* Logo + Nombre */}
-        <div
-          className="flex items-center gap-4 shrink-0 cursor-pointer"
+        <button
+          type="button"
+          className="flex shrink-0 items-center gap-2 text-left md:gap-4"
           onClick={() => onNavigate?.('dashboard')}
+          aria-label="ARK TOOLS: volver al catálogo"
         >
-          <Logo size={40} />
+          <Logo size={32} />
           <div className="leading-none">
-            <div className="orbitron font-orbitron font-black text-[14px] tracking-[0.18em] text-navy">
+            <div className="orbitron font-orbitron text-[12px] font-black tracking-[0.14em] text-navy sm:text-[14px] sm:tracking-[0.18em]">
               ARK TOOLS
             </div>
-            <div className="text-[8.5px] tracking-[0.22em] text-muted font-bold mt-[2px] uppercase">
+            <div className="mt-[2px] hidden text-[8.5px] font-bold uppercase tracking-[0.22em] text-muted sm:block">
               SUITE FISCAL & FINANCIERA MX
             </div>
           </div>
-        </div>
+        </button>
 
         {/* Nav (desktop) */}
-        <nav className="hidden lg:flex items-center gap-8 text-[11px] tracking-[0.14em] font-semibold text-muted">
+        <nav
+          aria-label="Categorías de herramientas"
+          className="hidden items-center gap-4 text-[11px] font-semibold tracking-[0.14em] text-muted lg:flex xl:gap-7"
+        >
           {navItems.map((item) => (
             <button
               key={item.id}
+              type="button"
               onClick={() => onNavigate?.(item.id)}
               className={cn(
-                'transition hover:text-navy',
+                'rounded-sm transition hover:text-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold',
                 activeTool === item.id && 'text-navy'
               )}
+              aria-pressed={activeTool === item.id}
             >
               {item.label}
             </button>
           ))}
           <div className="h-4 w-px bg-line" />
-          <span className="px-3 py-1 rounded-full bg-navy/5 border border-navy/15 text-navy text-[10px] font-bold tracking-wider">
-            TABLAS 2026
-          </span>
+          {currentToolLabel ? (
+            <>
+              <button
+                type="button"
+                onClick={() => onNavigate?.('back')}
+                className="inline-flex items-center gap-1 rounded-sm text-navy hover:text-gold-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+              >
+                <ArrowLeft size={13} />
+                Catálogo
+              </button>
+              <span className="max-w-[160px] truncate text-navy" title={currentToolLabel}>
+                {currentToolLabel}
+              </span>
+            </>
+          ) : (
+            <span className="rounded-full border border-navy/15 bg-navy/5 px-3 py-1 text-[10px] font-bold tracking-wider text-navy">
+              TABLAS 2026
+            </span>
+          )}
         </nav>
 
         {/* Auth & Multi-tenant (Desktop & Mobile) */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           <a
             href="https://wa.me/525657062511?text=Hola,%20solicito%20atenci%C3%B3n%20sobre%20ARK%20TOOLS"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100/70 transition"
+            className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100/70 sm:inline-flex"
             title="Soporte y atención directa por WhatsApp (+52 56 5706 2511)"
           >
             <MessageSquare size={13} className="text-emerald-600" />
@@ -142,17 +173,17 @@ export function Header({
           <SignedOut>
             <button
               onClick={() => onOpenAuthModal?.()}
-              className="px-4 py-1.5 rounded-full bg-navy text-white text-[11px] font-semibold tracking-wider hover:bg-navy-dark transition shadow-sm font-orbitron"
+              className="rounded-full bg-navy px-4 py-1.5 font-orbitron text-[11px] font-semibold tracking-wider text-white shadow-sm transition hover:bg-navy-dark"
             >
               ACCESO DESPACHOS
             </button>
           </SignedOut>
 
           <SignedIn>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-3">
               {/* D1 Cloud Status */}
-              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-200/80 text-[10px] font-semibold text-emerald-800">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <div className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 sm:flex">
+                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                 <span>D1 Nube Activa</span>
               </div>
 
@@ -161,10 +192,11 @@ export function Header({
                 <button
                   type="button"
                   onClick={() => setOrgOpen(!orgOpen)}
-                  className="flex items-center gap-2 py-1.5 px-3 rounded-lg border border-line bg-surface-2 text-[12px] font-semibold text-navy hover:bg-cream/40 transition max-w-[200px]"
+                  className="flex max-w-[110px] items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] font-semibold text-navy transition hover:bg-cream/40 sm:max-w-[200px] sm:gap-2 sm:px-3 sm:text-[12px]"
                   title="Cambiar de despacho o crear nuevo"
+                  aria-expanded={orgOpen}
                 >
-                  <Building2 size={14} className="text-gold-dark shrink-0" />
+                  <Building2 size={14} className="shrink-0 text-gold-dark" />
                   <span className="truncate">{tenantName || 'Mi Despacho'}</span>
                   <ChevronDown
                     size={13}
@@ -173,12 +205,12 @@ export function Header({
                 </button>
 
                 {orgOpen && (
-                  <div className="absolute right-0 mt-2 w-64 rounded-xl border border-line bg-white shadow-dome p-2 z-50">
-                    <div className="px-3 py-1.5 text-[10px] font-bold text-muted uppercase tracking-wider font-orbitron border-b border-line/60 mb-1">
+                  <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-line bg-white p-2 shadow-dome">
+                    <div className="mb-1 border-b border-line/60 px-3 py-1.5 font-orbitron text-[10px] font-bold uppercase tracking-wider text-muted">
                       Espacio de Trabajo / Despacho
                     </div>
 
-                    <div className="max-h-48 overflow-y-auto space-y-1">
+                    <div className="max-h-48 space-y-1 overflow-y-auto">
                       {(tenants || []).map((t: any) => {
                         const isCurrent = (activeTenant?.id || '') === t.id;
                         return (
@@ -190,25 +222,25 @@ export function Header({
                               setOrgOpen(false);
                             }}
                             className={cn(
-                              'w-full flex items-center justify-between px-3 py-2 rounded-lg text-left text-[12px] transition',
+                              'flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-[12px] transition',
                               isCurrent
-                                ? 'bg-navy/5 text-navy font-bold'
+                                ? 'bg-navy/5 font-bold text-navy'
                                 : 'text-ink hover:bg-surface-2'
                             )}
                           >
                             <span className="truncate">{t.name}</span>
-                            {isCurrent && <Check size={14} className="text-gold-dark shrink-0" />}
+                            {isCurrent && <Check size={14} className="shrink-0 text-gold-dark" />}
                           </button>
                         );
                       })}
                     </div>
 
-                    <div className="mt-2 pt-2 border-t border-line/60">
+                    <div className="mt-2 border-t border-line/60 pt-2">
                       {!isCreatingTenant ? (
                         <button
                           type="button"
                           onClick={() => setIsCreatingTenant(true)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-[11px] font-semibold text-navy hover:bg-cream/40 rounded-lg transition"
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold text-navy transition hover:bg-cream/40"
                         >
                           <Plus size={14} className="text-gold-dark" />
                           <span>Crear Nuevo Despacho</span>
@@ -221,19 +253,19 @@ export function Header({
                             placeholder="Nombre del despacho..."
                             value={newTenantName}
                             onChange={(e) => setNewTenantName(e.target.value)}
-                            className="w-full px-2.5 py-1.5 text-[11px] border border-line rounded-md bg-surface-2 outline-none focus:border-navy"
+                            className="w-full rounded-md border border-line bg-surface-2 px-2.5 py-1.5 text-[11px] outline-none focus:border-navy"
                           />
                           <div className="flex gap-1.5">
                             <button
                               type="submit"
-                              className="flex-1 py-1 px-2 bg-navy text-white text-[10px] font-bold rounded-md hover:bg-navy-dark transition"
+                              className="flex-1 rounded-md bg-navy px-2 py-1 text-[10px] font-bold text-white transition hover:bg-navy-dark"
                             >
                               Guardar
                             </button>
                             <button
                               type="button"
                               onClick={() => setIsCreatingTenant(false)}
-                              className="py-1 px-2 border border-line text-[10px] text-muted rounded-md hover:bg-surface-2 transition"
+                              className="rounded-md border border-line px-2 py-1 text-[10px] text-muted transition hover:bg-surface-2"
                             >
                               Cancelar
                             </button>
@@ -250,21 +282,21 @@ export function Header({
                 <button
                   type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="w-8 h-8 rounded-full border border-line bg-navy text-gold font-orbitron font-bold text-[11px] flex items-center justify-center hover:ring-2 hover:ring-gold/30 transition shadow-sm"
+                  className="flex h-8 w-8 items-center justify-center rounded-full border border-line bg-navy font-orbitron text-[11px] font-bold text-gold shadow-sm transition hover:ring-2 hover:ring-gold/30"
                   title={user?.email || 'Perfil'}
+                  aria-label="Abrir menú de usuario"
+                  aria-expanded={userMenuOpen}
                 >
                   {userInitials}
                 </button>
 
                 {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 rounded-xl border border-line bg-white shadow-dome p-2 z-50">
-                    <div className="px-3 py-2 border-b border-line/60">
-                      <div className="font-bold text-[12px] text-ink truncate">
+                  <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-line bg-white p-2 shadow-dome">
+                    <div className="border-b border-line/60 px-3 py-2">
+                      <div className="truncate text-[12px] font-bold text-ink">
                         {user?.fullName || 'Contador'}
                       </div>
-                      <div className="text-[10px] text-muted truncate">
-                        {user?.email}
-                      </div>
+                      <div className="truncate text-[10px] text-muted">{user?.email}</div>
                     </div>
 
                     <div className="pt-1">
@@ -274,7 +306,7 @@ export function Header({
                           setUserMenuOpen(false);
                           signOut();
                         }}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-[11px] font-semibold text-rose-600 hover:bg-rose-50 transition"
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50"
                       >
                         <LogOut size={13} />
                         <span>Cerrar Sesión</span>
@@ -287,6 +319,37 @@ export function Header({
           </SignedIn>
         </div>
       </div>
+      <nav
+        aria-label="Categorías de herramientas"
+        className="flex items-center gap-2 overflow-x-auto whitespace-nowrap border-t border-line/70 px-4 py-2.5 lg:hidden"
+      >
+        {currentToolLabel && (
+          <button
+            type="button"
+            onClick={() => onNavigate?.('back')}
+            className="inline-flex items-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+          >
+            <ArrowLeft size={13} />
+            Catálogo
+          </button>
+        )}
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onNavigate?.(item.id)}
+            className={cn(
+              'rounded-full border px-3 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold',
+              activeTool === item.id
+                ? 'border-navy bg-navy/5 text-navy'
+                : 'border-line bg-white text-muted'
+            )}
+            aria-pressed={activeTool === item.id}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
     </header>
   );
 }

@@ -38,6 +38,8 @@ interface ToolPreview {
   tag: string;
 }
 
+type PreviewCategory = 'all' | 'fiscal' | 'sat' | 'cobros' | 'compliance';
+
 const TOOLS_PREVIEW: ToolPreview[] = [
   // Fiscal
   {
@@ -142,6 +144,7 @@ export function LandingPage() {
   const [tenantName, setTenantName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [previewCategory, setPreviewCategory] = useState<PreviewCategory>('all');
 
   const openAuth = (mode: 'register' | 'login') => {
     setAuthMode(mode);
@@ -170,20 +173,34 @@ export function LandingPage() {
     }
   };
 
+  const selectPreviewCategory = (category: PreviewCategory) => {
+    setPreviewCategory(category);
+    document.getElementById('catalogo')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const visibleTools = TOOLS_PREVIEW.filter((tool) => {
+    if (previewCategory === 'all') return true;
+    if (previewCategory === 'fiscal') return tool.category === 'Fiscal';
+    if (previewCategory === 'sat') return tool.category === 'SAT & CFDI';
+    if (previewCategory === 'cobros')
+      return tool.category === 'Cobros' || tool.category === 'Finanzas';
+    return tool.category === 'Compliance';
+  });
+
   return (
-    <div className="min-h-screen bg-surface text-ink font-inter antialiased flex flex-col selection:bg-gold/20 selection:text-navy">
+    <div className="flex min-h-screen flex-col bg-surface font-inter text-ink antialiased selection:bg-gold/20 selection:text-navy">
       {/* ─────────────────────────────────────────────────────────────
           NAVBAR PÚBLICA
       ───────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/85 border-b border-line">
-        <div className="mx-auto max-w-[1280px] px-6 md:px-10 h-[68px] flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <Logo size={40} />
+      <header className="sticky top-0 z-50 border-b border-line bg-white/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between gap-2 px-4 sm:gap-4 md:h-[68px] md:px-10">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+            <Logo size={34} />
             <div className="leading-none">
-              <div className="orbitron font-orbitron font-black text-[14px] tracking-[0.18em] text-navy">
+              <div className="orbitron font-orbitron text-[12px] font-black tracking-[0.14em] text-navy sm:text-[14px] sm:tracking-[0.18em]">
                 ARK TOOLS
               </div>
-              <div className="text-[8.5px] tracking-[0.22em] text-muted font-bold mt-[2px] uppercase">
+              <div className="mt-[2px] hidden text-[8.5px] font-bold uppercase tracking-[0.22em] text-muted sm:block">
                 SUITE FISCAL & FINANCIERA MX
               </div>
             </div>
@@ -194,7 +211,7 @@ export function LandingPage() {
               href="https://wa.me/525657062511?text=Hola,%20solicito%20atenci%C3%B3n%20sobre%20ARK%20TOOLS"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100/70 transition"
+              className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100/70 md:inline-flex"
               title="Atención directa por WhatsApp (+52 56 5706 2511)"
             >
               <MessageSquare size={13} className="text-emerald-600" />
@@ -203,65 +220,97 @@ export function LandingPage() {
 
             <button
               onClick={() => openAuth('login')}
-              className="px-4 py-2 rounded-full border border-line bg-surface-2 text-[12px] font-semibold text-navy hover:bg-cream/40 transition"
+              className="whitespace-nowrap rounded-full border border-line bg-surface-2 px-3 py-2 text-[11px] font-semibold text-navy transition hover:bg-cream/40 sm:px-4 sm:text-[12px]"
             >
-              Acceso Despachos
+              <span className="hidden sm:inline">Acceso Despachos</span>
+              <span className="sm:hidden">Entrar</span>
             </button>
 
             <button
               onClick={() => openAuth('register')}
-              className="px-4 py-2 rounded-full bg-navy text-white text-[12px] font-bold tracking-wide hover:bg-navy-dark transition shadow-sm flex items-center gap-2"
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-full bg-navy px-3 py-2 text-[11px] font-bold tracking-wide text-white shadow-sm transition hover:bg-navy-dark sm:gap-2 sm:px-4 sm:text-[12px]"
             >
-              <span>Crear Cuenta Gratis</span>
+              <span className="hidden sm:inline">Crear Cuenta Gratis</span>
+              <span className="sm:hidden">Crear</span>
               <ArrowRight size={14} />
             </button>
           </div>
         </div>
+        <nav
+          aria-label="Navegación del catálogo"
+          className="mx-auto flex max-w-[1280px] items-center gap-2 overflow-x-auto whitespace-nowrap border-t border-line/70 px-4 py-2.5 md:px-10"
+        >
+          {(
+            [
+              ['all', 'Todas'],
+              ['fiscal', 'Fiscal'],
+              ['sat', 'SAT & CFDI'],
+              ['cobros', 'Cobros'],
+              ['compliance', 'Compliance'],
+            ] as const
+          ).map(([category, label]) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => selectPreviewCategory(category)}
+              className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${
+                previewCategory === category
+                  ? 'border-navy bg-navy/5 text-navy'
+                  : 'border-line bg-white text-muted hover:text-navy'
+              }`}
+              aria-pressed={previewCategory === category}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
       </header>
 
       {/* ─────────────────────────────────────────────────────────────
           HERO SECTION
       ───────────────────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden pt-16 md:pt-24 pb-16 px-6 md:px-10 border-b border-line">
+      <section className="relative overflow-hidden border-b border-line px-6 pb-16 pt-16 md:px-10 md:pt-24">
         {/* Glow de fondo decorativo */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] bg-gold/10 blur-[120px] pointer-events-none rounded-full" />
+        <div className="pointer-events-none absolute left-1/2 top-0 h-[350px] w-[800px] -translate-x-1/2 rounded-full bg-gold/10 blur-[120px]" />
 
-        <div className="relative mx-auto max-w-[1100px] text-center space-y-8">
+        <div className="relative mx-auto max-w-[1100px] space-y-8 text-center">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-cream/70 border border-gold/40 text-[11px] font-bold tracking-[0.14em] text-gold-dark uppercase font-orbitron">
+          <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-cream/70 px-3.5 py-1.5 font-orbitron text-[11px] font-bold uppercase tracking-[0.14em] text-gold-dark">
             <Zap size={14} className="text-gold-dark" />
             <span>Suite Gratuita 2026 · Acceso Sin Costo</span>
           </div>
 
           {/* Headline */}
-          <h1 className="font-playfair font-black text-[42px] sm:text-[56px] md:text-[68px] leading-[0.96] tracking-[-0.03em] text-ink">
-            Herramientas que{' '}
-            <span className="text-navy">trabajan</span> mientras tú cobras.
+          <h1 className="font-playfair text-[42px] font-black leading-[0.96] tracking-[-0.03em] text-ink sm:text-[56px] md:text-[68px]">
+            Herramientas que <span className="text-navy">trabajan</span> mientras tú cobras.
           </h1>
 
           {/* Subtitle */}
-          <p className="mx-auto max-w-[720px] text-[16px] md:text-[19px] leading-[1.55] text-muted font-inter">
+          <p className="mx-auto max-w-[720px] font-inter text-[16px] leading-[1.55] text-muted md:text-[19px]">
             La plataforma moderna para contadores, fiscalistas y equipos de nómina en México.
-            Automatiza cálculos estatales, valida CFDIs y audita cumplimiento en una interfaz veloz y precisa.
+            Automatiza cálculos estatales, valida CFDIs y audita cumplimiento en una interfaz veloz
+            y precisa.
           </p>
 
           {/* Caja explicativa de Registro Gratuito + Acceso Futuro */}
-          <div className="mx-auto max-w-[760px] p-6 rounded-2xl bg-surface-2 border border-gold/30 shadow-sm text-left">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="mx-auto max-w-[760px] rounded-2xl border border-gold/30 bg-surface-2 p-6 text-left shadow-sm">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-[13px] font-bold text-navy uppercase font-orbitron">
+                <div className="flex items-center gap-2 font-orbitron text-[13px] font-bold uppercase text-navy">
                   <Lock size={15} className="text-gold-dark" />
                   <span>100% Gratuito Hoy · Beneficios Exclusivos Mañana</span>
                 </div>
-                <p className="text-[13px] text-muted leading-relaxed">
-                  Crea tu cuenta gratuita en 30 segundos para acceder de inmediato a las <strong>10 herramientas completas</strong>. 
-                  Tu registro asegura pase prioritario a futuras herramientas Pro (asistente IA fiscal, almacenamiento multi-tenant en la nube y sincronización masiva).
+                <p className="text-[13px] leading-relaxed text-muted">
+                  Crea tu cuenta gratuita en 30 segundos para acceder de inmediato a las{' '}
+                  <strong>10 herramientas completas</strong>. Tu registro asegura pase prioritario a
+                  futuras herramientas Pro (asistente IA fiscal, almacenamiento multi-tenant en la
+                  nube y sincronización masiva).
                 </p>
               </div>
 
               <button
                 onClick={() => openAuth('register')}
-                className="whitespace-nowrap px-6 py-3 rounded-xl bg-navy hover:bg-navy-dark text-white font-orbitron font-bold text-[12px] tracking-wider transition shadow-dome flex items-center gap-2 self-stretch sm:self-auto justify-center"
+                className="flex items-center justify-center gap-2 self-stretch whitespace-nowrap rounded-xl bg-navy px-6 py-3 font-orbitron text-[12px] font-bold tracking-wider text-white shadow-dome transition hover:bg-navy-dark sm:self-auto"
               >
                 <span>CREAR CUENTA</span>
                 <ArrowRight size={14} />
@@ -290,43 +339,44 @@ export function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           SHOWCASE: LAS 10 HERRAMIENTAS
       ───────────────────────────────────────────────────────────── */}
-      <section className="py-20 px-6 md:px-10 bg-surface">
+      <section id="catalogo" className="scroll-mt-32 bg-surface px-6 py-20 md:px-10">
         <div className="mx-auto max-w-[1280px] space-y-12">
-          <div className="text-center space-y-3">
-            <div className="text-[11px] font-bold tracking-[0.2em] text-gold-dark uppercase font-orbitron">
+          <div className="space-y-3 text-center">
+            <div className="font-orbitron text-[11px] font-bold uppercase tracking-[0.2em] text-gold-dark">
               Catálogo de Herramientas
             </div>
-            <h2 className="font-playfair font-black text-[34px] md:text-[46px] leading-[1.05] text-ink">
-              10 utilidades indispensables para tu práctica contable
+            <h2 className="font-playfair text-[34px] font-black leading-[1.05] text-ink md:text-[46px]">
+              {visibleTools.length} utilidades indispensables para tu práctica contable
             </h2>
-            <p className="text-muted text-[15px] max-w-[580px] mx-auto">
-              Cada herramienta fue diseñada para resolver un problema fiscal específico con cero fricción y resultados inmediatos.
+            <p className="mx-auto max-w-[580px] text-[15px] text-muted">
+              Cada herramienta fue diseñada para resolver un problema fiscal específico con cero
+              fricción y resultados inmediatos.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {TOOLS_PREVIEW.map((tool, idx) => {
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {visibleTools.map((tool) => {
               const Icon = tool.icon;
               return (
                 <div
-                  key={idx}
-                  className="p-6 rounded-2xl border border-line bg-surface-2/60 hover:bg-surface-2 transition hover:border-gold/50 hover:shadow-glass flex flex-col justify-between group"
+                  key={tool.title}
+                  className="group flex flex-col justify-between rounded-2xl border border-line bg-surface-2/60 p-6 transition hover:border-gold/50 hover:bg-surface-2 hover:shadow-glass"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <div className="w-11 h-11 rounded-xl bg-white border border-line flex items-center justify-center text-navy shadow-sm group-hover:scale-105 group-hover:text-gold-dark transition">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-white text-navy shadow-sm transition group-hover:scale-105 group-hover:text-gold-dark">
                         <Icon size={22} />
                       </div>
-                      <span className="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md bg-cream text-gold-dark border border-gold/30">
+                      <span className="rounded-md border border-gold/30 bg-cream px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-gold-dark">
                         {tool.tag}
                       </span>
                     </div>
 
                     <div>
-                      <div className="text-[10px] font-semibold tracking-wider text-muted uppercase font-orbitron">
+                      <div className="font-orbitron text-[10px] font-semibold uppercase tracking-wider text-muted">
                         {tool.category}
                       </div>
-                      <h3 className="text-[18px] font-bold text-ink group-hover:text-navy transition mt-0.5">
+                      <h3 className="mt-0.5 text-[18px] font-bold text-ink transition group-hover:text-navy">
                         {tool.title}
                       </h3>
                       <p className="mt-2 text-[13px] leading-[1.6] text-muted">
@@ -335,7 +385,7 @@ export function LandingPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-line/60 flex items-center justify-between text-[11px] font-semibold text-navy">
+                  <div className="mt-6 flex items-center justify-between border-t border-line/60 pt-4 text-[11px] font-semibold text-navy">
                     <span>Incluido en registro gratis</span>
                     <CheckCircle2 size={14} className="text-emerald-600" />
                   </div>
@@ -349,97 +399,104 @@ export function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           BLOQUE DE TRANSPARENCIA: FUNDAMENTO LEGAL Y CERTEZA TÉCNICA
       ───────────────────────────────────────────────────────────── */}
-      <section className="py-20 px-6 md:px-10 bg-white border-y border-line">
+      <section className="border-y border-line bg-white px-6 py-20 md:px-10">
         <div className="mx-auto max-w-[1280px] space-y-12">
-          <div className="max-w-[760px] mx-auto text-center space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-navy/5 border border-navy/15 text-[11px] font-bold tracking-[0.16em] text-navy uppercase font-orbitron">
+          <div className="mx-auto max-w-[760px] space-y-3 text-center">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-navy/15 bg-navy/5 px-3 py-1 font-orbitron text-[11px] font-bold uppercase tracking-[0.16em] text-navy">
               <Scale size={14} className="text-gold-dark" />
               <span>Transparencia Jurídica & Cero Cajas Negras</span>
             </div>
-            <h2 className="font-playfair font-black text-[34px] md:text-[46px] leading-[1.05] text-ink">
+            <h2 className="font-playfair text-[34px] font-black leading-[1.05] text-ink md:text-[46px]">
               Cálculos fundamentados en la ley. <br className="hidden sm:inline" />
               Justificables ante el SAT y tus clientes.
             </h2>
-            <p className="text-muted text-[15px] leading-relaxed">
-              En materia tributaria, un número sin origen no sirve para declarar. Cada resultado emitido por ARK TOOLS desglosa su fórmula matemática y cita el artículo de ley aplicable, listo para respaldar tus papeles de trabajo.
+            <p className="text-[15px] leading-relaxed text-muted">
+              En materia tributaria, un número sin origen no sirve para declarar. Cada resultado
+              emitido por ARK TOOLS desglosa su fórmula matemática y cita el artículo de ley
+              aplicable, listo para respaldar tus papeles de trabajo.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {/* Tarjeta 1: ISR & Nómina */}
-            <div className="p-6 rounded-2xl bg-surface-2 border border-line hover:border-gold/50 transition space-y-3">
+            <div className="space-y-3 rounded-2xl border border-line bg-surface-2 p-6 transition hover:border-gold/50">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-navy font-orbitron bg-white px-2.5 py-1 rounded-md border border-line">
+                <span className="rounded-md border border-line bg-white px-2.5 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy">
                   ISR & Retenciones
                 </span>
-                <span className="text-[11px] text-emerald-700 font-semibold">2026 Vigente</span>
+                <span className="text-[11px] font-semibold text-emerald-700">2026 Vigente</span>
               </div>
-              <h3 className="font-bold text-[15px] text-ink">Art. 96 LISR y RMF Anexo 8</h3>
-              <p className="text-[12.5px] text-muted leading-relaxed">
-                Tarifas progresivas mensuales y quincenales, límite inferior, cuota fija y porcentaje sobre excedente, integrando el Decreto de Subsidio para el Empleo.
+              <h3 className="text-[15px] font-bold text-ink">Art. 96 LISR y RMF Anexo 8</h3>
+              <p className="text-[12.5px] leading-relaxed text-muted">
+                Tarifas progresivas mensuales y quincenales, límite inferior, cuota fija y
+                porcentaje sobre excedente, integrando el Decreto de Subsidio para el Empleo.
               </p>
             </div>
 
             {/* Tarjeta 2: IMSS & Salario Base */}
-            <div className="p-6 rounded-2xl bg-surface-2 border border-line hover:border-gold/50 transition space-y-3">
+            <div className="space-y-3 rounded-2xl border border-line bg-surface-2 p-6 transition hover:border-gold/50">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-navy font-orbitron bg-white px-2.5 py-1 rounded-md border border-line">
+                <span className="rounded-md border border-line bg-white px-2.5 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy">
                   IMSS & SBC
                 </span>
-                <span className="text-[11px] text-navy font-semibold">Tope 25 UMAs</span>
+                <span className="text-[11px] font-semibold text-navy">Tope 25 UMAs</span>
               </div>
-              <h3 className="font-bold text-[15px] text-ink">Arts. 27 y 28 LSS + LFT</h3>
-              <p className="text-[12.5px] text-muted leading-relaxed">
-                Factor de integración mínimo de 1.0493 conforme a Vacaciones Dignas (Art. 76 LFT), aguinaldo (Art. 87 LFT) y tope de 25 UMAs ($2,828.50/día).
+              <h3 className="text-[15px] font-bold text-ink">Arts. 27 y 28 LSS + LFT</h3>
+              <p className="text-[12.5px] leading-relaxed text-muted">
+                Factor de integración mínimo de 1.0493 conforme a Vacaciones Dignas (Art. 76 LFT),
+                aguinaldo (Art. 87 LFT) y tope de 25 UMAs ($2,828.50/día).
               </p>
             </div>
 
             {/* Tarjeta 3: ISN Estatal */}
-            <div className="p-6 rounded-2xl bg-surface-2 border border-line hover:border-gold/50 transition space-y-3">
+            <div className="space-y-3 rounded-2xl border border-line bg-surface-2 p-6 transition hover:border-gold/50">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-navy font-orbitron bg-white px-2.5 py-1 rounded-md border border-line">
+                <span className="rounded-md border border-line bg-white px-2.5 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy">
                   ISN Estatal
                 </span>
-                <span className="text-[11px] text-gold-dark font-semibold">32 Entidades</span>
+                <span className="text-[11px] font-semibold text-gold-dark">32 Entidades</span>
               </div>
-              <h3 className="font-bold text-[15px] text-ink">Leyes de Hacienda Estatales</h3>
-              <p className="text-[12.5px] text-muted leading-relaxed">
-                Tasas de nómina locales (CDMX 3%, Edomex 3%, NL 3%, etc.) con base gravable estricta, separando percepciones exentas y no integrables por estado.
+              <h3 className="text-[15px] font-bold text-ink">Leyes de Hacienda Estatales</h3>
+              <p className="text-[12.5px] leading-relaxed text-muted">
+                Tasas de nómina locales (CDMX 3%, Edomex 3%, NL 3%, etc.) con base gravable
+                estricta, separando percepciones exentas y no integrables por estado.
               </p>
             </div>
 
             {/* Tarjeta 4: Auditoría SAT & CFF */}
-            <div className="p-6 rounded-2xl bg-surface-2 border border-line hover:border-gold/50 transition space-y-3">
+            <div className="space-y-3 rounded-2xl border border-line bg-surface-2 p-6 transition hover:border-gold/50">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-navy font-orbitron bg-white px-2.5 py-1 rounded-md border border-line">
+                <span className="rounded-md border border-line bg-white px-2.5 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy">
                   Prevención Fiscal
                 </span>
-                <span className="text-[11px] text-emerald-700 font-semibold">CFF Art. 69-B</span>
+                <span className="text-[11px] font-semibold text-emerald-700">CFF Art. 69-B</span>
               </div>
-              <h3 className="font-bold text-[15px] text-ink">Listas Negras & EFOS/EDOS</h3>
-              <p className="text-[12.5px] text-muted leading-relaxed">
-                Cotejo preventivo contra listados oficiales del SAT para proteger la materialidad y deducibilidad de facturas frente a presuntas operaciones simuladas.
+              <h3 className="text-[15px] font-bold text-ink">Listas Negras & EFOS/EDOS</h3>
+              <p className="text-[12.5px] leading-relaxed text-muted">
+                Cotejo preventivo contra listados oficiales del SAT para proteger la materialidad y
+                deducibilidad de facturas frente a presuntas operaciones simuladas.
               </p>
             </div>
           </div>
 
           {/* Banner de confianza técnica */}
-          <div className="p-6 rounded-2xl bg-navy text-white flex flex-col md:flex-row items-center justify-between gap-6 shadow-dome">
+          <div className="flex flex-col items-center justify-between gap-6 rounded-2xl bg-navy p-6 text-white shadow-dome md:flex-row">
             <div className="space-y-1 text-center md:text-left">
-              <div className="text-[11px] font-bold tracking-widest text-gold uppercase font-orbitron">
+              <div className="font-orbitron text-[11px] font-bold uppercase tracking-widest text-gold">
                 Certeza en Papeles de Trabajo
               </div>
               <div className="text-[16px] font-semibold text-white">
                 ¿Necesitas justificar un cálculo ante un cliente o una auditoría?
               </div>
-              <p className="text-[13px] text-white/80 max-w-[640px]">
-                Todas las herramientas permiten copiar y exportar el desglose analítico paso a paso con los artículos y porcentajes oficiales citados expresamente.
+              <p className="max-w-[640px] text-[13px] text-white/80">
+                Todas las herramientas permiten copiar y exportar el desglose analítico paso a paso
+                con los artículos y porcentajes oficiales citados expresamente.
               </p>
             </div>
 
             <button
               onClick={() => openAuth('register')}
-              className="whitespace-nowrap px-6 py-3.5 rounded-xl bg-gold hover:bg-gold-light text-navy-dark font-orbitron font-bold text-[12px] tracking-wider transition shadow-sm flex items-center gap-2 shrink-0"
+              className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-gold px-6 py-3.5 font-orbitron text-[12px] font-bold tracking-wider text-navy-dark shadow-sm transition hover:bg-gold-light"
             >
               <span>PROBAR HERRAMIENTAS GRATIS</span>
               <ArrowRight size={15} />
@@ -451,48 +508,52 @@ export function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           POR QUÉ REGISTRARSE (EL BENEFICIO FUTURO)
       ───────────────────────────────────────────────────────────── */}
-      <section className="py-20 px-6 md:px-10 bg-surface-2 border-b border-line">
+      <section className="border-b border-line bg-surface-2 px-6 py-20 md:px-10">
         <div className="mx-auto max-w-[1100px] space-y-12">
-          <div className="text-center space-y-3">
-            <div className="text-[11px] font-bold tracking-[0.2em] text-gold-dark uppercase font-orbitron">
+          <div className="space-y-3 text-center">
+            <div className="font-orbitron text-[11px] font-bold uppercase tracking-[0.2em] text-gold-dark">
               Visión a Futuro
             </div>
-            <h2 className="font-playfair font-black text-[34px] md:text-[44px] leading-[1.1] text-ink">
+            <h2 className="font-playfair text-[34px] font-black leading-[1.1] text-ink md:text-[44px]">
               ¿Por qué pedimos tu registro si hoy es 100% gratuito?
             </h2>
-            <p className="text-muted text-[15px] max-w-[620px] mx-auto">
-              Estamos construyendo el sistema operativo definitivo para contadores independientes y firmas contables en México.
+            <p className="mx-auto max-w-[620px] text-[15px] text-muted">
+              Estamos construyendo el sistema operativo definitivo para contadores independientes y
+              firmas contables en México.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-2xl bg-white border border-line space-y-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-cream flex items-center justify-center text-navy font-bold">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="space-y-3 rounded-2xl border border-line bg-white p-6 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
                 <Layers size={20} className="text-navy" />
               </div>
-              <h3 className="font-bold text-[16px] text-ink">1. Acceso Vitalicio Fundador</h3>
-              <p className="text-[13px] text-muted leading-relaxed">
-                Los usuarios registrados en esta etapa temprana conservarán acceso libre a todas las herramientas actuales, incluso cuando introduzcamos planes comerciales.
+              <h3 className="text-[16px] font-bold text-ink">1. Acceso Vitalicio Fundador</h3>
+              <p className="text-[13px] leading-relaxed text-muted">
+                Los usuarios registrados en esta etapa temprana conservarán acceso libre a todas las
+                herramientas actuales, incluso cuando introduzcamos planes comerciales.
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-white border border-line space-y-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-cream flex items-center justify-center text-navy font-bold">
+            <div className="space-y-3 rounded-2xl border border-line bg-white p-6 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
                 <Users size={20} className="text-navy" />
               </div>
-              <h3 className="font-bold text-[16px] text-ink">2. Multi-Tenant por Despacho</h3>
-              <p className="text-[13px] text-muted leading-relaxed">
-                Podrás separar los cálculos y clientes de tu despacho contable con espacios de trabajo aislados (Multi-Tenant) y roles de colaboradores.
+              <h3 className="text-[16px] font-bold text-ink">2. Multi-Tenant por Despacho</h3>
+              <p className="text-[13px] leading-relaxed text-muted">
+                Podrás separar los cálculos y clientes de tu despacho contable con espacios de
+                trabajo aislados (Multi-Tenant) y roles de colaboradores.
               </p>
             </div>
 
-            <div className="p-6 rounded-2xl bg-white border border-line space-y-3 shadow-sm">
-              <div className="w-10 h-10 rounded-xl bg-cream flex items-center justify-center text-navy font-bold">
+            <div className="space-y-3 rounded-2xl border border-line bg-white p-6 shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
                 <Sparkles size={20} className="text-navy" />
               </div>
-              <h3 className="font-bold text-[16px] text-ink">3. Herramientas Exclusivas IA</h3>
-              <p className="text-[13px] text-muted leading-relaxed">
-                Próximamente lanzaremos auditorías asistidas por IA, respuestas automatizadas a requerimientos del SAT y almacenamiento en la nube sin costo adicional.
+              <h3 className="text-[16px] font-bold text-ink">3. Herramientas Exclusivas IA</h3>
+              <p className="text-[13px] leading-relaxed text-muted">
+                Próximamente lanzaremos auditorías asistidas por IA, respuestas automatizadas a
+                requerimientos del SAT y almacenamiento en la nube sin costo adicional.
               </p>
             </div>
           </div>
@@ -502,24 +563,25 @@ export function LandingPage() {
       {/* ─────────────────────────────────────────────────────────────
           CTA FINAL
       ───────────────────────────────────────────────────────────── */}
-      <section className="py-20 px-6 md:px-10 bg-navy text-white text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),transparent_70%)] pointer-events-none" />
+      <section className="relative overflow-hidden bg-navy px-6 py-20 text-center text-white md:px-10">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.15),transparent_70%)]" />
 
         <div className="relative mx-auto max-w-[760px] space-y-6">
-          <div className="text-[11px] font-bold tracking-[0.2em] text-gold uppercase font-orbitron">
+          <div className="font-orbitron text-[11px] font-bold uppercase tracking-[0.2em] text-gold">
             Empieza en 30 segundos
           </div>
-          <h2 className="font-playfair font-black text-[38px] md:text-[52px] leading-[1] text-white">
+          <h2 className="font-playfair text-[38px] font-black leading-[1] text-white md:text-[52px]">
             Eleva el nivel de tu práctica contable hoy mismo.
           </h2>
-          <p className="text-[15px] text-white/80 max-w-[520px] mx-auto leading-relaxed">
-            Únete a la comunidad de contadores y asesores fiscales que ya optimizan su tiempo con ARK TOOLS.
+          <p className="mx-auto max-w-[520px] text-[15px] leading-relaxed text-white/80">
+            Únete a la comunidad de contadores y asesores fiscales que ya optimizan su tiempo con
+            ARK TOOLS.
           </p>
 
-          <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
             <button
               onClick={() => openAuth('register')}
-              className="px-8 py-4 rounded-xl bg-gold hover:bg-gold-light text-ink font-orbitron font-bold text-[13px] tracking-wider transition shadow-dome flex items-center gap-2"
+              className="flex items-center gap-2 rounded-xl bg-gold px-8 py-4 font-orbitron text-[13px] font-bold tracking-wider text-ink shadow-dome transition hover:bg-gold-light"
             >
               <span>REGISTRARSE GRATIS AHORA</span>
               <ArrowRight size={16} />
@@ -527,7 +589,7 @@ export function LandingPage() {
 
             <button
               onClick={() => openAuth('login')}
-              className="px-6 py-4 rounded-xl bg-white/10 hover:bg-white/15 text-white font-orbitron font-semibold text-[12px] tracking-wider transition border border-white/20"
+              className="rounded-xl border border-white/20 bg-white/10 px-6 py-4 font-orbitron text-[12px] font-semibold tracking-wider text-white transition hover:bg-white/15"
             >
               Iniciar Sesión
             </button>
@@ -544,12 +606,12 @@ export function LandingPage() {
           MODAL DE AUTENTICACIÓN NATIVO (REGISTRO / LOGIN)
       ───────────────────────────────────────────────────────────── */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-navy/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md bg-white rounded-3xl border border-line shadow-2xl p-6 sm:p-8 space-y-6">
+        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm duration-150">
+          <div className="relative w-full max-w-md space-y-6 rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
             {/* Close button */}
             <button
               onClick={() => setModalOpen(false)}
-              className="absolute top-5 right-5 p-1.5 text-muted hover:text-ink hover:bg-surface-2 rounded-full transition"
+              className="absolute right-5 top-5 rounded-full p-1.5 text-muted transition hover:bg-surface-2 hover:text-ink"
             >
               <X size={18} />
             </button>
@@ -558,21 +620,21 @@ export function LandingPage() {
             <div className="flex items-center gap-3">
               <Logo size={38} />
               <div>
-                <h3 className="font-orbitron font-bold text-[14px] tracking-wider text-navy">
+                <h3 className="font-orbitron text-[14px] font-bold tracking-wider text-navy">
                   ARK TOOLS
                 </h3>
-                <p className="text-[10px] text-muted tracking-widest font-semibold uppercase">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
                   {authMode === 'register' ? 'Crear Cuenta Gratuita' : 'Iniciar Sesión'}
                 </p>
               </div>
             </div>
 
             {/* Toggle Modes */}
-            <div className="flex rounded-xl bg-surface-2 p-1 border border-line/60">
+            <div className="flex rounded-xl border border-line/60 bg-surface-2 p-1">
               <button
                 type="button"
                 onClick={() => setAuthMode('register')}
-                className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition font-orbitron tracking-wider ${
+                className={`flex-1 rounded-lg py-1.5 font-orbitron text-[11px] font-bold tracking-wider transition ${
                   authMode === 'register'
                     ? 'bg-white text-navy shadow-sm'
                     : 'text-muted hover:text-ink'
@@ -583,7 +645,7 @@ export function LandingPage() {
               <button
                 type="button"
                 onClick={() => setAuthMode('login')}
-                className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg transition font-orbitron tracking-wider ${
+                className={`flex-1 rounded-lg py-1.5 font-orbitron text-[11px] font-bold tracking-wider transition ${
                   authMode === 'login'
                     ? 'bg-white text-navy shadow-sm'
                     : 'text-muted hover:text-ink'
@@ -594,7 +656,7 @@ export function LandingPage() {
             </div>
 
             {errorMsg && (
-              <div className="p-3 text-[12px] bg-rose-50 border border-rose-200 text-rose-700 rounded-xl">
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[12px] text-rose-700">
                 {errorMsg}
               </div>
             )}
@@ -602,7 +664,7 @@ export function LandingPage() {
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1 font-orbitron">
+                <label className="mb-1 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
                   Correo Electrónico *
                 </label>
                 <input
@@ -612,14 +674,14 @@ export function LandingPage() {
                   placeholder="ejemplo@despacho.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full h-11 px-3.5 rounded-xl border border-line bg-surface-2 text-[13px] text-ink outline-none focus:border-navy focus:bg-white transition"
+                  className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none transition focus:border-navy focus:bg-white"
                 />
               </div>
 
               {authMode === 'register' && (
                 <>
                   <div>
-                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1 font-orbitron">
+                    <label className="mb-1 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
                       Nombre Completo
                     </label>
                     <input
@@ -627,12 +689,12 @@ export function LandingPage() {
                       placeholder="C.P. Juan Pérez"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-line bg-surface-2 text-[13px] text-ink outline-none focus:border-navy focus:bg-white transition"
+                      className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none transition focus:border-navy focus:bg-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1 font-orbitron">
+                    <label className="mb-1 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
                       Nombre de Despacho o Firma
                     </label>
                     <input
@@ -640,7 +702,7 @@ export function LandingPage() {
                       placeholder="Pérez & Asociados Asesores S.C."
                       value={tenantName}
                       onChange={(e) => setTenantName(e.target.value)}
-                      className="w-full h-11 px-3.5 rounded-xl border border-line bg-surface-2 text-[13px] text-ink outline-none focus:border-navy focus:bg-white transition"
+                      className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none transition focus:border-navy focus:bg-white"
                     />
                   </div>
                 </>
@@ -649,14 +711,20 @@ export function LandingPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl bg-navy hover:bg-navy-dark text-white font-orbitron font-bold text-[12px] tracking-wider transition shadow-sm flex items-center justify-center gap-2 mt-2"
+                className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-navy font-orbitron text-[12px] font-bold tracking-wider text-white shadow-sm transition hover:bg-navy-dark"
               >
-                <span>{loading ? 'ACCEDIENDO...' : authMode === 'register' ? 'COMENZAR AHORA' : 'ENTRAR AL SISTEMA'}</span>
+                <span>
+                  {loading
+                    ? 'ACCEDIENDO...'
+                    : authMode === 'register'
+                      ? 'COMENZAR AHORA'
+                      : 'ENTRAR AL SISTEMA'}
+                </span>
                 <ArrowRight size={14} />
               </button>
             </form>
 
-            <p className="text-[11px] text-muted text-center leading-normal">
+            <p className="text-center text-[11px] leading-normal text-muted">
               Sin tarjeta de crédito requerida. Acceso total a todas las herramientas de la suite.
             </p>
           </div>

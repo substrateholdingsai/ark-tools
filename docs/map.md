@@ -23,7 +23,8 @@
 | **Persistencia & API REST** | Endpoints `/api/clients`, `/api/expedientes` (+ `/verify`), `/api/auth/sync`, `/api/guia/progress`, `/api/ledger` (SHA-256), `/api/activos/watchlist` y `/api/ai/*` |
 | **Copy & Transparencia Legal** | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28) y cero cajas negras |
 | **Mesa de Ayuda & Soporte** | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site) |
-| **Landing Pública** | LandingPage interactiva con sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login |
+| **Landing Pública** | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login |
+| **Navegación & Usabilidad** | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas |
 | **Pruebas unitarias e integración** | 244 pasadas en 31 suites (100% éxito) |
 | **Auditoría DOF Catálogo** | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones) |
 | **Typecheck (TypeScript)** | 0 errores en modo estricto (100% limpio) |
@@ -85,17 +86,17 @@ ark-tools/
 │   ├── components/
 │   │   ├── ui/                       ✅ Componentes Atómicos (100%)
 │   │   ├── Logo.tsx                  ✅ Cubo isométrico 3D ARK con diamante
-│   │   ├── Header.tsx                ✅ Header sticky con subtítulo fiscal, badge Tablas 2026, soporte WhatsApp y selector multi-tenant
+│   │   ├── Header.tsx                ✅ Header sticky responsive con navegación por categorías, retorno al catálogo, soporte WhatsApp y selector multi-tenant
 │   │   ├── Footer.tsx                ✅ Footer institucional con privacidad de XMLs, soporte directo, 3 columnas y disclaimer legal
 │   │   ├── ExpedienteSelector.tsx    ✅ Barra persistente de cliente activo, búsqueda predictiva y modal de nuevo cliente
 │   │   ├── ExpedienteToolBanner.tsx  ✅ Banner interactivo en herramientas para archivar con sello SHA-256
 │   │   ├── PapelDeTrabajoModal.tsx   ✅ Cédula oficial tamaño Carta para impresión PDF con Sello QR y desglose
 │   │   ├── VerificacionPublicaModal.tsx ✅ Validador público de expedientes sellados vía QR (/api/expedientes/verify)
 │   │   ├── ToolCard.tsx              ✅ Tarjetas con hover dorado, badge y CTA
-│   │   ├── CategorySection.tsx       ✅ Agrupador de categorías (Fiscal, SAT, Cobros, etc. — 1 a 4 cols)
+│   │   ├── CategorySection.tsx       ✅ Agrupador de categorías anclables (Fiscal, SAT, Cobros, etc. — 1 a 4 cols)
 │   │   ├── ToolSkeleton.tsx          ✅ Skeleton loader animado para lazy imports
 │   │   ├── AuthGate.tsx              ✅ Componente de protección condicional
-│   │   ├── LandingPage.tsx           ✅ Landing pública (showcase 10 tools, sección Transparencia Jurídica, Footer institucional)
+│   │   ├── LandingPage.tsx           ✅ Landing pública con navegación/filtros por categoría, showcase de herramientas y modal Registro/Login
 │   │   ├── AiAssistantWidget.tsx     ✅ Widget flotante de chat con Workers AI (Llama 3.3 70B + D1 Tools)
 │   │   ├── AiAssistantWidget.test.tsx ✅ 4 tests de integración y UI del widget
 │   │   └── index.ts                  ✅ Barrel export
@@ -839,6 +840,25 @@ ark-tools/
 - **`src/tools/cierre-nomina/CierreNomina.test.tsx`**: 4 pruebas de integración y UI (100% pasadas).
 - **`src/App.tsx`**: Integración en el enrutador principal con carga diferida (`React.lazy`) y tarjeta destacada en la categoría Fiscal (`BATCH DOF`).
 
+### Mejora de Navegación y Usabilidad — Octubre 2026
+
+**Objetivo:** Hacer funcional el acceso por categorías, facilitar la navegación en pantallas móviles y dar contexto claro al usuario cuando abre una herramienta, tanto en el catálogo autenticado como en la landing pública.
+
+- **`src/App.tsx`**:
+  - Los filtros **Todas**, **Fiscal**, **SAT**, **Cobros** y **Compliance** actualizan el catálogo autenticado; las categorías no seleccionadas quedan ocultas.
+  - La categoría seleccionada se conserva al abrir una herramienta y al regresar al catálogo.
+  - Se muestra el nombre de la herramienta activa en el encabezado y se habilita un retorno explícito al catálogo.
+- **`src/components/Header.tsx`**:
+  - Navegación por categorías disponible en escritorio y como fila horizontal desplazable en móvil.
+  - Acciones semánticas para volver al catálogo desde el logotipo o la herramienta activa.
+  - Estados de selección accesibles (`aria-pressed` / `aria-expanded`) y foco de teclado visible en los controles de navegación.
+  - Ajustes de tamaño y espaciado para conservar legibles los controles de despacho y usuario en pantallas estrechas.
+- **`src/components/LandingPage.tsx`**:
+  - Navegación pública por categorías que desplaza al catálogo y filtra las tarjetas mostradas sin abrir el flujo de autenticación.
+  - Etiquetas compactas de acceso y registro en móvil para evitar desbordamiento del encabezado.
+- **`src/components/CategorySection.tsx`**: Anclas y margen de desplazamiento para que las secciones filtradas queden visibles debajo de la barra fija.
+- **Validación de esta actualización:** `pnpm exec tsc --noEmit`, `pnpm run build`, Prettier y `git diff --check` completados correctamente; suite existente con 244 pruebas en 31 archivos aprobada. El lint no se pudo ejecutar porque el repositorio no contiene configuración de ESLint.
+
 ---
 
 ## 5. Resumen General del Proyecto (Suite de 12 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
@@ -854,6 +874,7 @@ ark-tools/
 | **Multi-Tenancy** | Auth Nativo Soberano + Despachos + D1 Database (`ark_tools_db`) | ✅ 100% En Producción |
 | **Expediente Único** | Catálogo Clientes/Trabajadores, Auto-Prefill, Sello SHA-256 + Versión DOF | ✅ 100% Operativo en Producción |
 | **Workers AI** | Binding `[ai]`, Agentic Tool-Calling con D1 y LFT, Streaming SSE, Llama 3.3 70B | ✅ 100% Integrado y Probado |
+| **Navegación & Usabilidad** | Filtros de categorías en dashboard y landing, navegación móvil y retorno contextual al catálogo | ✅ Implementada y validada con typecheck, build y suite existente |
 | **Copy & Confianza** | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica | ✅ 100% En Producción |
 | **Core Global** | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage | ✅ 100% Operativo |
 

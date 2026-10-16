@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 import { GoldDivider } from './ui';
 
 interface CategorySectionProps {
+  id?: string;
   /** Título de la categoría */
   title: string;
   /** Descripción breve */
@@ -31,6 +32,7 @@ const columnClasses = {
 } as const;
 
 export function CategorySection({
+  id,
   title,
   description,
   icon,
@@ -39,20 +41,20 @@ export function CategorySection({
   className,
 }: CategorySectionProps) {
   return (
-    <section className={cn('', className)}>
+    <section id={id} className={cn('scroll-mt-32', className)}>
       {/* Header de la categoría */}
-      <div className="flex items-start gap-4 mb-6">
+      <div className="mb-6 flex items-start gap-4">
         {icon && (
-          <div className="shrink-0 w-10 h-10 rounded-[10px] bg-navy text-white grid place-items-center">
+          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[10px] bg-navy text-white">
             {icon}
           </div>
         )}
         <div className="flex-1">
-          <h2 className="font-playfair font-black text-[28px] md:text-[32px] leading-[1] tracking-[-0.02em] text-ink">
+          <h2 className="font-playfair text-[28px] font-black leading-[1] tracking-[-0.02em] text-ink md:text-[32px]">
             {title}
           </h2>
           {description && (
-            <p className="mt-2 text-[14px] leading-[1.5] text-muted inter font-inter max-w-[64ch]">
+            <p className="inter mt-2 max-w-[64ch] font-inter text-[14px] leading-[1.5] text-muted">
               {description}
             </p>
           )}
@@ -63,9 +65,7 @@ export function CategorySection({
       <GoldDivider spacing="sm" />
 
       {/* Grid de herramientas */}
-      <div className={cn('mt-6 grid gap-4', columnClasses[columns])}>
-        {children}
-      </div>
+      <div className={cn('mt-6 grid gap-4', columnClasses[columns])}>{children}</div>
     </section>
   );
 }
