@@ -1,6 +1,6 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.1 (Multi-Tenant MVP)  
+**Versión:** 1.2 (Suite Completa 11/11 + Multi-Tenant + Workers AI)  
 **Fecha:** Octubre 2026  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
@@ -25,7 +25,7 @@
 | **Typecheck (TypeScript)** | 0 errores en modo estricto (100% limpio) |
 | **Build Vite (SPA)** | 100% funcional con bundle ultraligero sin dependencias externas |
 | **Deploy Cloudflare Workers** | Activo y sincronizado en [https://tools.arksystems.site](https://tools.arksystems.site) |
-| **Git & Repositorio** | Sincronizado en rama `main` en GitHub |
+| **Git & Repositorio** | Sincronizado en rama `main` (Commit `6dc12e6`) en GitHub |
 | **Herramientas en Producción** | 11 de 11 operativas (ISN, SBC, Nómina, Finiquitos y Liquidaciones, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) — SUITE 100% CERRADA |
 
 ---
@@ -278,6 +278,32 @@ ark-tools/
   - [x] Componente interactivo de consulta (`MapaActivos.tsx`) con filtros en tiempo real, búsqueda, acordeón y timeline.
   - [x] 6 tests de integración y UI en `MapaActivos.test.tsx`.
   - [x] Conexión y lazy loading diferido integrado en `App.tsx` con `<ToolSkeleton />`.
+
+---
+
+### Fase E: Laboral & Finiquitos LFT (Completada ✅)
+- [x] **Motor de Cálculo LFT (`src/tools/finiquitos/lib/`):**
+  - [x] Cálculo de días de vacaciones según reforma *Vacaciones Dignas 2023* (Art. 76 LFT).
+  - [x] Vacaciones proporcionales y pendientes de gozar (Arts. 76 y 79 LFT).
+  - [x] Prima vacacional no menor al 25% (Art. 80 LFT).
+  - [x] Aguinaldo proporcional de 15 días base y pendientes (Art. 87 LFT).
+  - [x] Prima de antigüedad de 12 días por año con salario topado a 2×SMG ($630.08) (Arts. 162 y 486 LFT).
+  - [x] Indemnización constitucional de 90 días sobre SDI (Art. 50 Fracc. III LFT / Art. 123 Const.).
+  - [x] Indemnización de 20 días por año sobre SDI (Art. 50 Fracc. II LFT).
+  - [x] 7 tests unitarios del motor pasando al 100% (`calcularFiniquito.test.ts`).
+- [x] **Componentes Visuales de Finiquitos (`src/tools/finiquitos/components/`):**
+  - [x] `ParametrosFiniquitoCard.tsx` (selector Finiquito/Liquidación, auto-sugerencia SDI, preview antigüedad y accesibilidad).
+  - [x] `AntiguedadCard.tsx` (descomposición años/meses/días, tabla vacaciones 2023 y tarjeta del tope Art. 486).
+  - [x] `DesgloseFiniquitoTable.tsx` (tabla desktop y cards mobile con fundamentos legales).
+  - [x] `ResultadoFiniquitoCard.tsx` (`LiquidGlassDome`, cifra magnificada, copiar texto WhatsApp y descarga CSV).
+- [x] **Ensamblador y Pruebas UI:**
+  - [x] `CalculadoraFiniquitos.tsx` con navegación `onBack` y carga diferida con `<ToolSkeleton />`.
+  - [x] 6 tests de integración y UI pasando al 100% (`CalculadoraFiniquitos.test.tsx`).
+  - [x] Barrel exports en `components/index.ts` e `index.ts`.
+- [x] **Integración Global (Cierre 11/11):**
+  - [x] Integrado en `App.tsx` (Dashboard 4 columnas, router y banner oficial).
+  - [x] Integrado en `LandingPage.tsx` (`TOOLS_PREVIEW`).
+  - [x] Integrado en `Footer.tsx` (columna Fiscal & Nómina).
 
 ---
 
