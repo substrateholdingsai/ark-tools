@@ -152,6 +152,15 @@ export function Footer({ className, onSelectTool }: FooterProps) {
               <li>
                 <button
                   type="button"
+                  onClick={() => onSelectTool?.('finiquitos')}
+                  className="hover:text-navy text-left transition"
+                >
+                  Finiquitos y Liquidaciones LFT
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   onClick={() => onSelectTool?.('guia-sat-imss')}
                   className="hover:text-navy text-left transition"
                 >

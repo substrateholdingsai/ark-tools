@@ -64,6 +64,14 @@ const TOOLS_PREVIEW: ToolPreview[] = [
       'Cálculo exacto de ISR con subsidio al empleo actualizado, cuotas obrero-patronales del IMSS y neto a pagar en segundos.',
     tag: 'ISR + IMSS',
   },
+  {
+    icon: Scale,
+    category: 'Fiscal',
+    title: 'Finiquitos y Liquidaciones',
+    description:
+      'Cálculo conforme a la LFT con Vacaciones Dignas 2023, aguinaldo proporcional, prima de antigüedad y despido injustificado (Art. 50).',
+    tag: 'LFT 2026',
+  },
   // SAT
   {
     icon: FileSpreadsheet,

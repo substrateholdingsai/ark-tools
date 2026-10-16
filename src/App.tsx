@@ -51,6 +51,9 @@ const AuditorCobranza = lazy(
 const MapaActivos = lazy(
   () => import('@/tools/mapa-activos'),
 );
+const CalculadoraFiniquitos = lazy(
+  () => import('@/tools/finiquitos'),
+);
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -60,6 +63,7 @@ export type ToolId =
   | 'isn'
   | 'sbc'
   | 'nomina'
+  | 'finiquitos'
   | 'xml-excel'
   | 'validador'
   | 'spei'
@@ -130,6 +134,13 @@ export function App() {
 
       case 'nomina':
         return <CalculadoraNomina onBack={goToDashboard} />;
+
+      case 'finiquitos':
+        return (
+          <Suspense fallback={<ToolSkeleton />}>
+            <CalculadoraFiniquitos onBack={goToDashboard} />
+          </Suspense>
+        );
 
       case 'xml-excel':
         return <ConversorXML onBack={goToDashboard} />;
@@ -244,13 +255,13 @@ function Dashboard({ onSelectTool }: DashboardProps) {
 
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-muted font-orbitron shrink-0">
             <span className="px-3 py-1.5 rounded-lg bg-surface-2 border border-line text-ink">
-              UMA: $113.14
+              UMA: $117.31
             </span>
             <span className="px-3 py-1.5 rounded-lg bg-surface-2 border border-line text-ink">
-              SMG: $278.80
+              SMG: $315.04
             </span>
             <span className="px-3 py-1.5 rounded-lg bg-surface-2 border border-line text-ink">
-              TOPE SBC: 25 UMAs
+              TOPE SBC: 25 UMAs ($2,932.75)
             </span>
           </div>
         </div>
@@ -259,8 +270,8 @@ function Dashboard({ onSelectTool }: DashboardProps) {
       {/* Fiscal */}
       <CategorySection
         title="Fiscal"
-        description="Cálculos estatales y federales. ISN, ISR, IMSS, topes y factores."
-        columns={3}
+        description="Cálculos estatales y federales. ISN, ISR, IMSS, topes, factores y finiquitos LFT."
+        columns={4}
       >
         <ToolCard
           icon={Calculator}
@@ -285,6 +296,14 @@ function Dashboard({ onSelectTool }: DashboardProps) {
           badge="NUEVO"
           badgeVariant="gold"
           onSelect={() => onSelectTool('nomina')}
+        />
+        <ToolCard
+          icon={Scale}
+          title="Finiquitos y Liquidaciones"
+          description="Cálculo conforme a la LFT con Vacaciones Dignas 2023, aguinaldo, prima de antigüedad y despido."
+          badge="NUEVO"
+          badgeVariant="gold"
+          onSelect={() => onSelectTool('finiquitos')}
         />
       </CategorySection>
 

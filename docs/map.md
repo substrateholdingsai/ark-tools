@@ -20,13 +20,13 @@
 | **Copy & Transparencia Legal** | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF) y cero cajas negras |
 | **Mesa de Ayuda & Soporte** | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site) |
 | **Landing Pública** | LandingPage interactiva con sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login |
-| **Pruebas unitarias e integración** | 194 pasadas en 24 suites (100% éxito) |
+| **Pruebas unitarias e integración** | 200 pasadas en 25 suites (100% éxito) |
 | **Auditoría DOF Catálogo** | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones) |
 | **Typecheck (TypeScript)** | 0 errores en modo estricto (100% limpio) |
 | **Build Vite (SPA)** | 100% funcional con bundle ultraligero sin dependencias externas |
 | **Deploy Cloudflare Workers** | Activo y sincronizado en [https://tools.arksystems.site](https://tools.arksystems.site) |
-| **Git & Repositorio** | Sincronizado en rama `main` (Commit `5a6099a`) en GitHub |
-| **Herramientas en Producción** | 10 de 10 operativas (ISN, SBC, Nómina, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) |
+| **Git & Repositorio** | Sincronizado en rama `main` en GitHub |
+| **Herramientas en Producción** | 11 de 11 operativas (ISN, SBC, Nómina, Finiquitos y Liquidaciones, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) — SUITE 100% CERRADA |
 
 ---
 
@@ -200,11 +200,14 @@ ark-tools/
 │       │   ├── MapaActivos.test.tsx  ✅ 6 tests de integración y UI pasados
 │       │   └── index.ts              ✅ Barrel export
 │       │
-│       └── finiquitos/               ✅ MOTOR Y TIPOS COMPLETADOS (LFT)
+│       └── finiquitos/               ✅ 100% COMPLETADA Y DESPLEGADA (11/11)
 │           ├── types.ts              ✅ Tipos LFT (Arts. 50, 76, 79, 80, 87, 162, 486)
 │           ├── lib/calcularFiniquito.ts ✅ Motor de finiquito/liquidación (Vacaciones Dignas 2023, tope 2xSMG)
 │           ├── lib/calcularFiniquito.test.ts ✅ 7 tests unitarios pasados (100% éxito)
-│           └── index.ts              ✅ Barrel export
+│           ├── components/           ✅ ParametrosFiniquitoCard, AntiguedadCard, DesgloseFiniquitoTable, ResultadoFiniquitoCard
+│           ├── CalculadoraFiniquitos.tsx ✅ Componente principal interactivo con exportaciones CSV/TXT
+│           ├── CalculadoraFiniquitos.test.tsx ✅ 6 tests de integración y UI pasados (100% éxito)
+│           └── index.ts              ✅ Barrel export completo
 ```
 
 ---
@@ -620,22 +623,64 @@ ark-tools/
 
 ---
 
-## 5. Resumen General del Proyecto (Suite Completa 10/10 + Multi-Tenant + Workers AI + Copy Institucional)
+### Sprint 8 (Octubre 2026) — UI de Finiquitos y Liquidaciones LFT (Cierre 11/11) — Completado ✅
+**Objetivo:** Culminar la herramienta #11 de la suite con una interfaz visual de alta fidelidad, reactiva y fundamentada en la Ley Federal del Trabajo (LFT), conectada al motor matemático probado y expuesta en el Dashboard, Landing Page y Footer.
+
+#### 1. Componentes Visuales Creados (`src/tools/finiquitos/components/`)
+1. **`ParametrosFiniquitoCard.tsx`**:
+   - Selector por tabs: *Finiquito* (renuncia voluntaria) vs *Liquidación* (despido injustificado). Al seleccionar finiquito, oculta y fuerza a `false` los conceptos de 90 días y 20 días/año.
+   - Cálculo y sugerencia en vivo del Salario Diario Integrado (SDI) con factor mínimo de ley (`1.049315×`) y soporte de override manual con botón de restauración.
+   - Vista previa informativa ligera de antigüedad laboral (años, meses y días calculados).
+   - Pre-marcado inteligente de prima de antigüedad (Art. 162 Fracc. III) sugerido para separaciones con $\ge 15$ años o en liquidación.
+   - Enlace accesible entre etiquetas y campos con `id` y `htmlFor`.
+2. **`AntiguedadCard.tsx`**:
+   - Métricas de alto impacto visual: años, meses y días de servicio más días totales.
+   - Año de servicio en curso y días de vacaciones por ley conforme a la reforma *Vacaciones Dignas 2023* (Art. 76 LFT).
+   - Días transcurridos en el año de servicio para proporcionales (Arts. 79 y 87 LFT).
+   - Tarjeta interactiva del tope salarial (Art. 486 LFT) con alerta visual cuando el salario real supera 2×SMG ($630.08).
+3. **`DesgloseFiniquitoTable.tsx`**:
+   - Diseño dual adaptativo: tabla tabular completa en desktop y tarjetas apiladas en mobile.
+   - Cita jurídica de cada concepto (Arts. 50, 76, 79, 80, 87, 162 LFT) con badges temáticos en `navy` y fila de totales con diferenciación de régimen.
+4. **`ResultadoFiniquitoCard.tsx`**:
+   - `LiquidGlassDome` con cifra magnificada en pesos mexicanos (`$`, comas y 2 decimales).
+   - Mini-grid con desglose rápido de Aguinaldo, Vacaciones + Prima, Prima de Antigüedad e Indemnizaciones.
+   - Botón de **"Copiar Resumen Ejecutivo"** listo para enviar por WhatsApp o correo.
+   - Botón de **"Descargar Excel (CSV)"** con BOM UTF-8 y tabla desglosada para contadores.
+
+#### 2. Ensamblador Principal e Integración en la Plataforma
+- **`CalculadoraFiniquitos.tsx`**: Orquestador principal con navegación hacia el dashboard (`onBack`), badges normativos, feedback visual ante parámetros erróneos y carga diferida (lazy loading).
+- **Barrel Exports**: Actualización de `src/tools/finiquitos/components/index.ts` y `src/tools/finiquitos/index.ts`.
+- **Integración Global**:
+  - `src/App.tsx`: Incorporación de `finiquitos` en `ToolId`, router con `<Suspense />`, nueva `ToolCard` en la sección Fiscal (ampliada a 4 columnas) y actualización del banner a los valores oficiales 2026.
+  - `src/components/LandingPage.tsx`: Tarjeta de vista previa agregada en `TOOLS_PREVIEW`.
+  - `src/components/Footer.tsx`: Enlace interactivo en la columna *Fiscal & Nómina*.
+
+#### 3. Suite de Pruebas y Control de Calidad
+- 7 pruebas unitarias del motor en `src/tools/finiquitos/lib/calcularFiniquito.test.ts`.
+- 6 pruebas de integración y UI en `src/tools/finiquitos/CalculadoraFiniquitos.test.tsx` (montaje, navegación `onBack`, cambio de tabs, cálculo sugerido de SDI, desglose y exportaciones CSV/portapapeles).
+- **Total Suite:** **200 pruebas unitarias y de integración pasando al 100% en 25 suites**.
+- **Typecheck:** 0 errores en TypeScript estricto (`tsc --noEmit`).
+- **Compilación Vite:** Bundle generado limpiamente en 23s sin errores.
+- **Auditoría DOF:** 6/6 valores oficiales vigentes verificados (`pnpm verify:catalogo`).
+
+---
+
+## 5. Resumen General del Proyecto (Suite Completa 11/11 + Multi-Tenant + Workers AI + Copy Institucional)
 
 | Categoría | Herramientas / Módulos | Estado |
 |---|---|---|
-| **Fiscal / Laboral** | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Motor de Finiquitos y Liquidaciones LFT | ✅ 100% Operativas |
-| **SAT** | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0) | ✅ 100% Operativas |
-| **Cobros** | Generador Links de Pago Clip, Calculadora de Leasing Tecnológico | ✅ 100% Operativas |
-| **Compliance** | Guía SAT/IMSS, Auditoría Legal de Cobranza, Mapa de Activos Virtuales | ✅ 100% Operativas + Persistencia D1 |
+| **Fiscal / Laboral** | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos y Liquidaciones LFT | ✅ 100% Operativas (4/4) |
+| **SAT** | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0) | ✅ 100% Operativas (2/2) |
+| **Cobros** | Generador Links de Pago Clip, Calculadora de Leasing Tecnológico | ✅ 100% Operativas (2/2) |
+| **Compliance** | Guía SAT/IMSS, Auditoría Legal de Cobranza, Mapa de Activos Virtuales | ✅ 100% Operativas + Persistencia D1 (3/3) |
 | **Multi-Tenancy** | Auth Nativo Soberano + Despachos + D1 Database (`ark_tools_db`) | ✅ 100% En Producción |
 | **Workers AI** | Binding `[ai]`, Agentic Tool-Calling con D1 y LFT, Streaming SSE, Llama 3.3 70B | ✅ 100% Integrado y Probado |
 | **Copy & Confianza** | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica | ✅ 100% En Producción |
 | **Core Global** | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage | ✅ 100% Operativo |
 
-- **Total de pruebas unitarias y de integración:** **194 pasadas en 24 suites (100% éxito)**
+- **Total de herramientas en plataforma:** **11 de 11 (100% Suite Completa Cerrada)**
+- **Total de pruebas unitarias y de integración:** **200 pasadas en 25 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
 - **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)**
-- **Sincronización Git:** Rama `main` actualizada y limpia (`working tree clean`) en GitHub
-- **Estado general:** **Plataforma completa, validada, con fundamentación legal y desplegada en producción.**
+- **Estado general:** **Plataforma 100% completa, validada, con fundamentación legal y lista para despliegue.**

@@ -5,3 +5,5 @@
 
 export * from './types';
 export * from './lib/calcularFiniquito';
+export * from './components';
+export { CalculadoraFiniquitos, default } from './CalculadoraFiniquitos';
