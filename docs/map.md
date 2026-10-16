@@ -42,7 +42,8 @@ ark-tools/
 ├── scripts/
 │   └── verificar-catalogo.ts         ✅ CLI auditoría DOF de vigencias fiscales (pnpm verify:catalogo)
 ├── migrations/
-│   └── 0001_initial_schema.sql       ✅ D1 Multi-Tenant (users, tenants, guia, ledger, watchlist)
+│   ├── 0001_initial_schema.sql       ✅ D1 Multi-Tenant (users, tenants, guia, ledger, watchlist)
+│   └── 0002_expediente_unico.sql     ✅ D1 Expediente Único (clients, expedientes, índices y FKs)
 ├── public/ & index.html              ✅ Montaje de React y fuentes Google
 ├── wrangler.toml                     ✅ SPA assets, observabilidad, D1 binding, Workers AI binding [ai] y vars
 ├── package.json                      ✅ pnpm@9.7.0, scripts de build, deploy, test (sin dependencias externas de auth)
@@ -51,15 +52,18 @@ ark-tools/
 ├── vitest.config.ts                  ✅ Cobertura V8 y configuración de testing
 ├── src/
 │   ├── index.ts                      ✅ Worker Entry Point (/health, /api, D1 API handler, AI API handler, SPA fallback)
-│   ├── index.tsx                     ✅ React DOM Root con AuthProvider nativo
+│   ├── index.tsx                     ✅ React DOM Root con AuthProvider y ExpedienteProvider
 │   ├── App.tsx                       ✅ Router principal con Gating (Landing pública / Dashboard autenticado)
 │   ├── context/
-│   │   └── AuthContext.tsx           ✅ Contexto nativo soberano: login, sesión local, multi-tenant y D1 sync
+│   │   ├── AuthContext.tsx           ✅ Contexto nativo soberano: login, sesión local, multi-tenant y D1 sync
+│   │   └── ExpedienteContext.tsx     ✅ Contexto de cliente activo, auto-prefill y sellado de cálculo
 │   ├── hooks/
 │   │   ├── useAuth.ts                ✅ Hook multi-tenant unificado (usuario, despacho, tokens, logout)
 │   │   └── index.ts                  ✅ Barrel export
 │   ├── server/
 │   │   ├── d1Api.ts                  ✅ Handlers REST para D1 (Auth sync, Guía SAT, Ledger SHA-256, Watchlist)
+│   │   ├── d1Api.expediente.ts       ✅ Endpoints REST para clients y expedientes con SHA-256 determinista
+│   │   ├── d1Api.expediente.test.ts  ✅ 12 tests unitarios de hashing, aislamiento tenant y deduplicación
 │   │   └── ai/                       ✅ Cloudflare Workers AI & Agentic Tool-Calling
 │   │       ├── types.ts              ✅ Tipos para mensajes, tool definitions y requests
 │   │       ├── tools.ts              ✅ Catálogo de 4 herramientas y ejecutor con aislamiento D1 por tenant
@@ -70,7 +74,7 @@ ark-tools/
 │   ├── lib/
 │   │   ├── cn.ts                     ✅ Utilidad twMerge + clsx
 │   │   ├── useTenant.ts              ✅ Contexto del tenant activo
-│   │   └── apiClient.ts              ✅ Cliente SDK frontend tipado para D1
+│   │   └── apiClient.ts              ✅ Cliente SDK frontend tipado para D1 (guía, ledger, watchlist, clients, expedientes)
 │   ├── styles/
 │   │   └── ark-system.css            ✅ Estilos base, fuentes, variables y componentes físicos
 │   ├── components/
@@ -78,6 +82,8 @@ ark-tools/
 │   │   ├── Logo.tsx                  ✅ Cubo isométrico 3D ARK con diamante
 │   │   ├── Header.tsx                ✅ Header sticky con subtítulo fiscal, badge Tablas 2026, soporte WhatsApp y selector multi-tenant
 │   │   ├── Footer.tsx                ✅ Footer institucional con privacidad de XMLs, soporte directo, 3 columnas y disclaimer legal
+│   │   ├── ExpedienteSelector.tsx    ✅ Barra persistente de cliente activo, búsqueda predictiva y modal de nuevo cliente
+│   │   ├── ExpedienteToolBanner.tsx  ✅ Banner interactivo en herramientas para archivar con sello SHA-256
 │   │   ├── ToolCard.tsx              ✅ Tarjetas con hover dorado, badge y CTA
 │   │   ├── CategorySection.tsx       ✅ Agrupador de categorías (Fiscal, SAT, Cobros, etc. — 1 a 4 cols)
 │   │   ├── ToolSkeleton.tsx          ✅ Skeleton loader animado para lazy imports
