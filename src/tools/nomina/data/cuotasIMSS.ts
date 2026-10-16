@@ -17,7 +17,13 @@
  */
 
 import type { CuotaIMSS } from '../types';
-import { UMA } from '@/data/valores-vigentes/catalogo';
+import { CATALOGO_2026 } from '@/data/valores-vigentes/catalogo';
+
+const getValor = (id: string): number => {
+  const item = CATALOGO_2026.find(v => v.id === id);
+  if (!item) throw new Error(`Valor no encontrado en catálogo: ${id}`);
+  return item.valor as number;
+};
 
 /**
  * Cuotas IMSS obrero mensuales 2026.
@@ -64,4 +70,4 @@ export const CUOTAS_OBRERO: CuotaIMSS[] = [
 /**
  * UMA multiplicada por 3 (base para excedente).
  */
-export const TRES_UMAS = UMA.diaria2026.valor * 3;
+export const TRES_UMAS = getValor('UMA_DIARIA_2026') * 3;

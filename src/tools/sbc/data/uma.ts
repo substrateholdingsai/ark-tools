@@ -14,23 +14,30 @@
  */
 
 import type { ConstantesIMSS, ParametrosSBC } from '../types';
-import { UMA, SALARIO_MINIMO, TOPES_LSS } from '@/data/valores-vigentes/catalogo';
+import { CATALOGO_2026 } from '@/data/valores-vigentes/catalogo';
+
+// Helper para obtener valor por ID
+const getValor = (id: string): number => {
+  const item = CATALOGO_2026.find(v => v.id === id);
+  if (!item) throw new Error(`Valor no encontrado en catálogo: ${id}`);
+  return item.valor as number;
+};
 
 // ─────────────────────────────────────────────────────────────────────
 // CONSTANTES 2026 (desde catálogo centralizado)
 // ─────────────────────────────────────────────────────────────────────
 
 /** UMA diaria 2026 (INEGI) */
-export const UMA_DIARIA = UMA.diaria2026.valor;
+export const UMA_DIARIA = getValor('UMA_DIARIA_2026');
 
 /** Salario mínimo frontera norte 2026 (CONASAMI) */
-export const SALARIO_MINIMO_FRONTERA = SALARIO_MINIMO.frontera2026.valor;
+export const SALARIO_MINIMO_FRONTERA = getValor('SALARIO_MINIMO_FRONTERA_2026');
 
 /** Tope legal: 25 UMAs (LSS Art. 28) */
 export const TOPE_UMAS = 25;
 
 /** Tope en pesos: 25 × UMA_DIARIA (desde catálogo TOPES_LSS) */
-export const TOPE_PESOS = TOPES_LSS.tope25UMA2026.valor;
+export const TOPE_PESOS = getValor('TOPE_SBC_25_UMA_2026');
 
 /** Constantes agrupadas */
 export const CONSTANTES_IMSS: ConstantesIMSS = {
@@ -57,8 +64,8 @@ export const PARAMETROS_DEFAULT: ParametrosSBC = {
 // ─────────────────────────────────────────────────────────────────────
 
 export const PRESETS_SALARIO = [
-  { label: 'Mínimo general', valor: SALARIO_MINIMO.general2026.valor },
-  { label: 'Mínimo frontera', valor: SALARIO_MINIMO.frontera2026.valor },
+  { label: 'Mínimo general', valor: getValor('SALARIO_MINIMO_GENERAL_2026') },
+  { label: 'Mínimo frontera', valor: getValor('SALARIO_MINIMO_FRONTERA_2026') },
   { label: 'Típico', valor: 400 },
   { label: 'Profesional', valor: 580 },
   { label: 'Alto', valor: 850 },

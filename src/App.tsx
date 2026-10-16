@@ -1,11 +1,11 @@
 /**
  * ARK TOOLS — App Principal
  *
- * Maneja la navegación entre el dashboard y las herramientas.
- * Sprint 2: ISN + SBC funcionando.
+ * Router principal entre Dashboard y herramientas.
+ * Fase D: Compliance — Auditoría de Cobranza + Guía SAT/IMSS.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Calculator,
   FileSpreadsheet,
@@ -15,14 +15,25 @@ import {
   Sparkles,
   Scale,
   Globe,
+  ShieldAlert,
 } from 'lucide-react';
+
+import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
+import { apiClient } from '@/lib/apiClient';
+
 import {
   Header,
   Footer,
   ToolCard,
   CategorySection,
+  ToolSkeleton,
+  LandingPage,
+  AiAssistantWidget,
 } from './components';
 import type { NavItem } from './components';
+
+
+
 import { CalculadoraISN } from './tools/isn';
 import { CalculadoraSBC } from './tools/sbc';
 import { CalculadoraNomina } from './tools/nomina';
@@ -33,7 +44,18 @@ import { CalculadoraLeasing } from './tools/leasing';
 import { GuiaSATIMSS } from './tools/guia-sat-imss';
 import { AlertasVigencia } from '@/data/valores-vigentes';
 
-type ToolId =
+// Lazy-loaded: reduce bundle inicial (~45 KB c/u)
+const AuditorCobranza = lazy(
+  () => import('@/tools/auditor-cobranza'),
+);
+const MapaActivos = lazy(
+  () => import('@/tools/mapa-activos'),
+);
+
+// ═════════════════════════════════════════════════════════════════
+// TIPOS
+// ═════════════════════════════════════════════════════════════════
+export type ToolId =
   | 'dashboard'
   | 'isn'
   | 'sbc'
@@ -43,7 +65,11 @@ type ToolId =
   | 'spei'
   | 'leasing'
   | 'guia-sat-imss'
+  | 'auditor-cobranza'
   | 'mapa-activos';
+
+export type ToolRoute = ToolId;
+export type NavFilter = 'dashboard' | 'fiscal' | 'sat' | 'cobros' | 'compliance';
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'TODAS' },
@@ -53,22 +79,47 @@ const navItems: NavItem[] = [
   { id: 'compliance', label: 'COMPLIANCE' },
 ];
 
+// ═════════════════════════════════════════════════════════════════
+// APP
+// ═════════════════════════════════════════════════════════════════
 export function App() {
   const [activeTool, setActiveTool] = useState<ToolId>('dashboard');
+  const { isSignedIn, userId, email, fullName, tenantId, tenantName, organization, getToken } =
+    useAuth();
 
-  // ─────────────────────────────────────────────────────────────
-  // NAVEGACIÓN
-  // ─────────────────────────────────────────────────────────────
+  // Sincronización silenciosa de usuario y despacho con D1 en segundo plano
+  useEffect(() => {
+    if (!isSignedIn || !userId || !email) return;
+
+    getToken()
+      .then((token) => {
+        apiClient.auth
+          .sync(
+            {
+              user_id: userId,
+              email,
+              full_name: fullName,
+              tenant_id: tenantId,
+              tenant_name: tenantName,
+              tenant_slug: organization?.slug,
+            },
+            token
+          )
+          .catch((err) => {
+            console.debug('[AuthSync] Silencioso:', err);
+          });
+      })
+      .catch(() => {});
+  }, [isSignedIn, userId, email, fullName, tenantId, tenantName, organization?.slug, getToken]);
+
   const navigateTo = (tool: ToolId) => {
     setActiveTool(tool);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+
   const goToDashboard = () => navigateTo('dashboard');
 
-  // ─────────────────────────────────────────────────────────────
-  // RENDER DE HERRAMIENTAS
-  // ─────────────────────────────────────────────────────────────
   const renderTool = () => {
     switch (activeTool) {
       case 'isn':
@@ -95,8 +146,19 @@ export function App() {
       case 'guia-sat-imss':
         return <GuiaSATIMSS onBack={goToDashboard} />;
 
+      case 'auditor-cobranza':
+        return (
+          <Suspense fallback={<ToolSkeleton />}>
+            <AuditorCobranza onBack={goToDashboard} />
+          </Suspense>
+        );
+
       case 'mapa-activos':
-        return <PlaceholderTool name={activeTool} onBack={goToDashboard} />;
+        return (
+          <Suspense fallback={<ToolSkeleton />}>
+            <MapaActivos onBack={goToDashboard} />
+          </Suspense>
+        );
 
       case 'dashboard':
       default:
@@ -105,23 +167,35 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-surface text-ink font-inter antialiased">
-      <Header
-        activeTool={activeTool === 'dashboard' ? 'todas' : activeTool}
-        onNavigate={(id) => {
-          if (id === 'todas') goToDashboard();
-        }}
-        navItems={navItems}
-      />
+    <>
+      <SignedOut>
+        <LandingPage />
+      </SignedOut>
 
-      <AlertasVigencia />
+      <SignedIn>
+        <div className="min-h-screen bg-surface text-ink font-inter antialiased">
+          <Header
+            activeTool={activeTool === 'dashboard' ? 'dashboard' : activeTool}
+            onNavigate={(id) => {
+              if (id === 'dashboard') goToDashboard();
+            }}
+            navItems={navItems}
+          />
 
-      <main>{renderTool()}</main>
+          <AlertasVigencia />
 
-      <Footer />
-    </div>
+          <main>{renderTool()}</main>
+
+          <Footer onSelectTool={navigateTo} />
+
+          {/* Widget Flotante del Asistente Workers AI */}
+          <AiAssistantWidget />
+        </div>
+      </SignedIn>
+    </>
   );
 }
+
 
 // ═════════════════════════════════════════════════════════════════
 // DASHBOARD
@@ -139,14 +213,50 @@ function Dashboard({ onSelectTool }: DashboardProps) {
           Herramientas que{' '}
           <span className="text-navy">trabajan</span> mientras tú cobras.
         </h1>
-        <p className="mt-6 text-[16px] md:text-[18px] leading-[1.5] text-muted max-w-[52ch] inter font-inter">
+        <p className="mt-6 text-[16px] md:text-[18px] leading-[1.5] text-muted max-w-[52ch] font-inter">
           Suite de utilidades para contadores, nómina y RH. Cálculo en tiempo
           real, exportación instantánea y diseño pensado para que el dinero se
           entienda sin leer.
         </p>
       </section>
 
-      {/* Categoría: Fiscal */}
+      {/* Banner de Transparencia Jurídica & Papeles de Trabajo */}
+      <section className="p-6 md:p-7 rounded-2xl bg-white border border-line shadow-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-11 h-11 rounded-xl bg-navy/5 border border-navy/15 flex items-center justify-center text-navy shrink-0 mt-0.5">
+              <Scale size={22} className="text-navy" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-orbitron font-bold text-[13px] text-navy uppercase tracking-wider">
+                  Cálculos con Fundamento Jurídico Transparente
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-800">
+                  Normativa DOF 2026
+                </span>
+              </div>
+              <p className="text-[13px] text-muted font-inter max-w-[760px] leading-relaxed">
+                Cada calculadora de la suite desglosa su fórmula matemática y cita el artículo legal exacto (LISR, LSS, LFT, CFF y Códigos Estatales). Diseñado para que puedas justificar cada cifra ante auditorías y en tus papeles de trabajo.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-bold text-muted font-orbitron shrink-0">
+            <span className="px-3 py-1.5 rounded-lg bg-surface-2 border border-line text-ink">
+              UMA: $113.14
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-surface-2 border border-line text-ink">
+              SMG: $278.80
+            </span>
+            <span className="px-3 py-1.5 rounded-lg bg-surface-2 border border-line text-ink">
+              TOPE SBC: 25 UMAs
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* Fiscal */}
       <CategorySection
         title="Fiscal"
         description="Cálculos estatales y federales. ISN, ISR, IMSS, topes y factores."
@@ -178,7 +288,7 @@ function Dashboard({ onSelectTool }: DashboardProps) {
         />
       </CategorySection>
 
-      {/* Categoría: SAT */}
+      {/* SAT */}
       <CategorySection
         title="SAT"
         description="Herramientas para CFDI 4.0, validación y conversión de XMLs."
@@ -202,7 +312,7 @@ function Dashboard({ onSelectTool }: DashboardProps) {
         />
       </CategorySection>
 
-      {/* Categoría: Cobros */}
+      {/* Cobros */}
       <CategorySection
         title="Cobros"
         description="Genera links de pago y calcula tu modelo de negocio."
@@ -226,11 +336,11 @@ function Dashboard({ onSelectTool }: DashboardProps) {
         />
       </CategorySection>
 
-      {/* Categoría: Compliance */}
+      {/* Compliance */}
       <CategorySection
         title="Compliance"
-        description="Referencia educativa para entender el marco regulatorio."
-        columns={2}
+        description="Referencia educativa y auditoría regulatoria."
+        columns={3}
       >
         <ToolCard
           icon={Scale}
@@ -241,12 +351,20 @@ function Dashboard({ onSelectTool }: DashboardProps) {
           onSelect={() => onSelectTool('guia-sat-imss')}
         />
         <ToolCard
+          icon={ShieldAlert}
+          title="Auditoría Legal de Cobranza"
+          description="Compara contrato vs CRM, detecta diferencias críticas y genera un dictamen exportable con fundamento legal."
+          badge="NUEVO"
+          badgeVariant="gold"
+          onSelect={() => onSelectTool('auditor-cobranza')}
+        />
+        <ToolCard
           icon={Sparkles}
           title="Mapa de Activos Virtuales"
-          description="48 conductas mapeadas con Ley Fintech, LFPIORPI y CPF. Solo consulta."
-          badge="PRÓXIMAMENTE"
-          badgeVariant="muted"
-          disabled
+          description="12 conductas mapeadas con Ley Fintech, LFPIORPI, CPF y CFF. Matriz de consulta legal para contadores."
+          badge="NUEVO"
+          badgeVariant="gold"
+          onSelect={() => onSelectTool('mapa-activos')}
         />
       </CategorySection>
     </div>
@@ -256,12 +374,12 @@ function Dashboard({ onSelectTool }: DashboardProps) {
 // ═════════════════════════════════════════════════════════════════
 // PLACEHOLDER
 // ═════════════════════════════════════════════════════════════════
-interface PlaceholderToolProps {
+export interface PlaceholderToolProps {
   name: string;
   onBack: () => void;
 }
 
-function PlaceholderTool({ name, onBack }: PlaceholderToolProps) {
+export function PlaceholderTool({ name, onBack }: PlaceholderToolProps) {
   return (
     <div className="mx-auto max-w-[760px] px-6 md:px-10 py-20 text-center">
       <div className="text-[10px] font-bold tracking-[0.24em] text-gold-dark uppercase font-orbitron">
@@ -270,7 +388,7 @@ function PlaceholderTool({ name, onBack }: PlaceholderToolProps) {
       <h2 className="mt-4 font-playfair font-black text-[36px] leading-[1] text-ink">
         {name}
       </h2>
-      <p className="mt-4 text-[14px] leading-[1.6] text-muted inter font-inter">
+      <p className="mt-4 text-[14px] leading-[1.6] text-muted font-inter">
         Esta herramienta estará disponible en el próximo sprint. Vuelve al
         dashboard para explorar las que ya están listas.
       </p>

@@ -9,9 +9,15 @@
  * @see wrangler.toml — Configuración del worker
  */
 
+import { handleD1ApiRequest } from './server/d1Api';
+import { handleAiApiRequest } from './server/ai/aiApi';
+
 export interface Env {
   // Assets (SPA)
   ASSETS: Fetcher;
+
+  // Cloudflare Workers AI
+  AI?: Ai;
 
   // Variables públicas
   ENVIRONMENT: string;
@@ -27,9 +33,9 @@ export interface Env {
   CLIP_API_SECRET?: string;
   CLIP_ENVIRONMENT?: string;
 
-  // Futuros bindings (comentados en wrangler.toml)
+  // Cloudflare D1 Database (Multi-Tenant)
+  ARK_TOOLS_DB?: D1Database;
   // ARK_TOOLS_KV: KVNamespace;
-  // ARK_TOOLS_DB: D1Database;
   // ARK_TOOLS_R2: R2Bucket;
 }
 
@@ -102,7 +108,24 @@ async function handleApiRequest(
     return new Response(null, { headers: corsHeaders });
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // D1 MULTI-TENANT PERSISTENCIA (Guía SAT, Ledger, Activos)
+  // ─────────────────────────────────────────────────────────────────
+  const d1Response = await handleD1ApiRequest(request, env, corsHeaders);
+  if (d1Response) {
+    return d1Response;
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // WORKERS AI (Chat, Tools, Models)
+  // ─────────────────────────────────────────────────────────────────
+  const aiResponse = await handleAiApiRequest(request, env, corsHeaders);
+  if (aiResponse) {
+    return aiResponse;
+  }
+
   // Endpoints de API
+
   if (url.pathname === '/api/version') {
     return Response.json(
       {

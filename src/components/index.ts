@@ -14,6 +14,12 @@ export { Header } from './Header';
 export { Footer } from './Footer';
 export { ToolCard } from './ToolCard';
 export { CategorySection } from './CategorySection';
+export { ToolSkeleton } from './ToolSkeleton';
+export { AuthGate } from './AuthGate';
+export { LandingPage } from './LandingPage';
+export { AiAssistantWidget } from './AiAssistantWidget';
+
 
 // Tipos
 export type { NavItem } from './Header';
+

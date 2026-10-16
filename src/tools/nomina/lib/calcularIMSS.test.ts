@@ -38,14 +38,15 @@ describe('calcularCuota', () => {
   });
 
   it('calcula cuota sobre excedente de 3 UMA (SBC alto)', () => {
-    // SBC 500, 3 UMA = 339.42, excedente = 160.58
-    // 0.6% × 160.58 × 30 = 28.90
+    // UMA 2026 = 117.31, 3 UMA = 351.93
+    // SBC 500, excedente = 500 - 351.93 = 148.07
+    // 0.6% × 148.07 × 30 = 26.65
     const monto = calcularCuota(cuotaExcedente, 500, 30);
-    expect(monto).toBeCloseTo(28.90, 2);
+    expect(monto).toBeCloseTo(26.65, 2);
   });
 
   it('retorna 0 si SBC es menor que 3 UMA (no hay excedente)', () => {
-    // SBC 300, 3 UMA = 339.42, excedente = 0
+    // SBC 300, 3 UMA = 351.93, excedente = 0
     const monto = calcularCuota(cuotaExcedente, 300, 30);
     expect(monto).toBe(0);
   });
@@ -58,14 +59,14 @@ describe('calcularCuota', () => {
 describe('calcularIMSS', () => {
   it('calcula IMSS completo para SBC de 500 mensual', () => {
     const result = calcularIMSS(500, 'mensual');
-    // Cuotas:
+    // Cuotas (UMA 117.31, 3 UMA = 351.93, excedente = 148.07):
     //  Enfermedades: 0.25% × 500 × 30 = 37.50
-    //  Excedente: 0.60% × 160.58 × 30 = 28.90
+    //  Excedente: 0.60% × 148.07 × 30 = 26.65
     //  Invalidez: 0.625% × 500 × 30 = 93.75
     //  Cesantía: 1.125% × 500 × 30 = 168.75
     //  Guarderías: 0
-    // Total ≈ 328.90
-    expect(result.total).toBeCloseTo(328.90, 2);
+    // Total ≈ 326.65
+    expect(result.total).toBeCloseTo(326.65, 2);
     expect(result.dias).toBe(30);
     expect(result.sbc).toBe(500);
   });
@@ -84,8 +85,8 @@ describe('calcularIMSS', () => {
     const result = calcularIMSS(500, 'quincenal');
     // Días: 15
     expect(result.dias).toBe(15);
-    // El total es aproximadamente la mitad del mensual (164.46 con redondeo por ramo)
-    expect(result.total).toBeCloseTo(164.46, 2);
+    // El total es aproximadamente la mitad del mensual (163.34 con redondeo por ramo)
+    expect(result.total).toBeCloseTo(163.34, 2);
   });
 
   it('retorna 0 con SBC 0', () => {

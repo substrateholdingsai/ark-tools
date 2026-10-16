@@ -19,11 +19,12 @@ interface CategorySectionProps {
   /** Grid de herramientas (ToolCards) */
   children: ReactNode;
   /** Número de columnas en desktop. Default: 3 */
-  columns?: 2 | 3 | 4;
+  columns?: 1 | 2 | 3 | 4;
   className?: string;
 }
 
 const columnClasses = {
+  1: 'grid-cols-1 md:max-w-[420px]',
   2: 'grid-cols-1 md:grid-cols-2',
   3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
   4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4',

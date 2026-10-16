@@ -11,7 +11,7 @@ import { cn } from '@/lib/cn';
 
 interface ToolCardProps {
   /** Icono de Lucide */
-  icon: LucideIcon;
+  icon?: LucideIcon;
   /** Título de la herramienta */
   title: string;
   /** Descripción breve */
@@ -20,8 +20,12 @@ interface ToolCardProps {
   badge?: string;
   /** Si el badge es dorado (default) o navy */
   badgeVariant?: 'gold' | 'navy' | 'muted';
+  /** Categoría opcional */
+  category?: string;
   /** Callback al hacer click */
   onSelect?: () => void;
+  /** Alias para onSelect */
+  onClick?: () => void;
   /** Deshabilitado */
   disabled?: boolean;
   className?: string;
@@ -39,14 +43,18 @@ export function ToolCard({
   description,
   badge,
   badgeVariant = 'gold',
+  category,
   onSelect,
+  onClick,
   disabled = false,
   className,
 }: ToolCardProps) {
+  const handleClick = onSelect ?? onClick;
+
   return (
     <button
       type="button"
-      onClick={onSelect}
+      onClick={handleClick}
       disabled={disabled}
       className={cn(
         'group text-left rounded-[20px] border border-line bg-surface p-6',
@@ -59,16 +67,24 @@ export function ToolCard({
     >
       {/* Header de la card: icono + badge */}
       <div className="flex items-start justify-between gap-3 mb-4">
-        <div
-          className={cn(
-            'w-11 h-11 rounded-[12px] grid place-items-center',
-            'bg-surface-2 border border-line text-navy',
-            'transition-colors',
-            !disabled && 'group-hover:bg-navy group-hover:text-white'
-          )}
-        >
-          <Icon size={20} strokeWidth={1.75} />
-        </div>
+        {Icon ? (
+          <div
+            className={cn(
+              'w-11 h-11 rounded-[12px] grid place-items-center',
+              'bg-surface-2 border border-line text-navy',
+              'transition-colors',
+              !disabled && 'group-hover:bg-navy group-hover:text-white'
+            )}
+          >
+            <Icon size={20} strokeWidth={1.75} />
+          </div>
+        ) : category ? (
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted font-orbitron">
+            {category}
+          </span>
+        ) : (
+          <div />
+        )}
         {badge && (
           <span
             className={cn(

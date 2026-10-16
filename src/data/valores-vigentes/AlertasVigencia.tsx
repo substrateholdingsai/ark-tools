@@ -1,6 +1,5 @@
 import { useEstadoCatalogo } from './hooks';
-import { BadgeGold } from '@/components/ui/BadgeGold';
-import { GlassButton } from '@/components/ui/GlassButton';
+import { evaluarVigencia } from './vigencia';
 import type { ConfigVigencia } from './tipos';
 
 /**
@@ -19,46 +18,34 @@ export function AlertasVigencia({ config }: { config?: Partial<ConfigVigencia> }
     return null;
   }
 
-  // Vencidos críticos → alerta máxima
-  if (criticos.length > 0) {
-    return (
-      <div className="bg-navy text-white px-6 py-4 rounded-[16px] shadow-dome border border-navy-dark">
-        <div className="flex items-start gap-4 max-w-[1280px] mx-auto">
-          <span className="text-2xl" aria-hidden>⚠️</span>
-          <div className="flex-1">
-            <p className="font-inter font-bold text-sm tracking-wider uppercase">
-              Valores fiscales vencidos
-            </p>
-            <p className="font-inter text-sm mt-1 opacity-90">
-              {criticos.length} valor{criticos.length === 1 ? '' : 'es'} crítico
-              {criticos.length === 1 ? '' : 's'} requieren actualización inmediata:
-              {' '}
-              {criticos.map(v => v.etiqueta).join(', ')}.
-            </p>
+  const todas = [...criticos, ...vencidos, ...proximosAVencer];
+
+  // Deduplicar por ID (un valor puede estar en criticos y vencidos)
+  const unicas = new Map(todas.map(v => [v.id, v])).values();
+
+  return (
+    <div className="space-y-2 max-w-[1280px] mx-auto">
+      {Array.from(unicas).map(v => {
+        const vigencia = evaluarVigencia(v, config);
+        const esCritico = criticos.some(c => c.id === v.id);
+        return (
+          <div key={v.id} className={`flex items-center gap-3 p-3 rounded-xl border ${
+            esCritico ? 'bg-navy/10 border-navy-dark' : 'bg-surface-2 border-line'
+          }`}>
+            <span className="font-inter text-sm text-ink flex-1">
+              {v.nombre} — {vigencia.mensaje}
+            </span>
+            <a
+              href={v.fuente.urlDOF}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gold underline text-xs hover:no-underline"
+            >
+              Ver DOF
+            </a>
           </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Próximos a vencer → aviso preventivo
-  if (proximosAVencer.length > 0) {
-    return (
-      <div className="bg-surface-2 border border-line px-6 py-3 rounded-[16px]">
-        <div className="flex items-center gap-3 max-w-[1280px] mx-auto">
-          <BadgeGold>PRÓXIMO</BadgeGold>
-          <p className="font-inter text-sm text-ink">
-            {proximosAVencer.length} valor{proximosAVencer.length === 1 ? '' : 'es'} fiscal
-            {proximosAVencer.length === 1 ? '' : 'es'} vence
-            {proximosAVencer.length === 1 ? '' : 'n'} en los próximos 60 días.
-          </p>
-          <GlassButton variant="default" className="ml-auto text-xs">
-            Ver detalle
-          </GlassButton>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+        );
+      })}
+    </div>
+  );
 }

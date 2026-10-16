@@ -39,7 +39,7 @@ export function evaluarVigencia(
 ): ResultadoVigencia {
   const cfg = { ...CONFIG_DEFAULT, ...config };
   const hoy = cfg.fechaReferencia;
-  const desde = parseFechaISO(valor.vigenteDesde);
+  const desde = parseFechaISO(valor.vigencia.inicio);
 
   // Aún no entra en vigor
   if (hoy < desde) {
@@ -47,13 +47,13 @@ export function evaluarVigencia(
     return {
       estado: 'proximo-vencer',
       diasRestantes: dias,
-      mensaje: `Entra en vigor en ${dias} día${dias === 1 ? '' : 's'} (${valor.vigenteDesde}).`,
+      mensaje: `Entra en vigor en ${dias} día${dias === 1 ? '' : 's'} (${valor.vigencia.inicio}).`,
       requiereAtencion: false,
     };
   }
 
   // Sin fecha de fin → nunca caduca (si config lo permite)
-  if (valor.vigenteHasta === null) {
+  if (valor.vigencia.fin === null) {
     if (cfg.infinitosSiSinFecha) {
       return {
         estado: 'vigente',
@@ -70,7 +70,7 @@ export function evaluarVigencia(
     };
   }
 
-  const hasta = parseFechaISO(valor.vigenteHasta);
+  const hasta = parseFechaISO(valor.vigencia.fin);
   const dias = diasEntre(hoy, hasta);
 
   // Vencido
@@ -78,7 +78,7 @@ export function evaluarVigencia(
     return {
       estado: 'vencido',
       diasRestantes: dias,
-      mensaje: `Venció hace ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'} (${valor.vigenteHasta}). Actualizar.`,
+      mensaje: `Venció hace ${Math.abs(dias)} día${Math.abs(dias) === 1 ? '' : 's'} (${valor.vigencia.fin}). Actualizar.`,
       requiereAtencion: true,
     };
   }
@@ -88,7 +88,7 @@ export function evaluarVigencia(
     return {
       estado: 'proximo-vencer',
       diasRestantes: dias,
-      mensaje: `Vence en ${dias} día${dias === 1 ? '' : 's'} (${valor.vigenteHasta}).`,
+      mensaje: `Vence en ${dias} día${dias === 1 ? '' : 's'} (${valor.vigencia.fin}).`,
       requiereAtencion: true,
     };
   }
@@ -97,7 +97,7 @@ export function evaluarVigencia(
   return {
     estado: 'vigente',
     diasRestantes: dias,
-    mensaje: `Vigente hasta ${valor.vigenteHasta}.`,
+    mensaje: `Vigente hasta ${valor.vigencia.fin}.`,
     requiereAtencion: false,
   };
 }
@@ -125,7 +125,7 @@ export function evaluarLote(
     else if (r.estado === 'proximo-vencer') proximosAVencer.push(v);
     else if (r.estado === 'vencido') {
       vencidos.push(v);
-      if (v.criticidad === 'critico') criticos.push(v);
+      if (v.criticidad === 'ALTA') criticos.push(v);
     }
   }
 

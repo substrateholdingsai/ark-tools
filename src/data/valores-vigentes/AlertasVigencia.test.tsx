@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AlertasVigencia } from './AlertasVigencia';
 
@@ -7,14 +7,37 @@ vi.mock('./hooks', () => ({
   useEstadoCatalogo: vi.fn(),
 }));
 
+// Mock de evaluarVigencia
+vi.mock('./vigencia', () => ({
+  evaluarVigencia: vi.fn(),
+}));
+
 import { useEstadoCatalogo } from './hooks';
+import { evaluarVigencia } from './vigencia';
+
+const baseValor = {
+  id: '',
+  nombre: '',
+  valor: 0,
+  unidad: 'MXN_DIARIO' as const,
+  vigencia: { inicio: '2026-01-01', fin: '2026-12-31' },
+  fuente: {
+    organismo: 'SAT' as const,
+    publicacion: 'DOF 01/01/2026',
+    urlDOF: 'https://www.dof.gob.mx/test',
+    referencia: 'Art. test',
+  },
+  esProyeccion: false as const,
+  verificadoPor: 'Test — 2026-01-01',
+  criticidad: 'ALTA' as const,
+};
 
 describe('AlertasVigencia', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('no renderiza nada si todo está vigente', () => {
     vi.mocked(useEstadoCatalogo).mockReturnValue({
-      vigentes: [{ id: 'x' } as any],
+      vigentes: [{ ...baseValor, id: 'x', nombre: 'X' } as any],
       proximosAVencer: [],
       vencidos: [],
       criticos: [],
@@ -23,38 +46,71 @@ describe('AlertasVigencia', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('muestra banner navy cuando hay críticos vencidos', () => {
+  it('muestra lista con enlaces DOF cuando hay críticos vencidos', () => {
+    const valor = { ...baseValor, id: 'uma.diaria.2026', nombre: 'UMA diaria 2026' };
     vi.mocked(useEstadoCatalogo).mockReturnValue({
       vigentes: [],
       proximosAVencer: [],
-      vencidos: [{ id: 'uma.diaria.2026', etiqueta: 'UMA diaria 2026' } as any],
-      criticos: [{ id: 'uma.diaria.2026', etiqueta: 'UMA diaria 2026' } as any],
+      vencidos: [valor],
+      criticos: [valor],
     });
+    vi.mocked(evaluarVigencia).mockReturnValue({
+      estado: 'vencido',
+      diasRestantes: -10,
+      mensaje: 'Venció hace 10 días',
+      requiereAtencion: true,
+    });
+
     render(<AlertasVigencia />);
-    expect(screen.getByText(/valores fiscales vencidos/i)).toBeInTheDocument();
     expect(screen.getByText(/UMA diaria 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/Venció hace 10 días/)).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /Ver DOF/i });
+    expect(link).toHaveAttribute('href', 'https://www.dof.gob.mx/test');
+    expect(link).toHaveAttribute('target', '_blank');
   });
 
-  it('muestra BadgeGold cuando solo hay próximos a vencer', () => {
+  it('muestra lista para próximos a vencer', () => {
+    const valor = { ...baseValor, id: 'x', nombre: 'UMA' };
     vi.mocked(useEstadoCatalogo).mockReturnValue({
       vigentes: [],
-      proximosAVencer: [{ id: 'x', etiqueta: 'UMA' } as any],
+      proximosAVencer: [valor],
       vencidos: [],
       criticos: [],
     });
+    vi.mocked(evaluarVigencia).mockReturnValue({
+      estado: 'proximo-vencer',
+      diasRestantes: 30,
+      mensaje: 'Vence en 30 días',
+      requiereAtencion: true,
+    });
+
     render(<AlertasVigencia />);
-    expect(screen.getByText(/PRÓXIMO/)).toBeInTheDocument();
+    expect(screen.getByText(/UMA/)).toBeInTheDocument();
+    expect(screen.getByText(/Vence en 30 días/)).toBeInTheDocument();
   });
 
-  it('prioriza banner crítico sobre próximo-vencer', () => {
+  it('prioriza críticos primero en la lista', () => {
+    const critico = { ...baseValor, id: 'c', nombre: 'Critico' };
+    const vencido = { ...baseValor, id: 'b', nombre: 'Vencido' };
+    const proximo = { ...baseValor, id: 'a', nombre: 'Proximo' };
     vi.mocked(useEstadoCatalogo).mockReturnValue({
       vigentes: [],
-      proximosAVencer: [{ id: 'a', etiqueta: 'A' } as any],
-      vencidos: [{ id: 'b', etiqueta: 'B' } as any],
-      criticos: [{ id: 'b', etiqueta: 'B' } as any],
+      proximosAVencer: [proximo],
+      vencidos: [vencido],
+      criticos: [critico],
     });
+    vi.mocked(evaluarVigencia).mockReturnValue({
+      estado: 'vigente',
+      diasRestantes: 100,
+      mensaje: 'OK',
+      requiereAtencion: false,
+    });
+
     render(<AlertasVigencia />);
-    expect(screen.getByText(/valores fiscales vencidos/i)).toBeInTheDocument();
-    expect(screen.queryByText(/PRÓXIMO/)).not.toBeInTheDocument();
+    const items = screen.getAllByText(/Critico|Vencido|Proximo/);
+    // Orden: criticos, vencidos, proximosAVencer
+    expect(items[0]).toHaveTextContent('Critico');
+    expect(items[1]).toHaveTextContent('Vencido');
+    expect(items[2]).toHaveTextContent('Proximo');
   });
 });

@@ -5,6 +5,11 @@
 # ─────────────────────────────────────────────────────────────────────
 
 # ─────────────────────────────────────────────────────────────────────
+# AUTH NATIVO (Zero-Dependency & Multi-Tenant Sovereign)
+# No requiere claves de terceros. Sincroniza directamente con Cloudflare D1.
+# ─────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────
 # CLIP DEVELOPERS (API CHECKOUT & LINKS DE PAGO)
 # Obtén tus API Keys en: https://developer.clip.mx/docs/getting-started
 # ─────────────────────────────────────────────────────────────────────

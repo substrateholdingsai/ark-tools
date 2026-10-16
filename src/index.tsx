@@ -1,12 +1,12 @@
 /**
  * ARK TOOLS — React Entry Point
  *
- * Este archivo monta la aplicación React en el DOM.
- * El worker (src/index.ts) sirve el HTML que carga este bundle.
+ * Monta la aplicación React en el DOM con el AuthProvider nativo.
  */
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import { AuthProvider } from './context/AuthContext';
 import { App } from './App';
 import './styles/ark-system.css';
 
@@ -20,6 +20,8 @@ if (!rootElement) {
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>
 );

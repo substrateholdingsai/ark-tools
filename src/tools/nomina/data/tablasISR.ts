@@ -10,17 +10,27 @@
  */
 
 import type { RangoISR, RangoSubsidio } from '../types';
-import { TARIFA_ISR } from '@/data/valores-vigentes/catalogo';
+import { CATALOGO_2026 } from '@/data/valores-vigentes/catalogo';
+
+interface TarifaISRRango {
+  limiteInferior: number;
+  limiteSuperior: number | null;
+  cuotaFija: number;
+  tasa: number;
+}
 
 /**
  * Tabla ISR mensual 2026 — fuente centralizada en catálogo de valores vigentes.
- * El test de integridad del catálogo valida que TARIFA_ISR.mensual2026
+ * El test de integridad del catálogo valida que TARIFA_ISR_MENSUAL_2026
  * tenga fuente, referencia y no esté vencida.
  * 
  * Conversión: el catálogo usa `tasa` (decimal, ej. 0.0192) y el tipo local
  * usa `tasaExcedente` (porcentaje, ej. 1.92).
  */
-export const TABLA_ISR_MENSUAL: RangoISR[] = TARIFA_ISR.mensual2026.valor.map(r => ({
+const tarifaIsr = CATALOGO_2026.find(v => v.id === 'TARIFA_ISR_MENSUAL_2026');
+if (!tarifaIsr) throw new Error('TARIFA_ISR_MENSUAL_2026 no encontrado en catálogo');
+
+export const TABLA_ISR_MENSUAL: RangoISR[] = (tarifaIsr.valor as TarifaISRRango[]).map(r => ({
   limiteInferior: r.limiteInferior,
   limiteSuperior: r.limiteSuperior,
   cuotaFija: r.cuotaFija,

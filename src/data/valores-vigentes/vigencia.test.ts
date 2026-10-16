@@ -2,21 +2,31 @@ import { describe, it, expect } from 'vitest';
 import { evaluarVigencia, evaluarLote } from './vigencia';
 import type { ValorFiscal } from './tipos';
 
-const base: Omit<ValorFiscal, 'id' | 'vigenteDesde' | 'vigenteHasta'> = {
-  etiqueta: 'Test',
+const base: Omit<ValorFiscal, 'id' | 'vigencia' | 'fuente' | 'verificadoPor'> = {
+  nombre: 'Test',
   valor: 100,
-  fuente: 'DOF',
-  referencia: 'https://dof.gob.mx/test',
-  fechaPublicacion: '2026-01-01',
-  criticidad: 'critico',
+  unidad: 'MXN',
+  criticidad: 'ALTA',
+  esProyeccion: false,
 };
 
 function makeValor(
   id: string,
-  desde: string,
-  hasta: string | null
+  inicio: string,
+  fin: string | null
 ): ValorFiscal {
-  return { ...base, id, vigenteDesde: desde, vigenteHasta: hasta };
+  return {
+    ...base,
+    id,
+    vigencia: { inicio, fin },
+    fuente: {
+      organismo: 'SAT',
+      publicacion: 'DOF 01/01/2026',
+      urlDOF: 'https://dof.gob.mx/test',
+      referencia: 'Art. test',
+    },
+    verificadoPor: 'Test — 2026-01-01',
+  };
 }
 
 describe('evaluarVigencia', () => {
@@ -44,7 +54,7 @@ describe('evaluarVigencia', () => {
     expect(r.requiereAtencion).toBe(true);
   });
 
-  it('trata vigenteHasta=null como vigente infinito', () => {
+  it('trata vigencia.fin=null como vigente infinito', () => {
     const v = makeValor('x', '2020-01-01', null);
     const r = evaluarVigencia(v, { fechaReferencia: ref });
     expect(r.estado).toBe('vigente');

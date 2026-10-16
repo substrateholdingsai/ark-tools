@@ -2,84 +2,68 @@
  * Origen oficial de un valor fiscal.
  * Permite trazabilidad y auditoría.
  */
-export type FuenteOficial =
-  | 'DOF'           // Diario Oficial de la Federación
-  | 'INEGI'         // Instituto Nacional de Estadística y Geografía
-  | 'SAT'           // Servicio de Administración Tributaria
-  | 'IMSS'          // Instituto Mexicano del Seguro Social
-  | 'CONASAMI'      // Comisión Nacional de Salarios Mínimos
-  | 'SHCP'          // Secretaría de Hacienda y Crédito Público
-  | 'CONGRESO'      // Congreso de la Unión (leyes)
-  | 'ENTIDAD';      // Gobierno estatal (ISN, etc.)
+export type OrganismoOficial =
+  | 'INEGI'
+  | 'CONASAMI'
+  | 'IMSS'
+  | 'SAT'
+  | 'CONGRESO_ESTATAL';
 
 /**
- * Ciclo de vida de un valor.
- * - `vigente`: activo, dentro de su periodo válido.
- * - `proximo-vencer`: dentro de la ventana de alerta (default 60 días).
- * - `vencido`: superó su fecha de fin sin reemplazo.
- * - `historico`: ya fue reemplazado, se conserva para referencia.
+ * Unidad de medida del valor fiscal.
  */
-export type EstadoVigencia =
-  | 'vigente'
-  | 'proximo-vencer'
-  | 'vencido'
-  | 'historico';
+export type UnidadFiscal =
+  | 'MXN'
+  | 'MXN_DIARIO'
+  | 'MXN_MENSUAL'
+  | 'PORCENTAJE';
 
 /**
  * Nivel de criticidad si el valor caduca.
- * - `critico`: el producto da resultados INCORRECTOS.
- * - `alto`: resultados desactualizados pero no erróneos.
- * - `medio`: solo informativo.
- * - `bajo`: cosmético.
+ * - `ALTA`: el producto da resultados INCORRECTOS.
+ * - `MEDIA`: resultados desactualizados pero no erróneos.
+ * - `BAJA`: solo informativo/cosmético.
  */
-export type CriticidadCaducidad = 'critico' | 'alto' | 'medio' | 'bajo';
+export type Criticidad = 'ALTA' | 'MEDIA' | 'BAJA';
 
 /**
- * Un valor fiscal individual con metadatos de vigencia.
+ * Información de la fuente oficial con trazabilidad completa.
  */
-export interface ValorFiscal<T = unknown> {
-  /** Identificador único en el catálogo. Ej: 'uma.diaria.2026' */
+export interface FuenteOficial {
+  readonly organismo: OrganismoOficial;
+  readonly publicacion: string;    // Ej: "DOF 09/12/2025"
+  readonly urlDOF: string;         // Link directo al documento oficial en DOF
+  readonly referencia: string;     // Referencia legal: "Art. 26 Apartado B Constitucional" / "Art. 96 LISR"
+}
+
+/**
+ * Periodo de vigencia del valor.
+ */
+export interface Vigencia {
+  readonly inicio: string;         // ISO date "2026-01-01"
+  readonly fin: string | null;     // null = vigente indefinidamente
+}
+
+/**
+ * Un valor fiscal individual con metadatos completos de vigencia y trazabilidad.
+ */
+export interface ValorFiscal {
   readonly id: string;
-
-  /** Etiqueta legible para UI. Ej: 'UMA diaria 2026' */
-  readonly etiqueta: string;
-
-  /** Valor numérico o estructura de valores. */
-  readonly valor: T;
-
-  /** Fuente oficial que publica el valor. */
+  readonly nombre: string;
+  readonly valor: unknown;
+  readonly unidad: UnidadFiscal;
+  readonly vigencia: Vigencia;
   readonly fuente: FuenteOficial;
-
-  /** URL o referencia documental de la fuente. */
-  readonly referencia: string;
-
-  /** Fecha ISO de publicación oficial (YYYY-MM-DD). */
-  readonly fechaPublicacion: string;
-
-  /** Fecha ISO de inicio de vigencia (YYYY-MM-DD). */
-  readonly vigenteDesde: string;
-
-  /**
-   * Fecha ISO de fin de vigencia (YYYY-MM-DD).
-   * `null` = sin fecha de fin conocida (ej. leyes sin reforma programada).
-   */
-  readonly vigenteHasta: string | null;
-
-  /** Criticidad si este valor caduca sin reemplazo. */
-  readonly criticidad: CriticidadCaducidad;
-
-  /** Notas opcionales para mantenimiento. */
-  readonly notas?: string;
-
-  /** ¿Este valor es una proyección/estimación no publicada aún? */
-  readonly esProyeccion?: boolean;
+  readonly esProyeccion: false;           // Forzar verificación: no hay false por defecto
+  readonly verificadoPor: string;         // "Pavel M. — 2026-01-15"
+  readonly criticidad: Criticidad;
 }
 
 /**
  * Resultado de evaluar la vigencia de un valor en una fecha dada.
  */
 export interface ResultadoVigencia {
-  readonly estado: EstadoVigencia;
+  readonly estado: 'vigente' | 'proximo-vencer' | 'vencido' | 'historico';
   readonly diasRestantes: number | null;
   readonly mensaje: string;
   readonly requiereAtencion: boolean;
@@ -89,12 +73,7 @@ export interface ResultadoVigencia {
  * Configuración global del sistema de vigencias.
  */
 export interface ConfigVigencia {
-  /** Días de anticipación para alertar "próximo a vencer". Default: 60. */
   readonly diasAlerta: number;
-
-  /** Fecha de referencia para evaluar. Default: hoy. */
   readonly fechaReferencia: Date;
-
-  /** Si `true`, valores sin `vigenteHasta` nunca caducan. Default: true. */
   readonly infinitosSiSinFecha: boolean;
 }

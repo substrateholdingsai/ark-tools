@@ -36,8 +36,8 @@ APP_NAME = "ARK TOOLS"
 APP_VERSION = "1.0.0"
 APP_URL = "http://localhost:8787"
 COMPANY_NAME = "Substrate Holdings LLC"
-COMPANY_EMAIL = "noah@arksystems.site"
-SUPPORT_URL = "https://wa.me/5219990000000"
+COMPANY_EMAIL = "pavel@arksystems.site"
+SUPPORT_URL = "https://wa.me/525657062511"
 
 # ─────────────────────────────────────────────────────────────────────
 # KV NAMESPACE (para historial de cálculos, feature flags)
@@ -47,13 +47,20 @@ SUPPORT_URL = "https://wa.me/5219990000000"
 # id = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # ─────────────────────────────────────────────────────────────────────
-# D1 DATABASE (para persistencia de cálculos, cuando migremos a SaaS)
+# D1 DATABASE (Persistencia multi-tenant SaaS)
 # ─────────────────────────────────────────────────────────────────────
-# [[d1_databases]]
-# binding = "ARK_TOOLS_DB"
-# database_name = "ark_tools_production"
-# database_id = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-# migrations_dir = "migrations"
+[[d1_databases]]
+binding = "ARK_TOOLS_DB"
+database_name = "ark_tools_db"
+database_id = "3e53559f-9062-4311-bdc9-f6dd206560a1"
+migrations_dir = "migrations"
+
+
+# ─────────────────────────────────────────────────────────────────────
+# WORKERS AI
+# ─────────────────────────────────────────────────────────────────────
+[ai]
+binding = "AI"
 
 # ─────────────────────────────────────────────────────────────────────
 # R2 BUCKET (para exportaciones de Excel/PDF generadas)
@@ -83,4 +90,14 @@ name = "ark-tools-production"
 routes = [
   { pattern = "tools.arksystems.site", custom_domain = true }
 ]
-vars = { ENVIRONMENT = "production", APP_URL = "https://tools.arksystems.site" }
+vars = { ENVIRONMENT = "production", APP_NAME = "ARK TOOLS", APP_VERSION = "1.0.0", APP_URL = "https://tools.arksystems.site", COMPANY_NAME = "Substrate Holdings LLC", COMPANY_EMAIL = "pavel@arksystems.site", SUPPORT_URL = "https://wa.me/525657062511" }
+
+[[env.production.d1_databases]]
+binding = "ARK_TOOLS_DB"
+database_name = "ark_tools_db"
+database_id = "3e53559f-9062-4311-bdc9-f6dd206560a1"
+migrations_dir = "migrations"
+
+[env.production.ai]
+binding = "AI"
+

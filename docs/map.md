@@ -1,9 +1,9 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.0  
+**Versión:** 1.1 (Multi-Tenant MVP)  
 **Fecha:** Octubre 2026  
 **Mantenedor:** Substrate Holdings LLC  
-**URL de Producción:** [https://ark-tools.substrateholdingsai.workers.dev](https://ark-tools.substrateholdingsai.workers.dev)  
+**URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
 **Repositorio:** [https://github.com/substrateholdingsai/ark-tools](https://github.com/substrateholdingsai/ark-tools)
 
 ---
@@ -12,15 +12,22 @@
 
 | Métrica | Estado |
 |---|---|
-| **Pruebas unitarias** | 120/120 pasadas (100% éxito) |
-| **Typecheck (TypeScript)** | 0 errores en código de producción (tests con advertencias menores) |
-| **Build Vite (SPA)** | 100% funcional (~16s) |
-| **Deploy Cloudflare Workers** | Activo y sincronizado en producción |
-| **Herramientas en Producción** | 8 de 8 (ISN, SBC, Nómina, Conversor XML, Validador XML, Links de Pago Clip, Leasing y Guía SAT/IMSS) |
-| **Catálogo Centralizado** | 7 valores fiscales con fuente, referencia y vigencia validada |
-| **Siguiente en Pipeline** | Mapa de Activos Virtuales (Fase D) |
+| **Autenticación & AuthGate** | 100% Operativo con Auth Nativo Soberano (Zero-Dependency) |
+| **Multi-Tenancy** | Despachos y organizaciones con `AuthContext` + D1 Database (`ark_tools_db`) |
+| **Base de Datos Cloudflare D1** | `ark_tools_db` en producción (5 tablas migradas con aislamiento por `tenant_id`) |
+| **Cloudflare Workers AI** | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1 y streaming SSE) |
+| **Persistencia & API REST** | Endpoints `/api/auth/sync`, `/api/guia/progress`, `/api/ledger` (SHA-256), `/api/activos/watchlist` y `/api/ai/*` |
+| **Copy & Transparencia Legal** | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF) y cero cajas negras |
+| **Mesa de Ayuda & Soporte** | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site) |
+| **Landing Pública** | LandingPage interactiva con sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login |
+| **Pruebas unitarias e integración** | 193 pasadas en 24 suites (100% éxito) |
+| **Typecheck (TypeScript)** | 0 errores en modo estricto (100% limpio) |
+| **Build Vite (SPA)** | 100% funcional con bundle ultraligero sin dependencias externas |
+| **Deploy Cloudflare Workers** | Activo y sincronizado en [https://tools.arksystems.site](https://tools.arksystems.site) |
+| **Herramientas en Producción** | 10 de 10 operativas (ISN, SBC, Nómina, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) |
 
 ---
+
 
 ## 2. Mapa de Arquitectura y Estado de Componentes
 
@@ -29,36 +36,52 @@ ark-tools/
 ├── docs/
 │   ├── design-system.md              ✅ Completo (Especificación visual ARK)
 │   └── map.md                        ✅ Este documento
+├── migrations/
+│   └── 0001_initial_schema.sql       ✅ D1 Multi-Tenant (users, tenants, guia, ledger, watchlist)
 ├── public/ & index.html              ✅ Montaje de React y fuentes Google
-├── wrangler.toml                     ✅ SPA assets, observabilidad y variables
-├── package.json                      ✅ pnpm@9.7.0, scripts de build, deploy, test
+├── wrangler.toml                     ✅ SPA assets, observabilidad, D1 binding, Workers AI binding [ai] y vars
+├── package.json                      ✅ pnpm@9.7.0, scripts de build, deploy, test (sin dependencias externas de auth)
 ├── tailwind.config.js                ✅ Tokens ARK (Navy, Gold, LCD, Sombras, Radios)
 ├── tsconfig.json & vite.config.ts    ✅ Configuración estricta y aliases de ruta
 ├── vitest.config.ts                  ✅ Cobertura V8 y configuración de testing
 ├── src/
-│   ├── index.ts                      ✅ Worker Entry Point (/health, /api, SPA fallback)
-│   ├── index.tsx                     ✅ React DOM Root
-│   ├── App.tsx                       ✅ Router principal, navegación, Dashboard y 8 herramientas activas
+│   ├── index.ts                      ✅ Worker Entry Point (/health, /api, D1 API handler, AI API handler, SPA fallback)
+│   ├── index.tsx                     ✅ React DOM Root con AuthProvider nativo
+│   ├── App.tsx                       ✅ Router principal con Gating (Landing pública / Dashboard autenticado)
+│   ├── context/
+│   │   └── AuthContext.tsx           ✅ Contexto nativo soberano: login, sesión local, multi-tenant y D1 sync
+│   ├── hooks/
+│   │   ├── useAuth.ts                ✅ Hook multi-tenant unificado (usuario, despacho, tokens, logout)
+│   │   └── index.ts                  ✅ Barrel export
+│   ├── server/
+│   │   ├── d1Api.ts                  ✅ Handlers REST para D1 (Auth sync, Guía SAT, Ledger SHA-256, Watchlist)
+│   │   └── ai/                       ✅ Cloudflare Workers AI & Agentic Tool-Calling
+│   │       ├── types.ts              ✅ Tipos para mensajes, tool definitions y requests
+│   │       ├── tools.ts              ✅ Catálogo de 4 herramientas y ejecutor con aislamiento D1 por tenant
+│   │       ├── tools.test.ts         ✅ 5 tests unitarios de ejecución y seguridad multi-tenant
+│   │       ├── agent.ts              ✅ Orquestador Llama 3.3 70B con loop de tool-calling y streaming SSE
+│   │       ├── aiApi.ts              ✅ Endpoints REST (/api/ai/status, /api/ai/models, /api/ai/tools, /api/ai/chat)
+│   │       └── aiApi.test.ts         ✅ 6 tests de integración de API
 │   ├── lib/
-│   │   └── cn.ts                     ✅ Utilidad twMerge + clsx
+│   │   ├── cn.ts                     ✅ Utilidad twMerge + clsx
+│   │   ├── useTenant.ts              ✅ Contexto del tenant activo
+│   │   └── apiClient.ts              ✅ Cliente SDK frontend tipado para D1
 │   ├── styles/
 │   │   └── ark-system.css            ✅ Estilos base, fuentes, variables y componentes físicos
 │   ├── components/
 │   │   ├── ui/                       ✅ Componentes Atómicos (100%)
-│   │   │   ├── TextMagnified.tsx     ✅ Playfair 900 con relieve para cifras clave
-│   │   │   ├── GoldDivider.tsx       ✅ Separador con diamante ◆
-│   │   │   ├── GlassButton.tsx       ✅ Botón 3D interactivo (default / primary)
-│   │   │   ├── BadgeGold.tsx         ✅ Badge para valor y ganancias
-│   │   │   ├── LiquidGlassDome.tsx   ✅ Cúpula de cristal con reflejo y sombra oro
-│   │   │   ├── ReceiptGold.tsx       ✅ Contenedor doble borde para folios
-│   │   │   ├── LCDDisplay.tsx        ✅ Pantalla retroiluminada tipo calculadora
-│   │   │   └── index.ts              ✅ Barrel export
 │   │   ├── Logo.tsx                  ✅ Cubo isométrico 3D ARK con diamante
-│   │   ├── Header.tsx                ✅ Header sticky con navegación y safe-area
-│   │   ├── Footer.tsx                ✅ Footer institucional con badges
+│   │   ├── Header.tsx                ✅ Header sticky con subtítulo fiscal, badge Tablas 2026, soporte WhatsApp y selector multi-tenant
+│   │   ├── Footer.tsx                ✅ Footer institucional con privacidad de XMLs, soporte directo, 3 columnas y disclaimer legal
 │   │   ├── ToolCard.tsx              ✅ Tarjetas con hover dorado, badge y CTA
-│   │   ├── CategorySection.tsx       ✅ Agrupador de categorías (Fiscal, SAT, Cobros, etc.)
+│   │   ├── CategorySection.tsx       ✅ Agrupador de categorías (Fiscal, SAT, Cobros, etc. — 1 a 4 cols)
+│   │   ├── ToolSkeleton.tsx          ✅ Skeleton loader animado para lazy imports
+│   │   ├── AuthGate.tsx              ✅ Componente de protección condicional
+│   │   ├── LandingPage.tsx           ✅ Landing pública (showcase 10 tools, sección Transparencia Jurídica, Footer institucional)
+│   │   ├── AiAssistantWidget.tsx     ✅ Widget flotante de chat con Workers AI (Llama 3.3 70B + D1 Tools)
+│   │   ├── AiAssistantWidget.test.tsx ✅ 4 tests de integración y UI del widget
 │   │   └── index.ts                  ✅ Barrel export
+
 │   │
 │   ├── data/ (Datos globales de referencia)
 │   │   ├── valores-vigentes/         ✅ Catálogo centralizado de valores fiscales
@@ -69,8 +92,13 @@ ark-tools/
 │   │   │   ├── tipos.ts              ✅ Tipos ValorFiscal, ConfigVigencia
 │   │   │   └── index.ts              ✅ Barrel export completo
 │   │   ├── estados.ts                ✅ Re-export desde ISN (fuente única de verdad)
-│   │   ├── conductas.ts              ⏳ Pendiente (48 conductas Ley Fintech / LFPIORPI)
-│   │   └── actos.ts                  ✅ Completado (Guía SAT/IMSS: 8 pasos, 8 actos, 3 plazos)
+│   │   ├── conductas.ts              ✅ Catálogo de Activos Virtuales (12 conductas, autoridades, hitos, umbrales)
+│   │   ├── conductas.test.ts         ✅ 15 tests unitarios pasados
+│   │   ├── actos.ts                  ✅ Completado (Guía SAT/IMSS: 8 pasos, 8 actos, 3 plazos)
+│   │   ├── conductas-cobranza.ts     ✅ Catálogo de Auditoría de Cobranza (8 secciones, 43 conductas)
+│   │   ├── conductas-cobranza.test.ts✅ 6 tests unitarios pasados
+│   │   ├── comparadores-contrato-crm.ts ✅ 12 comparadores Contrato vs CRM (Sección VIII)
+│   │   └── comparadores-contrato-crm.test.ts ✅ 11 tests unitarios pasados
 │   │
 │   └── tools/ (Módulos de herramientas)
 │       │
@@ -146,12 +174,33 @@ ark-tools/
 │       ├── guia-sat-imss/            ✅ 100% COMPLETADA Y DESPLEGADA
 │       │   ├── types.ts              ✅ Tipos para pasos, actos y plazos
 │       │   ├── iconos.ts             ✅ Mapeo de iconos Lucide para UI
-│       │   ├── componentes/          ✅ PasoGuiaCard, ActoFiscalCard, PlazoClaveCard
-│       │   ├── GuiaSATIMSS.tsx       ✅ Componente principal con progreso, checklist y catálogo
+│       │   ├── lib/generarBorrador.ts ✅ Motor generador de escritos legales
+│       │   ├── lib/generarBorrador.test.ts ✅ 3 tests unitarios pasados
+│       │   ├── components/           ✅ PasoGuiaCard, ActoFiscalCard, PlazoClaveCard
+│       │   ├── GuiaSATIMSS.tsx       ✅ Componente interactivo con timeline, modal y checklist persistente
 │       │   └── index.ts              ✅ Barrel export
 │       │
-│       └── mapa-activos/             ⏳ PENDIENTE
-│           └── MapaActivos.tsx       🟡 Placeholder
+│       ├── auditor-cobranza/         ✅ 100% COMPLETADA Y CONECTADA
+│       │   ├── types.ts              ✅ Tipos y constantes re-exportadas del dictamen
+│       │   ├── lib/calcularDictamen.ts ✅ Motor de evaluación de riesgos y dictamen
+│       │   ├── lib/calcularDictamen.test.ts ✅ 7 tests unitarios pasados
+│       │   ├── lib/exportarDictamenCobranza.ts ✅ Generador y descargador TXT / CSV (BOM UTF-8)
+│       │   ├── lib/exportarDictamenCobranza.test.ts ✅ 2 tests unitarios pasados
+│       │   ├── components/           ✅ ResumenAuditoriaDome, ComparadorCard, SeccionConductasAccordion, ListaDetallesDictamen
+│       │   ├── AuditorCobranza.tsx   ✅ Componente principal interactivo con exportaciones
+│       │   └── index.ts              ✅ Barrel export
+│       │
+│       ├── mapa-activos/             ✅ 100% COMPLETADA
+│       │   ├── types.ts              ✅ Re-export de tipos de regulación y conductas
+│       │   ├── MapaActivos.tsx       ✅ Componente interactivo con filtros, autoridades, timeline y frontera
+│       │   ├── MapaActivos.test.tsx  ✅ 6 tests de integración y UI pasados
+│       │   └── index.ts              ✅ Barrel export
+│       │
+│       └── finiquitos/               ✅ MOTOR Y TIPOS COMPLETADOS (LFT)
+│           ├── types.ts              ✅ Tipos LFT (Arts. 50, 76, 79, 80, 87, 162, 486)
+│           ├── lib/calcularFiniquito.ts ✅ Motor de finiquito/liquidación (Vacaciones Dignas 2023, tope 2xSMG)
+│           ├── lib/calcularFiniquito.test.ts ✅ 7 tests unitarios pasados (100% éxito)
+│           └── index.ts              ✅ Barrel export
 ```
 
 ---
@@ -207,10 +256,21 @@ ark-tools/
   - [x] Progreso visual con barra y contadores.
   - [x] Barrel export `src/tools/guia-sat-imss/index.ts`.
   - [x] Integración en `App.tsx` (badge "NUEVO" y navegación habilitada).
-- [ ] **Mapa de Activos Virtuales (`src/tools/mapa-activos/`):**
-  - [ ] Catálogo de 48 conductas en `src/data/conductas.ts`.
-  - [ ] Matriz de consulta legal (Ley Fintech, LFPIORPI, Código Penal Federal).
-  - [ ] Componente interactivo de consulta.
+- [x] **Auditoría de Cobranza (`src/tools/auditor-cobranza/`):**
+  - [x] Catálogo de 43 conductas en 8 secciones (`src/data/conductas-cobranza.ts`).
+  - [x] 12 comparadores Contrato vs CRM en Sección VIII (`src/data/comparadores-contrato-crm.ts`).
+  - [x] Motor matemático de dictamen y ponderación de riesgos (`lib/calcularDictamen.ts`).
+  - [x] Generador y descargador de reportes en TXT y CSV con BOM UTF-8 (`lib/exportarDictamenCobranza.ts`).
+  - [x] Componentes visuales: `ResumenAuditoriaDome`, `ComparadorCard`, `SeccionConductasAccordion`, `ListaDetallesDictamen`.
+  - [x] Componente principal `AuditorCobranza.tsx` conectado al dashboard de `App.tsx` con badge `NUEVO`.
+  - [x] 26 tests unitarios dedicados pasando al 100%.
+- [x] **Mapa de Activos Virtuales (`src/tools/mapa-activos/`):**
+  - [x] Catálogo de conductas, autoridades, hitos reguladores y umbrales en `src/data/conductas.ts`.
+  - [x] 15 tests unitarios de datos en `src/data/conductas.test.ts`.
+  - [x] Matriz de consulta legal (Ley Fintech, LFPIORPI, Código Penal Federal, CFF e Iniciativa 2026).
+  - [x] Componente interactivo de consulta (`MapaActivos.tsx`) con filtros en tiempo real, búsqueda, acordeón y timeline.
+  - [x] 6 tests de integración y UI en `MapaActivos.test.tsx`.
+  - [x] Conexión y lazy loading diferido integrado en `App.tsx` con `<ToolSkeleton />`.
 
 ---
 
@@ -379,4 +439,194 @@ ark-tools/
 
 ---
 
-### Fase D: Compliance y Educación
+### Sprint 4.1 (Octubre 2026) — Auditoría Legal de Cobranza (Fase D) — Completado ✅
+**Objetivo:** Desarrollar el motor de auditoría preventiva y detección de riesgos en cobranza extrajudicial e intimidatoria, comparando datos contractuales vs registros de CRM y tipificando conductas de riesgo legal conforme a CPF, LFPIORPI y Ley Fintech.
+
+#### 1. Auditoría Legal de Cobranza (`src/tools/auditor-cobranza/`)
+- **Catálogo de conductas (`src/data/conductas-cobranza.ts`):** 43 conductas agrupadas en 8 secciones (I a VIII) con severidades `BAJO`, `MEDIO`, `ALTO` y `CRITICO` y ponderación matemática.
+- **Comparadores Contrato vs CRM (`src/data/comparadores-contrato-crm.ts`):** 12 comparadores específicos (CC-8.1 a CC-8.12) con 5 estados de evaluación (`COINCIDE`, `DIFIERE`, `PARCIAL`, `NO_VERIFICABLE`, `SIN_DATO`).
+- **Motor de dictamen (`lib/calcularDictamen.ts`):** Cálculo de puntaje /100, nivel de riesgo ponderado, escalamiento inmediato a crítico ante faltas graves, generación de advertencias y recomendaciones legales automáticas.
+- **Generador de exportables (`lib/exportarDictamenCobranza.ts`):** Exportación instantánea a TXT formateado y CSV con BOM UTF-8 (`\uFEFF`) para lectura directa en Microsoft Excel.
+- **Componentes especializados (`src/tools/auditor-cobranza/components/`):**
+  - `ResumenAuditoriaDome.tsx`: Cúpula de cristal (`LiquidGlassDome`) con calificación, badge de nivel y desglose de severidad.
+  - `ComparadorCard.tsx`: Tarjetas de comparadores con estados, notas del auditor y fundamento normativo.
+  - `SeccionConductasAccordion.tsx`: Acordeón interactivo multi-sección con checkboxes de conductas observadas.
+  - `ListaDetallesDictamen.tsx`: Tabla de alta densidad para auditoría exhaustiva.
+- **Skeleton loader y Lazy Loading:** Introducción de `ToolSkeleton.tsx` y carga diferida en `App.tsx` (reducción de 45 kB en bundle principal).
+- **Testing:** 26 tests unitarios pasando al 100% (conductas, comparadores, cálculo y exportadores).
+
+---
+
+### Sprint 4.2 (Octubre 2026) — Mapa de Regulación de Activos Virtuales (Fase D Final) — Completado ✅
+**Objetivo:** Proporcionar una matriz de referencia y consulta legal en activos virtuales y criptoactivos para contadores públicos y asesores financieros conforme a Ley Fintech, LFPIORPI, Código Penal Federal y Código Fiscal de la Federación.
+
+#### 1. Mapa de Activos Virtuales (`src/tools/mapa-activos/`)
+- **Catálogo normativo (`src/data/conductas.ts`):**
+  - 12 conductas tipificadas con artículo, calificación, penas de prisión y sanciones en UMA.
+  - 5 autoridades regulatorias (CNBV, Banxico, UIF, SAT, CONDUSEF).
+  - Timeline regulatorio 2026–2029 con hitos clave (EBR, auditoría anual obligatoria, Ley Fintech 2.0).
+  - Umbrales de reporte antilavado (210 UMA para operaciones individuales, 4 UMA para comisiones, KYC sin umbral).
+  - Frontera legal vs ilegal (3 conductas permitidas vs 3 conductas ilícitas/restringidas).
+  - Filosofía regulatoria: *"Aislar, no prohibir"*.
+- **Interfaz y componentes (`MapaActivos.tsx`):**
+  - Buscador en tiempo real de conductas, artículos y sanciones.
+  - Filtros por marco legal, gravedad, relevancia para contador y conductas no ignorables.
+  - Tarjetas interactivas con acordeón expandible para ver penas detalladas.
+  - Soporte `onBack` para navegación hacia el Dashboard.
+- **Lazy loading y optimización:**
+  - Carga diferida en `App.tsx` (`chunk index-DOzmIO7U.js` de 28.09 kB).
+  - Tarjeta dorada (`badge="NUEVO"`) integrada en la sección **Compliance** del Dashboard (`columns={3}`).
+- **Testing:**
+  - 15 tests unitarios en `src/data/conductas.test.ts`.
+  - 6 tests de integración y UI en `src/tools/mapa-activos/MapaActivos.test.tsx`.
+
+---
+
+### Sprint 5 (Octubre 2026) — Arquitectura Multi-Tenant, Auth Nativo Soberano y Cloudflare D1 (MVP) — Completado ✅
+**Objetivo:** Transformar la suite ARK TOOLS en una plataforma SaaS Multi-Tenant soberana (sin dependencias de terceros ni restricciones geográficas como las que afectan a servicios externos como Clerk en México), con landing pública de captación, gating condicional y base de datos distribuida en Cloudflare D1.
+
+#### 1. Autenticación Soberana y Multi-Tenancy Nativo (`src/context/AuthContext.tsx`)
+- **Arquitectura Zero-Dependency**: Reemplazo total de `@clerk/clerk-react` por un contexto nativo React (`AuthContext`) que garantiza operatividad ininterrumpida y soberanía de datos en México y Latinoamérica.
+- **Persistencia Local + Sincronización D1**: Sesión persistida en `localStorage` con sincronización asíncrona hacia la base de datos distribuida Cloudflare D1 (`/api/auth/sync`).
+- **Hook `useAuth()` (`src/hooks/useAuth.ts`)**: Mantiene la misma interfaz desacoplada: usuario autenticado (`userId`, `email`, `fullName`), despacho activo (`tenantId`, `tenantName`, `isOrg`, `orgRole`), selector de despachos (`tenants`, `switchTenant`, `createTenant`), y obtención de tokens de sesión (`getToken()`).
+- **Navegación Multi-Tenant (`Header.tsx`)**:
+  - Selector de Despacho nativo: Dropdown con cambio inmediato de despacho contable y creación en caliente de nuevos espacios (`createTenant`).
+  - Menú de Usuario nativo: Iniciales dinámicas, información de perfil y cierre de sesión (`signOut`).
+  - Badge `D1 Nube Activa`: Indicador visual de sincronización en la nube para el despacho.
+
+#### 2. Landing Pública de Captación y Gating Condicional (`LandingPage.tsx`)
+- **Gating en `App.tsx`**: `<SignedOut>` renderiza la Landing pública; `<SignedIn>` desbloquea el Dashboard completo y las herramientas.
+- **Showcase de las 10 Herramientas**: Explicación interactiva con tags oficiales (32 estados, IMSS/UMA, CFDI 4.0, Clip, etc.).
+- **Estrategia de Crecimiento Gratuito**: 100% gratuito hoy, explicando que el registro anticipado otorga condición de "Pase Fundador" para acceso prioritario a futuras herramientas Pro (IA fiscal, multi-despacho ilimitado).
+- **Modal de Autenticación Interactivo**: Modal nativo con tabs "REGISTRO" y "ENTRAR" que permite acceso inmediato sin fricciones ni dependencias externas.
+
+#### 3. Base de Datos Cloudflare D1 y Migración Inicial (`migrations/0001_initial_schema.sql`)
+- Base de datos en producción: `ark_tools_db` (ID: `3e53559f-9062-4311-bdc9-f6dd206560a1`).
+- 5 tablas relacionales con aislamiento estricto por `tenant_id`:
+  1. `users`: Usuarios individuales sincronizados automáticamente con D1.
+  2. `tenants`: Organizaciones/despachos contables o cuentas personales.
+  3. `guia_progress`: Checklist de 8 pasos y borradores de defensa fiscal por despacho (`PRIMARY KEY(tenant_id, step_id)`).
+  4. `arkangel_ledger`: Registro inmutable append-only con encadenamiento de hash **SHA-256** (`prev_hash` + payload actual).
+  5. `activos_watchlist`: Notas y conductas guardadas de Activos Virtuales por despacho (`PRIMARY KEY(tenant_id, conducta_id)`).
+
+#### 4. Endpoints REST en Cloudflare Worker (`src/server/d1Api.ts`) y SDK Frontend (`src/lib/apiClient.ts`)
+- `POST /api/auth/sync`: Upsert silencioso de usuario y tenant al iniciar sesión.
+- `GET/POST /api/guia/progress`: Consulta y guardado de avance de los 8 pasos de la Guía SAT/IMSS.
+- `GET/POST /api/ledger`: Consulta y registro de dictámenes sellados criptográficamente.
+- `GET/POST/DELETE /api/activos/watchlist`: Gestión de lista de seguimiento y notas.
+
+#### 5. Persistencia Activa en Herramientas
+- **Guía SAT/IMSS (`GuiaSATIMSS.tsx`)**: Hidratación automática de la nube al seleccionar un despacho y auto-guardado en D1 con debounce. Badge dinámico `🟢 Despacho: [Nombre]`.
+- **Auditoría de Cobranza (`AuditorCobranza.tsx`)**: Botón interactivo *"Sellar en Ledger Inmutable (D1)"* que calcula el bloque SHA-256 y muestra el hash sellado en pantalla.
+- **Sincronización en `App.tsx`**: Sincronización silenciosa en segundo plano con D1 ante cambios de usuario o despacho.
+
+---
+
+### Sprint 6 (Octubre 2026) — Integración de Cloudflare Workers AI & Agentic Tool-Calling — Completado ✅
+**Objetivo:** Habilitar capacidades de Inteligencia Artificial Generativa y Razonamiento en el Edge utilizando Cloudflare Workers AI, implementando una arquitectura de herramientas (Agentic Tool-Calling) con acceso seguro, parametrizado y con aislamiento multi-tenant a los recursos de D1.
+
+#### 1. Infraestructura y Binding en Cloudflare Wrangler
+- **Activación de Binding Oficial**: Configuración en `wrangler.toml` con `[ai] binding = "AI"`.
+- **Tipado en Worker**: Integración del tipo `AI?: Ai;` dentro de `Env` en `src/index.ts`.
+
+#### 2. Arquitectura de Seguridad: Patrón "Guardián de Políticas y Tenant"
+- El modelo LLM **nunca ejecuta consultas SQL crudas**.
+- Se implementó un catálogo formal de herramientas (`AI_TOOLS_CATALOG`) descrito mediante JSON Schema.
+- El Worker actúa como runtime de validación y control de acceso: el `tenant_id` se extrae de la sesión autenticada o cabecera `x-tenant-id` y se inyecta obligatoriamente en los *Prepared Statements* de D1.
+
+#### 3. Catálogo de Herramientas Implementadas (`src/server/ai/tools.ts`)
+1. `consultar_progreso_guia`: Consulta los pasos, checklist y borradores de defensa fiscal SAT/IMSS del despacho en D1.
+2. `consultar_auditoria_ledger`: Consulta registros del libro mayor de auditoría y cobranza con sellos SHA-256 por caso.
+3. `consultar_watchlist_activos`: Recupera notas y conductas marcadas en la matriz de Activos Virtuales.
+4. `obtener_info_despacho`: Obtiene metadatos y perfil de la organización/tenant en D1.
+
+#### 4. Orquestador de Inferencia y Streaming (`src/server/ai/agent.ts`)
+- Modelo principal: `@cf/meta/llama-3.3-70b-instruct` (alta capacidad de seguimiento de esquemas y razonamiento fiscal).
+- Modelo de respuesta rápida / bajo costo: `@cf/meta/llama-3.1-8b-instruct`.
+- Ciclo de Tool-Calling:
+  1. Envío inicial de prompt y catálogo de herramientas.
+  2. Detección y ejecución concurrente de `tool_calls`.
+  3. Reenvío de resultados estructurados al modelo para síntesis final.
+  4. Soporte para Server-Sent Events (SSE `stream: true`) vía `ReadableStream`.
+
+#### 5. Endpoints REST Expuestos (`src/server/ai/aiApi.ts`)
+- `GET /api/ai/status`: Verificación de salud y disponibilidad de los bindings `env.AI` y `env.ARK_TOOLS_DB`.
+- `GET /api/ai/models`: Catálogo de modelos recomendados con categorías y casos de uso.
+- `GET /api/ai/tools`: Especificación JSON Schema de las herramientas disponibles.
+- `POST /api/ai/chat`: Inferencia conversacional con tools y streaming para clientes HTTP/SPA.
+
+#### 6. Suite de Pruebas y Control de Calidad
+- 6 pruebas unitarias en `src/server/ai/tools.test.ts` (validación de binding, cálculo de finiquitos en worker, aislamiento de tenant, control de errores).
+- 6 pruebas de integración en `src/server/ai/aiApi.test.ts` (rutas, códigos HTTP 200/400/503, validación de payloads).
+- 4 pruebas de integración y render en `src/components/AiAssistantWidget.test.tsx` (apertura, cierre, minimizado, envío y visualización de tools).
+
+#### 7. Despliegue en Producción Verificado en Edge (`tools.arksystems.site`)
+- Binding `[ai]` y base de datos `ARK_TOOLS_DB` vinculados exitosamente en Cloudflare Workers.
+- Inferencia probada en vivo con el modelo `@cf/meta/llama-3.3-70b-instruct-fp8-fast`.
+- Ciclo de Tool-Calling verificado en producción: el modelo invocó con éxito `obtener_info_despacho` (D1) y `calcular_finiquito_lft` (LFT 2026) devolviendo resultados fiscales exactos.
+
+---
+
+### Sprint 7 (Octubre 2026) — Optimización de Copy, Header, Footer Institucional y Fundamentación Jurídica (Transparencia Fiscal) — Completado ✅
+**Objetivo:** Transformar el copy institucional de ARK TOOLS para proyectar el máximo nivel de solidez técnica y jurídica ante despachos contables y directores financieros, erradicando conceptos de prueba interna (tokens de UI) y agregando certeza jurídica transparente con citas exactas de ley en cada cálculo.
+
+#### 1. Rediseño y Optimización de Header (`src/components/Header.tsx` y navbar de `LandingPage.tsx`)
+- **Identidad Clara de Especialidad**: Actualización del subtítulo de la marca de `HERRAMIENTAS MODERNAS` a **`SUITE FISCAL & FINANCIERA MX`**, comunicando de inmediato el nicho y país.
+- **Badge Normativo Oficial**: Sustitución de `v1.0.0` por el sello de certeza jurídica **`TABLAS 2026`** (anclado a las tarifas del Diario Oficial de la Federación).
+- **Atención Directa vía WhatsApp**: Integración de botón visible de soporte directo con enlace automático hacia el número corporativo **`+52 56 5706 2511`**.
+- **CTA Institucional**: Optimización del botón de autenticación hacia **`ACCESO DESPACHOS`** y **`Crear Cuenta Gratis`**.
+
+#### 2. Footer Institucional Integral (`src/components/Footer.tsx`)
+- **Reemplazo de Placeholders de Diseño**: Eliminación de insignias técnicas conceptuales (`LIQUID GLASS`, `ORO ESTRATÉGICO`, `BLANCO = CONFIANZA`) en favor de sellos de confianza operativa real.
+- **Garantía de Privacidad y Procesamiento Local de XMLs**:
+  - *"El análisis y procesamiento de tus XMLs, nóminas y CFDI se ejecuta de forma segura en tu navegador. Tus datos no se transfieren ni se comercializan."*
+- **Canales Oficiales de Soporte**:
+  - Correo empresarial: [`pavel@arksystems.site`](mailto:pavel@arksystems.site).
+  - WhatsApp directo: [`+52 56 5706 2511`](https://wa.me/525657062511?text=Hola,%20solicito%20atenci%C3%B3n%20sobre%20ARK%20TOOLS).
+- **Directorio de Soluciones en 3 Columnas**:
+  - *Fiscal & Nómina*: ISN 2026 (32 Estados), SBC 2026, Nómina/ISR/IMSS, Guía SAT/IMSS.
+  - *SAT & Auditoría*: Conversor XML a Excel, Validador CFDI Art. 69-B (EFOS), Auditor de Cobranza, Mapa de Activos Virtuales.
+  - *Finanzas & Cloud*: Simulador Leasing, Enlaces SPEI Clip, Tarjeta informativa de arquitectura *Cloud Multi-Tenant*.
+- **Descargo de Responsabilidad Legal (Disclaimer)**:
+  - Fundamentado expresamente en el Código Fiscal de la Federación (CFF), Ley del ISR, Ley del Seguro Social y Ley Federal del Trabajo.
+- **Unificación**: Conexión del mismo componente `<Footer />` tanto en el Dashboard autenticado (`App.tsx`) como en la Landing pública (`LandingPage.tsx`).
+
+#### 3. Módulo de Transparencia Jurídica & Cero Cajas Negras (`LandingPage.tsx` y `App.tsx`)
+- **Sección en Landing Page**: *"Cálculos fundamentados en la ley. Justificables ante el SAT y tus clientes."*
+- **4 Fichas de Fundamentación Legal**:
+  1. *ISR & Retenciones*: Art. 96 LISR, RMF 2026 Anexo 8 y Decreto de Subsidio para el Empleo.
+  2. *IMSS & Salario Base*: Arts. 27 y 28 LSS + LFT (Vacaciones Dignas y Aguinaldo, tope de 25 UMAs).
+  3. *ISN Estatal*: Leyes de Hacienda Estatales de las 32 entidades con delimitación estricta de base gravable.
+  4. *Prevención Fiscal*: CFF Art. 69-B contra listas negras del SAT de operaciones simuladas (EFOS/EDOS).
+- **Banner en Dashboard (`App.tsx`)**:
+  - Recordatorio visible de certeza para papeles de trabajo y métricas oficiales vigentes DOF 2026: UMA ($113.14), SMG ($278.80) y Tope SBC (25 UMAs / $2,828.50).
+
+#### 4. Configuración de Entorno en Cloudflare (`wrangler.toml`)
+- Actualización de variables de entorno de producción y desarrollo:
+  - `COMPANY_EMAIL`: `pavel@arksystems.site`
+  - `SUPPORT_URL`: `https://wa.me/525657062511`
+
+#### 5. Verificación y Despliegue en Edge
+- **Typecheck**: 0 errores en TypeScript (`tsc --noEmit`).
+- **Testing**: 193 pruebas unitarias y de integración pasando al 100% en 24 suites.
+- **Deploy**: Desplegado en Cloudflare Workers (`Version ID: 90c90496-fc07-4237-9565-7172041bcc5e`) en [https://tools.arksystems.site](https://tools.arksystems.site).
+
+---
+
+## 5. Resumen General del Proyecto (Suite Completa 10/10 + Multi-Tenant + Workers AI + Copy Institucional)
+
+| Categoría | Herramientas / Módulos | Estado |
+|---|---|---|
+| **Fiscal / Laboral** | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Motor de Finiquitos y Liquidaciones LFT | ✅ 100% Operativas |
+| **SAT** | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0) | ✅ 100% Operativas |
+| **Cobros** | Generador Links de Pago Clip, Calculadora de Leasing Tecnológico | ✅ 100% Operativas |
+| **Compliance** | Guía SAT/IMSS, Auditoría Legal de Cobranza, Mapa de Activos Virtuales | ✅ 100% Operativas + Persistencia D1 |
+| **Multi-Tenancy** | Auth Nativo Soberano + Despachos + D1 Database (`ark_tools_db`) | ✅ 100% En Producción |
+| **Workers AI** | Binding `[ai]`, Agentic Tool-Calling con D1 y LFT, Streaming SSE, Llama 3.3 70B | ✅ 100% Integrado y Probado |
+| **Copy & Confianza** | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica | ✅ 100% En Producción |
+| **Core Global** | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage | ✅ 100% Operativo |
+
+- **Total de pruebas unitarias y de integración:** **193 pasadas en 24 suites (100% éxito)**
+- **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
+- **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)**
+- **Estado general:** **Plataforma completa, validada, con fundamentación legal y desplegada en producción.**

@@ -7,15 +7,21 @@
  */
 
 import type { Estado } from '../types';
-import { UMA, TOPES_LSS } from '@/data/valores-vigentes/catalogo';
+import { CATALOGO_2026 } from '@/data/valores-vigentes/catalogo';
+
+const getValor = (id: string): number => {
+  const item = CATALOGO_2026.find(v => v.id === id);
+  if (!item) throw new Error(`Valor no encontrado en catálogo: ${id}`);
+  return item.valor as number;
+};
 
 /**
  * Valores fiscales centralizados — reemplaza hardcodes
- * El test de integridad del catálogo ya valida que UMA.diaria2026
- * y TOPES_LSS.tope25UMA2026 tengan fuente, referencia y no estén vencidos.
+ * El test de integridad del catálogo ya valida que UMA_DIARIA_2026
+ * y TOPE_SBC_25_UMA_2026 tengan fuente, referencia y no estén vencidos.
  */
-export const UMA_DIARIA = UMA.diaria2026.valor;
-export const TOPE_25_UMA = TOPES_LSS.tope25UMA2026.valor;
+export const UMA_DIARIA = getValor('UMA_DIARIA_2026');
+export const TOPE_25_UMA = getValor('TOPE_SBC_25_UMA_2026');
 
 export const ESTADOS: Estado[] = [
   { id: 'AGS', nombre: 'Aguascalientes', corto: 'Ags', tasa: 2.0, vigencia: '2026', articulo: 'Art. 12 LHE' },
