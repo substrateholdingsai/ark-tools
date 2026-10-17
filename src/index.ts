@@ -16,6 +16,7 @@ import { handleAdminApiRequest } from './server/adminApi';
 import { handleInvitationsApiRequest } from './server/invitationsApi';
 import { handleAlegraApiRequest } from './server/alegra/alegraApi';
 import { checkAlegraAccountsHealth } from './server/alegra/cron';
+import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './server/llmsTxt';
 
 export interface Env {
   // Assets (SPA)
@@ -64,6 +65,36 @@ export default {
     // ─────────────────────────────────────────────────────────────────
     if (url.pathname.startsWith('/api/')) {
       return handleApiRequest(request, env, ctx);
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // GEO / AI AGENTS SPECIFICATIONS (llms.txt, llms-full.txt, robots.txt)
+    // ─────────────────────────────────────────────────────────────────
+    if (url.pathname === '/llms.txt' || url.pathname === '/.well-known/llms.txt') {
+      return new Response(generateLlmsTxt(), {
+        headers: {
+          'Content-Type': 'text/markdown; charset=utf-8',
+          'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+        },
+      });
+    }
+
+    if (url.pathname === '/llms-full.txt') {
+      return new Response(generateLlmsFullTxt(), {
+        headers: {
+          'Content-Type': 'text/markdown; charset=utf-8',
+          'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+        },
+      });
+    }
+
+    if (url.pathname === '/robots.txt') {
+      return new Response(generateRobotsTxt(), {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Cache-Control': 'public, max-age=86400, s-maxage=86400',
+        },
+      });
     }
 
     // ─────────────────────────────────────────────────────────────────
