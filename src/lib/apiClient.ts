@@ -132,6 +132,45 @@ export interface AdminTenant {
   expediente_count: number;
 }
 
+export interface TenantMember {
+  userId: string;
+  email: string;
+  fullName: string;
+  role: 'owner' | 'admin' | 'member';
+  joinedAt: number;
+}
+
+export interface TenantPendingInvitation {
+  id: string;
+  email: string;
+  role: 'admin' | 'member';
+  createdAt: number;
+  expiresAt: number;
+  invitedByEmail: string;
+  invitedByName: string;
+}
+
+export interface TenantMembersResponse {
+  tenantId: string;
+  currentUserRole: 'owner' | 'admin' | 'member';
+  members: TenantMember[];
+  invitations: TenantPendingInvitation[];
+}
+
+export interface InvitationInfoResponse {
+  valid: boolean;
+  error?: string;
+  invitation?: {
+    id: string;
+    email: string;
+    tenantName: string;
+    role: 'admin' | 'member';
+    inviterName: string;
+    expiresAt: number;
+  };
+  userExists?: boolean;
+}
+
 interface ApiErrorResponse {
   error?: string;
   message?: string;
@@ -645,6 +684,114 @@ export const apiClient = {
         throw new Error(error.error || error.message || 'Error al actualizar rol');
       }
       return (await res.json()) as { success: boolean; message: string };
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // INVITACIONES Y GESTIÓN DE EQUIPO
+  // ─────────────────────────────────────────────────────────────────
+  teams: {
+    async getMembers(tenantId: string): Promise<TenantMembersResponse> {
+      const res = await apiFetch(`/api/tenants/${tenantId}/members`);
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al obtener miembros del despacho');
+      }
+      return (await res.json()) as TenantMembersResponse;
+    },
+
+    async inviteMember(
+      tenantId: string,
+      email: string,
+      role: 'admin' | 'member' = 'member'
+    ): Promise<{
+      success: boolean;
+      message: string;
+      invitation: { id: string; email: string; role: string; expiresAt: number };
+    }> {
+      const res = await apiFetch(`/api/tenants/${tenantId}/invitations`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ email, role }),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al enviar invitación');
+      }
+      return (await res.json()) as {
+        success: boolean;
+        message: string;
+        invitation: { id: string; email: string; role: string; expiresAt: number };
+      };
+    },
+
+    async revokeInvitation(
+      tenantId: string,
+      invitationId: string
+    ): Promise<{ success: boolean; message: string }> {
+      const res = await apiFetch(`/api/tenants/${tenantId}/invitations/${invitationId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al revocar invitación');
+      }
+      return (await res.json()) as { success: boolean; message: string };
+    },
+
+    async removeMember(
+      tenantId: string,
+      userId: string
+    ): Promise<{ success: boolean; message: string }> {
+      const res = await apiFetch(`/api/tenants/${tenantId}/members/${userId}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al remover miembro');
+      }
+      return (await res.json()) as { success: boolean; message: string };
+    },
+
+    async updateMemberRole(
+      tenantId: string,
+      userId: string,
+      role: 'admin' | 'member'
+    ): Promise<{ success: boolean; message: string; role: string }> {
+      const res = await apiFetch(`/api/tenants/${tenantId}/members/${userId}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al actualizar rol');
+      }
+      return (await res.json()) as { success: boolean; message: string; role: string };
+    },
+
+    async getInvitationInfo(token: string): Promise<InvitationInfoResponse> {
+      const res = await apiFetch(`/api/invitations/info?token=${encodeURIComponent(token)}`);
+      return (await res.json()) as InvitationInfoResponse;
+    },
+
+    async acceptInvitation(params: {
+      token: string;
+      password?: string;
+      fullName?: string;
+    }): Promise<{ success: boolean; message: string; session: AuthSession }> {
+      const res = await apiFetch('/api/invitations/accept', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al aceptar invitación');
+      }
+      return (await res.json()) as { success: boolean; message: string; session: AuthSession };
     },
   },
 };

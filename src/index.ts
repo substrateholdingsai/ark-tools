@@ -13,6 +13,7 @@ import { handleD1ApiRequest } from './server/d1Api';
 import { handleAiApiRequest } from './server/ai/aiApi';
 import { authenticateRequest, handleAuthApiRequest } from './server/auth';
 import { handleAdminApiRequest } from './server/adminApi';
+import { handleInvitationsApiRequest } from './server/invitationsApi';
 
 export interface Env {
   // Assets (SPA)
@@ -135,6 +136,16 @@ async function handleApiRequest(
   const adminResponse = await handleAdminApiRequest(request, env, corsHeaders, authPrincipal);
   if (adminResponse) {
     return adminResponse;
+  }
+
+  const invitationsResponse = await handleInvitationsApiRequest(
+    request,
+    env,
+    corsHeaders,
+    authPrincipal
+  );
+  if (invitationsResponse) {
+    return invitationsResponse;
   }
 
   const isPublicApi =

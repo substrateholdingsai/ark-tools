@@ -23,6 +23,7 @@ export { ExpedienteToolBanner } from './ExpedienteToolBanner';
 export { PapelDeTrabajoModal } from './PapelDeTrabajoModal';
 export { VerificacionPublicaModal } from './VerificacionPublicaModal';
 export { AdminPanel } from './admin/AdminPanel';
+export { TeamModal, InviteAcceptModal } from './team';
 
 
 // Tipos

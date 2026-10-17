@@ -32,6 +32,7 @@ import {
   ExpedienteSelector,
   VerificacionPublicaModal,
   AdminPanel,
+  InviteAcceptModal,
 } from './components';
 import type { NavItem } from './components';
 
@@ -94,6 +95,11 @@ export function App() {
     if (typeof window === 'undefined') return null;
     const params = new URLSearchParams(window.location.search);
     return params.get('verify') || params.get('hash') || null;
+  });
+  const [inviteToken, setInviteToken] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('auth') === 'invite' ? params.get('token') : null;
   });
   const navigateTo = (tool: ToolId) => {
     setActiveTool(tool);
@@ -269,6 +275,32 @@ export function App() {
               const url = new URL(window.location.href);
               url.searchParams.delete('verify');
               url.searchParams.delete('hash');
+              window.history.replaceState({}, '', url.toString());
+            }
+          }}
+        />
+      )}
+
+      {/* Modal de Aceptación de Invitación a Despacho */}
+      {inviteToken && (
+        <InviteAcceptModal
+          token={inviteToken}
+          isOpen={Boolean(inviteToken)}
+          onClose={() => {
+            setInviteToken(null);
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('auth');
+              url.searchParams.delete('token');
+              window.history.replaceState({}, '', url.toString());
+            }
+          }}
+          onSuccess={() => {
+            setInviteToken(null);
+            if (typeof window !== 'undefined') {
+              const url = new URL(window.location.href);
+              url.searchParams.delete('auth');
+              url.searchParams.delete('token');
               window.history.replaceState({}, '', url.toString());
             }
           }}

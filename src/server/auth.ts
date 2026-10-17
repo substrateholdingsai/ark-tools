@@ -31,7 +31,7 @@ function json(
   return Response.json(body, { status, headers });
 }
 
-function cookieHeader(token: string, env: Env): string {
+export function cookieHeader(token: string, env: Env): string {
   const secure = env.APP_URL.startsWith('https://') ? '; Secure' : '';
   return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}${secure}`;
 }
@@ -51,17 +51,17 @@ function getCookie(request: Request, name: string): string | null {
   return pair ? pair.slice(name.length + 1) : null;
 }
 
-function randomToken(): string {
+export function randomToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function sha256(value: string): Promise<string> {
+export async function sha256(value: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-async function hashPassword(password: string): Promise<string> {
+export async function hashPassword(password: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const key = await crypto.subtle.importKey(
     'raw',
@@ -82,7 +82,7 @@ async function hashPassword(password: string): Promise<string> {
   return `pbkdf2_sha256$${PASSWORD_ITERATIONS}$${saltHex}$${hashHex}`;
 }
 
-async function verifyPassword(password: string, encoded: string): Promise<boolean> {
+export async function verifyPassword(password: string, encoded: string): Promise<boolean> {
   const [algorithm, iterationsText, saltHex, expectedHex] = encoded.split('$');
   const iterations = Number(iterationsText);
   if (
@@ -131,11 +131,11 @@ function slugify(value: string): string {
     .slice(0, 60);
 }
 
-function passwordIsValid(password: string): boolean {
+export function passwordIsValid(password: string): boolean {
   return password.length >= 15 && password.length <= 128;
 }
 
-async function rateLimit(
+export async function rateLimit(
   env: Env,
   scope: string,
   value: string,
@@ -210,7 +210,7 @@ async function sendAuthEmail(
   }
 }
 
-async function createSession(
+export async function createSession(
   env: Env,
   userId: string
 ): Promise<{ token: string; expiresAt: number }> {
@@ -227,7 +227,7 @@ async function createSession(
   return { token, expiresAt };
 }
 
-async function getTenantMemberships(env: Env, userId: string): Promise<TenantMembership[]> {
+export async function getTenantMemberships(env: Env, userId: string): Promise<TenantMembership[]> {
   const { results } = await env
     .ARK_TOOLS_DB!.prepare(
       `SELECT t.id, t.name, COALESCE(t.slug, '') AS slug, m.role
@@ -241,7 +241,7 @@ async function getTenantMemberships(env: Env, userId: string): Promise<TenantMem
   return results || [];
 }
 
-function publicSession(principal: AuthPrincipal, tenants: TenantMembership[]) {
+export function publicSession(principal: AuthPrincipal, tenants: TenantMembership[]) {
   return {
     user: { id: principal.id, email: principal.email, fullName: principal.fullName },
     tenants,

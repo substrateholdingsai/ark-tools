@@ -155,7 +155,7 @@ export function LandingPage() {
     const url = new URL(window.location.href);
     const action = url.searchParams.get('auth');
     const token = url.searchParams.get('token');
-    if (!action || !token) return;
+    if (!action || !token || action === 'invite') return;
 
     url.searchParams.delete('auth');
     url.searchParams.delete('token');

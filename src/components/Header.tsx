@@ -15,10 +15,12 @@ import {
   Check,
   MessageSquare,
   Crown,
+  Users,
 } from 'lucide-react';
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/cn';
 import { Logo } from './Logo';
+import { TeamModal } from './team/TeamModal';
 
 export interface NavItem {
   id: string;
@@ -61,6 +63,7 @@ export function Header({
   const [isCreatingTenant, setIsCreatingTenant] = useState(false);
   const [newTenantName, setNewTenantName] = useState('');
   const [actionError, setActionError] = useState('');
+  const [teamModalOpen, setTeamModalOpen] = useState(false);
 
   const orgRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
@@ -260,7 +263,19 @@ export function Header({
                       })}
                     </div>
 
-                    <div className="mt-2 border-t border-line/60 pt-2">
+                    <div className="mt-2 border-t border-line/60 pt-2 space-y-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setOrgOpen(false);
+                          setTeamModalOpen(true);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-[11px] font-semibold text-navy transition hover:bg-cream/40"
+                      >
+                        <Users size={14} className="text-gold-dark" />
+                        <span>Equipo y Colaboradores</span>
+                      </button>
+
                       {!isCreatingTenant ? (
                         <button
                           type="button"
@@ -368,6 +383,18 @@ export function Header({
 
                       <button
                         type="button"
+                        onClick={() => {
+                          setUserMenuOpen(false);
+                          setTeamModalOpen(true);
+                        }}
+                        className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-semibold text-navy transition hover:bg-surface-2"
+                      >
+                        <Users size={13} className="text-gold-dark" />
+                        <span>Equipo del Despacho</span>
+                      </button>
+
+                      <button
+                        type="button"
                         onClick={() => void handleSignOut()}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50"
                       >
@@ -418,6 +445,9 @@ export function Header({
           </button>
         ))}
       </nav>
+
+      {/* Modal de Equipo y Colaboradores */}
+      <TeamModal isOpen={teamModalOpen} onClose={() => setTeamModalOpen(false)} />
     </header>
   );
 }
