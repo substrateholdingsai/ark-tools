@@ -171,6 +171,75 @@ export interface InvitationInfoResponse {
   userExists?: boolean;
 }
 
+export interface AlegraAccount {
+  tenant_id: string;
+  alegra_account_id: string;
+  alegra_email: string;
+  alegra_company_name: string | null;
+  alegra_company_id: string | null;
+  alegra_rfc: string | null;
+  csd_configured: boolean;
+  is_default: boolean;
+  status: 'active' | 'revoked' | 'error';
+  last_checked_at: number | null;
+  last_error: string | null;
+  created_at: number;
+  updated_at: number;
+}
+
+export interface AlegraInvoiceRecord {
+  id: string;
+  tenant_id: string;
+  alegra_account_id: string;
+  alegra_invoice_id: string | null;
+  client_id: string | null;
+  uuid: string | null;
+  folio: string | null;
+  customer_name: string;
+  customer_rfc: string;
+  total: number;
+  currency: string;
+  status: 'open' | 'paid' | 'void' | 'draft';
+  pdf_url: string | null;
+  xml_url: string | null;
+  created_by: string | null;
+  created_at: number;
+}
+
+export interface AlegraInvoiceInputPayload {
+  date: string;
+  dueDate?: string;
+  client: {
+    name: string;
+    identification: string;
+    email?: string;
+    cfdiUse?: string;
+    regime?: string;
+    address?: {
+      zipCode: string;
+      street?: string;
+      exteriorNumber?: string;
+      city?: string;
+      state?: string;
+    };
+  };
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+    description?: string;
+    productKey?: string;
+    unit?: string;
+    tax?: Array<{
+      percentage: number;
+      name?: string;
+    }>;
+  }>;
+  paymentMethod?: 'PUE' | 'PPD';
+  paymentForm?: string;
+  observations?: string;
+}
+
 interface ApiErrorResponse {
   error?: string;
   message?: string;
@@ -792,6 +861,114 @@ export const apiClient = {
         throw new Error(error.error || error.message || 'Error al aceptar invitación');
       }
       return (await res.json()) as { success: boolean; message: string; session: AuthSession };
+    },
+  },
+
+  alegra: {
+    async getAccounts(tenantId: string): Promise<AlegraAccount[]> {
+      const res = await apiFetch(`/api/alegra/accounts?tenant_id=${encodeURIComponent(tenantId)}`, {
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al consultar cuentas de Alegra');
+      }
+      const data = (await res.json()) as { accounts: AlegraAccount[] };
+      return data.accounts || [];
+    },
+
+    async connectAccount(params: {
+      tenant_id: string;
+      alegra_email: string;
+      alegra_token: string;
+      is_default?: boolean;
+    }): Promise<{ ok: boolean; account: AlegraAccount }> {
+      const res = await apiFetch('/api/alegra/accounts', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al conectar cuenta con Alegra');
+      }
+      return (await res.json()) as { ok: boolean; account: AlegraAccount };
+    },
+
+    async getAccountStatus(
+      tenantId: string,
+      accountId: string
+    ): Promise<{ ok: boolean; account: AlegraAccount; error?: string }> {
+      const res = await apiFetch(
+        `/api/alegra/accounts/${encodeURIComponent(accountId)}/status?tenant_id=${encodeURIComponent(tenantId)}`,
+        { headers: getHeaders() }
+      );
+      return (await res.json()) as { ok: boolean; account: AlegraAccount; error?: string };
+    },
+
+    async setDefaultAccount(tenantId: string, accountId: string): Promise<{ ok: boolean }> {
+      const res = await apiFetch(`/api/alegra/accounts/${encodeURIComponent(accountId)}`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ tenant_id: tenantId, is_default: true }),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al marcar cuenta como predeterminada');
+      }
+      return (await res.json()) as { ok: boolean };
+    },
+
+    async disconnectAccount(tenantId: string, accountId: string): Promise<{ ok: boolean }> {
+      const res = await apiFetch(
+        `/api/alegra/accounts/${encodeURIComponent(accountId)}?tenant_id=${encodeURIComponent(tenantId)}`,
+        {
+          method: 'DELETE',
+          headers: getHeaders(),
+        }
+      );
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al desconectar cuenta');
+      }
+      return (await res.json()) as { ok: boolean };
+    },
+
+    async createInvoice(params: {
+      tenant_id: string;
+      alegra_account_id?: string;
+      client_id?: string;
+      invoice: AlegraInvoiceInputPayload;
+    }): Promise<{ ok: boolean; invoice: any }> {
+      const res = await apiFetch('/api/alegra/invoices', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(params),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al timbrar factura CFDI 4.0');
+      }
+      return (await res.json()) as { ok: boolean; invoice: any };
+    },
+
+    async getInvoices(
+      tenantId: string,
+      options?: { clientId?: string; limit?: number }
+    ): Promise<AlegraInvoiceRecord[]> {
+      const query = new URLSearchParams({ tenant_id: tenantId });
+      if (options?.clientId) query.set('client_id', options.clientId);
+      if (options?.limit) query.set('limit', String(options.limit));
+
+      const res = await apiFetch(`/api/alegra/invoices?${query.toString()}`, {
+        headers: getHeaders(),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al consultar historial de facturas');
+      }
+      const data = (await res.json()) as { invoices: AlegraInvoiceRecord[] };
+      return data.invoices || [];
     },
   },
 };

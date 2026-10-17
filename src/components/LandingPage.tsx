@@ -24,6 +24,7 @@ import {
   Layers,
   Users,
   X,
+  FileCode,
   MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -99,6 +100,14 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     description:
       'Genera links de cobro instantáneos a través de SPEI / Clip Checkout para honorarios contables sin fricción ni comisiones ocultas.',
     tag: 'SPEI / Clip',
+  },
+  {
+    icon: FileCode,
+    category: 'Cobros',
+    title: 'Timbrado de Facturas CFDI 4.0',
+    description:
+      'Emite y timbra facturas fiscales en tiempo real con el SAT delegando la certificación a Alegra / PAC Quadrum sin salir de ARK TOOLS.',
+    tag: 'PAC Quadrum / SAT',
   },
   {
     icon: Building2,

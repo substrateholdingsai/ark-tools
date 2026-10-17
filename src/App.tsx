@@ -17,6 +17,7 @@ import {
   Globe,
   ShieldAlert,
   Users,
+  FileCode,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -44,6 +45,7 @@ import { ValidadorXML } from './tools/xml-validador';
 import { GeneradorSPEI } from './tools/spei';
 import { CalculadoraLeasing } from './tools/leasing';
 import { GuiaSATIMSS } from './tools/guia-sat-imss';
+import { TimbradoFacturas } from './tools/timbrado/TimbradoFacturas';
 import { AlertasVigencia } from '@/data/valores-vigentes';
 
 // Lazy-loaded: reduce bundle inicial (~45 KB c/u)
@@ -67,6 +69,7 @@ export type ToolId =
   | 'xml-excel'
   | 'validador'
   | 'spei'
+  | 'timbrado'
   | 'leasing'
   | 'guia-sat-imss'
   | 'auditor-cobranza'
@@ -141,6 +144,7 @@ export function App() {
     'xml-excel': 'Conversor XML a Excel',
     validador: 'Validador de XMLs',
     spei: 'Generador de Links de Pago',
+    timbrado: 'Timbrado de Facturas CFDI 4.0',
     leasing: 'Calculadora Leasing',
     'guia-sat-imss': 'Guía SAT/IMSS',
     'auditor-cobranza': 'Auditoría Legal de Cobranza',
@@ -188,6 +192,14 @@ export function App() {
 
       case 'spei':
         return <GeneradorSPEI onBack={goToDashboard} />;
+
+      case 'timbrado':
+        return (
+          <TimbradoFacturas
+            onBack={goToDashboard}
+            onNavigateToValidador={() => navigateTo('validador')}
+          />
+        );
 
       case 'leasing':
         return <CalculadoraLeasing onBack={goToDashboard} />;
@@ -453,8 +465,8 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
         <CategorySection
           id="cobros"
           title="Cobros"
-          description="Genera links de pago y calcula tu modelo de negocio."
-          columns={2}
+          description="Genera links de pago, emite facturas CFDI 4.0 y calcula tu modelo de negocio."
+          columns={3}
         >
           <ToolCard
             icon={Globe}
@@ -463,6 +475,14 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
             badge="NUEVO"
             badgeVariant="gold"
             onSelect={() => onSelectTool('spei')}
+          />
+          <ToolCard
+            icon={FileCode}
+            title="Timbrado de Facturas"
+            description="Emite y timbra facturas CFDI 4.0 ante el SAT vía PAC Quadrum (Alegra). Descarga XML y PDF al instante."
+            badge="CFDI 4.0"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('timbrado')}
           />
           <ToolCard
             icon={Building2}

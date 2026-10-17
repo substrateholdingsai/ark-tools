@@ -239,6 +239,15 @@ export function Footer({ className, onSelectTool }: FooterProps) {
                   Generador Cobros SPEI / Clip
                 </button>
               </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => onSelectTool?.('timbrado')}
+                  className="hover:text-navy text-left transition"
+                >
+                  Timbrado Facturas CFDI 4.0 (Alegra)
+                </button>
+              </li>
               <li className="pt-2">
                 <div className="p-3 rounded-xl bg-surface-2 border border-line text-[11px] leading-relaxed text-muted">
                   <span className="font-bold text-navy block mb-1 font-orbitron tracking-wider">
