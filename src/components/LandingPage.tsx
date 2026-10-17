@@ -19,13 +19,12 @@ import {
   ShieldAlert,
   ArrowRight,
   CheckCircle2,
-  Zap,
   Lock,
-  Layers,
   Users,
   X,
   FileCode,
   MessageSquare,
+  Fingerprint,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Logo } from './Logo';
@@ -37,6 +36,7 @@ interface ToolPreview {
   title: string;
   description: string;
   tag: string;
+  isPremium?: boolean;
 }
 
 type PreviewCategory = 'all' | 'fiscal' | 'sat' | 'cobros' | 'compliance';
@@ -75,6 +75,23 @@ const TOOLS_PREVIEW: ToolPreview[] = [
       'Cálculo conforme a la LFT con Vacaciones Dignas 2023, aguinaldo proporcional, prima de antigüedad y despido injustificado (Art. 50).',
     tag: 'LFT 2026',
   },
+  {
+    icon: Calculator,
+    category: 'Fiscal',
+    title: 'Calculadora RESICO 2026',
+    description:
+      'Determinación mensual de ISR e IVA para Personas Físicas (tasas 1.0% a 2.5%, retención 1.25%) y Morales (flujo de efectivo) con Cédula Oficial y QR.',
+    tag: 'Art. 113-E / 206',
+  },
+  {
+    icon: Users,
+    category: 'Fiscal',
+    title: 'Cierre de Nómina Masivo',
+    description:
+      'Procesamiento en lote por período. Retenciones SAT, cuotas IMSS, ISN estatal, Cédula con Sello QR y archivo de dispersión bancaria.',
+    tag: 'BATCH DOF',
+    isPremium: true,
+  },
   // SAT
   {
     icon: FileSpreadsheet,
@@ -107,11 +124,12 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     title: 'Timbrado de Facturas CFDI 4.0',
     description:
       'Emite y timbra facturas fiscales en tiempo real con el SAT delegando la certificación a Alegra / PAC Quadrum sin salir de ARK TOOLS.',
-    tag: 'PAC Quadrum / SAT',
+    tag: 'PAC Quadrum',
+    isPremium: true,
   },
   {
     icon: Building2,
-    category: 'Finanzas',
+    category: 'Cobros',
     title: 'Calculadora Leasing',
     description:
       'Simulador financiero y fiscal de arrendamiento puro vs financiero, análisis de deducción máxima de ISR y tabla de amortización.',
@@ -125,6 +143,7 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     description:
       'Metodología en 8 pasos procesales para responder auditorías, cartas invitación y multas con fundamentos legales y plazos estrictos.',
     tag: 'Defensa Fiscal',
+    isPremium: true,
   },
   {
     icon: ShieldAlert,
@@ -132,7 +151,7 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     title: 'Auditoría Legal de Cobranza',
     description:
       'Compara contratos de crédito contra bitácoras CRM, detecta conductas ilícitas de cobranza extrajudicial y emite un dictamen formal exportable.',
-    tag: 'CONDUSEF / PROFECO',
+    tag: 'CONDUSEF',
   },
   {
     icon: Sparkles,
@@ -140,7 +159,7 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     title: 'Mapa de Activos Virtuales',
     description:
       'Matriz legal de consulta para contadores sobre 12 conductas con criptoactivos: Ley Fintech, LFPIORPI (prevención de lavado) y Código Fiscal.',
-    tag: 'Fintech & Prevención',
+    tag: 'Fintech',
   },
 ];
 
@@ -335,43 +354,42 @@ export function LandingPage() {
         <div className="relative mx-auto max-w-[1100px] space-y-8 text-center">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-cream/70 px-3.5 py-1.5 font-orbitron text-[11px] font-bold uppercase tracking-[0.14em] text-gold-dark">
-            <Zap size={14} className="text-gold-dark" />
-            <span>Suite Gratuita 2026 · Acceso Sin Costo</span>
+            <ShieldCheck size={14} className="text-gold-dark" />
+            <span>Blindaje & Evidencia Fiscal 2026 · Cero Riesgo</span>
           </div>
 
           {/* Headline */}
           <h1 className="font-playfair text-[42px] font-black leading-[0.96] tracking-[-0.03em] text-ink sm:text-[56px] md:text-[68px]">
-            Herramientas que <span className="text-navy">trabajan</span> mientras tú cobras.
+            Cálculos auditables. <br />
+            <span className="text-navy">Blindados</span> ante cualquier revisión.
           </h1>
 
           {/* Subtitle */}
-          <p className="mx-auto max-w-[720px] font-inter text-[16px] leading-[1.55] text-muted md:text-[19px]">
-            La plataforma moderna para contadores, fiscalistas y equipos de nómina en México.
-            Automatiza cálculos estatales, valida CFDIs y audita cumplimiento en una interfaz veloz
-            y precisa.
+          <p className="mx-auto max-w-[760px] font-inter text-[16px] leading-[1.55] text-muted md:text-[19px]">
+            La plataforma para despachos y fiscalistas en México. Realiza cálculos sin costo y genera
+            <strong> Cédulas de Trabajo Formales con Sello Criptográfico SHA-256</strong> que demuestran
+            la trazabilidad de tus cifras ante el SAT y tribunales.
           </p>
 
-          {/* Caja explicativa de Registro Gratuito + Acceso Futuro */}
-          <div className="mx-auto max-w-[760px] rounded-2xl border border-gold/30 bg-surface-2 p-6 text-left shadow-sm">
-            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-              <div className="space-y-1">
+          {/* Caja Freemium: Calculadoras Gratis + Trazabilidad Pro */}
+          <div className="mx-auto max-w-[800px] rounded-2xl border border-gold/40 bg-surface-2 p-6 text-left shadow-sm">
+            <div className="flex flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+              <div className="space-y-1.5">
                 <div className="flex items-center gap-2 font-orbitron text-[13px] font-bold uppercase text-navy">
-                  <Lock size={15} className="text-gold-dark" />
-                  <span>100% Gratuito Hoy · Beneficios Exclusivos Mañana</span>
+                  <Fingerprint size={16} className="text-gold-dark" />
+                  <span>Modelo Transparente: Gratis para calcular, Pro para blindar</span>
                 </div>
                 <p className="text-[13px] leading-relaxed text-muted">
-                  Crea tu cuenta gratuita en 30 segundos para acceder de inmediato a las{' '}
-                  <strong>10 herramientas completas</strong>. Tu registro asegura pase prioritario a
-                  futuras herramientas Pro (asistente IA fiscal, almacenamiento multi-tenant en la
-                  nube y sincronización masiva).
+                  Usa todas las calculadoras y conversores de forma <strong>100% gratuita e ilimitada</strong>.
+                  Solo pagas si requieres emitir dictámenes, timbrado masivo o sellar tu <strong>Expediente Único con validez pericial</strong>.
                 </p>
               </div>
 
               <button
                 onClick={() => openAuth('register')}
-                className="flex items-center justify-center gap-2 self-stretch whitespace-nowrap rounded-xl bg-navy px-6 py-3 font-orbitron text-[12px] font-bold tracking-wider text-white shadow-dome transition hover:bg-navy-dark sm:self-auto"
+                className="flex items-center justify-center gap-2 self-stretch whitespace-nowrap rounded-xl bg-navy px-6 py-3.5 font-orbitron text-[12px] font-bold tracking-wider text-white shadow-dome transition hover:bg-navy-dark sm:self-auto"
               >
-                <span>CREAR CUENTA</span>
+                <span>COMENZAR GRATIS</span>
                 <ArrowRight size={14} />
               </button>
             </div>
@@ -381,22 +399,22 @@ export function LandingPage() {
           <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-[12px] font-medium text-muted">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              <span>Sin tarjeta de crédito</span>
+              <span>Sin tarjeta de crédito requerida</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              <span>Tasas y tablas vigentes 2026</span>
+              <span>Cédulas con Hash SHA-256 y QR verificador</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              <span>Aislamiento multi-tenant por despacho</span>
+              <span>Tasas oficiales DOF 2026</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          SHOWCASE: LAS 10 HERRAMIENTAS
+          SHOWCASE: LAS HERRAMIENTAS
       ───────────────────────────────────────────────────────────── */}
       <section id="catalogo" className="scroll-mt-32 bg-surface px-6 py-20 md:px-10">
         <div className="mx-auto max-w-[1280px] space-y-12">
@@ -444,10 +462,21 @@ export function LandingPage() {
                     </div>
                   </div>
 
-                  <div className="mt-6 flex items-center justify-between border-t border-line/60 pt-4 text-[11px] font-semibold text-navy">
-                    <span>Incluido en registro gratis</span>
-                    <CheckCircle2 size={14} className="text-emerald-600" />
-                  </div>
+                  {/* Footer de Tarjeta: Gratuito vs Pro */}
+                  {tool.isPremium ? (
+                    <div className="mt-6 flex items-center justify-between border-t border-line/60 pt-4 text-[11px] font-semibold text-gold-dark">
+                      <span className="flex items-center gap-1.5">
+                        <Fingerprint size={13} className="text-gold-dark" />
+                        Requiere Crédito Pro
+                      </span>
+                      <Lock size={13} className="text-muted" />
+                    </div>
+                  ) : (
+                    <div className="mt-6 flex items-center justify-between border-t border-line/60 pt-4 text-[11px] font-semibold text-navy">
+                      <span>Cálculo libre e ilimitado</span>
+                      <CheckCircle2 size={14} className="text-emerald-600" />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -565,54 +594,50 @@ export function LandingPage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          POR QUÉ REGISTRARSE (EL BENEFICIO FUTURO)
+          MODELO DE NEGOCIO TRANSPARENTE (FREEMIUM)
       ───────────────────────────────────────────────────────────── */}
       <section className="border-b border-line bg-surface-2 px-6 py-20 md:px-10">
         <div className="mx-auto max-w-[1100px] space-y-12">
           <div className="space-y-3 text-center">
             <div className="font-orbitron text-[11px] font-bold uppercase tracking-[0.2em] text-gold-dark">
-              Visión a Futuro
+              Transparencia Total
             </div>
             <h2 className="font-playfair text-[34px] font-black leading-[1.1] text-ink md:text-[44px]">
-              ¿Por qué pedimos tu registro si hoy es 100% gratuito?
+              ¿Cómo ganamos dinero si las calculadoras son gratis?
             </h2>
             <p className="mx-auto max-w-[620px] text-[15px] text-muted">
-              Estamos construyendo el sistema operativo definitivo para contadores independientes y
-              firmas contables en México.
+              Creemos en dar valor primero. La suite básica siempre será de acceso libre. Cobramos únicamente por servicios de alto valor operativo.
             </p>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <div className="space-y-3 rounded-2xl border border-line bg-white p-6 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
-                <Layers size={20} className="text-navy" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <CheckCircle2 size={20} />
               </div>
-              <h3 className="text-[16px] font-bold text-ink">1. Acceso Vitalicio Fundador</h3>
+              <h3 className="text-[16px] font-bold text-ink">1. Calculadoras Gratuitas</h3>
               <p className="text-[13px] leading-relaxed text-muted">
-                Los usuarios registrados en esta etapa temprana conservarán acceso libre a todas las
-                herramientas actuales, incluso cuando introduzcamos planes comerciales.
+                Todas las fórmulas DOF, ISR, IMSS, conversor XML y RESICO son de libre uso. Sin trucos, sin límites de cálculos diarios.
+              </p>
+            </div>
+
+            <div className="space-y-3 rounded-2xl border border-gold/40 bg-white p-6 shadow-sm ring-1 ring-gold/20">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
+                <Fingerprint size={20} className="text-gold-dark" />
+              </div>
+              <h3 className="text-[16px] font-bold text-ink">2. Expediente Único (Sello SHA-256)</h3>
+              <p className="text-[13px] leading-relaxed text-muted">
+                Cobramos micro-créditos por estampar la firma de tu despacho en PDFs formales con QR pericial auditables por la autoridad.
               </p>
             </div>
 
             <div className="space-y-3 rounded-2xl border border-line bg-white p-6 shadow-sm">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
-                <Users size={20} className="text-navy" />
+                <FileCode size={20} className="text-navy" />
               </div>
-              <h3 className="text-[16px] font-bold text-ink">2. Multi-Tenant por Despacho</h3>
+              <h3 className="text-[16px] font-bold text-ink">3. Timbrado & Automatización Masiva</h3>
               <p className="text-[13px] leading-relaxed text-muted">
-                Podrás separar los cálculos y clientes de tu despacho contable con espacios de
-                trabajo aislados (Multi-Tenant) y roles de colaboradores.
-              </p>
-            </div>
-
-            <div className="space-y-3 rounded-2xl border border-line bg-white p-6 shadow-sm">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
-                <Sparkles size={20} className="text-navy" />
-              </div>
-              <h3 className="text-[16px] font-bold text-ink">3. Herramientas Exclusivas IA</h3>
-              <p className="text-[13px] leading-relaxed text-muted">
-                Próximamente lanzaremos auditorías asistidas por IA, respuestas automatizadas a
-                requerimientos del SAT y almacenamiento en la nube sin costo adicional.
+                Emisión de CFDI 4.0 con PAC certificado y procesamiento masivo de nóminas para despachos que manejan alto volumen.
               </p>
             </div>
           </div>

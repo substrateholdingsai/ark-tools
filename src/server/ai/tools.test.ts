@@ -96,4 +96,32 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     expect(data.totalFiniquito).toBeGreaterThan(0);
     expect(data.importeAguinaldo).toBe(7500); // 15 días * $500
   });
+
+  it('ejecuta calcular_resico sin requerir conexión a D1', async () => {
+    const mockEnv = {} as Env;
+
+    const res = await executeAiTool(
+      'calcular_resico',
+      {
+        tipoPersona: 'fisica',
+        ingresosCobrados: 50000,
+        retencionISR: 500,
+        ivaCobrado: 8000,
+        ivaAcreditable: 3000,
+        mes: 3,
+      },
+      mockEnv,
+      'tenant_test'
+    );
+
+    expect(res.success).toBe(true);
+    expect(res.data).toBeDefined();
+    const data = res.data as any;
+    expect(data.tipoPersona).toBe('fisica');
+    expect(data.tasaISRPct).toBe(1.1); // hasta 50,000 -> 1.1% = 550
+    expect(data.isrCausado).toBe(550);
+    expect(data.isrNetoPagar).toBe(50); // 550 - 500
+    expect(data.ivaNetoPagar).toBe(5000); // 8000 - 3000
+    expect(data.totalImpuestosPagar).toBe(5050);
+  });
 });

@@ -14,6 +14,102 @@ import { AI_TOOLS_CATALOG } from './tools';
 import type { AiChatRequestBody } from './types';
 import { requireTenantMembership, type AuthPrincipal } from '../auth';
 
+export const FREE_QUOTA_LIMIT = 10;
+export const PRO_PAYMENT_URL = 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65';
+
+export function getAiPeriod(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  return `${y}-${m}`;
+}
+
+export async function getAiQuotaStatus(
+  env: Env,
+  tenantId: string,
+  isSuperAdmin = false
+): Promise<{
+  allowed: boolean;
+  used: number;
+  limit: number;
+  is_pro: boolean;
+  period: string;
+  payment_url: string;
+}> {
+  const period = getAiPeriod();
+  if (isSuperAdmin) {
+    return {
+      allowed: true,
+      used: 0,
+      limit: 999999,
+      is_pro: true,
+      period,
+      payment_url: PRO_PAYMENT_URL,
+    };
+  }
+
+  if (!env.ARK_TOOLS_DB) {
+    return {
+      allowed: true,
+      used: 0,
+      limit: FREE_QUOTA_LIMIT,
+      is_pro: false,
+      period,
+      payment_url: PRO_PAYMENT_URL,
+    };
+  }
+
+  try {
+    const row = await env.ARK_TOOLS_DB.prepare(
+      'SELECT query_count, is_pro FROM ai_usage WHERE tenant_id = ? AND period = ?'
+    )
+      .bind(tenantId, period)
+      .first<{ query_count: number; is_pro: number }>();
+
+    const used = row?.query_count || 0;
+    const isPro = Boolean(row?.is_pro);
+    const allowed = isPro || used < FREE_QUOTA_LIMIT;
+
+    return {
+      allowed,
+      used,
+      limit: isPro ? 999999 : FREE_QUOTA_LIMIT,
+      is_pro: isPro,
+      period,
+      payment_url: PRO_PAYMENT_URL,
+    };
+  } catch (err) {
+    console.error('Error verificando cuota de IA:', err);
+    return {
+      allowed: true,
+      used: 0,
+      limit: FREE_QUOTA_LIMIT,
+      is_pro: false,
+      period,
+      payment_url: PRO_PAYMENT_URL,
+    };
+  }
+}
+
+export async function incrementAiUsage(env: Env, tenantId: string): Promise<void> {
+  if (!env.ARK_TOOLS_DB) return;
+  const period = getAiPeriod();
+  const now = Math.floor(Date.now() / 1000);
+
+  try {
+    await env.ARK_TOOLS_DB.prepare(
+      `INSERT INTO ai_usage (tenant_id, period, query_count, is_pro, updated_at)
+       VALUES (?, ?, 1, 0, ?)
+       ON CONFLICT(tenant_id, period) DO UPDATE SET
+         query_count = query_count + 1,
+         updated_at = ?`
+    )
+      .bind(tenantId, period, now, now)
+      .run();
+  } catch (err) {
+    console.error('Error incrementando uso de IA:', err);
+  }
+}
+
 export async function handleAiApiRequest(
   request: Request,
   env: Env,
@@ -88,7 +184,27 @@ export async function handleAiApiRequest(
     );
   }
 
-  // 4. POST /api/ai/chat — Chat / Inferencia con Tools
+  // 4. GET /api/ai/quota — Consultar cuota restante del despacho
+  if (url.pathname === '/api/ai/quota' && request.method === 'GET') {
+    if (!principal) {
+      return Response.json(
+        { error: 'Autenticación requerida.' },
+        { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const tenantId = url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id');
+    if (!tenantId || !(await requireTenantMembership(env, principal, tenantId))) {
+      return Response.json(
+        { error: 'No tienes acceso a este despacho.' },
+        { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const isSuperAdmin = principal.platformRole === 'super_admin';
+    const quota = await getAiQuotaStatus(env, tenantId, isSuperAdmin);
+    return Response.json(quota, { headers: corsHeaders });
+  }
+
+  // 5. POST /api/ai/chat — Chat / Inferencia con Tools y Paywall
   if (url.pathname === '/api/ai/chat' && request.method === 'POST') {
     if (!env.AI) {
       return Response.json(
@@ -126,6 +242,27 @@ export async function handleAiApiRequest(
         );
       }
 
+      // Verificación de cuota gratuita y estado Pro
+      const isSuperAdmin = principal.platformRole === 'super_admin';
+      const quotaCheck = await getAiQuotaStatus(env, tenantId, isSuperAdmin);
+
+      if (!quotaCheck.allowed) {
+        return Response.json(
+          {
+            quota_exceeded: true,
+            current_usage: quotaCheck.used,
+            limit: quotaCheck.limit,
+            payment_url: PRO_PAYMENT_URL,
+            result: `Has alcanzado el límite de **${quotaCheck.limit} consultas gratuitas de cortesía** de este mes.\n\nPara continuar utilizando **ARK Contable AI** con consultas ilimitadas, respaldo automático en D1 y soporte prioritario, activa tu suscripción a **ARK TOOLS Pro** ($399 MXN/mes).`,
+            message: 'Límite de consultas gratuitas de cortesía alcanzado.',
+          },
+          { status: 402, headers: corsHeaders }
+        );
+      }
+
+      // Incrementar uso de IA
+      await incrementAiUsage(env, tenantId);
+
       const response = await runAiAgent(env, {
         messages: body.messages,
         tenantId,
@@ -144,11 +281,21 @@ export async function handleAiApiRequest(
       }
 
       // Respuesta JSON estándar
-      const data = await response.json();
-      return Response.json(data, {
-        status: response.status,
-        headers: corsHeaders,
-      });
+      const data = (await response.json()) as Record<string, unknown>;
+      return Response.json(
+        {
+          ...(typeof data === 'object' && data !== null ? data : { data }),
+          quota: {
+            used: quotaCheck.used + 1,
+            limit: quotaCheck.limit,
+            is_pro: quotaCheck.is_pro,
+          },
+        },
+        {
+          status: response.status,
+          headers: corsHeaders,
+        }
+      );
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       return Response.json(

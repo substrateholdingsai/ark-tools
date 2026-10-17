@@ -15,6 +15,13 @@ vi.mock('@/lib/apiClient', () => ({
   apiClient: {
     ai: {
       chat: vi.fn(),
+      getQuota: vi.fn().mockResolvedValue({
+        allowed: true,
+        used: 2,
+        limit: 10,
+        is_pro: false,
+        payment_url: 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+      }),
     },
   },
 }));
@@ -80,12 +87,15 @@ describe('AiAssistantWidget', () => {
     // Debe mostrar el mensaje del usuario de inmediato
     expect(screen.getByText('¿Cómo va la guía?')).toBeInTheDocument();
 
-    // Esperar respuesta del asistente
-    await waitFor(() => {
-      expect(
-        screen.getByText(/El despacho lleva 3 de los 8 pasos completados/i)
-      ).toBeInTheDocument();
-    });
+    // Esperar respuesta del asistente (considerando simulateTyping)
+    await waitFor(
+      () => {
+        expect(
+          screen.getByText(/El despacho lleva 3 de los 8 pasos completados/i)
+        ).toBeInTheDocument();
+      },
+      { timeout: 3500 }
+    );
 
     // Debe mostrar la herramienta ejecutada
     expect(screen.getByText('consultar_progreso_guia')).toBeInTheDocument();
@@ -94,5 +104,26 @@ describe('AiAssistantWidget', () => {
         tenant_id: 'tenant_test_123',
       })
     );
+  });
+
+  it('muestra la tarjeta de Paywall y enlace a Clip cuando la cuota mensual se agota', async () => {
+    vi.mocked(apiClient.ai.chat).mockResolvedValueOnce({
+      quota_exceeded: true,
+      result: 'Has alcanzado el límite de 10 consultas gratuitas de este mes.',
+      payment_url: 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+      quota: { used: 10, limit: 10, is_pro: false },
+    });
+
+    render(<AiAssistantWidget />);
+    fireEvent.click(screen.getByTitle('Abrir Asistente ARK AI'));
+
+    const input = screen.getByPlaceholderText(/Escribe tu consulta/i);
+    fireEvent.change(input, { target: { value: 'Pregunta número 11' } });
+    fireEvent.click(screen.getByTitle('Enviar mensaje'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/ACTIVAR PRO — \$399 MXN \/ MES/i)).toBeInTheDocument();
+      expect(screen.getByText(/Desbloquear ARK TOOLS Pro/i)).toBeInTheDocument();
+    });
   });
 });

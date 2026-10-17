@@ -10,6 +10,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Users,
   UserPlus,
@@ -197,10 +198,10 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
     return days > 0 ? `${days} día${days > 1 ? 's' : ''}` : 'expirando';
   };
 
-  return (
+  const modalContent = (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -318,23 +319,10 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
             <div className="space-y-6">
               {/* Sección 1: Miembros Activos */}
               <div>
-                <div className="mb-3 flex items-center justify-between gap-2">
+                <div className="mb-3">
                   <h3 className="font-orbitron text-[11px] font-bold uppercase tracking-wider text-muted">
                     Colaboradores del Despacho
                   </h3>
-                  {canManage && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTab('invite');
-                        setErrorMsg(null);
-                      }}
-                      className="flex items-center gap-1.5 rounded-lg bg-navy px-3 py-1.5 font-orbitron text-[10px] font-bold tracking-wider text-white shadow-xs transition hover:bg-navy-dark"
-                    >
-                      <UserPlus size={13} className="text-gold" />
-                      <span>+ INVITAR COLABORADOR</span>
-                    </button>
-                  )}
                 </div>
 
                 {members.length === 0 && !loading ? (
@@ -699,6 +687,10 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 }
 
 export default TeamModal;

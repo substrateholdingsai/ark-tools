@@ -55,6 +55,7 @@ const CalculadoraFiniquitos = lazy(() => import('@/tools/finiquitos'));
 const CierreNomina = lazy(() =>
   import('@/tools/cierre-nomina').then((m) => ({ default: m.CierreNomina }))
 );
+const CalculadoraResico = lazy(() => import('@/tools/resico'));
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -66,6 +67,7 @@ export type ToolId =
   | 'nomina'
   | 'finiquitos'
   | 'cierre-nomina'
+  | 'resico'
   | 'xml-excel'
   | 'validador'
   | 'spei'
@@ -141,6 +143,7 @@ export function App() {
     nomina: 'Nómina Rápida',
     finiquitos: 'Finiquitos y Liquidaciones',
     'cierre-nomina': 'Cierre de Nómina Masivo',
+    resico: 'Calculadora RESICO',
     'xml-excel': 'Conversor XML a Excel',
     validador: 'Validador de XMLs',
     spei: 'Generador de Links de Pago',
@@ -181,6 +184,13 @@ export function App() {
         return (
           <Suspense fallback={<ToolSkeleton />}>
             <CierreNomina onBack={goToDashboard} />
+          </Suspense>
+        );
+
+      case 'resico':
+        return (
+          <Suspense fallback={<ToolSkeleton />}>
+            <CalculadoraResico onBack={goToDashboard} />
           </Suspense>
         );
 
@@ -338,9 +348,9 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
         <h1 className="max-w-[24ch] font-playfair text-[48px] font-black leading-[0.92] tracking-[-0.03em] text-ink md:text-[68px]">
           Herramientas que <span className="text-navy">trabajan</span> mientras tú cobras.
         </h1>
-        <p className="mt-6 max-w-[52ch] font-inter text-[16px] leading-[1.5] text-muted md:text-[18px]">
-          Suite de utilidades para contadores, nómina y RH. Cálculo en tiempo real, exportación
-          instantánea y diseño pensado para que el dinero se entienda sin leer.
+        <p className="mt-6 max-w-[64ch] font-inter text-[16px] leading-[1.5] text-muted md:text-[18px]">
+          Cuadra nóminas, calcula impuestos y emite papeles de trabajo oficiales en segundos. Motor
+          determinista con respaldo jurídico para el cumplimiento fiscal y laboral en México.
         </p>
       </section>
 
@@ -429,6 +439,14 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
             badge="BATCH DOF"
             badgeVariant="gold"
             onSelect={() => onSelectTool('cierre-nomina')}
+          />
+          <ToolCard
+            icon={Calculator}
+            title="Calculadora RESICO 2026"
+            description="Determinación mensual de ISR e IVA para Personas Físicas (1%-2.5%) y Morales (30% flujo) con Cédula y QR."
+            badge="NUEVO"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('resico')}
           />
         </CategorySection>
       )}

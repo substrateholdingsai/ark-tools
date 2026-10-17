@@ -9,6 +9,7 @@
 import type { Env } from '../../index';
 import type { AiToolFunction } from './types';
 import { calcularFiniquito } from '../../tools/finiquitos';
+import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
 
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
@@ -35,6 +36,46 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         incluir20DiasAnio: { type: 'boolean', description: 'Activar 20 días por año de servicio (Art. 50 Fracc. II LFT).' },
       },
       required: ['tipoBaja', 'fechaIngreso', 'fechaBaja', 'salarioDiario', 'sdi'],
+    },
+  },
+  {
+    name: 'calcular_resico',
+    description:
+      'Calcula la liquidación mensual de ISR e IVA para contribuyentes en el Régimen Simplificado de Confianza (RESICO). Soporta Persona Física (Art. 113-E con tasas 1.0% a 2.5%, retención 1.25% de personas morales y tope 3.5M) y Persona Moral (Art. 206 base flujo de efectivo al 30%).',
+    parameters: {
+      type: 'object',
+      properties: {
+        tipoPersona: {
+          type: 'string',
+          enum: ['fisica', 'moral'],
+          description: 'Tipo de contribuyente: "fisica" (Art. 113-E LISR) o "moral" (Art. 206 LISR).',
+        },
+        ingresosCobrados: {
+          type: 'number',
+          description: 'Monto de ingresos efectivamente cobrados amparados por CFDI en el mes (para PF) o acumulados en el ejercicio (para PM).',
+        },
+        deduccionesCobros: {
+          type: 'number',
+          description: 'Deducciones autorizadas pagadas acumuladas (solo aplica para Persona Moral).',
+        },
+        retencionISR: {
+          type: 'number',
+          description: 'Monto de retención de ISR (1.25% por PM para PF, o retenciones bancarias acumuladas para PM).',
+        },
+        ivaCobrado: {
+          type: 'number',
+          description: 'IVA trasladado efectivamente cobrado en el mes.',
+        },
+        ivaAcreditable: {
+          type: 'number',
+          description: 'IVA acreditable efectivamente pagado en gastos e inversiones.',
+        },
+        mes: {
+          type: 'number',
+          description: 'Número de mes a declarar (1 a 12).',
+        },
+      },
+      required: ['tipoPersona', 'ingresosCobrados'],
     },
   },
   {
@@ -137,6 +178,39 @@ export async function executeAiTool(
         };
       }
       return { success: true, data: resultado.valor };
+    }
+
+    if (toolName === 'calcular_resico') {
+      const tipo = (args.tipoPersona as 'fisica' | 'moral') || 'fisica';
+      const mes = (Number(args.mes) || 1) as MesFiscal;
+      if (tipo === 'moral') {
+        const resultado = calcularResicoPM({
+          ingresosCobradosAcumulados: Number(args.ingresosCobrados || 0),
+          deduccionesAutorizadasAcumuladas: Number(args.deduccionesCobros || 0),
+          ptuPagada: 0,
+          perdidasFiscalesPendientes: 0,
+          pagosProvisionalesPrevios: 0,
+          retencionesISRAcumuladas: Number(args.retencionISR || 0),
+          ivaCobrado: Number(args.ivaCobrado || 0),
+          ivaAcreditablePagado: Number(args.ivaAcreditable || 0),
+          retencionIVAMes: 0,
+          mes,
+          ejercicio: 2026,
+        });
+        return { success: true, data: resultado };
+      } else {
+        const resultado = calcularResicoPF({
+          ingresosCobradosMes: Number(args.ingresosCobrados || 0),
+          ingresosAcumuladosPrevios: 0,
+          retencionISREfectuadaPM: Number(args.retencionISR || 0),
+          ivaCobrado: Number(args.ivaCobrado || 0),
+          ivaAcreditablePagado: Number(args.ivaAcreditable || 0),
+          retencionIVAEfectuadaPM: 0,
+          mes,
+          ejercicio: 2026,
+        });
+        return { success: true, data: resultado };
+      }
     }
 
     // 2. Herramientas que requieren D1

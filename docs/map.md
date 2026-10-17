@@ -1,6 +1,6 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.7 (Suite de 13 Herramientas + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR)  
+**Versión:** 1.8 (Suite de 14 Herramientas + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR)  
 **Fecha:** Octubre 2026  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
@@ -12,6 +12,7 @@
 
 | Métrica                                 | Estado                                                                                                                                                                                                                                                                |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Calculadora y Cédula RESICO 2026**    | 100% Operativo (Doble modalidad Persona Física Art. 113-E 1%-2.5% con tope $3.5M y retención 1.25% PM, Persona Moral Art. 206 30% flujo, Cédula oficial Carta, QR público y Workers AI)                                                                        |
 | **Timbrado CFDI 4.0 (Alegra / PAC)**    | 100% Operativo en Producción (Emisión SAT delegada vía PAC Quadrum, multi-cuenta por despacho, encriptación AES-GCM 256-bit, verificación en vivo de CSD, descarga de XML/PDF y Cron de health check cada 6h con alertas Resend)                                 |
 | **Colaboración en Equipo e Invitaciones**| 100% Operativo en Producción (Gestión de miembros, roles owner/admin/member, invitaciones seguras por correo vía Resend, aceptación pública o autenticada y aislamiento multi-tenant)                                                                               |
 | **Cierre de Nómina Masivo (Batch DOF)** | 100% Operativo (Ingesta CSV/Excel, cálculo simultáneo de retenciones SAT, IMSS Obrero, ISN, Cédula Concentradora y Dispersión Bancaria)                                                                                                                               |
@@ -20,20 +21,19 @@
 | **Expediente Único & Catálogo**         | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF)                                                                                                                                                        |
 | **Autenticación & AuthGate**            | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant) |
 | **Multi-Tenancy**                       | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                      |
-| **Base de Datos Cloudflare D1**         | 100% Actualizada en Producción (`0001`, `0002`, `0003`, `0004_tenant_invitations.sql` y `0005_alegra_integration.sql` aplicadas con éxito en `ark_tools_db`) |
-| **Cloudflare Workers AI**               | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1 y streaming SSE)                                                                                                                                                        |
+| **Base de Datos Cloudflare D1**         | 100% Actualizada en Producción (`0001`, `0002`, `0003`, `0004_tenant_invitations.sql`, `0005_alegra_integration.sql` y `0006_ai_usage_paywall.sql` aplicadas con éxito en `ark_tools_db`) |
+| **Cloudflare Workers AI**               | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO y streaming SSE)                                                                                                                                             |
 | **Persistencia & API REST**             | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, Workers AI y Alegra CFDI 4.0.                                                                                                                |
 | **Copy & Transparencia Legal**          | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0) y cero cajas negras                                                                                                                                                      |
 | **Mesa de Ayuda & Soporte**             | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                 |
 | **Landing Pública**                     | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                      |
 | **Navegación & Usabilidad**             | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                 |
-| **Pruebas unitarias e integración**     | 294 pasadas en 39 suites (100% éxito)                                                                                                                                                                                                                                |
+| **Pruebas unitarias e integración**     | 315 pasadas en 42 suites (100% éxito)                                                                                                                                                                                                                                |
 | **Auditoría DOF Catálogo**              | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                   |
 | **Typecheck (TypeScript)**              | 0 errores en modo estricto (100% limpio)                                                                                                                                                                                                                              |
-| **Build Vite (SPA)**                    | 100% funcional con bundle optimizado (Vite build en 18s)                                                                                                                                                                                                               |
-| **Deploy Cloudflare Workers**           | 100% Desplegado y Activo en [https://tools.arksystems.site](https://tools.arksystems.site) (Versión: `34fc6f93-142f-47c1-85c1-28117aecfd13` con cron `0 */6 * * *`)                                                                                                |
+| **Build Vite (SPA)**                    | 100% funcional con bundle optimizado (Vite build en 41s)                                                                                                                                                                                                               |
 | **Git & Repositorio**                   | Sincronizado en rama `main` en GitHub                                                                                                                                                                                                                                 |
-| **Herramientas en Producción**          | 13 de 13 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, Conversor XML, Validador XML, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos) + Admin + Team |
+| **Herramientas en Producción**          | 14 de 14 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos) + Admin + Team |
 
 ---
 
@@ -258,6 +258,18 @@ ark-tools/
 │       │   ├── components/           ✅ CedulaConcentradoraModal (Carta horizontal, QR, firmas)
 │       │   ├── CierreNomina.tsx      ✅ Pantalla interactiva principal con carga masiva y KPIs
 │       │   ├── CierreNomina.test.tsx ✅ 4 tests de UI e integración pasados (100% éxito)
+│       │   └── index.ts              ✅ Barrel export completo
+│       │
+│       ├── resico/                   ✅ 100% COMPLETADA Y DESPLEGADA (14/14)
+│       │   ├── types.ts              ✅ Tipos PF (Art. 113-E/J) y PM (Art. 206)
+│       │   ├── data/tablasResico.ts  ✅ Tarifas mensuales DOF 1%-2.5%, retención 1.25%, tasa 30% PM y topes
+│       │   ├── lib/calcularResicoPF.ts ✅ Motor mensual PF, retenciones PM, IVA acreditable y alertas tope $3.5M
+│       │   ├── lib/calcularResicoPM.ts ✅ Motor mensual PM flujo de efectivo, PTU, pérdidas y tasa 30%
+│       │   ├── lib/calcularResico.test.ts ✅ 12 tests unitarios pasados (100% éxito)
+│       │   ├── lib/exportarResico.ts ✅ Exportador Cédula CSV BOM UTF-8 y plantilla WhatsApp
+│       │   ├── components/           ✅ ParametrosResicoCard, ResultadoResicoCard, DesgloseResicoTable, CedulaResicoModal
+│       │   ├── CalculadoraResico.tsx ✅ Ensamblador con alternador PF/PM y Expediente Único
+│       │   ├── CalculadoraResico.test.tsx ✅ 4 tests de UI e integración pasados (100% éxito)
 │       │   └── index.ts              ✅ Barrel export completo
 │       │
 │       └── timbrado/                 ✅ 100% COMPLETADA Y DESPLEGADA (13/13)
@@ -1045,27 +1057,146 @@ ark-tools/
 
 ---
 
-## 5. Resumen General del Proyecto (Suite de 13 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
+### Sprint 14 — ARK Contable AI: Fine-Tuning de Alcance, Paywall Clip D1, Animación Typewriter & Dataset de las 13 Herramientas — Completado ✅
 
-| Categoría                     | Herramientas / Módulos                                                                                        | Estado                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **Cierre de Nómina Masivo**   | Motor Batch DOF 2026, Ingesta CSV/Excel, Cédula Concentradora Carta, Layout Dispersión, Sello QR              | ✅ 100% Operativo en Producción (Herramienta #12)                 |
-| **Papel de Trabajo (PDF/QR)** | Cédula institucional Carta, `@media print`, Sello SHA-256, Importe en Letras, QR y Verificación Pública       | ✅ 100% Operativo en Producción                                   |
-| **Fiscal / Laboral**          | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos y Liquidaciones LFT | ✅ 100% Conectadas a Expediente Único (4/4)                       |
-| **SAT**                       | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0)                                                 | ✅ 100% Operativas (2/2)                                          |
-| **Cobros**                    | Links de Pago Clip, Timbrado CFDI 4.0 vía Alegra/Quadrum, Calculadora de Leasing Tecnológico                    | ✅ 100% Operativas (3/3)                                          |
-| **Compliance**                | Guía SAT/IMSS, Auditoría Legal de Cobranza, Mapa de Activos Virtuales                                         | ✅ 100% Operativas + Persistencia D1 (3/3)                        |
-| **Multi-Tenancy & Equipos**   | Invitaciones a despachos vía Resend, control de roles (`admin`/`member`/`viewer`), aislamiento estricto en D1  | ✅ 100% Operativo en Producción                                   |
-| **Super Admin Console**       | Métricas globales, auditoría de infraestructura, directorio de despachos y gestión de roles                    | ✅ 100% Operativo en Producción                                   |
-| **Expediente Único**          | Catálogo Clientes/Trabajadores, Auto-Prefill, Sello SHA-256 + Versión DOF                                     | ✅ 100% Operativo en Producción                                   |
-| **Workers AI**                | Binding `[ai]`, Agentic Tool-Calling con D1 y LFT, Streaming SSE, Llama 3.3 70B                               | ✅ 100% Integrado y Probado                                       |
-| **Navegación & Usabilidad**   | Filtros de categorías en dashboard y landing, navegación móvil y retorno contextual al catálogo               | ✅ Implementada y validada con typecheck, build y suite existente |
-| **Copy & Confianza**          | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica                          | ✅ 100% En Producción                                             |
-| **Core Global**               | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage              | ✅ 100% Operativo                                                 |
+**Objetivo:** Elevar el asistente inteligente (`ARK Contable AI`) a nivel de consultor fiscal experto en producción: delimitar su alcance contra preguntas fuera de dominio, inyectar el catálogo completo de las 13 herramientas para evitar falsos rechazos, implementar paywall con cuota gratuita mensual y monetización vía Clip, incorporar animación de escritura progresiva y perfeccionar el contraste y diseño del chat.
 
-- **Total de herramientas en plataforma:** **13 de 13 (100% Operativas)** + Super Admin Console
-- **Total de pruebas unitarias y de integración:** **294 pasadas en 39 suites (100% éxito)**
+#### 1. Delimitación Estricta de Alcance y Grounding de Conocimiento (`src/server/ai/agent.ts`)
+- **Regla Estricta de Corte (Anti-Out-of-Scope):** Si el usuario formula preguntas ajenas a la materia fiscal, contable, laboral o al uso de ARK TOOLS (ej. biología, medicina, deportes, entretenimiento o física), el modelo declina cortésmente responder y reitera su función especializada.
+- **Rigor Conceptual y Corrección de Premisas Falsas:**
+  - *SBC (Salario Base de Cotización):* Corrección explícita de que NO es un impuesto, sino la base salarial (Art. 27 LSS) para cuotas obrero-patronales IMSS e INFONAVIT, topada a 25 UMAs.
+  - *Subsidio para el Empleo:* Aclaración frente a confusiones con el SBC (Decreto DOF 2024).
+- **Catálogo Canónico de las 13 Herramientas:** Inyección completa en el `systemPrompt` con propósito, funcionamiento, entradas y salidas:
+  1. *Conversor XML a Excel (`xml-excel`):* Procesamiento local por lote de hasta 200 CFDIs 3.3/4.0 con extracción a tablas limpias CSV/Excel.
+  2. *Validador de XMLs (`validador`):* Auditoría de sellos digitales SAT, esquemas XSD y cotejo automático con lista negra del Art. 69-B del CFF (EFOS).
+  3. *Calculadora ISN 2026 (`isn`):* Tasas oficiales estatales (1% al 4%) de las 32 entidades y papel de trabajo.
+  4. *Calculadora SBC 2026 (`sbc`):* Factor de integración con Vacaciones Dignas, topes de 25 UMAs ($2,932.75) y salario mínimo.
+  5. *Nómina Rápida 2026 (`nomina`):* ISR progresivo (Art. 96), Subsidio al Empleo y cuotas IMSS obreras.
+  6. *Finiquitos y Liquidaciones (`finiquitos`):* Cálculos LFT (aguinaldo, prima de antigüedad tope 2xSMG, 90 días y 20 días/año) conectado a la herramienta Worker.
+  7. *Cierre de Nómina Masivo (`cierre-nomina`):* Ingesta CSV/Excel, retenciones consolidadas, Sello QR y pasivo patronal.
+  8. *Generador Links de Pago SPEI (`spei`):* Cobro de honorarios con Clip Checkout y transferencias CLABE.
+  9. *Timbrado de Facturas CFDI 4.0 (`timbrado`):* Timbrado oficial con PAC Quadrum vía Alegra (XML + PDF).
+  10. *Calculadora Leasing (`leasing`):* Arrendamiento puro vs financiero vs crédito con topes de deducción LISR Art. 28.
+  11. *Guía SAT/IMSS (`guia-sat-imss`):* 8 pasos ante requerimientos, checklists, plazos del CFF y guardado en D1.
+  12. *Auditoría Legal de Cobranza (`auditor-cobranza`):* Matriz de 23 conductas prohibidas (Art. 284 Bis CPF) con sello SHA-256 en Ledger D1.
+  13. *Mapa de Activos Virtuales (`mapa-activos`):* 12 conductas con Ley Fintech, LFPIORPI y notas por cliente en D1.
+- **Prevención de Truncamiento:** `max_tokens: 2048` en todas las ejecuciones de Cloudflare Workers AI (`@cf/meta/llama-3.3-70b-instruct-fp8-fast`).
+
+#### 2. Paywall de Consultas y Monetización con Clip (`src/server/ai/`)
+- **Migración D1 (`migrations/0006_ai_usage_paywall.sql`):**
+  - Tabla `ai_usage`: `id` (UUID), `tenant_id`, `month_key` (`YYYY-MM`), `query_count`, `is_pro`, `created_at`, `updated_at`.
+  - Índice único sobre `(tenant_id, month_key)`.
+  - Aplicada exitosamente en producción Cloudflare D1 (`ark_tools_db`).
+- **Control de Cuota & Exenciones (`aiApi.ts`):**
+  - Límite de 10 consultas mensuales gratuitas por despacho (`FREE_QUOTA_PER_MONTH = 10`).
+  - Exención automática para usuarios con rol `super_admin` (`isPro = true`, consultas ilimitadas).
+  - Al agotar la cuota mensual, el endpoint retorna HTTP `402 Payment Required` con payload de paywall y enlace a checkout de Clip.
+  - Endpoint `GET /api/ai/quota`: Consulta de cuota usada, límite mensual, estado Pro y enlace de pago.
+  - Enlace de suscripción Clip integrado: `https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65` ($399 MXN / mes).
+
+#### 3. Frontend y Experiencia de Usuario (`src/components/AiAssistantWidget.tsx`)
+- **Animación Typewriter (`simulateTyping`):**
+  - Escritura dinámica progresiva que simula tipeo natural en tiempo real (~200ms a 600ms máx con auto-cálculo de chunks), eliminando la aparición brusca de bloques gigantescos.
+- **Formateo Markdown Enriquecido (`renderFormattedContent`):**
+  - Dobles saltos de línea renderizados como espacios visuales reales entre párrafos (`h-2.5`).
+  - Soporte de encabezados `###`, viñetas `•`, listas numeradas `1.` y negritas `**`.
+- **Accesibilidad y Contraste de Texto:**
+  - Inyección de parámetro `isUser` en `renderFormattedContent` y `renderInlineFormatted`:
+  - En globos del usuario (`bg-navy`), párrafos y negritas se renderizan en blanco nítido (`text-white`) y dorado (`text-amber-300`), corrigiendo el conflicto anterior donde heredaban `text-ink` (#0F172A) y se volvían ilegibles sobre fondo azul.
+- **Tarjeta Interactiva de Paywall en Chat:**
+  - Bloque visual elegante con gradiente ámbar, botón de suscripción a Clip, contador en el header (`x/10 gratis`) y bloqueo reactivo del textarea al consumir el cupo.
+
+#### 4. Corrección en Modal de Colaboradores (`src/components/team/TeamModal.tsx`)
+- Utilización de `createPortal(..., document.body)` para el submodal "Invitar Colaborador", resolviendo el bug de superposición visual que tapaba el campo de correo electrónico.
+- Eliminación del botón duplicado azul en la interfaz de invitación.
+
+---
+
+### Sprint 15 (Octubre 2026) — Calculadora y Cédula RESICO 2026 (Personas Físicas y Morales) — Completado ✅
+
+**Objetivo:** Desarrollar e integrar el módulo integral de determinación de pagos provisionales mensuales para el Régimen Simplificado de Confianza (RESICO), dando cobertura al 100% tanto a Personas Físicas (Arts. 113-E a 113-J LISR) como a Personas Morales bajo flujo de efectivo (Arts. 206 a 215 LISR), con Cédula Oficial Carta imprimible, Sello SHA-256, QR de verificación pública y soporte de Workers AI Tool-Calling.
+
+#### 1. Motores Matemáticos y Datos Oficiales DOF (`src/tools/resico/`)
+- **`types.ts`**: Definición de interfaces tipadas `EntradaResicoPF`, `EntradaResicoPM`, `ResultadoResicoPF`, `ResultadoResicoPM`, `DesgloseImpuesto` y rangos de tarifas.
+- **`data/tablasResico.ts`**:
+  - Tabla progresiva mensual de ISR Persona Física (1.00% hasta $25k, 1.10% hasta $50k, 1.50% hasta $83.3k, 2.00% hasta $208.3k, y 2.50% hasta $3.5M).
+  - Tasa de retención PM a PF del 1.25% (Art. 113-J LISR).
+  - Tasa corporativa general del 30.0% para Personas Morales (Art. 211 LISR).
+  - Topes de ingresos oficiales: $3,500,000 MXN para Personas Físicas y $35,000,000 MXN para Personas Morales.
+- **`lib/calcularResicoPF.ts`**:
+  - Determinación de tasa y cálculo de ISR causado mensual.
+  - Acreditamiento automático de retención del 1.25% efectuada por personas morales sin generar saldos negativos a pagar.
+  - Liquidación neta de IVA conforme a los requisitos del Art. 5 de la LIVA (IVA trasladado cobrado menos IVA acreditable pagado y retenciones de IVA).
+  - Monitoreo de consumo del tope $3.5M con cuatro umbrales preventivos (`seguro`, `preventivo` al 75%, `critico` al 90%, y `excedido`).
+- **`lib/calcularResicoPM.ts`**:
+  - Base gravable sobre utilidad fiscal acumulada a flujo de efectivo (ingresos cobrados $-$ deducciones autorizadas pagadas $-$ PTU amortizable $-$ pérdidas fiscales pendientes).
+  - Aplicación de tasa del 30% y acreditamiento de pagos provisionales previos y retenciones acumuladas.
+  - Liquidación de IVA del mes y evaluación del tope de $35M.
+- **`lib/exportarResico.ts`**:
+  - Exportación de cédula analítica a CSV con prefijo Byte Order Mark (`\uFEFF`) para lectura limpia en Microsoft Excel.
+  - Generador de mensaje ejecutivo preformateado para envío al cliente por WhatsApp en 1 clic.
+- **`lib/calcularResico.test.ts`**: 12 pruebas unitarias exhaustivas aprobadas al 100%.
+
+#### 2. Componentes de Interfaz y Cédula Carta QR
+- **`components/ParametrosResicoCard.tsx`**: Selector interactivo de modalidad (Persona Física vs Moral), selector de mes y ejercicio, autocompletado y botón de sugerencia del 16% de IVA trasladado.
+- **`components/ResultadoResicoCard.tsx`**: Cúpula de cristal (`LiquidGlassDome`), cifra total de impuestos magnificada, importe en letras oficial conforme al Art. 28 del CFF, chips rápidos de ISR e IVA, barra visual de tope $3.5M y accesos a exportación.
+- **`components/DesgloseResicoTable.tsx`**: Tabla matricial analítica con desglose de bases, tasas aplicadas, importes, naturalezas y fundamentos legales, con notas y advertencias periciales.
+- **`components/CedulaResicoModal.tsx`**: Formato institucional tamaño Carta para impresión y guardado en PDF (`@media print`), con membrete oficial del despacho, folio, sello digital criptográfico SHA-256, código QR vectorial de verificación pública y bloque de firmas autógrafas para Contador y Contribuyente.
+- **`CalculadoraResico.test.tsx`**: 4 pruebas de interfaz e integración aprobadas al 100%.
+
+#### 3. Integración en el Ecosistema ARK TOOLS
+- **`App.tsx`**: Incorporación de `resico` en `ToolId`, enrutador principal con carga diferida (`React.lazy`), tarjeta destacada en la categoría **Fiscal** (4 columnas) y banner institucional.
+- **`ExpedienteToolBanner.tsx`**: Enlace automático para archivar cálculos en Cloudflare D1 bajo el expediente del cliente activo.
+- **`PapelDeTrabajoModal.tsx`**: Manejo de expedientes RESICO archivados para visualización e impresión retrocompatible.
+- **`LandingPage.tsx` & `Footer.tsx`**: Incorporación en el catálogo público y directorio del pie de página institucional.
+- **`server/ai/tools.ts` & `agent.ts`**: Registro de la función `calcular_resico` e inyección de la herramienta #14 en el prompt del orquestador Llama 3.3 70B de Workers AI.
+
+---
+
+### Sprint 16: Renovación de la Landing Page Pública — Enfoque en Blindaje & Evidencia Fiscal (Completada ✅)
+
+- [x] **Hero Section con Propuesta de Valor Diferenciada:**
+  - [x] Nuevo titular pericial: *"Cálculos auditables. Blindados ante cualquier revisión."*
+  - [x] Badge de confianza: `Blindaje & Evidencia Fiscal 2026 · Cero Riesgo`.
+  - [x] Destacado del Sello Criptográfico SHA-256 y Cédulas de Trabajo Formales con QR verificado para respaldar ante el SAT y tribunales.
+- [x] **Caja Freemium Clara & Transparente:**
+  - [x] Mensaje de conversión: *"Modelo Transparente: Gratis para calcular, Pro para blindar"*.
+  - [x] Explicación diáfana de acceso 100% libre e ilimitado a las calculadoras y conversores básicos, monetizando exclusivamente los servicios de alto valor operativo.
+- [x] **Catálogo Completo de 14 Herramientas & Estandarización de Categorías:**
+  - [x] Integración de la tarjeta de **Cierre de Nómina Masivo (Batch DOF)** con badge Pro.
+  - [x] Estandarización de la categoría **Cobros** unificando SPEI/Clip, Timbrado CFDI 4.0 Alegra/Quadrum y Leasing Tecnológico.
+  - [x] Distintivos visuales `Fingerprint` ("Requiere Crédito Pro") en herramientas de timbrado y certificación pericial.
+- [x] **Nueva Sección de Negocio Transparente:**
+  - [x] Sustitución de visión preliminar por: *"Transparencia Total: ¿Cómo ganamos dinero si las calculadoras son gratis?"*.
+  - [x] Desglose de 3 pilares: (1) Calculadoras Gratuitas e ilimitadas, (2) Expediente Único con Sello SHA-256 por micro-créditos, (3) Timbrado CFDI 4.0 & Procesamiento Masivo.
+- [x] **Calidad & Robustez Técnica:**
+  - [x] TypeScript `tsc --noEmit` limpio (0 errores TS).
+  - [x] 315 pruebas unitarias e integración aprobadas al 100% (42 suites).
+  - [x] Bundle de producción Vite compilado sin errores.
+
+---
+
+## 5. Resumen General del Proyecto (Suite de 14 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
+
+| Categoría                     | Herramientas / Módulos                                                                                                          | Estado                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Fiscal / Laboral**          | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos LFT, **Calculadora RESICO 2026**      | ✅ 100% Conectadas a Expediente Único (5/5)                       |
+| **Cierre de Nómina Masivo**   | Motor Batch DOF 2026, Ingesta CSV/Excel, Cédula Concentradora Carta, Layout Dispersión, Sello QR                                | ✅ 100% Operativo en Producción (Herramienta #12)                 |
+| **Papel de Trabajo (PDF/QR)** | Cédula institucional Carta, `@media print`, Sello SHA-256, Importe en Letras, QR y Verificación Pública                         | ✅ 100% Operativo en Producción                                   |
+| **SAT**                       | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0)                                                                   | ✅ 100% Operativas (2/2)                                          |
+| **Cobros**                    | Links de Pago Clip, Timbrado CFDI 4.0 vía Alegra/Quadrum, Calculadora de Leasing Tecnológico                                      | ✅ 100% Operativas (3/3)                                          |
+| **Compliance**                | Guía SAT/IMSS, Auditoría Legal de Cobranza, Mapa de Activos Virtuales                                                           | ✅ 100% Operativas + Persistencia D1 (3/3)                        |
+| **Multi-Tenancy & Equipos**   | Invitaciones a despachos vía Resend, control de roles (`admin`/`member`/`viewer`), aislamiento estricto en D1                    | ✅ 100% Operativo en Producción                                   |
+| **Super Admin Console**       | Métricas globales, auditoría de infraestructura, directorio de despachos y gestión de roles                                      | ✅ 100% Operativo en Producción                                   |
+| **Expediente Único**          | Catálogo Clientes/Trabajadores, Auto-Prefill, Sello SHA-256 + Versión DOF                                                       | ✅ 100% Operativo en Producción                                   |
+| **Workers AI & Chatbot**      | Binding `[ai]`, Llama 3.3 70B, Agentic Tool-Calling con D1/LFT/RESICO, Paywall D1 + Clip, Typewriter, Dataset 14 Tools         | ✅ 100% Integrado y Desplegado en Producción                       |
+| **Navegación & Usabilidad**   | Filtros de categorías en dashboard y landing, navegación móvil y retorno contextual al catálogo                                 | ✅ Implementada y validada con typecheck, build y suite existente |
+| **Copy & Confianza**          | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica, Landing Freemium                           | ✅ 100% En Producción                                             |
+| **Core Global**               | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage Renovada                       | ✅ 100% Operativo                                                 |
+
+- **Total de herramientas en plataforma:** **14 de 14 (100% Operativas)** + Super Admin Console + ARK Contable AI
+- **Total de pruebas unitarias y de integración:** **315 pasadas en 42 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
-- **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)** (`ark-tools-production`, Versión: `34fc6f93-142f-47c1-85c1-28117aecfd13`)
-- **Estado general:** Sistema de autenticación nativa, gestión colaborativa de equipos (Sprint 12), integración de timbrado CFDI 4.0 vía Alegra (Sprint 13), consola de Super Admin, base de datos D1 (migraciones 0001 a 0005) y suite completa 100% desplegados en producción.
+- **Build Vite (SPA):** 100% funcional con bundle optimizado (Vite build en 16.5s)
+- **Estado general:** Suite de 14 herramientas, Landing Page renovada con propuesta de Blindaje & Evidencia Fiscal, modelo Freemium transparente, Expediente Único multi-tenant, emisión y timbrado CFDI 4.0 con PAC, motor batch de nómina, Calculadora RESICO 2026, Papel de Trabajo Oficial con QR público, y agente de IA con Tool-Calling 100% integrados y documentados.

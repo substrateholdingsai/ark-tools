@@ -156,6 +156,25 @@ export function PapelDeTrabajoModal({
         importe: totalMonto,
       },
     ];
+  } else if (tool_id === 'resico') {
+    totalMonto = Number(outputs.totalImpuestosPagar) || 0;
+    const desglose = (outputs.desglose as Array<{
+      concepto: string;
+      base?: number;
+      tasaPct?: number;
+      importe?: number;
+      fundamento?: string;
+    }>) || [];
+
+    filasConceptos = desglose.map((d) => ({
+      concepto: d.concepto,
+      formula:
+        d.tasaPct && d.tasaPct > 0
+          ? `Base $${(d.base || 0).toLocaleString('es-MX')} × ${d.tasaPct}%`
+          : `Base $${(d.base || 0).toLocaleString('es-MX')}`,
+      fundamento: d.fundamento || 'LISR Art. 113-E / 206',
+      importe: Number(d.importe) || 0,
+    }));
   } else {
     totalMonto = 0;
   }

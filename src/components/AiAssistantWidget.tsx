@@ -8,7 +8,7 @@
  * - Calcular Finiquitos y Liquidaciones LFT en tiempo real
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Sparkles,
   X,
@@ -20,9 +20,13 @@ import {
   Minimize2,
   CheckCircle2,
   HelpCircle,
+  Crown,
+  ExternalLink,
+  Lock,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { apiClient } from '@/lib/apiClient';
+import { cn } from '@/lib/cn';
 
 interface Message {
   id: string;
@@ -30,6 +34,17 @@ interface Message {
   content: string;
   toolsExecuted?: string[];
   timestamp: string;
+  isTyping?: boolean;
+  isPaywall?: boolean;
+  paymentUrl?: string;
+}
+
+interface QuotaState {
+  used: number;
+  limit: number;
+  isPro: boolean;
+  quotaExceeded: boolean;
+  paymentUrl: string;
 }
 
 const QUICK_PROMPTS = [
@@ -56,6 +71,48 @@ export function AiAssistantWidget() {
 
   const { tenantId, tenantName } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [quota, setQuota] = useState<QuotaState>({
+    used: 0,
+    limit: 10,
+    isPro: false,
+    quotaExceeded: false,
+    paymentUrl: 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+  });
+
+  const clearTypingInterval = () => {
+    if (typingRef.current) {
+      clearInterval(typingRef.current);
+      typingRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => clearTypingInterval();
+  }, []);
+
+  const loadQuota = useCallback(async () => {
+    if (!tenantId) return;
+    try {
+      const data = await apiClient.ai.getQuota(tenantId);
+      setQuota({
+        used: data.used,
+        limit: data.limit,
+        isPro: data.is_pro,
+        quotaExceeded: !data.allowed,
+        paymentUrl: data.payment_url || 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+      });
+    } catch {
+      // ignorar si no hay conexión
+    }
+  }, [tenantId]);
+
+  useEffect(() => {
+    if (isOpen && tenantId) {
+      void loadQuota();
+    }
+  }, [isOpen, tenantId, loadQuota]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,9 +124,37 @@ export function AiAssistantWidget() {
     }
   }, [messages, isOpen, isMinimized]);
 
+  const simulateTyping = useCallback((fullText: string, assistantMsgId: string) => {
+    clearTypingInterval();
+
+    let i = 0;
+    // Step dinámico optimizado: fluido pero rápido (~200ms a 600ms máx)
+    const step = Math.max(4, Math.ceil(fullText.length / 40));
+
+    typingRef.current = setInterval(() => {
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.id !== assistantMsgId) return msg;
+
+          if (i < fullText.length) {
+            const nextI = Math.min(i + step, fullText.length);
+            const updatedContent = fullText.slice(0, nextI);
+            i = nextI;
+            return { ...msg, content: updatedContent, isTyping: i < fullText.length };
+          } else {
+            clearTypingInterval();
+            return { ...msg, content: fullText, isTyping: false };
+          }
+        })
+      );
+    }, 15);
+  }, []);
+
   const handleSend = async (textToSend?: string) => {
     const text = (textToSend || inputMessage).trim();
     if (!text || isLoading) return;
+
+    clearTypingInterval();
 
     const userMsg: Message = {
       id: `user-${Date.now()}`,
@@ -96,15 +181,40 @@ export function AiAssistantWidget() {
         },
       );
 
-      const assistantMsg: Message = {
-        id: `asst-${Date.now()}`,
+      if (res.quota) {
+        setQuota((prev) => ({
+          ...prev,
+          used: res.quota!.used,
+          limit: res.quota!.limit,
+          isPro: res.quota!.is_pro,
+        }));
+      }
+
+      if (res.quota_exceeded) {
+        setQuota((prev) => ({
+          ...prev,
+          quotaExceeded: true,
+          paymentUrl: res.payment_url || prev.paymentUrl,
+        }));
+      }
+
+      const assistantId = `asst-${Date.now()}`;
+      const placeholderAssistantMsg: Message = {
+        id: assistantId,
         role: 'assistant',
-        content: res.result || 'Respuesta recibida sin contenido.',
+        content: '',
         toolsExecuted: res.tools_executed,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isTyping: true,
+        isPaywall: res.quota_exceeded,
+        paymentUrl: res.payment_url || quota.paymentUrl,
       };
 
-      setMessages((prev) => [...prev, assistantMsg]);
+      setMessages((prev) => [...prev, placeholderAssistantMsg]);
+      setIsLoading(false);
+
+      const fullText = res.result || 'Respuesta recibida sin contenido.';
+      simulateTyping(fullText, assistantId);
     } catch (err: unknown) {
       const errMsg = err instanceof Error ? err.message : String(err);
       const errorMsg: Message = {
@@ -170,10 +280,25 @@ export function AiAssistantWidget() {
                   <span className="font-playfair font-black text-[15px] tracking-wide text-white">
                     ARK AI
                   </span>
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse" />
-                    En vivo
-                  </span>
+                  {quota.isPro ? (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-gold/20 text-gold border border-gold/40">
+                      <Crown className="w-3 h-3 text-gold" />
+                      PRO
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border',
+                        quota.used >= quota.limit
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                      )}
+                      title={`Consultas usadas este mes: ${quota.used} de ${quota.limit}`}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse" />
+                      {quota.used}/{quota.limit} gratis
+                    </span>
+                  )}
                 </div>
                 <div className="text-[11px] text-white/70 truncate max-w-[200px]">
                   {tenantName ? `🏢 ${tenantName}` : 'Modo Despacho General'}
@@ -242,8 +367,40 @@ export function AiAssistantWidget() {
 
                       {/* Contenido con formateo de negritas simple */}
                       <div className="whitespace-pre-wrap break-words">
-                        {renderFormattedContent(msg.content)}
+                        {renderFormattedContent(msg.content, msg.role === 'user')}
+                        {msg.isTyping && (
+                          <span
+                            className={cn(
+                              'inline-block w-1.5 h-3.5 animate-pulse ml-1 align-middle rounded-xs',
+                              msg.role === 'user' ? 'bg-white' : 'bg-navy'
+                            )}
+                          />
+                        )}
                       </div>
+
+                      {/* Tarjeta interactiva de Paywall con enlace de pago Clip */}
+                      {msg.isPaywall && (
+                        <div className="mt-3.5 rounded-xl border border-gold/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-3.5 shadow-sm space-y-2.5">
+                          <div className="flex items-center gap-1.5 text-navy font-bold text-[12px] font-orbitron">
+                            <Crown className="w-4 h-4 text-gold-dark" />
+                            <span>Desbloquear ARK TOOLS Pro</span>
+                          </div>
+                          <p className="text-[11px] text-muted leading-relaxed">
+                            Obtén consultas ilimitadas con Llama 3.3, integración total con D1,
+                            timbrado masivo y soporte directo para todo tu despacho.
+                          </p>
+                          <a
+                            href={msg.paymentUrl || quota.paymentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-navy text-white text-[11px] font-bold font-orbitron hover:bg-navy-dark transition shadow-md group"
+                          >
+                            <Sparkles className="w-3.5 h-3.5 text-gold group-hover:scale-110 transition-transform" />
+                            <span>ACTIVAR PRO — $399 MXN / MES</span>
+                            <ExternalLink className="w-3.5 h-3.5 text-white/80" />
+                          </a>
+                        </div>
+                      )}
 
                       <div
                         className={`text-[10px] mt-1.5 text-right font-mono ${
@@ -281,7 +438,7 @@ export function AiAssistantWidget() {
               </div>
 
               {/* Chips / Prompts Rápidos (solo si hay pocos mensajes) */}
-              {messages.length <= 3 && !isLoading && (
+              {messages.length <= 3 && !isLoading && !quota.quotaExceeded && (
                 <div className="px-3 py-2 bg-surface border-t border-line/60">
                   <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1">
                     <HelpCircle className="w-3 h-3 text-gold" /> Sugerencias rápidas:
@@ -302,27 +459,49 @@ export function AiAssistantWidget() {
 
               {/* Input Footer */}
               <div className="p-3 bg-surface border-t border-line">
-                <div className="flex items-end gap-2 bg-surface-2 border border-line rounded-xl p-2 focus-within:border-navy focus-within:ring-1 focus-within:ring-navy transition-all">
-                  <textarea
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Escribe tu consulta o pide un cálculo..."
-                    rows={1}
-                    className="flex-1 max-h-24 bg-transparent text-[13px] text-ink placeholder:text-muted resize-none focus:outline-none leading-relaxed py-1"
-                  />
-                  <button
-                    onClick={() => handleSend()}
-                    disabled={!inputMessage.trim() || isLoading}
-                    className="p-2 rounded-lg bg-[#002B7F] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#001A4D] transition-colors shrink-0 shadow-sm"
-                    title="Enviar mensaje"
-                  >
-                    <Send className="w-4 h-4" />
-                  </button>
-                </div>
+                {quota.quotaExceeded ? (
+                  <div className="rounded-xl border border-gold/40 bg-gradient-to-r from-amber-50 to-cream/40 p-3 text-center space-y-2">
+                    <div className="flex items-center justify-center gap-1.5 font-orbitron text-[11px] font-bold text-navy">
+                      <Lock className="w-3.5 h-3.5 text-gold-dark" />
+                      <span>LÍMITE MENSUAL ALCANZADO ({quota.limit}/{quota.limit})</span>
+                    </div>
+                    <p className="text-[10px] text-muted">
+                      Has consumido tus {quota.limit} consultas de cortesía del mes. Activa Pro para seguir consultando.
+                    </p>
+                    <a
+                      href={quota.paymentUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-lg bg-navy text-white text-[10px] font-bold font-orbitron hover:bg-navy-dark transition shadow-xs"
+                    >
+                      <Sparkles className="w-3 h-3 text-gold" />
+                      <span>SUSCRIBIRSE PRO ($399 MXN)</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </div>
+                ) : (
+                  <div className="flex items-end gap-2 bg-surface-2 border border-line rounded-xl p-2 focus-within:border-navy focus-within:ring-1 focus-within:ring-navy transition-all">
+                    <textarea
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder="Escribe tu consulta o pide un cálculo..."
+                      rows={1}
+                      className="flex-1 max-h-24 bg-transparent text-[13px] text-ink placeholder:text-muted resize-none focus:outline-none leading-relaxed py-1"
+                    />
+                    <button
+                      onClick={() => handleSend()}
+                      disabled={!inputMessage.trim() || isLoading}
+                      className="p-2 rounded-lg bg-[#002B7F] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#001A4D] transition-colors shrink-0 shadow-sm"
+                      title="Enviar mensaje"
+                    >
+                      <Send className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
                 <div className="flex justify-between items-center mt-1.5 px-1 text-[10px] text-muted font-mono">
                   <span>Enter para enviar • LFT 2026</span>
-                  <span>Workers AI Cloudflare</span>
+                  <span>{quota.isPro ? 'ARK Pro Ilimitado' : `${quota.used}/${quota.limit} consultas gratis`}</span>
                 </div>
               </div>
             </>
@@ -333,47 +512,128 @@ export function AiAssistantWidget() {
   );
 }
 
+function renderInlineFormatted(
+  text: string,
+  keyPrefix: string | number,
+  isUser: boolean = false
+) {
+  const boldRegex = /\*\*(.*?)\*\*/g;
+  const elements: (string | React.ReactNode)[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = boldRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      elements.push(text.substring(lastIndex, match.index));
+    }
+    elements.push(
+      <strong
+        key={`${keyPrefix}-${match.index}`}
+        className={cn(
+          'font-semibold',
+          isUser ? 'text-white font-bold' : 'text-ink'
+        )}
+      >
+        {match[1]}
+      </strong>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    elements.push(text.substring(lastIndex));
+  }
+
+  return elements.length > 0 ? elements : text;
+}
+
 /**
- * Función ligera de renderizado para soportar negritas (**texto**) y código en bloque/línea
- * sin necesidad de librerías markdown pesadas.
+ * Función de renderizado para soportar negritas, viñetas, listas y separación entre párrafos
  */
-function renderFormattedContent(content: string) {
-  const parts = content.split('\n');
-  return parts.map((line, lineIdx) => {
-    // Si la línea es encabezado
-    if (line.startsWith('### ')) {
+function renderFormattedContent(content: string, isUser: boolean = false) {
+  const lines = content.split('\n');
+  return lines.map((line, lineIdx) => {
+    const trimmed = line.trim();
+
+    // Renglón vacío -> espacio visual real entre párrafos
+    if (!trimmed) {
+      return <div key={lineIdx} className="h-2.5" />;
+    }
+
+    // Encabezados markdown (### o ##)
+    if (line.startsWith('### ') || line.startsWith('## ')) {
       return (
-        <h4 key={lineIdx} className="font-bold text-[13px] text-navy mt-2 mb-1">
-          {line.replace('### ', '')}
+        <h4
+          key={lineIdx}
+          className={cn(
+            'font-bold text-[13px] mt-2.5 mb-1 font-orbitron',
+            isUser ? 'text-white' : 'text-navy'
+          )}
+        >
+          {line.replace(/^###?\s+/, '')}
         </h4>
       );
     }
 
-    // Parsear **negritas**
-    const boldRegex = /\*\*(.*?)\*\*/g;
-    const elements: (string | React.ReactNode)[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    while ((match = boldRegex.exec(line)) !== null) {
-      if (match.index > lastIndex) {
-        elements.push(line.substring(lastIndex, match.index));
-      }
-      elements.push(
-        <strong key={`${lineIdx}-${match.index}`} className="font-semibold text-ink">
-          {match[1]}
-        </strong>
+    // Listas con viñetas (- o *)
+    if (line.startsWith('- ') || line.startsWith('* ')) {
+      return (
+        <div key={lineIdx} className="flex items-start gap-2 my-1 pl-1">
+          <span
+            className={cn(
+              'font-bold text-xs leading-5 select-none',
+              isUser ? 'text-amber-300' : 'text-gold-dark'
+            )}
+          >
+            •
+          </span>
+          <span
+            className={cn(
+              'flex-1 text-[13px] leading-relaxed',
+              isUser ? 'text-white' : 'text-ink'
+            )}
+          >
+            {renderInlineFormatted(line.slice(2), lineIdx, isUser)}
+          </span>
+        </div>
       );
-      lastIndex = match.index + match[0].length;
     }
 
-    if (lastIndex < line.length) {
-      elements.push(line.substring(lastIndex));
+    // Listas numeradas (1. , 2. )
+    const numMatch = line.match(/^(\d+)\.\s+(.*)$/);
+    if (numMatch) {
+      return (
+        <div key={lineIdx} className="flex items-start gap-2 my-1 pl-1">
+          <span
+            className={cn(
+              'font-bold text-[11px] font-mono leading-5 select-none',
+              isUser ? 'text-amber-300' : 'text-navy'
+            )}
+          >
+            {numMatch[1]}.
+          </span>
+          <span
+            className={cn(
+              'flex-1 text-[13px] leading-relaxed',
+              isUser ? 'text-white' : 'text-ink'
+            )}
+          >
+            {renderInlineFormatted(numMatch[2] || '', lineIdx, isUser)}
+          </span>
+        </div>
+      );
     }
 
+    // Párrafo estándar con espacio inferior
     return (
-      <p key={lineIdx} className={lineIdx > 0 ? 'mt-1' : ''}>
-        {elements.length > 0 ? elements : line}
+      <p
+        key={lineIdx}
+        className={cn(
+          'mb-2 leading-relaxed text-[13px] last:mb-0',
+          isUser ? 'text-white' : 'text-ink'
+        )}
+      >
+        {renderInlineFormatted(line, lineIdx, isUser)}
       </p>
     );
   });

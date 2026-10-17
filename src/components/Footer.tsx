@@ -161,6 +161,15 @@ export function Footer({ className, onSelectTool }: FooterProps) {
               <li>
                 <button
                   type="button"
+                  onClick={() => onSelectTool?.('resico')}
+                  className="hover:text-navy text-left transition"
+                >
+                  Calculadora y Cédula RESICO 2026
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
                   onClick={() => onSelectTool?.('guia-sat-imss')}
                   className="hover:text-navy text-left transition"
                 >

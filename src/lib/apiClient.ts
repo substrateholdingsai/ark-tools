@@ -499,15 +499,49 @@ export const apiClient = {
       };
     },
 
+    async getQuota(tenantId?: string): Promise<{
+      allowed: boolean;
+      used: number;
+      limit: number;
+      is_pro: boolean;
+      period: string;
+      payment_url: string;
+    }> {
+      const headers = getHeaders() as Record<string, string>;
+      if (tenantId) {
+        headers['x-tenant-id'] = tenantId;
+      }
+      const url = tenantId ? `/api/ai/quota?tenant_id=${encodeURIComponent(tenantId)}` : '/api/ai/quota';
+      const res = await apiFetch(url, { headers });
+      if (!res.ok) {
+        return {
+          allowed: true,
+          used: 0,
+          limit: 10,
+          is_pro: false,
+          period: '',
+          payment_url: 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+        };
+      }
+      return (await res.json()) as any;
+    },
+
     async chat(payload: {
       messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
       tenant_id?: string;
       model?: string;
     }): Promise<{
-      model: string;
-      tenant_id: string;
+      model?: string;
+      tenant_id?: string;
       tools_executed?: string[];
       result: string;
+      quota_exceeded?: boolean;
+      payment_url?: string;
+      quota?: {
+        used: number;
+        limit: number;
+        is_pro: boolean;
+      };
     }> {
       const headers = getHeaders() as Record<string, string>;
       if (payload.tenant_id) {
@@ -521,16 +555,23 @@ export const apiClient = {
       });
 
       if (!res.ok) {
-        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        const error = (await res.json().catch(() => ({}))) as any;
+        if (res.status === 402 || error.quota_exceeded) {
+          return {
+            quota_exceeded: true,
+            result: error.result || error.message || 'Límite de consultas gratuitas alcanzado.',
+            payment_url: error.payment_url || 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+            quota: {
+              used: error.current_usage || 10,
+              limit: error.limit || 10,
+              is_pro: false,
+            },
+          };
+        }
         throw new Error(error.message || error.error || 'Error al comunicarse con Workers AI');
       }
 
-      return (await res.json()) as {
-        model: string;
-        tenant_id: string;
-        tools_executed?: string[];
-        result: string;
-      };
+      return (await res.json()) as any;
     },
   },
 
