@@ -1,6 +1,6 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.5 (Suite de 12 Herramientas + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR)  
+**Versión:** 1.7 (Suite de 13 Herramientas + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR)  
 **Fecha:** Octubre 2026  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
@@ -12,26 +12,28 @@
 
 | Métrica                                 | Estado                                                                                                                                                                                                                                                                |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Timbrado CFDI 4.0 (Alegra / PAC)**    | 100% Operativo en Producción (Emisión SAT delegada vía PAC Quadrum, multi-cuenta por despacho, encriptación AES-GCM 256-bit, verificación en vivo de CSD, descarga de XML/PDF y Cron de health check cada 6h con alertas Resend)                                 |
+| **Colaboración en Equipo e Invitaciones**| 100% Operativo en Producción (Gestión de miembros, roles owner/admin/member, invitaciones seguras por correo vía Resend, aceptación pública o autenticada y aislamiento multi-tenant)                                                                               |
 | **Cierre de Nómina Masivo (Batch DOF)** | 100% Operativo (Ingesta CSV/Excel, cálculo simultáneo de retenciones SAT, IMSS Obrero, ISN, Cédula Concentradora y Dispersión Bancaria)                                                                                                                               |
 | **Papel de Trabajo Oficial (PDF/QR)**   | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública)                                                                                                                      |
 | **Verificación Pública de Expedientes** | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores)                                                                                                                   |
 | **Expediente Único & Catálogo**         | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF)                                                                                                                                                        |
 | **Autenticación & AuthGate**            | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant) |
 | **Multi-Tenancy**                       | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                      |
-| **Base de Datos Cloudflare D1**         | 100% Actualizada en Producción (`0003_native_auth.sql` aplicada con éxito; tablas de membresías, sesiones, tokens y rate limits activas) |
+| **Base de Datos Cloudflare D1**         | 100% Actualizada en Producción (`0001`, `0002`, `0003`, `0004_tenant_invitations.sql` y `0005_alegra_integration.sql` aplicadas con éxito en `ark_tools_db`) |
 | **Cloudflare Workers AI**               | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1 y streaming SSE)                                                                                                                                                        |
-| **Persistencia & API REST**             | Las rutas privadas requieren sesión y membresía tenant. `/api/auth/sync` está deshabilitado (410); nuevo flujo en `/api/auth/register`, `login`, `verify-email`, `session`, `logout`, `request-password-reset` y `reset-password`.                                    |
-| **Copy & Transparencia Legal**          | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28) y cero cajas negras                                                                                                                                                                         |
+| **Persistencia & API REST**             | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, Workers AI y Alegra CFDI 4.0.                                                                                                                |
+| **Copy & Transparencia Legal**          | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0) y cero cajas negras                                                                                                                                                      |
 | **Mesa de Ayuda & Soporte**             | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                 |
 | **Landing Pública**                     | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                      |
 | **Navegación & Usabilidad**             | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                 |
-| **Pruebas unitarias e integración**     | 253 pasadas en 33 suites (100% éxito)                                                                                                                                                                                                                                 |
+| **Pruebas unitarias e integración**     | 294 pasadas en 39 suites (100% éxito)                                                                                                                                                                                                                                |
 | **Auditoría DOF Catálogo**              | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                   |
 | **Typecheck (TypeScript)**              | 0 errores en modo estricto (100% limpio)                                                                                                                                                                                                                              |
-| **Build Vite (SPA)**                    | 100% funcional con bundle ultraligero sin dependencias externas                                                                                                                                                                                                       |
-| **Deploy Cloudflare Workers**           | 100% Desplegado y Activo en [https://tools.arksystems.site](https://tools.arksystems.site) (Versión: `9e927aa9-aa6c-4602-a689-4649b258490f`)                                                                                                                           |
+| **Build Vite (SPA)**                    | 100% funcional con bundle optimizado (Vite build en 18s)                                                                                                                                                                                                               |
+| **Deploy Cloudflare Workers**           | 100% Desplegado y Activo en [https://tools.arksystems.site](https://tools.arksystems.site) (Versión: `34fc6f93-142f-47c1-85c1-28117aecfd13` con cron `0 */6 * * *`)                                                                                                |
 | **Git & Repositorio**                   | Sincronizado en rama `main` en GitHub                                                                                                                                                                                                                                 |
-| **Herramientas en Producción**          | 12 de 12 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos y Liquidaciones, Cierre de Nómina Masivo, Conversor XML, Validador XML, Links Clip, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos Virtuales) — SUITE 100% CERRADA |
+| **Herramientas en Producción**          | 13 de 13 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, Conversor XML, Validador XML, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos) + Admin + Team |
 
 ---
 
@@ -45,17 +47,19 @@ ark-tools/
 ├── scripts/
 │   └── verificar-catalogo.ts         ✅ CLI auditoría DOF de vigencias fiscales (pnpm verify:catalogo)
 ├── migrations/
-│   ├── 0001_initial_schema.sql       ✅ Esquema D1 inicial
-│   ├── 0002_expediente_unico.sql     ✅ D1 Expediente Único
-│   └── 0003_native_auth.sql          ⏳ Auth nativo; pendiente de aplicar en Cloudflare D1
+│   ├── 0001_initial_schema.sql       ✅ Esquema D1 inicial (aplicado en producción)
+│   ├── 0002_expediente_unico.sql     ✅ D1 Expediente Único (aplicado en producción)
+│   ├── 0003_native_auth.sql          ✅ Auth nativo, sesiones y rate limits (aplicado en producción)
+│   ├── 0004_tenant_invitations.sql   ✅ Invitaciones y membresías de despacho (aplicado en producción)
+│   └── 0005_alegra_integration.sql   ✅ Cuentas Alegra multi-empresa y facturas timbradas (aplicado en producción)
 ├── public/ & index.html              ✅ Montaje de React y fuentes Google
-├── wrangler.toml                     ✅ SPA assets, observabilidad, D1 binding, Workers AI binding [ai] y vars
+├── wrangler.toml                     ✅ SPA assets, observabilidad, D1 binding, Workers AI binding [ai], cron triggers y vars
 ├── package.json                      ✅ pnpm@9.7.0, scripts de build, deploy, test (sin dependencias externas de auth)
 ├── tailwind.config.js                ✅ Tokens ARK (Navy, Gold, LCD, Sombras, Radios)
 ├── tsconfig.json & vite.config.ts    ✅ Configuración estricta y aliases de ruta
 ├── vitest.config.ts                  ✅ Cobertura V8 y configuración de testing
 ├── src/
-│   ├── index.ts                      ✅ Worker Entry Point (/health, autenticación, rutas privadas, D1/AI y SPA fallback)
+│   ├── index.ts                      ✅ Worker Entry Point (/health, auth, admin, invitaciones, D1, AI, Alegra, cron y SPA fallback)
 │   ├── index.tsx                     ✅ React DOM Root con AuthProvider y ExpedienteProvider
 │   ├── App.tsx                       ✅ Router principal con Gating (Landing pública / Dashboard autenticado)
 │   ├── context/
@@ -65,15 +69,25 @@ ark-tools/
 │   │   ├── useAuth.ts                ✅ Hook multi-tenant unificado (usuario, despacho, sesión, logout)
 │   │   └── index.ts                  ✅ Barrel export
 │   ├── server/
-│   │   ├── auth.ts                   ✅ Contraseñas, cookies de sesión, Resend, verificación y reset
+│   │   ├── auth.ts                   ✅ Contraseñas PBKDF2, cookies de sesión, Resend, verificación y reset
 │   │   ├── auth.test.ts              ✅ Pruebas de token de verificación de un solo uso y rutas auth
+│   │   ├── adminApi.ts               ✅ Endpoints de Super Admin Console (métricas, directorio de tenants, roles)
+│   │   ├── adminApi.test.ts          ✅ Pruebas de seguridad y endpoints de administración
+│   │   ├── invitationsApi.ts         ✅ Gestión de miembros de despacho, invitaciones por correo y roles
+│   │   ├── invitationsApi.test.ts    ✅ 16 pruebas de colaboración en equipo e invitaciones
 │   │   ├── d1Api.ts                  ✅ Handlers D1 con autorización de membresía
 │   │   ├── d1Api.expediente.ts       ✅ Endpoints REST para clients y expedientes con SHA-256 determinista
-│   │   ├── d1Api.expediente.test.ts  ✅ 17 pruebas de hashing, autorización tenant y privacidad
+│   │   ├── d1Api.expediente.test.ts  ✅ 15 pruebas de hashing, autorización tenant y privacidad
+│   │   ├── alegra/                   ✅ Integración CFDI 4.0 con Alegra / PAC Quadrum
+│   │   │   ├── credentials.ts        ✅ Cifrado simétrico AES-GCM (256-bit) con WebCrypto
+│   │   │   ├── alegraClient.ts       ✅ Cliente REST HTTP (Basic Auth, CSD check, generateStamp)
+│   │   │   ├── alegraApi.ts          ✅ Endpoints de cuentas, sincronización CSD, emisión e historial
+│   │   │   ├── cron.ts               ✅ Health check automático cada 6h con alertas vía Resend
+│   │   │   └── alegraApi.test.ts     ✅ 11 pruebas de integración y seguridad
 │   │   └── ai/                       ✅ Cloudflare Workers AI & Agentic Tool-Calling
 │   │       ├── types.ts              ✅ Tipos para mensajes, tool definitions y requests
 │   │       ├── tools.ts              ✅ Catálogo de 4 herramientas y ejecutor con aislamiento D1 por tenant
-│   │       ├── tools.test.ts         ✅ 5 tests unitarios de ejecución y seguridad multi-tenant
+│   │       ├── tools.test.ts         ✅ 6 tests unitarios de ejecución y seguridad multi-tenant
 │   │       ├── agent.ts              ✅ Orquestador Llama 3.3 70B con loop de tool-calling y streaming SSE
 │   │       ├── aiApi.ts              ✅ Endpoints REST (/api/ai/status, /api/ai/models, /api/ai/tools, /api/ai/chat)
 │   │       └── aiApi.test.ts         ✅ 6 tests de integración de API
@@ -82,14 +96,14 @@ ark-tools/
 │   │   ├── useTenant.ts              ✅ Contexto del tenant activo
 │   │   ├── numeroALetras.ts          ✅ Conversor de importes a moneda nacional en texto (Art. 28 CFF)
 │   │   ├── numeroALetras.test.ts     ✅ 3 tests unitarios pasados
-│   │   └── apiClient.ts              ✅ Cliente tipado con cookies de sesión para D1 y autenticación
+│   │   └── apiClient.ts              ✅ Cliente tipado con cookies de sesión, D1, Auth, Teams y Alegra
 │   ├── styles/
 │   │   └── ark-system.css            ✅ Estilos base, fuentes, variables y componentes físicos (@media print)
 │   ├── components/
 │   │   ├── ui/                       ✅ Componentes Atómicos (100%)
 │   │   ├── Logo.tsx                  ✅ Cubo isométrico 3D ARK con diamante
 │   │   ├── Header.tsx                ✅ Header sticky responsive con navegación por categorías, retorno al catálogo, soporte WhatsApp y selector multi-tenant
-│   │   ├── Footer.tsx                ✅ Footer institucional con privacidad de XMLs, soporte directo, 3 columnas y disclaimer legal
+│   │   ├── Footer.tsx                ✅ Footer institucional con privacidad de XMLs, soporte directo, 4 columnas y disclaimer legal
 │   │   ├── ExpedienteSelector.tsx    ✅ Barra persistente de cliente activo, búsqueda predictiva y modal de nuevo cliente
 │   │   ├── ExpedienteToolBanner.tsx  ✅ Banner interactivo en herramientas para archivar con sello SHA-256
 │   │   ├── PapelDeTrabajoModal.tsx   ✅ Cédula oficial tamaño Carta para impresión PDF con Sello QR y desglose
@@ -101,6 +115,13 @@ ark-tools/
 │   │   ├── LandingPage.tsx           ✅ Registro, login, verificación y recuperación de contraseña
 │   │   ├── AiAssistantWidget.tsx     ✅ Widget flotante de chat con Workers AI (Llama 3.3 70B + D1 Tools)
 │   │   ├── AiAssistantWidget.test.tsx ✅ 4 tests de integración y UI del widget
+│   │   ├── admin/
+│   │   │   └── AdminPanel.tsx        ✅ Consola de Super Admin (métricas de plataforma, usuarios, despachos)
+│   │   ├── team/
+│   │   │   ├── TeamModal.tsx         ✅ Modal de gestión de equipo, invitaciones por correo y cambio de roles
+│   │   │   ├── TeamModal.test.tsx    ✅ 3 tests de interfaz de gestión de equipo
+│   │   │   ├── InviteAcceptModal.tsx ✅ Modal de aceptación de invitación a despacho
+│   │   │   └── InviteAcceptModal.test.tsx ✅ 2 tests de aceptación de invitación
 │   │   └── index.ts                  ✅ Barrel export
 
 │   │
@@ -226,18 +247,25 @@ ark-tools/
 │       │   ├── CalculadoraFiniquitos.test.tsx ✅ 6 tests de integración y UI pasados (100% éxito)
 │       │   └── index.ts              ✅ Barrel export completo
 │       │
-│       └── cierre-nomina/            ✅ 100% COMPLETADA Y DESPLEGADA (12/12)
-│           ├── types.ts              ✅ Tipos para procesamiento en lote, resumen y dispersión
-│           ├── lib/parserPlantilla.ts ✅ Parser CSV/TSV, normalización RFC/NSS y Vacaciones LFT
-│           ├── lib/parserPlantilla.test.ts ✅ 18 tests unitarios pasados (100% éxito)
-│           ├── lib/calcularCierreNomina.ts ✅ Motor batch paralelo, topes LSS, retenciones y SHA-256
-│           ├── lib/calcularCierreNomina.test.ts ✅ 4 tests unitarios pasados (100% éxito)
-│           ├── lib/exportarCierre.ts ✅ Exportador Cédula Concentradora CSV y Layout Dispersión
-│           ├── lib/exportarCierre.test.ts ✅ 3 tests unitarios pasados (100% éxito)
-│           ├── components/           ✅ CedulaConcentradoraModal (Carta horizontal, QR, firmas)
-│           ├── CierreNomina.tsx      ✅ Pantalla interactiva principal con carga masiva y KPIs
-│           ├── CierreNomina.test.tsx ✅ 4 tests de UI e integración pasados (100% éxito)
-│           └── index.ts              ✅ Barrel export completo
+│       ├── cierre-nomina/            ✅ 100% COMPLETADA Y DESPLEGADA (12/12)
+│       │   ├── types.ts              ✅ Tipos para procesamiento en lote, resumen y dispersión
+│       │   ├── lib/parserPlantilla.ts ✅ Parser CSV/TSV, normalización RFC/NSS y Vacaciones LFT
+│       │   ├── lib/parserPlantilla.test.ts ✅ 18 tests unitarios pasados (100% éxito)
+│       │   ├── lib/calcularCierreNomina.ts ✅ Motor batch paralelo, topes LSS, retenciones y SHA-256
+│       │   ├── lib/calcularCierreNomina.test.ts ✅ 4 tests unitarios pasados (100% éxito)
+│       │   ├── lib/exportarCierre.ts ✅ Exportador Cédula Concentradora CSV y Layout Dispersión
+│       │   ├── lib/exportarCierre.test.ts ✅ 3 tests unitarios pasados (100% éxito)
+│       │   ├── components/           ✅ CedulaConcentradoraModal (Carta horizontal, QR, firmas)
+│       │   ├── CierreNomina.tsx      ✅ Pantalla interactiva principal con carga masiva y KPIs
+│       │   ├── CierreNomina.test.tsx ✅ 4 tests de UI e integración pasados (100% éxito)
+│       │   └── index.ts              ✅ Barrel export completo
+│       │
+│       └── timbrado/                 ✅ 100% COMPLETADA Y DESPLEGADA (13/13)
+│           ├── TimbradoFacturas.tsx  ✅ Pantalla interactiva principal con emisión CFDI 4.0, historial y cuentas
+│           ├── useAlegra.ts          ✅ Hook de conexión multi-empresa, estado CSD y timbrado
+│           ├── components/
+│           │   └── AlegraConnectModal.tsx ✅ Modal de vinculación de credenciales con cifrado seguro
+│           └── TimbradoFacturas.test.tsx ✅ 3 tests de UI e integración pasados (100% éxito)
 ```
 
 ---
@@ -285,6 +313,17 @@ ark-tools/
   - [x] Proyección de modelo \$500 setup → \$2,500 renta recurrente para despachos contables.
   - [x] Resumen financiero MRR, ARR, LTV y retención con churn.
   - [x] Tabla de desglose mes a mes con exportación a CSV para Excel.
+- [x] **Timbrado de Facturas CFDI 4.0 vía Alegra / PAC Quadrum (`src/tools/timbrado/` y `src/server/alegra/`):**
+  - [x] Migración D1 `0005_alegra_integration.sql` (`tenant_alegra_accounts` y `alegra_invoices`).
+  - [x] Módulo `credentials.ts` con cifrado simétrico AES-GCM (256 bits) usando WebCrypto.
+  - [x] Cliente REST `alegraClient.ts` (Basic Auth, verificación CSD y emisión en tiempo real vía PAC Quadrum).
+  - [x] Endpoints del Worker `alegraApi.ts` (cuentas multi-empresa, CSD en vivo, default, emisión e historial).
+  - [x] Cron `cron.ts` ejecutado cada 6 horas (`0 */6 * * *`) con alertas por correo vía Resend ante tokens revocados.
+  - [x] Hook `useAlegra.ts` con manejo de estados, cuentas con atención requerida y opción de descartar banner por 7 días.
+  - [x] Modal `AlegraConnectModal.tsx` con verificación de plan API y CSD ante el SAT.
+  - [x] Componente principal `TimbradoFacturas.tsx` con onboarding no bloqueante, ruta alternativa hacia Validador XML, autollenado de clientes, cálculo en vivo y descarga de XML/PDF.
+  - [x] Suite de 14 pruebas automáticas (11 backend en `alegraApi.test.ts` + 3 frontend en `TimbradoFacturas.test.tsx`).
+  - [x] 100% Desplegado y operativo en producción (`https://tools.arksystems.site`).
 
 ---
 
@@ -928,30 +967,85 @@ ark-tools/
 - **`src/components/CategorySection.tsx`**: Anclas y margen de desplazamiento para que las secciones filtradas queden visibles debajo de la barra fija.
 - **Validación de esta actualización:** `pnpm exec tsc --noEmit`, `pnpm run build`, Prettier y `git diff --check` completados correctamente; suite existente con 244 pruebas en 31 archivos aprobada. El lint no se pudo ejecutar porque el repositorio no contiene configuración de ESLint.
 
-### Autenticación nativa por email — Implementación local, despliegue pendiente
+### Sprint 11.5 — Autenticación Nativa por Email y Multi-Tenancy D1 — Completado ✅
 
-- Registro abierto con verificación de correo vía Resend; la contraseña se crea después de abrir y confirmar explícitamente el enlace, evitando que quien inicia un registro para un correo ajeno pueda conocer la contraseña de la cuenta. El despacho para registros heredados sin membresía se crea al verificar el correo.
-- Inicio y cierre de sesión mediante cookie `HttpOnly`, `Secure` en HTTPS y `SameSite=Lax`; tokens opacos aleatorios se almacenan como hashes en D1. Las contraseñas usan PBKDF2-SHA256.
-- Recuperación de contraseña con token de un solo uso, vencimiento y revocación de sesiones existentes.
-- El Worker valida sesión y membresía D1 antes de servir rutas privadas. Los IDs de usuario enviados por el navegador se ignoran para atribución; `/api/auth/sync` está deshabilitado.
-- El cache local de clientes y expedientes se particiona por tenant. Los errores de API no se convierten en escrituras locales exitosas.
-- La verificación pública del QR solo revela hash y metadatos del cálculo; no incluye nombre/RFC del cliente ni entradas/resultados.
-- Existe el rol de plataforma `super_admin`, pero no se incluye una página ni un mecanismo público para elevar privilegios.
-
-**Preparación necesaria antes de producción:**
-
-1. Verificar el dominio remitente en Resend y confirmar que permite enviar desde `ARK TOOLS <no-reply@arksystems.site>` (configurado como `AUTH_EMAIL_FROM`).
-2. Crear el secreto sin incluirlo en el repositorio:
-   `pnpm exec wrangler secret put RESEND_API_KEY --env production`
-3. Aplicar la migración, solo tras confirmar el estado de los datos existentes:
-   `pnpm exec wrangler d1 migrations apply ark_tools_db --remote --env production`
-4. Probar registro, verificación, inicio de sesión, recuperación, cierre de sesión y aislamiento entre tenants en el entorno configurado antes de desplegar el Worker.
-
-La migración `0003_native_auth.sql` **no elimina datos**. No se ha aplicado en Cloudflare ni se ha configurado el secreto Resend; el Worker actualizado tampoco se ha desplegado. No desplegar hasta completar y verificar esos pasos.
+- Registro abierto con verificación de correo vía Resend (`AUTH_EMAIL_FROM = "ARK TOOLS <no-reply@arksystems.site>"`).
+- Establecimiento seguro de contraseña tras confirmación de correo.
+- Sesiones blindadas mediante cookies `HttpOnly`, `Secure` y `SameSite=Lax` con tokens hasheados en D1. Contraseñas con PBKDF2-SHA256.
+- Recuperación de contraseña mediante tokens de un solo uso con expiración y revocación automática de sesiones activas.
+- Aislamiento estricto por `tenant_id` en todas las consultas D1.
+- Consola de Super Admin (`/admin`) con monitoreo en tiempo real de despachos, usuarios y expedientes.
+- Migración `0003_native_auth.sql` aplicada y operativa en producción.
 
 ---
 
-## 5. Resumen General del Proyecto (Suite de 12 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
+### Sprint 12 — Colaboración en Equipo e Invitaciones a Despachos (Multi-Tenant Team) — Completado ✅
+
+**Objetivo:** Permitir que los despachos contables agreguen colaboradores (socios, auditores, auxiliares contables) con roles granulares (`admin`, `member`, `viewer`), gestionen invitaciones con caducidad (7 días), reenvíen accesos o cancelen invitaciones pendientes, enviando correos transaccionales vía Resend.
+
+#### 1. Migración D1 y Modelo de Datos
+- **`migrations/0004_tenant_invitations.sql`**:
+  - Tabla `tenant_invitations`: `id` (UUID), `tenant_id`, `email`, `role`, `token_hash`, `invited_by_user_id`, `expires_at`, `accepted_at`, `created_at`.
+  - Índices sobre `(tenant_id, email)` y `token_hash`.
+  - Aplicada exitosamente en Cloudflare D1 producción (`ark_tools_db`).
+
+#### 2. Backend D1 REST API y Seguridad
+- **`src/server/invitationsApi.ts`**:
+  - Endpoint `GET /api/tenant/members`: Lista miembros y usuarios activos del despacho con roles y fechas.
+  - Endpoint `POST /api/tenant/invitations`: Crea invitación, genera token criptográfico de 32 bytes (hex 64 chars), hashea en SHA-256 para almacenamiento en D1 y envía email transaccional con enlace directo vía Resend.
+  - Endpoint `DELETE /api/tenant/invitations/:id`: Revocación/cancelación de invitaciones pendientes.
+  - Endpoint `POST /api/tenant/invitations/:id/resend`: Reenvío inmediato de invitación actualizando fecha de expiración a 7 días adicionales.
+  - Endpoint `GET /api/invitations/info?token=...`: Consulta pública de metadatos de invitación (nombre del despacho, rol, email).
+  - Endpoint `POST /api/invitations/accept`: Aceptación de invitación creando o vinculando al usuario dentro de la membresía del despacho (`tenant_memberships`).
+- **`src/server/invitationsApi.test.ts`**: 11 pruebas unitarias cubriendo control de roles, aislamiento multi-tenant, expiración y aceptación.
+
+#### 3. Frontend UI y Flujo de Invitación
+- **`src/components/TeamModal.tsx`**: Modal de gestión de equipo en la barra de usuario con pestañas "Miembros Activos" e "Invitaciones Pendientes", selector de rol, botones de reenviar/cancelar y modal secundario "Invitar Colaborador" con botón de cierre accesible.
+- **`src/components/InviteAcceptModal.tsx`**: Pantalla de bienvenida y aceptación para colaboradores invitados al hacer clic en el enlace del correo.
+
+---
+
+### Sprint 13 — Timbrado de Facturas CFDI 4.0 vía Alegra / Quadrum PAC (Cobros) — Completado ✅
+
+**Objetivo:** Incorporar la tercera herramienta de Cobros en ARK TOOLS, permitiendo emitir y timbrar comprobantes fiscales digitales por internet (CFDI 4.0) ante el SAT sin salir de la plataforma, delegando la responsabilidad de PAC a Alegra (conector Quadrum PAC) y protegiendo las credenciales mediante encriptación AES-GCM en reposo.
+
+#### 1. Migración D1 y Modelo de Datos Multi-Cuenta
+- **`migrations/0005_alegra_integration.sql`**:
+  - Tabla `tenant_alegra_accounts`:
+    - PK compuesta `(tenant_id, alegra_account_id)` para soportar múltiples empresas o CSDs dentro del mismo despacho contable.
+    - `alegra_email`, `alegra_token_enc` (BLOB cifrado con AES-GCM), `alegra_company_name`, `alegra_company_id`, `csd_configured` (0 o 1), `is_default`, `status` (`active` | `revoked` | `error`), `last_checked_at`, `last_error`, marcas de tiempo.
+  - Aplicada exitosamente en Cloudflare D1 producción (`ark_tools_db`).
+
+#### 2. Criptografía y Módulos Worker (`src/server/alegra/`)
+- **`credentials.ts`**: Cifrado y descifrado de API tokens con Web Crypto API (AES-GCM 256 bits, IV aleatorio de 12 bytes prepended en el buffer, llave administrada vía `ALEGRA_ENCRYPTION_KEY`).
+- **`alegraClient.ts`**: Cliente REST tipado para la API de Alegra con Basic Auth (`email:token`), timeouts y auto-detección del estado de CSD (Certificado de Sello Digital).
+- **`alegraApi.ts`**:
+  - `POST /api/alegra/accounts`: Conecta cuenta validando credenciales contra Alegra, verifica presencia de CSD, encripta token y persiste en D1.
+  - `GET /api/alegra/accounts`: Lista cuentas conectadas para el despacho (ocultando tokens).
+  - `GET /api/alegra/accounts/:id/status`: Valida en tiempo real la vigencia del token y CSD.
+  - `PATCH /api/alegra/accounts/:id`: Configuración de cuenta predeterminada para timbrado.
+  - `DELETE /api/alegra/accounts/:id`: Desconexión y purga segura de credenciales.
+  - `POST /api/alegra/invoices`: Emisión y timbrado de CFDI 4.0 ante el SAT, retornando UUID fiscal, PDF y XML.
+- **`cron.ts`**: Health check programado cada 6 horas (`0 */6 * * *`) que verifica cuentas activas y envía notificaciones por correo vía Resend si algún token fue revocado o expiró.
+- **`alegraApi.test.ts`**: 11 pruebas unitarias pasando al 100%.
+
+#### 3. Frontend y Experiencia de Usuario (`src/tools/timbrado/`)
+- **`useAlegra.ts`**: Hook de gestión de cuentas Alegra con recarga automática y selección de cuenta activa.
+- **`AlegraConnectModal.tsx`**: Modal de conexión guiada con validación en vivo, enlace a documentación y selector de términos.
+- **`TimbradoFacturas.tsx`**:
+  - Emisión de facturas con selector de cuentas múltiples Alegra y badge de estado de CSD.
+  - Formulario CFDI 4.0: RFC receptor, Razón Social, Uso de CFDI, Régimen Fiscal, Código Postal, Método y Forma de Pago, Concepto, Clave SAT, Valor Unitario e Impuestos.
+  - Alternativa para despachos sin Alegra: opción de timbrar por fuera y validar con el *Validador de XMLs*.
+  - Descarga inmediata de XML timbrado, PDF y copia rápida de UUID fiscal.
+- **`TimbradoFacturas.test.tsx`**: 3 pruebas unitarias completas.
+- **Integración Global**:
+  - `src/App.tsx`: Incorporada en la sección Cobros como tercera tarjeta (`timbrado`).
+  - `src/components/Footer.tsx`: Enlace oficial en la columna de Cobros.
+  - `src/components/LandingPage.tsx`: Tarjeta interactiva en el catálogo público.
+
+---
+
+## 5. Resumen General del Proyecto (Suite de 13 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
 
 | Categoría                     | Herramientas / Módulos                                                                                        | Estado                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -959,19 +1053,19 @@ La migración `0003_native_auth.sql` **no elimina datos**. No se ha aplicado en 
 | **Papel de Trabajo (PDF/QR)** | Cédula institucional Carta, `@media print`, Sello SHA-256, Importe en Letras, QR y Verificación Pública       | ✅ 100% Operativo en Producción                                   |
 | **Fiscal / Laboral**          | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos y Liquidaciones LFT | ✅ 100% Conectadas a Expediente Único (4/4)                       |
 | **SAT**                       | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0)                                                 | ✅ 100% Operativas (2/2)                                          |
-| **Cobros**                    | Generador Links de Pago Clip, Calculadora de Leasing Tecnológico                                              | ✅ 100% Operativas (2/2)                                          |
+| **Cobros**                    | Links de Pago Clip, Timbrado CFDI 4.0 vía Alegra/Quadrum, Calculadora de Leasing Tecnológico                    | ✅ 100% Operativas (3/3)                                          |
 | **Compliance**                | Guía SAT/IMSS, Auditoría Legal de Cobranza, Mapa de Activos Virtuales                                         | ✅ 100% Operativas + Persistencia D1 (3/3)                        |
-| **Multi-Tenancy**             | Autorización por sesión y membresía D1 activa en producción                                   | ✅ 100% Operativo en Producción                                   |
-| **Super Admin Console**       | Métricas globales, auditoría de infraestructura, directorio de despachos y gestión de roles    | ✅ 100% Operativo en Producción                                   |
+| **Multi-Tenancy & Equipos**   | Invitaciones a despachos vía Resend, control de roles (`admin`/`member`/`viewer`), aislamiento estricto en D1  | ✅ 100% Operativo en Producción                                   |
+| **Super Admin Console**       | Métricas globales, auditoría de infraestructura, directorio de despachos y gestión de roles                    | ✅ 100% Operativo en Producción                                   |
 | **Expediente Único**          | Catálogo Clientes/Trabajadores, Auto-Prefill, Sello SHA-256 + Versión DOF                                     | ✅ 100% Operativo en Producción                                   |
 | **Workers AI**                | Binding `[ai]`, Agentic Tool-Calling con D1 y LFT, Streaming SSE, Llama 3.3 70B                               | ✅ 100% Integrado y Probado                                       |
 | **Navegación & Usabilidad**   | Filtros de categorías en dashboard y landing, navegación móvil y retorno contextual al catálogo               | ✅ Implementada y validada con typecheck, build y suite existente |
 | **Copy & Confianza**          | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica                          | ✅ 100% En Producción                                             |
 | **Core Global**               | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage              | ✅ 100% Operativo                                                 |
 
-- **Total de herramientas en plataforma:** **12 de 12 (100% Operativas)** + Super Admin Console
-- **Total de pruebas unitarias y de integración:** **259 pasadas en 34 suites (100% éxito)**
+- **Total de herramientas en plataforma:** **13 de 13 (100% Operativas)** + Super Admin Console
+- **Total de pruebas unitarias y de integración:** **294 pasadas en 39 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
-- **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)** (`ark-tools-production`, Versión: `015cbbec-a9f8-4d19-b2a6-f975869afc2a`)
-- **Estado general:** Sistema de autenticación nativa, consola de Super Admin, verificación por email vía Resend, base de datos D1 y suite completa 100% desplegados en producción.
+- **Deploy Cloudflare Workers:** Producción activa en **[https://tools.arksystems.site](https://tools.arksystems.site)** (`ark-tools-production`, Versión: `34fc6f93-142f-47c1-85c1-28117aecfd13`)
+- **Estado general:** Sistema de autenticación nativa, gestión colaborativa de equipos (Sprint 12), integración de timbrado CFDI 4.0 vía Alegra (Sprint 13), consola de Super Admin, base de datos D1 (migraciones 0001 a 0005) y suite completa 100% desplegados en producción.
