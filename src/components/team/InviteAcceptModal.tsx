@@ -68,6 +68,17 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
       });
   }, [token, isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   const handleAccept = async (e?: React.FormEvent) => {
@@ -117,8 +128,14 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
     user.email.toLowerCase() !== invitation.email.toLowerCase();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4">
-      <div className="animate-in fade-in zoom-in-95 w-full max-w-md overflow-hidden rounded-3xl border border-line bg-white shadow-2xl">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="animate-in fade-in zoom-in-95 w-full max-w-md overflow-hidden rounded-3xl border border-line bg-white shadow-2xl"
+      >
         {/* Encabezado */}
         <div className="border-b border-line bg-surface-2/60 px-6 py-4">
           <div className="flex items-center justify-between">
@@ -356,6 +373,24 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
               )}
             </div>
           )}
+        </div>
+
+        {/* Pie con botón de cierre */}
+        <div className="flex items-center justify-between border-t border-line bg-surface-2/50 px-6 py-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[12px] font-semibold text-muted hover:text-navy"
+          >
+            Ahora no / Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-line bg-white px-4 py-1.5 font-orbitron text-[10px] font-bold text-navy shadow-xs transition hover:bg-surface-2"
+          >
+            CERRAR
+          </button>
         </div>
       </div>
     </div>

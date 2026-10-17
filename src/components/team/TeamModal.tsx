@@ -26,6 +26,7 @@ import {
   Send,
   Building2,
   ChevronDown,
+  ArrowLeft,
 } from 'lucide-react';
 import {
   apiClient,
@@ -86,6 +87,17 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
       setSuccessMsg(null);
     }
   }, [isOpen, tenantId, loadTeamData]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -181,8 +193,14 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-      <div className="animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-2xl">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-line bg-white shadow-2xl"
+      >
         {/* Cabecera */}
         <div className="flex items-center justify-between border-b border-line bg-surface-2/60 px-6 py-4">
           <div className="flex items-center gap-3">
@@ -543,11 +561,23 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="flex flex-col-reverse gap-2.5 pt-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab('members');
+                    setErrorMsg(null);
+                  }}
+                  className="flex h-11 items-center justify-center gap-1.5 rounded-xl border border-line bg-surface-2 px-5 font-orbitron text-[11px] font-bold text-muted transition hover:bg-surface hover:text-navy"
+                >
+                  <ArrowLeft size={14} />
+                  <span>ATRÁS / CANCELAR</span>
+                </button>
+
                 <button
                   type="submit"
                   disabled={inviting || !inviteEmail.trim()}
-                  className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-navy font-orbitron text-[11px] font-bold tracking-wider text-white shadow-sm transition hover:bg-navy-dark disabled:opacity-50"
+                  className="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-navy font-orbitron text-[11px] font-bold tracking-wider text-white shadow-sm transition hover:bg-navy-dark disabled:opacity-50 sm:flex-none sm:px-6"
                 >
                   {inviting ? (
                     <>
@@ -564,6 +594,38 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
               </div>
             </form>
           )}
+        </div>
+
+        {/* Pie de Página / Barra Inferior de Navegación y Cierre */}
+        <div className="flex items-center justify-between border-t border-line bg-surface-2/50 px-6 py-3.5">
+          {activeTab === 'invite' ? (
+            <button
+              type="button"
+              onClick={() => {
+                setActiveTab('members');
+                setErrorMsg(null);
+              }}
+              className="flex items-center gap-1.5 font-orbitron text-[11px] font-bold text-navy hover:underline"
+            >
+              <ArrowLeft size={13} className="text-gold-dark" />
+              <span>VOLVER A LA LISTA DE MIEMBROS</span>
+            </button>
+          ) : (
+            <div className="text-[11px] font-medium text-muted">
+              <span>{members.length} miembro{members.length !== 1 ? 's' : ''} activo{members.length !== 1 ? 's' : ''}</span>
+              {invitations.length > 0 && (
+                <span className="ml-1.5 text-gold-dark">• {invitations.length} invitación{invitations.length !== 1 ? 'es' : ''} pendiente{invitations.length !== 1 ? 's' : ''}</span>
+              )}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl border border-line bg-white px-5 py-2 font-orbitron text-[11px] font-bold text-navy shadow-xs transition hover:bg-surface-2 hover:text-ink"
+          >
+            CERRAR
+          </button>
         </div>
 
         {/* Modal de confirmación para remover miembro */}
