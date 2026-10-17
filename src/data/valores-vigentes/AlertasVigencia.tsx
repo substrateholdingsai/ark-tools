@@ -24,7 +24,7 @@ export function AlertasVigencia({ config }: { config?: Partial<ConfigVigencia> }
   const unicas = new Map(todas.map(v => [v.id, v])).values();
 
   return (
-    <div className="space-y-2 max-w-[1280px] mx-auto">
+    <div className="mx-auto my-3 max-w-[1280px] space-y-2 px-6 md:px-10">
       {Array.from(unicas).map(v => {
         const vigencia = evaluarVigencia(v, config);
         const esCritico = criticos.some(c => c.id === v.id);

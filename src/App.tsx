@@ -267,10 +267,12 @@ export function App() {
 
           {/* Selector y Catálogo de Expediente Único (Sprint 9) — oculto en consola admin */}
           {activeTool !== 'admin' && (
-            <>
+            <div className="w-full">
               <ExpedienteSelector />
-              <AlertasVigencia />
-            </>
+              <div className="mx-auto max-w-[1280px] px-6 md:px-10">
+                <AlertasVigencia />
+              </div>
+            </div>
           )}
 
           <main>

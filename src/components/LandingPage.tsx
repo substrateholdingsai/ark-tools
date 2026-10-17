@@ -532,7 +532,7 @@ export function LandingPage() {
               <h3 className="text-[15px] font-bold text-ink">Arts. 27 y 28 LSS + LFT</h3>
               <p className="text-[12.5px] leading-relaxed text-muted">
                 Factor de integración mínimo de 1.0493 conforme a Vacaciones Dignas (Art. 76 LFT),
-                aguinaldo (Art. 87 LFT) y tope de 25 UMAs ($2,828.50/día).
+                aguinaldo (Art. 87 LFT) y tope de 25 UMAs ($2,932.75/día).
               </p>
             </div>
 

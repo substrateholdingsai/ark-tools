@@ -31,14 +31,14 @@ export function ExplicacionSBC() {
           El SBC integra las prestaciones al salario base. En 2026, la UMA sube
           a{' '}
           <strong className="text-white font-orbitron tabular-nums">
-            $113.14
+            $117.31
           </strong>
           , por lo que el tope de 25 UMAs llega a{' '}
           <strong className="text-white font-orbitron tabular-nums">
-            $2,828.50
+            $2,932.75
           </strong>
           . Si pagas por encima, el IMSS topa. Si pagas por debajo del salario
-          mínimo (<strong className="text-white">$278.80</strong>), se ajusta al
+          mínimo frontera (<strong className="text-white">$440.87</strong>), se ajusta al
           mínimo.
         </p>
 

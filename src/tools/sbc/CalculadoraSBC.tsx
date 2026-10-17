@@ -122,7 +122,7 @@ export function CalculadoraSBC({ onBack }: CalculadoraSBCProps) {
         </h1>
         <p className="mt-3 text-[14px] leading-[1.6] text-muted max-w-[64ch] inter font-inter">
           Salario Base de Cotización con factor de integración, tope de 25 UMAs
-          ($2,828.50) y salario mínimo frontera ($278.80). Cálculo conforme LSS
+          ($2,932.75) y salario mínimo frontera ($440.87). Cálculo conforme LSS
           Art. 27 y 28.
         </p>
       </header>

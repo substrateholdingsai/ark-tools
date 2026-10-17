@@ -6,7 +6,7 @@
  */
 
 import type { LucideIcon } from 'lucide-react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Fingerprint } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
 interface ToolCardProps {
@@ -51,6 +51,7 @@ export function ToolCard({
   className,
 }: ToolCardProps) {
   const handleClick = onSelect ?? onClick;
+  const isPro = badge === 'PRO' || badgeVariant === 'gold';
 
   return (
     <button
@@ -89,11 +90,12 @@ export function ToolCard({
         {badge && (
           <span
             className={cn(
-              'px-2.5 py-1 rounded-full text-[10px] font-bold tracking-[0.12em] uppercase',
+              'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-[0.12em] uppercase',
               badgeVariantClasses[badgeVariant]
             )}
           >
-            {badge}
+            {isPro && <Fingerprint size={12} className="text-navy-dark" />}
+            <span>{badge}</span>
           </span>
         )}
       </div>
@@ -106,13 +108,25 @@ export function ToolCard({
         {description}
       </p>
 
-      {/* Footer: CTA */}
-      <div className="mt-5 flex items-center gap-2 text-[11px] font-bold tracking-[0.14em] text-navy orbitron font-orbitron">
-        <span>ABRIR</span>
-        <ArrowRight
-          size={14}
-          className="transition-transform group-hover:translate-x-1"
-        />
+      {/* Footer: CTA + Reconocimiento Pro */}
+      <div className="mt-5 flex items-center justify-between border-t border-line/40 pt-4 text-[11px] font-bold tracking-[0.14em] orbitron font-orbitron">
+        {isPro ? (
+          <div className="flex items-center gap-1.5 text-gold-dark font-semibold text-[10px]">
+            <Fingerprint size={13} className="text-gold-dark" />
+            <span>CRÉDITO PRO</span>
+          </div>
+        ) : (
+          <div className="text-[10px] font-medium text-muted">
+            <span>LIBRE</span>
+          </div>
+        )}
+        <div className="flex items-center gap-1.5 text-navy group-hover:text-navy-dark">
+          <span>ABRIR</span>
+          <ArrowRight
+            size={14}
+            className="transition-transform group-hover:translate-x-1"
+          />
+        </div>
       </div>
     </button>
   );

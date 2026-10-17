@@ -137,7 +137,7 @@ describe('calcularResultadoSBC', () => {
     // SBC bruto = 580 × 1.0493 ≈ 608.60
     expect(resultado.sbcBruto).toBeCloseTo(580 * (1 + 18 / 365), 2);
 
-    // SBC final: como el bruto (608.60) está dentro del rango (278.80 - 2828.50),
+    // SBC final: como el bruto (608.60) está dentro del rango (440.87 - 2932.75),
     // no se aplica tope
     expect(resultado.tipoTope).toBeNull();
     expect(resultado.sbcFinal).toBeCloseTo(resultado.sbcBruto, 2);
