@@ -44,9 +44,11 @@ interface TeamModalProps {
 export function TeamModal({ isOpen, onClose }: TeamModalProps) {
   const { tenantId, tenantName, orgRole, platformRole, user } = useAuth();
 
+  const [serverRole, setServerRole] = useState<'owner' | 'admin' | 'member' | null>(null);
+  const effectiveRole = serverRole || orgRole;
   const isSuperAdmin = platformRole === 'super_admin';
-  const isOwner = orgRole === 'owner' || isSuperAdmin;
-  const isAdmin = orgRole === 'admin';
+  const isOwner = effectiveRole === 'owner' || isSuperAdmin;
+  const isAdmin = effectiveRole === 'admin';
   const canManage = isOwner || isAdmin;
 
   const [activeTab, setActiveTab] = useState<'members' | 'invite'>('members');
@@ -71,6 +73,9 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
     setErrorMsg(null);
     try {
       const data = await apiClient.teams.getMembers(tenantId);
+      if (data.currentUserRole) {
+        setServerRole(data.currentUserRole);
+      }
       setMembers(data.members || []);
       setInvitations(data.invitations || []);
     } catch (err) {
@@ -313,9 +318,24 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
             <div className="space-y-6">
               {/* Sección 1: Miembros Activos */}
               <div>
-                <h3 className="mb-3 font-orbitron text-[11px] font-bold uppercase tracking-wider text-muted">
-                  Colaboradores del Despacho
-                </h3>
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <h3 className="font-orbitron text-[11px] font-bold uppercase tracking-wider text-muted">
+                    Colaboradores del Despacho
+                  </h3>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('invite');
+                        setErrorMsg(null);
+                      }}
+                      className="flex items-center gap-1.5 rounded-lg bg-navy px-3 py-1.5 font-orbitron text-[10px] font-bold tracking-wider text-white shadow-xs transition hover:bg-navy-dark"
+                    >
+                      <UserPlus size={13} className="text-gold" />
+                      <span>+ INVITAR COLABORADOR</span>
+                    </button>
+                  )}
+                </div>
 
                 {members.length === 0 && !loading ? (
                   <div className="rounded-xl border border-line bg-surface p-6 text-center text-[12px] text-muted">
@@ -619,13 +639,29 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-line bg-white px-5 py-2 font-orbitron text-[11px] font-bold text-navy shadow-xs transition hover:bg-surface-2 hover:text-ink"
-          >
-            CERRAR
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-xl border border-line bg-white px-4 py-2 font-orbitron text-[11px] font-bold text-muted shadow-xs transition hover:bg-surface-2 hover:text-ink"
+            >
+              CERRAR
+            </button>
+
+            {activeTab === 'members' && canManage && (
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('invite');
+                  setErrorMsg(null);
+                }}
+                className="flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2 font-orbitron text-[11px] font-bold tracking-wider text-white shadow-xs transition hover:bg-navy-dark"
+              >
+                <UserPlus size={14} className="text-gold" />
+                <span>+ INVITAR COLABORADOR</span>
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Modal de confirmación para remover miembro */}
