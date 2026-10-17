@@ -14,6 +14,8 @@ import { handleAiApiRequest } from './server/ai/aiApi';
 import { authenticateRequest, handleAuthApiRequest } from './server/auth';
 import { handleAdminApiRequest } from './server/adminApi';
 import { handleInvitationsApiRequest } from './server/invitationsApi';
+import { handleAlegraApiRequest } from './server/alegra/alegraApi';
+import { checkAlegraAccountsHealth } from './server/alegra/cron';
 
 export interface Env {
   // Assets (SPA)
@@ -39,6 +41,9 @@ export interface Env {
   // Email transaccional para autenticación nativa
   RESEND_API_KEY?: string;
   AUTH_EMAIL_FROM?: string;
+
+  // Encriptación Alegra (AES-GCM)
+  ALEGRA_ENCRYPTION_KEY?: string;
 
   // Cloudflare D1 Database (Multi-Tenant)
   ARK_TOOLS_DB?: D1Database;
@@ -86,6 +91,14 @@ export default {
     // SPA FALLBACK (Assets)
     // ─────────────────────────────────────────────────────────────────
     return env.ASSETS.fetch(request);
+  },
+
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext
+  ): Promise<void> {
+    ctx.waitUntil(checkAlegraAccountsHealth(env));
   },
 } satisfies ExportedHandler<Env>;
 
@@ -175,6 +188,19 @@ async function handleApiRequest(
   const aiResponse = await handleAiApiRequest(request, env, corsHeaders, authPrincipal);
   if (aiResponse) {
     return aiResponse;
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // ALEGRA CFDI 4.0 (Timbrado, Cuentas, Historial)
+  // ─────────────────────────────────────────────────────────────────
+  const alegraResponse = await handleAlegraApiRequest(
+    request,
+    env,
+    corsHeaders,
+    authPrincipal
+  );
+  if (alegraResponse) {
+    return alegraResponse;
   }
 
   // Endpoints de API

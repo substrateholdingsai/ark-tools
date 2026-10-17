@@ -101,3 +101,10 @@ migrations_dir = "migrations"
 
 [env.production.ai]
 binding = "AI"
+
+# ─────────────────────────────────────────────────────────────────────
+# CRON TRIGGERS (Health check Alegra cada 6 horas)
+# ─────────────────────────────────────────────────────────────────────
+[triggers]
+crons = ["0 */6 * * *"]
+
