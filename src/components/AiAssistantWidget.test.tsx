@@ -7,7 +7,6 @@ vi.mock('@/context/AuthContext', () => ({
   useAuth: () => ({
     tenantId: 'tenant_test_123',
     tenantName: 'Despacho Contable Águila',
-    getToken: vi.fn().mockResolvedValue('mock_token'),
   }),
 }));
 
@@ -93,8 +92,7 @@ describe('AiAssistantWidget', () => {
     expect(apiClient.ai.chat).toHaveBeenCalledWith(
       expect.objectContaining({
         tenant_id: 'tenant_test_123',
-      }),
-      'mock_token'
+      })
     );
   });
 });

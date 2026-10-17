@@ -12,6 +12,18 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   };
+  const principal = {
+    id: 'user-1',
+    email: 'user@example.com',
+    fullName: 'Test User',
+    platformRole: 'user' as const,
+  };
+  const tenantMembership = {
+    id: 't-123',
+    name: 'Test Tenant',
+    slug: 'test-tenant',
+    role: 'owner' as const,
+  };
 
   describe('computeDeterministicHash', () => {
     it('genera el mismo hash independientemente del orden de las llaves', async () => {
@@ -53,10 +65,16 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
 
   describe('handleExpedienteApiRequest — Endpoints de Clientes', () => {
     function createMockDb(mockResults: Record<string, unknown> = {}) {
+      const firstResults = [tenantMembership, ...((mockResults.firstSequence as unknown[]) || [])];
+      let firstIndex = 0;
       const mockStatement = {
         bind: vi.fn().mockReturnThis(),
         all: vi.fn().mockResolvedValue({ results: mockResults.all || [] }),
-        first: vi.fn().mockResolvedValue(mockResults.first ?? null),
+        first: vi.fn().mockImplementation(() => {
+          const result = firstResults[firstIndex];
+          firstIndex += 1;
+          return Promise.resolve(result ?? mockResults.first ?? null);
+        }),
         run: vi.fn().mockResolvedValue({ success: true }),
       };
 
@@ -78,6 +96,38 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
       expect(data.error).toContain('tenant_id');
     });
 
+    it('rechaza solicitudes sin identidad autenticada', async () => {
+      const db = {
+        prepare: vi.fn(() => ({
+          bind: vi.fn().mockReturnThis(),
+          first: vi.fn().mockResolvedValue(null),
+        })),
+      };
+      const mockEnv = { ARK_TOOLS_DB: db } as unknown as Env;
+      const req = new Request('http://localhost/api/clients?tenant_id=t-123', { method: 'GET' });
+
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders);
+
+      expect(res?.status).toBe(401);
+    });
+
+    it('rechaza a una identidad autenticada que no es miembro del tenant', async () => {
+      const db = {
+        prepare: vi.fn(() => ({
+          bind: vi.fn().mockReturnThis(),
+          first: vi.fn().mockResolvedValue(null),
+        })),
+      };
+      const mockEnv = { ARK_TOOLS_DB: db } as unknown as Env;
+      const req = new Request('http://localhost/api/clients?tenant_id=tenant-alien', {
+        method: 'GET',
+      });
+
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders, principal);
+
+      expect(res?.status).toBe(403);
+    });
+
     it('lista clientes del tenant decodificando metadata', async () => {
       const db = createMockDb({
         all: [
@@ -94,10 +144,12 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
       const mockEnv = { ARK_TOOLS_DB: db } as unknown as Env;
 
       const req = new Request('http://localhost/api/clients?tenant_id=t-123', { method: 'GET' });
-      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders);
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders, principal);
 
       expect(res?.status).toBe(200);
-      const data = (await res?.json()) as { clients: Array<{ id: string; metadata: Record<string, unknown> }> };
+      const data = (await res?.json()) as {
+        clients: Array<{ id: string; metadata: Record<string, unknown> }>;
+      };
       expect(data.clients).toHaveLength(1);
       expect(data.clients[0]?.id).toBe('client-1');
       expect(data.clients[0]?.metadata).toEqual({ puesto: 'Contador Jr' });
@@ -111,7 +163,7 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
         method: 'POST',
         body: JSON.stringify({ tenant_id: 't-123' }), // falta nombre
       });
-      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders);
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders, principal);
 
       expect(res?.status).toBe(400);
     });
@@ -129,22 +181,65 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
           rfc: 'IAL200101XYZ',
         }),
       });
-      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders);
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders, principal);
 
       expect(res?.status).toBe(201);
-      const data = (await res?.json()) as { client: { id: string; nombre: string; factor_integracion: number } };
+      const data = (await res?.json()) as {
+        client: { id: string; nombre: string; factor_integracion: number };
+      };
       expect(data.client.nombre).toBe('Industrias Alfa SA');
       expect(data.client.factor_integracion).toBeCloseTo(1.0493, 3);
       expect(db.prepare).toHaveBeenCalled();
+    });
+
+    it('no incluye datos privados en la respuesta de verificación pública', async () => {
+      const db = {
+        prepare: vi.fn(() => ({
+          bind: vi.fn().mockReturnThis(),
+          first: vi.fn().mockResolvedValue({
+            input_hash: 'a'.repeat(64),
+            tool_id: 'nomina',
+            titulo: 'Cálculo de nómina',
+            catalog_version: CURRENT_CATALOG_VERSION,
+            created_at: '2026-01-01T00:00:00.000Z',
+            client_nombre: 'Nombre Privado',
+            client_rfc: 'RFC123456ABC',
+            inputs: JSON.stringify({ salario: 500 }),
+            outputs: JSON.stringify({ neto: 10000 }),
+            tenant_name: 'Despacho Privado',
+          }),
+        })),
+      };
+      const mockEnv = { ARK_TOOLS_DB: db } as unknown as Env;
+      const req = new Request(`http://localhost/api/expedientes/verify?hash=${'a'.repeat(64)}`);
+
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders);
+      const data = (await res?.json()) as { certificado: Record<string, unknown> };
+
+      expect(res?.status).toBe(200);
+      expect(data.certificado).toMatchObject({
+        tool_id: 'nomina',
+        input_hash: 'a'.repeat(64),
+      });
+      expect(data.certificado).not.toHaveProperty('inputs');
+      expect(data.certificado).not.toHaveProperty('outputs');
+      expect(data.certificado).not.toHaveProperty('cliente');
+      expect(data.certificado).not.toHaveProperty('despacho');
     });
   });
 
   describe('handleExpedienteApiRequest — Endpoints de Expedientes', () => {
     function createMockDb(mockResults: Record<string, unknown> = {}) {
+      const firstResults = [tenantMembership, ...((mockResults.firstSequence as unknown[]) || [])];
+      let firstIndex = 0;
       const mockStatement = {
         bind: vi.fn().mockReturnThis(),
         all: vi.fn().mockResolvedValue({ results: mockResults.all || [] }),
-        first: vi.fn().mockResolvedValue(mockResults.first ?? null),
+        first: vi.fn().mockImplementation(() => {
+          const result = firstResults[firstIndex];
+          firstIndex += 1;
+          return Promise.resolve(result ?? mockResults.first ?? null);
+        }),
         run: vi.fn().mockResolvedValue({ success: true }),
       };
 
@@ -173,7 +268,7 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
 
     it('falla con 403 si el cliente no pertenece al tenant', async () => {
       // Mock db returns null for client check
-      const db = createMockDb({ first: null });
+      const db = createMockDb({ firstSequence: [null], first: null });
       const mockEnv = { ARK_TOOLS_DB: db } as unknown as Env;
 
       const req = new Request('http://localhost/api/expedientes', {
@@ -186,7 +281,7 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
           outputs: { finiquito: 15000 },
         }),
       });
-      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders);
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders, principal);
 
       expect(res?.status).toBe(403);
       const data = (await res?.json()) as { error: string };
@@ -198,6 +293,7 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
       // second call is for existing duplicate check -> returns null
       const mockFirst = vi
         .fn()
+        .mockResolvedValueOnce(tenantMembership) // tenant membership
         .mockResolvedValueOnce({ id: 'c-1', nombre: 'Juan' }) // clientExists
         .mockResolvedValueOnce(null); // deduplication check
 
@@ -221,7 +317,7 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
           outputs: { finiquito: 15000 },
         }),
       });
-      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders);
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders, principal);
 
       expect(res?.status).toBe(201);
       const data = (await res?.json()) as {
@@ -252,6 +348,7 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
 
       const mockFirst = vi
         .fn()
+        .mockResolvedValueOnce(tenantMembership) // tenant membership
         .mockResolvedValueOnce({ id: 'c-1', nombre: 'Juan' }) // clientExists
         .mockResolvedValueOnce(existingExpediente); // existing duplicate found
 
@@ -275,7 +372,7 @@ describe('Expediente Único — Backend Handlers (/api/clients & /api/expediente
           outputs: { finiquito: 15000 },
         }),
       });
-      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders);
+      const res = await handleExpedienteApiRequest(req, mockEnv, corsHeaders, principal);
 
       expect(res?.status).toBe(200);
       const data = (await res?.json()) as {

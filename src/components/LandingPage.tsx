@@ -6,7 +6,7 @@
  * para asegurar acceso prioritario a futuras herramientas exclusivas.
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Calculator,
   FileSpreadsheet,
@@ -136,39 +136,89 @@ const TOOLS_PREVIEW: ToolPreview[] = [
 ];
 
 export function LandingPage() {
-  const { login } = useAuth();
+  const { register, signIn, verifyEmail, requestPasswordReset, resetPassword } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'register' | 'login'>('register');
+  const [authMode, setAuthMode] = useState<'register' | 'login' | 'forgot' | 'reset' | 'verify'>(
+    'register'
+  );
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [tenantName, setTenantName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  const [authToken, setAuthToken] = useState('');
   const [previewCategory, setPreviewCategory] = useState<PreviewCategory>('all');
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const action = url.searchParams.get('auth');
+    const token = url.searchParams.get('token');
+    if (!action || !token) return;
+
+    url.searchParams.delete('auth');
+    url.searchParams.delete('token');
+    window.history.replaceState({}, '', url.toString());
+    setAuthToken(token);
+
+    if (action === 'reset') {
+      setAuthMode('reset');
+      setModalOpen(true);
+      return;
+    }
+    if (action === 'verify') {
+      setAuthMode('verify');
+      setModalOpen(true);
+    }
+  }, []);
 
   const openAuth = (mode: 'register' | 'login') => {
     setAuthMode(mode);
     setErrorMsg('');
+    setSuccessMsg('');
+    setPassword('');
     setModalOpen(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) {
+    if (['register', 'login', 'forgot'].includes(authMode) && !email.trim()) {
       setErrorMsg('Por favor ingresa tu correo electrónico.');
       return;
     }
     setLoading(true);
     setErrorMsg('');
+    setSuccessMsg('');
     try {
-      await login({
-        email: email.trim(),
-        fullName: fullName.trim() || undefined,
-        tenantName: tenantName.trim() || undefined,
-      });
-      // Al completarse login(), AuthContext actualiza isSignedIn y App.tsx conmuta al Dashboard automáticamente
-    } catch (err: any) {
-      setErrorMsg(err?.message || 'Error al autenticar. Intenta de nuevo.');
+      if (authMode === 'verify') {
+        await verifyEmail(authToken, password);
+        setPassword('');
+        setAuthToken('');
+        setModalOpen(false);
+        setSuccessMsg('Correo verificado. Tu cuenta está lista y tu sesión está iniciada.');
+      } else if (authMode === 'register') {
+        const message = await register({
+          email: email.trim(),
+          fullName: fullName.trim() || undefined,
+          tenantName: tenantName.trim() || undefined,
+        });
+        setSuccessMsg(message);
+        setPassword('');
+      } else if (authMode === 'login') {
+        await signIn(email.trim(), password);
+        setModalOpen(false);
+      } else if (authMode === 'forgot') {
+        setSuccessMsg(await requestPasswordReset(email.trim()));
+      } else {
+        setSuccessMsg(await resetPassword(authToken, password));
+        setPassword('');
+        setAuthToken('');
+        setAuthMode('login');
+      }
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'No se pudo completar la solicitud.');
+    } finally {
       setLoading(false);
     }
   };
@@ -624,59 +674,83 @@ export function LandingPage() {
                   ARK TOOLS
                 </h3>
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
-                  {authMode === 'register' ? 'Crear Cuenta Gratuita' : 'Iniciar Sesión'}
+                  {authMode === 'register'
+                    ? 'Crear Cuenta Gratuita'
+                    : authMode === 'login'
+                      ? 'Iniciar Sesión'
+                      : authMode === 'forgot'
+                        ? 'Recuperar Contraseña'
+                        : authMode === 'reset'
+                          ? 'Crear Nueva Contraseña'
+                          : 'Verificar Correo'}
                 </p>
               </div>
             </div>
 
             {/* Toggle Modes */}
-            <div className="flex rounded-xl border border-line/60 bg-surface-2 p-1">
-              <button
-                type="button"
-                onClick={() => setAuthMode('register')}
-                className={`flex-1 rounded-lg py-1.5 font-orbitron text-[11px] font-bold tracking-wider transition ${
-                  authMode === 'register'
-                    ? 'bg-white text-navy shadow-sm'
-                    : 'text-muted hover:text-ink'
-                }`}
-              >
-                REGISTRO
-              </button>
-              <button
-                type="button"
-                onClick={() => setAuthMode('login')}
-                className={`flex-1 rounded-lg py-1.5 font-orbitron text-[11px] font-bold tracking-wider transition ${
-                  authMode === 'login'
-                    ? 'bg-white text-navy shadow-sm'
-                    : 'text-muted hover:text-ink'
-                }`}
-              >
-                ENTRAR
-              </button>
-            </div>
+            {(authMode === 'register' || authMode === 'login') && (
+              <div className="flex rounded-xl border border-line/60 bg-surface-2 p-1">
+                <button
+                  type="button"
+                  onClick={() => openAuth('register')}
+                  className={`flex-1 rounded-lg py-1.5 font-orbitron text-[11px] font-bold tracking-wider transition ${
+                    authMode === 'register'
+                      ? 'bg-white text-navy shadow-sm'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  REGISTRO
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openAuth('login')}
+                  className={`flex-1 rounded-lg py-1.5 font-orbitron text-[11px] font-bold tracking-wider transition ${
+                    authMode === 'login'
+                      ? 'bg-white text-navy shadow-sm'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  ENTRAR
+                </button>
+              </div>
+            )}
 
             {errorMsg && (
               <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[12px] text-rose-700">
                 {errorMsg}
               </div>
             )}
+            {successMsg && (
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
+                {successMsg}
+              </div>
+            )}
+            {authMode === 'verify' && (
+              <p className="text-[12px] leading-relaxed text-muted">
+                Confirma tu correo y crea una contraseña para completar tu cuenta. Este paso
+                requiere tu acción explícita.
+              </p>
+            )}
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="mb-1 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
-                  Correo Electrónico *
-                </label>
-                <input
-                  type="email"
-                  required
-                  autoFocus
-                  placeholder="ejemplo@despacho.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none transition focus:border-navy focus:bg-white"
-                />
-              </div>
+              {['register', 'login', 'forgot'].includes(authMode) && (
+                <div>
+                  <label className="mb-1 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
+                    Correo Electrónico *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    autoFocus
+                    autoComplete="email"
+                    placeholder="ejemplo@despacho.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none transition focus:border-navy focus:bg-white"
+                  />
+                </div>
+              )}
 
               {authMode === 'register' && (
                 <>
@@ -708,6 +782,31 @@ export function LandingPage() {
                 </>
               )}
 
+              {['login', 'reset', 'verify'].includes(authMode) && (
+                <div>
+                  <label className="mb-1 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
+                    {authMode === 'login'
+                      ? 'Contraseña *'
+                      : authMode === 'reset'
+                        ? 'Nueva Contraseña *'
+                        : 'Crea una Contraseña *'}
+                  </label>
+                  <input
+                    type="password"
+                    required
+                    minLength={authMode === 'login' ? undefined : 15}
+                    maxLength={128}
+                    autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none transition focus:border-navy focus:bg-white"
+                  />
+                  {authMode !== 'login' && (
+                    <p className="mt-1 text-[10px] text-muted">Usa entre 15 y 128 caracteres.</p>
+                  )}
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -715,18 +814,51 @@ export function LandingPage() {
               >
                 <span>
                   {loading
-                    ? 'ACCEDIENDO...'
+                    ? 'PROCESANDO...'
                     : authMode === 'register'
-                      ? 'COMENZAR AHORA'
-                      : 'ENTRAR AL SISTEMA'}
+                      ? 'CREAR CUENTA'
+                      : authMode === 'login'
+                        ? 'ENTRAR AL SISTEMA'
+                        : authMode === 'forgot'
+                          ? 'ENVIAR INSTRUCCIONES'
+                          : authMode === 'reset'
+                            ? 'ACTUALIZAR CONTRASEÑA'
+                            : authMode === 'verify'
+                              ? 'VERIFICAR Y CREAR CUENTA'
+                              : 'CONFIRMAR CORREO'}
                 </span>
                 <ArrowRight size={14} />
               </button>
             </form>
 
-            <p className="text-center text-[11px] leading-normal text-muted">
-              Sin tarjeta de crédito requerida. Acceso total a todas las herramientas de la suite.
-            </p>
+            {authMode === 'login' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('forgot');
+                  setErrorMsg('');
+                  setSuccessMsg('');
+                }}
+                className="w-full text-center text-[11px] font-semibold text-navy hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            )}
+            {(authMode === 'forgot' || authMode === 'reset' || authMode === 'verify') && (
+              <button
+                type="button"
+                onClick={() => openAuth('login')}
+                className="w-full text-center text-[11px] font-semibold text-navy hover:underline"
+              >
+                Volver a iniciar sesión
+              </button>
+            )}
+            {authMode === 'register' && (
+              <p className="text-center text-[11px] leading-normal text-muted">
+                Te enviaremos un enlace para confirmar tu correo y crear tu contraseña. Sin tarjeta
+                de crédito requerida.
+              </p>
+            )}
           </div>
         </div>
       )}

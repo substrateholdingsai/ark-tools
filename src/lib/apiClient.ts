@@ -75,14 +75,61 @@ export interface CertificadoVerificacion {
   titulo: string | null;
   catalog_version: string;
   created_at: string;
-  despacho: string;
-  cliente: {
-    nombre: string;
-    rfc: string | null;
-    tipo: string;
+}
+
+export interface AdminOverview {
+  counts: {
+    totalUsers: number;
+    verifiedUsers: number;
+    totalTenants: number;
+    totalClients: number;
+    totalExpedientes: number;
+    totalLedgerEntries: number;
   };
-  inputs: Record<string, unknown>;
-  outputs: Record<string, unknown>;
+  recentUsers: Array<{
+    id: string;
+    email: string;
+    full_name: string | null;
+    platform_role: string;
+    created_at: string;
+    email_verified_at: number | null;
+  }>;
+  recentTenants: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    created_at: string;
+    member_count: number;
+  }>;
+  systemHealth: {
+    database: string;
+    aiWorkers: boolean;
+    resendEmail: boolean;
+    clipPayments: boolean;
+    environment: string;
+    appVersion: string;
+    timestamp: string;
+  };
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  full_name: string | null;
+  platform_role: 'user' | 'super_admin';
+  created_at: string;
+  email_verified_at: number | null;
+  tenants: Array<{ id: string; name: string; role: string }>;
+}
+
+export interface AdminTenant {
+  id: string;
+  name: string;
+  slug: string;
+  created_at: string;
+  member_count: number;
+  client_count: number;
+  expediente_count: number;
 }
 
 interface ApiErrorResponse {
@@ -90,52 +137,110 @@ interface ApiErrorResponse {
   message?: string;
 }
 
-function getHeaders(token?: string | null): HeadersInit {
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+export interface AuthSession {
+  user: {
+    id: string;
+    email: string;
+    fullName: string;
   };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  tenants: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    role: 'owner' | 'admin' | 'member';
+  }>;
+  platformRole: 'user' | 'super_admin';
+}
+
+async function authRequest<T>(path: string, payload?: unknown, method = 'POST'): Promise<T> {
+  const res = await apiFetch(path, {
+    method,
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    ...(payload === undefined ? {} : { body: JSON.stringify(payload) }),
+  });
+  const data = (await res.json().catch(() => ({}))) as T & ApiErrorResponse;
+  if (!res.ok) {
+    throw new Error(data.error || 'No se pudo completar la solicitud de autenticación.');
   }
-  return headers;
+  return data;
+}
+
+export class ApiAuthorizationError extends Error {
+  constructor(
+    message: string,
+    readonly status: 401 | 403
+  ) {
+    super(message);
+    this.name = 'ApiAuthorizationError';
+  }
+}
+
+async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}): Promise<Response> {
+  const response = await fetch(input, { ...init, credentials: 'same-origin' });
+  if (response.status === 401 || response.status === 403) {
+    const data = (await response
+      .clone()
+      .json()
+      .catch(() => ({}))) as ApiErrorResponse;
+    throw new ApiAuthorizationError(
+      data.error || 'No tienes autorización para esta operación.',
+      response.status
+    );
+  }
+  return response;
+}
+
+function getHeaders(): HeadersInit {
+  return { 'Content-Type': 'application/json' };
 }
 
 export const apiClient = {
   // ─────────────────────────────────────────────────────────────────
-  // 0. AUTH SYNC (USUARIO Y TENANT)
+  // 0. AUTHENTICATION
   // ─────────────────────────────────────────────────────────────────
   auth: {
-    async sync(
-      payload: {
-        user_id: string;
-        email: string;
-        full_name?: string | null;
-        tenant_id?: string | null;
-        tenant_name?: string | null;
-        tenant_slug?: string | null;
-      },
-      token?: string | null
-    ): Promise<{ success: boolean }> {
-      const res = await fetch('/api/auth/sync', {
-        method: 'POST',
-        headers: getHeaders(token),
-        body: JSON.stringify(payload),
+    register: (payload: { email: string; fullName?: string; tenantName?: string }) =>
+      authRequest<{ success: boolean; message: string }>('/api/auth/register', payload),
+    login: (payload: { email: string; password: string }) =>
+      authRequest<AuthSession>('/api/auth/login', payload),
+    verifyEmail: (token: string, password: string) =>
+      authRequest<AuthSession>('/api/auth/verify-email', { token, password }),
+    requestPasswordReset: (email: string) =>
+      authRequest<{ success: boolean; message: string }>('/api/auth/request-password-reset', {
+        email,
+      }),
+    resetPassword: (token: string, password: string) =>
+      authRequest<{ success: boolean; message: string }>('/api/auth/reset-password', {
+        token,
+        password,
+      }),
+    session: async (): Promise<AuthSession | null> => {
+      const res = await fetch('/api/auth/session', {
+        method: 'GET',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
       });
-      if (!res.ok) {
-        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
-        throw new Error(error.error || 'Error al sincronizar sesión');
-      }
-      return (await res.json()) as { success: boolean };
+      if (res.status === 401) return null;
+      const data = (await res.json().catch(() => ({}))) as AuthSession & ApiErrorResponse;
+      if (!res.ok) throw new Error(data.error || 'No se pudo validar la sesión.');
+      return data;
     },
+    logout: () => authRequest<{ success: boolean }>('/api/auth/logout'),
+    createTenant: (name: string) =>
+      authRequest<{
+        success: boolean;
+        tenant: AuthSession['tenants'][number];
+      }>('/api/auth/tenants', { name }),
   },
 
   // ─────────────────────────────────────────────────────────────────
   // 1. GUÍA SAT / IMSS
   // ─────────────────────────────────────────────────────────────────
   guia: {
-    async getProgress(tenantId: string, token?: string | null): Promise<GuiaStepProgress[]> {
-      const res = await fetch(`/api/guia/progress?tenant_id=${encodeURIComponent(tenantId)}`, {
-        headers: getHeaders(token),
+    async getProgress(tenantId: string): Promise<GuiaStepProgress[]> {
+      const res = await apiFetch(`/api/guia/progress?tenant_id=${encodeURIComponent(tenantId)}`, {
+        headers: getHeaders(),
       });
       if (!res.ok) {
         throw new Error(`Error al consultar progreso: ${res.statusText}`);
@@ -144,19 +249,15 @@ export const apiClient = {
       return data.progress || [];
     },
 
-    async saveStep(
-      payload: {
-        tenant_id: string;
-        user_id: string;
-        step_id: number;
-        checklist_state: Record<string, boolean> | string;
-        draft_text?: string;
-      },
-      token?: string | null
-    ): Promise<{ success: boolean; message: string }> {
-      const res = await fetch('/api/guia/progress', {
+    async saveStep(payload: {
+      tenant_id: string;
+      step_id: number;
+      checklist_state: Record<string, boolean> | string;
+      draft_text?: string;
+    }): Promise<{ success: boolean; message: string }> {
+      const res = await apiFetch('/api/guia/progress', {
         method: 'POST',
-        headers: getHeaders(token),
+        headers: getHeaders(),
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -171,17 +272,13 @@ export const apiClient = {
   // 2. ARKANGEL LEDGER
   // ─────────────────────────────────────────────────────────────────
   ledger: {
-    async getEntries(
-      tenantId: string,
-      casoId?: string,
-      token?: string | null
-    ): Promise<LedgerEntry[]> {
+    async getEntries(tenantId: string, casoId?: string): Promise<LedgerEntry[]> {
       let url = `/api/ledger?tenant_id=${encodeURIComponent(tenantId)}`;
       if (casoId) {
         url += `&caso_id=${encodeURIComponent(casoId)}`;
       }
-      const res = await fetch(url, {
-        headers: getHeaders(token),
+      const res = await apiFetch(url, {
+        headers: getHeaders(),
       });
       if (!res.ok) {
         throw new Error(`Error al consultar ledger: ${res.statusText}`);
@@ -190,19 +287,21 @@ export const apiClient = {
       return data.entries || [];
     },
 
-    async addEntry(
-      payload: {
-        tenant_id: string;
-        user_id: string;
-        caso_id: string;
-        conducta_id: string;
-        estado: 'BLOQUEADO' | 'PERMITIDO';
-      },
-      token?: string | null
-    ): Promise<{ success: boolean; id: number; hash_sha256: string; prev_hash: string; timestamp: string }> {
-      const res = await fetch('/api/ledger', {
+    async addEntry(payload: {
+      tenant_id: string;
+      caso_id: string;
+      conducta_id: string;
+      estado: 'BLOQUEADO' | 'PERMITIDO';
+    }): Promise<{
+      success: boolean;
+      id: number;
+      hash_sha256: string;
+      prev_hash: string;
+      timestamp: string;
+    }> {
+      const res = await apiFetch('/api/ledger', {
         method: 'POST',
-        headers: getHeaders(token),
+        headers: getHeaders(),
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -223,10 +322,13 @@ export const apiClient = {
   // 3. ACTIVOS VIRTUALES WATCHLIST
   // ─────────────────────────────────────────────────────────────────
   activos: {
-    async getWatchlist(tenantId: string, token?: string | null): Promise<WatchlistEntry[]> {
-      const res = await fetch(`/api/activos/watchlist?tenant_id=${encodeURIComponent(tenantId)}`, {
-        headers: getHeaders(token),
-      });
+    async getWatchlist(tenantId: string): Promise<WatchlistEntry[]> {
+      const res = await apiFetch(
+        `/api/activos/watchlist?tenant_id=${encodeURIComponent(tenantId)}`,
+        {
+          headers: getHeaders(),
+        }
+      );
       if (!res.ok) {
         throw new Error(`Error al consultar watchlist: ${res.statusText}`);
       }
@@ -234,18 +336,14 @@ export const apiClient = {
       return data.watchlist || [];
     },
 
-    async saveConducta(
-      payload: {
-        tenant_id: string;
-        user_id: string;
-        conducta_id: number;
-        notes?: string;
-      },
-      token?: string | null
-    ): Promise<{ success: boolean; message: string }> {
-      const res = await fetch('/api/activos/watchlist', {
+    async saveConducta(payload: {
+      tenant_id: string;
+      conducta_id: number;
+      notes?: string;
+    }): Promise<{ success: boolean; message: string }> {
+      const res = await apiFetch('/api/activos/watchlist', {
         method: 'POST',
-        headers: getHeaders(token),
+        headers: getHeaders(),
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -257,14 +355,13 @@ export const apiClient = {
 
     async removeConducta(
       tenantId: string,
-      conductaId: number,
-      token?: string | null
+      conductaId: number
     ): Promise<{ success: boolean; message: string }> {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/activos/watchlist?tenant_id=${encodeURIComponent(tenantId)}&conducta_id=${conductaId}`,
         {
           method: 'DELETE',
-          headers: getHeaders(token),
+          headers: getHeaders(),
         }
       );
       if (!res.ok) {
@@ -279,30 +376,37 @@ export const apiClient = {
   // 4. WORKERS AI (CHAT & TOOL-CALLING)
   // ─────────────────────────────────────────────────────────────────
   ai: {
-    async getStatus(): Promise<{ status: string; binding_ai: boolean; binding_d1: boolean; default_model: string }> {
-      const res = await fetch('/api/ai/status');
-      return (await res.json()) as { status: string; binding_ai: boolean; binding_d1: boolean; default_model: string };
+    async getStatus(): Promise<{
+      status: string;
+      binding_ai: boolean;
+      binding_d1: boolean;
+      default_model: string;
+    }> {
+      const res = await apiFetch('/api/ai/status');
+      return (await res.json()) as {
+        status: string;
+        binding_ai: boolean;
+        binding_d1: boolean;
+        default_model: string;
+      };
     },
 
-    async chat(
-      payload: {
-        messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
-        tenant_id?: string;
-        model?: string;
-      },
-      token?: string | null
-    ): Promise<{
+    async chat(payload: {
+      messages: Array<{ role: 'user' | 'assistant' | 'system'; content: string }>;
+      tenant_id?: string;
+      model?: string;
+    }): Promise<{
       model: string;
       tenant_id: string;
       tools_executed?: string[];
       result: string;
     }> {
-      const headers = getHeaders(token) as Record<string, string>;
+      const headers = getHeaders() as Record<string, string>;
       if (payload.tenant_id) {
         headers['x-tenant-id'] = payload.tenant_id;
       }
 
-      const res = await fetch('/api/ai/chat', {
+      const res = await apiFetch('/api/ai/chat', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload),
@@ -326,18 +430,20 @@ export const apiClient = {
   // 5. EXPEDIENTE ÚNICO: CLIENTES (SPRINT 9)
   // ─────────────────────────────────────────────────────────────────
   clients: {
-    async list(
-      params: { tenant_id: string; q?: string; tipo?: string; estado?: string },
-      token?: string | null
-    ): Promise<ClientRecord[]> {
+    async list(params: {
+      tenant_id: string;
+      q?: string;
+      tipo?: string;
+      estado?: string;
+    }): Promise<ClientRecord[]> {
       const q = new URLSearchParams();
       q.set('tenant_id', params.tenant_id);
       if (params.q) q.set('q', params.q);
       if (params.tipo) q.set('tipo', params.tipo);
       if (params.estado) q.set('estado', params.estado);
 
-      const res = await fetch(`/api/clients?${q.toString()}`, {
-        headers: getHeaders(token),
+      const res = await apiFetch(`/api/clients?${q.toString()}`, {
+        headers: getHeaders(),
       });
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
@@ -347,10 +453,9 @@ export const apiClient = {
       return data.clients || [];
     },
 
-    async get(id: string, tenantId: string, token?: string | null): Promise<ClientRecord> {
-      const res = await fetch(`/api/clients/${encodeURIComponent(id)}?tenant_id=${encodeURIComponent(tenantId)}`, {
-        headers: getHeaders(token),
-      });
+    async get(id: string, tenantId: string): Promise<ClientRecord> {
+      const params = new URLSearchParams({ tenant_id: tenantId, id });
+      const res = await apiFetch(`/api/clients?${params.toString()}`, { headers: getHeaders() });
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
         throw new Error(error.error || error.message || 'Error al obtener cliente');
@@ -363,12 +468,11 @@ export const apiClient = {
       payload: Partial<ClientRecord> & {
         tenant_id: string;
         nombre: string;
-      },
-      token?: string | null
+      }
     ): Promise<ClientRecord> {
-      const res = await fetch('/api/clients', {
+      const res = await apiFetch('/api/clients', {
         method: 'POST',
-        headers: getHeaders(token),
+        headers: getHeaders(),
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -381,13 +485,12 @@ export const apiClient = {
 
     async update(
       id: string,
-      payload: Partial<ClientRecord> & { tenant_id: string },
-      token?: string | null
+      payload: Partial<ClientRecord> & { tenant_id: string }
     ): Promise<ClientRecord> {
-      const res = await fetch(`/api/clients/${encodeURIComponent(id)}`, {
+      const res = await apiFetch('/api/clients', {
         method: 'PUT',
-        headers: getHeaders(token),
-        body: JSON.stringify(payload),
+        headers: getHeaders(),
+        body: JSON.stringify({ ...payload, id }),
       });
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
@@ -397,14 +500,11 @@ export const apiClient = {
       return data.client;
     },
 
-    async delete(
-      id: string,
-      tenantId: string,
-      token?: string | null
-    ): Promise<{ success: boolean; message: string }> {
-      const res = await fetch(`/api/clients/${encodeURIComponent(id)}?tenant_id=${encodeURIComponent(tenantId)}`, {
+    async delete(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
+      const params = new URLSearchParams({ tenant_id: tenantId, id });
+      const res = await apiFetch(`/api/clients?${params.toString()}`, {
         method: 'DELETE',
-        headers: getHeaders(token),
+        headers: getHeaders(),
       });
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
@@ -418,19 +518,24 @@ export const apiClient = {
   // 6. EXPEDIENTE ÚNICO: EXPEDIENTES / HISTORIAL DE CÁLCULOS (SPRINT 9)
   // ─────────────────────────────────────────────────────────────────
   expedientes: {
-    async list(
-      params: { tenant_id: string; client_id?: string; tool_id?: string; limit?: number; offset?: number },
-      token?: string | null
-    ): Promise<ExpedienteRecord[]> {
+    async list(params: {
+      tenant_id: string;
+      client_id?: string;
+      id?: string;
+      tool_id?: string;
+      limit?: number;
+      offset?: number;
+    }): Promise<ExpedienteRecord[]> {
       const q = new URLSearchParams();
       q.set('tenant_id', params.tenant_id);
       if (params.client_id) q.set('client_id', params.client_id);
+      if (params.id) q.set('id', params.id);
       if (params.tool_id) q.set('tool_id', params.tool_id);
       if (params.limit) q.set('limit', String(params.limit));
       if (params.offset) q.set('offset', String(params.offset));
 
-      const res = await fetch(`/api/expedientes?${q.toString()}`, {
-        headers: getHeaders(token),
+      const res = await apiFetch(`/api/expedientes?${q.toString()}`, {
+        headers: getHeaders(),
       });
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
@@ -440,38 +545,25 @@ export const apiClient = {
       return data.expedientes || [];
     },
 
-    async get(id: string, tenantId: string, token?: string | null): Promise<ExpedienteRecord> {
-      const res = await fetch(
-        `/api/expedientes/${encodeURIComponent(id)}?tenant_id=${encodeURIComponent(tenantId)}`,
-        {
-          headers: getHeaders(token),
-        }
-      );
-      if (!res.ok) {
-        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
-        throw new Error(error.error || error.message || 'Error al obtener expediente');
-      }
-      const data = (await res.json()) as { expediente: ExpedienteRecord };
-      return data.expediente;
+    async get(id: string, tenantId: string): Promise<ExpedienteRecord> {
+      const [expediente] = await apiClient.expedientes.list({ tenant_id: tenantId, id, limit: 1 });
+      if (!expediente) throw new Error('Expediente no encontrado.');
+      return expediente;
     },
 
-    async save(
-      payload: {
-        tenant_id: string;
-        client_id: string;
-        tool_id: string;
-        titulo?: string;
-        inputs: Record<string, unknown>;
-        outputs: Record<string, unknown>;
-        catalog_version?: string;
-        created_by?: string | null;
-        force?: boolean;
-      },
-      token?: string | null
-    ): Promise<{ expediente: ExpedienteRecord; deduplicated?: boolean }> {
-      const res = await fetch('/api/expedientes', {
+    async save(payload: {
+      tenant_id: string;
+      client_id: string;
+      tool_id: string;
+      titulo?: string;
+      inputs: Record<string, unknown>;
+      outputs: Record<string, unknown>;
+      catalog_version?: string;
+      force?: boolean;
+    }): Promise<{ expediente: ExpedienteRecord; deduplicated?: boolean }> {
+      const res = await apiFetch('/api/expedientes', {
         method: 'POST',
-        headers: getHeaders(token),
+        headers: getHeaders(),
         body: JSON.stringify(payload),
       });
       if (!res.ok) {
@@ -481,18 +573,12 @@ export const apiClient = {
       return (await res.json()) as { expediente: ExpedienteRecord; deduplicated?: boolean };
     },
 
-    async delete(
-      id: string,
-      tenantId: string,
-      token?: string | null
-    ): Promise<{ success: boolean; message: string }> {
-      const res = await fetch(
-        `/api/expedientes/${encodeURIComponent(id)}?tenant_id=${encodeURIComponent(tenantId)}`,
-        {
-          method: 'DELETE',
-          headers: getHeaders(token),
-        }
-      );
+    async delete(id: string, tenantId: string): Promise<{ success: boolean; message: string }> {
+      const params = new URLSearchParams({ tenant_id: tenantId, id });
+      const res = await apiFetch(`/api/expedientes?${params.toString()}`, {
+        method: 'DELETE',
+        headers: getHeaders(),
+      });
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
         throw new Error(error.error || error.message || 'Error al eliminar expediente');
@@ -503,8 +589,62 @@ export const apiClient = {
     async verify(
       hash: string
     ): Promise<{ verified: boolean; certificado?: CertificadoVerificacion; message?: string }> {
-      const res = await fetch(`/api/expedientes/verify?hash=${encodeURIComponent(hash)}`);
-      return (await res.json()) as { verified: boolean; certificado?: CertificadoVerificacion; message?: string };
+      const res = await apiFetch(`/api/expedientes/verify?hash=${encodeURIComponent(hash)}`);
+      return (await res.json()) as {
+        verified: boolean;
+        certificado?: CertificadoVerificacion;
+        message?: string;
+      };
+    },
+  },
+
+  // ─────────────────────────────────────────────────────────────────
+  // SUPER ADMIN API
+  // ─────────────────────────────────────────────────────────────────
+  admin: {
+    async getOverview(): Promise<AdminOverview> {
+      const res = await apiFetch('/api/admin/overview');
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al obtener métricas');
+      }
+      return (await res.json()) as AdminOverview;
+    },
+
+    async getUsers(): Promise<AdminUser[]> {
+      const res = await apiFetch('/api/admin/users');
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al obtener usuarios');
+      }
+      const data = (await res.json()) as { users: AdminUser[] };
+      return data.users;
+    },
+
+    async getTenants(): Promise<AdminTenant[]> {
+      const res = await apiFetch('/api/admin/tenants');
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al obtener despachos');
+      }
+      const data = (await res.json()) as { tenants: AdminTenant[] };
+      return data.tenants;
+    },
+
+    async updateUserRole(
+      userId: string,
+      role: 'user' | 'super_admin'
+    ): Promise<{ success: boolean; message: string }> {
+      const res = await apiFetch('/api/admin/users/role', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ userId, role }),
+      });
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al actualizar rol');
+      }
+      return (await res.json()) as { success: boolean; message: string };
     },
   },
 };

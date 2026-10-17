@@ -11,6 +11,8 @@
 
 import { handleD1ApiRequest } from './server/d1Api';
 import { handleAiApiRequest } from './server/ai/aiApi';
+import { authenticateRequest, handleAuthApiRequest } from './server/auth';
+import { handleAdminApiRequest } from './server/adminApi';
 
 export interface Env {
   // Assets (SPA)
@@ -32,6 +34,10 @@ export interface Env {
   CLIP_API_KEY?: string;
   CLIP_API_SECRET?: string;
   CLIP_ENVIRONMENT?: string;
+
+  // Email transaccional para autenticación nativa
+  RESEND_API_KEY?: string;
+  AUTH_EMAIL_FROM?: string;
 
   // Cloudflare D1 Database (Multi-Tenant)
   ARK_TOOLS_DB?: D1Database;
@@ -108,10 +114,46 @@ async function handleApiRequest(
     return new Response(null, { headers: corsHeaders });
   }
 
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
+    const origin = request.headers.get('Origin');
+    const configuredOrigin = new URL(env.APP_URL).origin;
+    const isLocalDevelopment =
+      env.ENVIRONMENT !== 'production' &&
+      origin !== null &&
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
+    if (origin && origin !== configuredOrigin && !isLocalDevelopment) {
+      return Response.json({ error: 'Origen no permitido.' }, { status: 403, headers: corsHeaders });
+    }
+  }
+
+  const authPrincipal = await authenticateRequest(request, env);
+  const authResponse = await handleAuthApiRequest(request, env, corsHeaders, authPrincipal);
+  if (authResponse) {
+    return authResponse;
+  }
+
+  const adminResponse = await handleAdminApiRequest(request, env, corsHeaders, authPrincipal);
+  if (adminResponse) {
+    return adminResponse;
+  }
+
+  const isPublicApi =
+    (url.pathname === '/api/version' && request.method === 'GET') ||
+    (url.pathname === '/api/clip/status' && request.method === 'GET') ||
+    (url.pathname === '/api/expedientes/verify' && request.method === 'GET') ||
+    (['/api/ai/status', '/api/ai/models', '/api/ai/tools'].includes(url.pathname) &&
+      request.method === 'GET');
+  if (!isPublicApi && !authPrincipal) {
+    return Response.json(
+      { error: 'Autenticación requerida.' },
+      { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────────
   // D1 MULTI-TENANT PERSISTENCIA (Guía SAT, Ledger, Activos)
   // ─────────────────────────────────────────────────────────────────
-  const d1Response = await handleD1ApiRequest(request, env, corsHeaders);
+  const d1Response = await handleD1ApiRequest(request, env, corsHeaders, authPrincipal);
   if (d1Response) {
     return d1Response;
   }
@@ -119,7 +161,7 @@ async function handleApiRequest(
   // ─────────────────────────────────────────────────────────────────
   // WORKERS AI (Chat, Tools, Models)
   // ─────────────────────────────────────────────────────────────────
-  const aiResponse = await handleAiApiRequest(request, env, corsHeaders);
+  const aiResponse = await handleAiApiRequest(request, env, corsHeaders, authPrincipal);
   if (aiResponse) {
     return aiResponse;
   }

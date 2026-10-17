@@ -31,7 +31,6 @@ import { useAuth } from '@/hooks';
 import { apiClient } from '@/lib/apiClient';
 import { generarBorrador } from './lib/generarBorrador';
 
-
 const STORAGE_KEY = 'ark.guia-sat-imss.checklist.v1';
 
 export type FiltroAutoridad = 'todos' | 'SAT' | 'IMSS';
@@ -115,9 +114,7 @@ function ActoCard({
         {acto.titulo}
       </h3>
 
-      <p className="mt-1 font-inter text-[11px] leading-[1.45] text-muted">
-        {acto.descripcion}
-      </p>
+      <p className="mt-1 font-inter text-[11px] leading-[1.45] text-muted">{acto.descripcion}</p>
 
       <div className="mt-3 flex flex-wrap gap-1.5">
         <span className="rounded-full border border-line bg-surface px-2 py-1 font-orbitron text-[9px] tracking-widest text-muted">
@@ -136,7 +133,7 @@ function ActoCard({
       <button
         type="button"
         onClick={() => onUsarEnBorrador(acto.codigo)}
-        className="glass-btn mt-4 h-9 w-full rounded-[12px] px-3 font-inter text-[12px] font-semibold text-navy hover:text-navy-dark transition"
+        className="glass-btn mt-4 h-9 w-full rounded-[12px] px-3 font-inter text-[12px] font-semibold text-navy transition hover:text-navy-dark"
       >
         Usar en borrador
       </button>
@@ -145,8 +142,9 @@ function ActoCard({
 }
 
 export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
-  const { tenantId, userId, tenantName, getToken } = useAuth();
+  const { tenantId, userId, tenantName } = useAuth();
   const [sincronizandoD1, setSincronizandoD1] = useState(false);
+  const [errorD1, setErrorD1] = useState('');
 
   const [checks, setChecks] = useState<Record<string, boolean>>(() => {
     if (typeof window === 'undefined') return {};
@@ -176,9 +174,10 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
     let isMounted = true;
     setSincronizandoD1(true);
+    setErrorD1('');
 
-    getToken()
-      .then((token) => apiClient.guia.getProgress(tenantId, token))
+    apiClient.guia
+      .getProgress(tenantId)
       .then((progress) => {
         if (!isMounted || !progress || progress.length === 0) return;
 
@@ -200,7 +199,10 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
         }
       })
       .catch((err) => {
-        console.debug('[GuiaD1] Error cargando progreso:', err);
+        console.error('[GuiaD1] No se pudo cargar el progreso:', err);
+        if (isMounted) {
+          setErrorD1(err instanceof Error ? err.message : 'No se pudo sincronizar el progreso.');
+        }
       })
       .finally(() => {
         if (isMounted) setSincronizandoD1(false);
@@ -209,7 +211,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
     return () => {
       isMounted = false;
     };
-  }, [tenantId, getToken]);
+  }, [tenantId]);
 
   // 2. Guardar en localStorage de respaldo
   useEffect(() => {
@@ -225,26 +227,20 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
     if (!tenantId || !userId) return;
 
     const timer = setTimeout(() => {
-      getToken()
-        .then((token) =>
-          apiClient.guia.saveStep(
-            {
-              tenant_id: tenantId,
-              user_id: userId,
-              step_id: pasoActivoId,
-              checklist_state: checks,
-            },
-            token
-          )
-        )
+      apiClient.guia
+        .saveStep({
+          tenant_id: tenantId,
+          step_id: pasoActivoId,
+          checklist_state: checks,
+        })
         .catch((err) => {
-          console.debug('[GuiaD1] Error auto-guardando:', err);
+          console.error('[GuiaD1] No se pudo guardar el progreso:', err);
+          setErrorD1(err instanceof Error ? err.message : 'No se pudo guardar el progreso.');
         });
     }, 800);
 
     return () => clearTimeout(timer);
-  }, [checks, pasoActivoId, tenantId, userId, getToken]);
-
+  }, [checks, pasoActivoId, tenantId, userId]);
 
   useEffect(() => {
     if (!modalAbierto) return;
@@ -259,10 +255,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
     return () => window.removeEventListener('keydown', handler);
   }, [modalAbierto]);
 
-  const actosTodos = useMemo<ActoFiscal[]>(
-    () => [...ACTOS_SAT, ...ACTOS_IMSS],
-    []
-  );
+  const actosTodos = useMemo<ActoFiscal[]>(() => [...ACTOS_SAT, ...ACTOS_IMSS], []);
 
   const q = busqueda.trim().toLowerCase();
 
@@ -287,18 +280,11 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
   const actosVisibles = useMemo<ActoFiscal[]>(() => {
     return actosTodos.filter((acto) => {
-      const coincideAutoridad =
-        filtro === 'todos' || acto.autoridad === filtro;
+      const coincideAutoridad = filtro === 'todos' || acto.autoridad === filtro;
 
       if (!q) return coincideAutoridad;
 
-      const texto = [
-        acto.titulo,
-        acto.descripcion,
-        acto.codigo,
-        acto.fundamento,
-        acto.accion,
-      ]
+      const texto = [acto.titulo, acto.descripcion, acto.codigo, acto.fundamento, acto.accion]
         .join(' ')
         .toLowerCase();
 
@@ -319,11 +305,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
   const completados = useMemo(() => {
     return GUIA_PASOS.reduce((acc, paso) => {
-      return (
-        acc +
-        paso.checklist.filter((_, index) => checks[claveCheck(paso.id, index)])
-          .length
-      );
+      return acc + paso.checklist.filter((_, index) => checks[claveCheck(paso.id, index)]).length;
     }, 0);
   }, [checks]);
 
@@ -331,9 +313,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
   const avancePorPaso = useMemo(() => {
     return GUIA_PASOS.map((paso) => {
-      const done = paso.checklist.filter(
-        (_, index) => checks[claveCheck(paso.id, index)]
-      ).length;
+      const done = paso.checklist.filter((_, index) => checks[claveCheck(paso.id, index)]).length;
 
       return {
         id: paso.id,
@@ -411,7 +391,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-2 font-orbitron text-[11px] font-bold uppercase tracking-[0.16em] text-muted transition hover:text-navy mb-6"
+          className="mb-6 inline-flex items-center gap-2 font-orbitron text-[11px] font-bold uppercase tracking-[0.16em] text-muted transition hover:text-navy"
         >
           <ArrowLeft size={14} strokeWidth={2.5} />
           Volver al dashboard
@@ -435,33 +415,40 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
             </span>
 
             {tenantName && (
-              <span className="rounded-full border border-gold/40 bg-cream/60 px-3 py-1 font-inter text-[10px] font-bold uppercase tracking-[0.14em] text-gold-dark flex items-center gap-1.5">
+              <span className="flex items-center gap-1.5 rounded-full border border-gold/40 bg-cream/60 px-3 py-1 font-inter text-[10px] font-bold uppercase tracking-[0.14em] text-gold-dark">
                 <span
                   className={cn(
-                    'w-1.5 h-1.5 rounded-full',
-                    sincronizandoD1 ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
+                    'h-1.5 w-1.5 rounded-full',
+                    sincronizandoD1 ? 'animate-pulse bg-amber-500' : 'bg-emerald-500'
                   )}
                 />
-                <span>{sincronizandoD1 ? 'Sincronizando...' : `Despacho: ${tenantName}`}</span>
+                <span>
+                  {sincronizandoD1
+                    ? 'Sincronizando...'
+                    : errorD1
+                      ? 'Error de sincronización'
+                      : `Despacho: ${tenantName}`}
+                </span>
               </span>
             )}
           </div>
-
+          {errorD1 && (
+            <p role="alert" className="mt-2 text-xs text-rose-700">
+              No se pudo sincronizar con el servidor: {errorD1}
+            </p>
+          )}
 
           <h1 className="mt-4 font-playfair text-4xl font-black leading-[0.98] tracking-[-0.03em] text-ink sm:text-5xl">
             Guía interactiva
-            <span className="mt-1 block text-navy">
-              SAT / IMSS
-            </span>
+            <span className="mt-1 block text-navy">SAT / IMSS</span>
           </h1>
 
           <p className="mt-4 max-w-[640px] font-inter text-[15px] leading-7 text-muted">
-            Qué hacer ante un exhorto o requerimiento del SAT o del IMSS:
-            clasifica el acto, valida plazos, integra evidencia, define
-            estrategia y genera un borrador de respuesta legal.
+            Qué hacer ante un exhorto o requerimiento del SAT o del IMSS: clasifica el acto, valida
+            plazos, integra evidencia, define estrategia y genera un borrador de respuesta legal.
           </p>
 
-          <div className="mt-6 max-w-[640px] relative">
+          <div className="relative mt-6 max-w-[640px]">
             <input
               value={busqueda}
               onChange={(event) => setBusqueda(event.target.value)}
@@ -470,7 +457,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
             />
             <Search
               size={18}
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted pointer-events-none"
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted"
             />
           </div>
 
@@ -511,7 +498,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
               Resumen ejecutivo
             </p>
 
-            <span className="rounded-full border border-line bg-surface px-2.5 py-1 font-inter text-[10px] font-bold uppercase tracking-[0.14em] text-gold-dark font-orbitron">
+            <span className="rounded-full border border-line bg-surface px-2.5 py-1 font-inter font-orbitron text-[10px] font-bold uppercase tracking-[0.14em] text-gold-dark">
               ARK CHECK
             </span>
           </div>
@@ -536,9 +523,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
             </div>
 
             <div className="border-l border-line pl-4">
-              <p className="font-playfair text-4xl font-black leading-none text-ink">
-                {avance}%
-              </p>
+              <p className="font-playfair text-4xl font-black leading-none text-ink">{avance}%</p>
               <p className="mt-1 font-inter text-[10px] uppercase tracking-[0.16em] text-muted">
                 Avance
               </p>
@@ -546,13 +531,12 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
           </div>
 
           <div className="mt-6 rounded-card bg-navy p-4 text-white">
-            <p className="font-inter text-[13px] font-semibold flex items-center gap-1.5">
+            <p className="flex items-center gap-1.5 font-inter text-[13px] font-semibold">
               <Sparkles size={14} className="text-gold" />
               Regla de oro ARK
             </p>
             <p className="mt-1 font-inter text-[12px] leading-[1.45] text-white/80">
-              Nunca contestes sin clasificar. Contesta exacto, prueba
-              pertinente y conserva acuse.
+              Nunca contestes sin clasificar. Contesta exacto, prueba pertinente y conserva acuse.
             </p>
           </div>
 
@@ -560,7 +544,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
             <button
               type="button"
               onClick={reiniciar}
-              className="glass-btn h-11 rounded-[12px] font-inter text-[13px] font-semibold text-muted hover:text-ink flex items-center justify-center gap-2"
+              className="glass-btn flex h-11 items-center justify-center gap-2 rounded-[12px] font-inter text-[13px] font-semibold text-muted hover:text-ink"
             >
               <RotateCcw size={14} />
               Reiniciar sesión
@@ -569,7 +553,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
             <button
               type="button"
               onClick={() => setModalAbierto(true)}
-              className="glass-btn glass-btn-primary h-11 rounded-[12px] font-inter text-[13px] font-semibold flex items-center justify-center gap-2"
+              className="glass-btn glass-btn-primary flex h-11 items-center justify-center gap-2 rounded-[12px] font-inter text-[13px] font-semibold"
             >
               <FileText size={14} />
               Generar borrador
@@ -608,9 +592,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
                   <span
                     className={cn(
                       'grid h-7 w-7 place-items-center rounded-full font-orbitron text-[12px] font-bold',
-                      isActive
-                        ? 'bg-white text-navy'
-                        : 'border border-line bg-cream text-navy'
+                      isActive ? 'bg-white text-navy' : 'border border-line bg-cream text-navy'
                     )}
                   >
                     {paso.id}
@@ -619,9 +601,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
                   <span
                     className={cn(
                       'rounded-full px-1.5 py-0.5 font-inter text-[10px] font-semibold',
-                      isActive
-                        ? 'bg-white/15 text-white'
-                        : 'bg-surface-2 text-muted'
+                      isActive ? 'bg-white/15 text-white' : 'bg-surface-2 text-muted'
                     )}
                   >
                     {done}/{paso.checklist.length}
@@ -794,9 +774,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setPasoActivoId(Math.min(8, pasoActivo.id + 1))
-                  }
+                  onClick={() => setPasoActivoId(Math.min(8, pasoActivo.id + 1))}
                   className="glass-btn h-9 rounded-full px-3 font-inter text-[12px] font-semibold text-navy hover:text-navy-dark"
                 >
                   Siguiente paso
@@ -818,9 +796,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
                   key={plazo.id}
                   className={cn(
                     'flex items-center justify-between rounded-[16px] px-4 py-3',
-                    plazo.destacado
-                      ? 'bg-white text-navy'
-                      : 'bg-white/10 text-white'
+                    plazo.destacado ? 'bg-white text-navy' : 'bg-white/10 text-white'
                   )}
                 >
                   <div>
@@ -852,10 +828,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
             <div className="mt-4 space-y-1">
               {NOTAS_PLAZOS.map((nota) => (
-                <p
-                  key={nota}
-                  className="font-inter text-[11px] leading-[1.45] text-white/60"
-                >
+                <p key={nota} className="font-inter text-[11px] leading-[1.45] text-white/60">
                   * {nota}
                 </p>
               ))}
@@ -921,8 +894,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
               Tipos de actos más comunes
             </h2>
             <p className="mt-2 max-w-[640px] font-inter text-[13px] leading-6 text-muted">
-              Clasifica antes de contestar. Cada acto tiene riesgo, fundamento
-              y respuesta distinta.
+              Clasifica antes de contestar. Cada acto tiene riesgo, fundamento y respuesta distinta.
             </p>
           </div>
 
@@ -954,9 +926,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
                   </div>
 
                   <div>
-                    <p className="font-playfair text-lg font-bold leading-none text-ink">
-                      SAT
-                    </p>
+                    <p className="font-playfair text-lg font-bold leading-none text-ink">SAT</p>
                     <p className="mt-1 font-inter text-[11px] uppercase tracking-[0.16em] text-muted">
                       CFF • 4 actos críticos
                     </p>
@@ -970,11 +940,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {actosSat.map((acto) => (
-                  <ActoCard
-                    key={acto.codigo}
-                    acto={acto}
-                    onUsarEnBorrador={usarActoEnBorrador}
-                  />
+                  <ActoCard key={acto.codigo} acto={acto} onUsarEnBorrador={usarActoEnBorrador} />
                 ))}
               </div>
             </div>
@@ -989,9 +955,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
                   </div>
 
                   <div>
-                    <p className="font-playfair text-lg font-bold leading-none text-ink">
-                      IMSS
-                    </p>
+                    <p className="font-playfair text-lg font-bold leading-none text-ink">IMSS</p>
                     <p className="mt-1 font-inter text-[11px] uppercase tracking-[0.16em] text-muted">
                       LSS • 4 actos críticos
                     </p>
@@ -1005,11 +969,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
               <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 {actosImss.map((acto) => (
-                  <ActoCard
-                    key={acto.codigo}
-                    acto={acto}
-                    onUsarEnBorrador={usarActoEnBorrador}
-                  />
+                  <ActoCard key={acto.codigo} acto={acto} onUsarEnBorrador={usarActoEnBorrador} />
                 ))}
               </div>
             </div>
@@ -1038,24 +998,21 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
             <div className="rounded-card border border-white/15 bg-white/10 p-4">
               <p className="font-inter text-[12px] font-bold">1. Exacto</p>
               <p className="mt-1 font-inter text-[11px] leading-[1.45] text-white/70">
-                Solo lo pedido. Nada de anexos voluntarios que amplíen la
-                revisión.
+                Solo lo pedido. Nada de anexos voluntarios que amplíen la revisión.
               </p>
             </div>
 
             <div className="rounded-card border border-white/15 bg-white/10 p-4">
               <p className="font-inter text-[12px] font-bold">2. Pertinente</p>
               <p className="mt-1 font-inter text-[11px] leading-[1.45] text-white/70">
-                Prueba que desvirtúa directamente. Papeles de trabajo, no
-                capturas sueltas.
+                Prueba que desvirtúa directamente. Papeles de trabajo, no capturas sueltas.
               </p>
             </div>
 
             <div className="rounded-card bg-white p-4 text-navy">
               <p className="font-inter text-[12px] font-bold">3. Acuse</p>
               <p className="mt-1 font-inter text-[11px] leading-[1.45]">
-                Sin acuse, no exististe. Guarda folio, sello y fecha en
-                expediente único.
+                Sin acuse, no exististe. Guarda folio, sello y fecha en expediente único.
               </p>
             </div>
           </div>
@@ -1068,9 +1025,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
             </div>
 
             <div>
-              <p className="font-playfair text-lg font-bold text-ink">
-                Genera tu borrador
-              </p>
+              <p className="font-playfair text-lg font-bold text-ink">Genera tu borrador</p>
               <p className="font-inter text-[12px] text-muted">
                 Sin backend • Copiar, exportar y compartir
               </p>
@@ -1080,7 +1035,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
           <div className="mt-5 space-y-3">
             <label
               htmlFor="acto-seleccionado"
-              className="font-inter text-[11px] font-bold uppercase tracking-[0.16em] text-ink block"
+              className="block font-inter text-[11px] font-bold uppercase tracking-[0.16em] text-ink"
             >
               Tipo de acto seleccionado
             </label>
@@ -1101,16 +1056,15 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
             <button
               type="button"
               onClick={() => setModalAbierto(true)}
-              className="glass-btn glass-btn-primary h-12 w-full rounded-input font-inter text-[13px] font-semibold flex items-center justify-center gap-2"
+              className="glass-btn glass-btn-primary flex h-12 w-full items-center justify-center gap-2 rounded-input font-inter text-[13px] font-semibold"
             >
               <FileText size={16} />
               Generar borrador
             </button>
 
             <div className="rounded-input border border-line bg-cream p-3 font-inter text-[11px] leading-[1.45] text-muted">
-              Al generar, se usa tu avance actual ({avance}%) y el paso{' '}
-              {pasoActivo.id}. El borrador se abre como vista previa local para
-              copiar o descargar TXT. Sin envío automático.
+              Al generar, se usa tu avance actual ({avance}%) y el paso {pasoActivo.id}. El borrador
+              se abre como vista previa local para copiar o descargar TXT. Sin envío automático.
             </div>
           </div>
         </div>
@@ -1141,7 +1095,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
                 type="button"
                 onClick={() => setModalAbierto(false)}
                 aria-label="Cerrar borrador"
-                className="grid h-9 w-9 place-items-center rounded-full border border-line bg-cream font-inter text-[12px] font-bold text-ink hover:bg-surface-2 transition"
+                className="grid h-9 w-9 place-items-center rounded-full border border-line bg-cream font-inter text-[12px] font-bold text-ink transition hover:bg-surface-2"
               >
                 <X size={16} />
               </button>
@@ -1149,7 +1103,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
 
             <div className="overflow-auto p-6">
               <div className="rounded-card border border-line bg-cream p-4">
-                <pre className="whitespace-pre-wrap font-mono text-[12px] leading-[1.6] text-ink select-all">
+                <pre className="select-all whitespace-pre-wrap font-mono text-[12px] leading-[1.6] text-ink">
                   {borrador}
                 </pre>
               </div>
@@ -1158,7 +1112,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
                 <button
                   type="button"
                   onClick={copiarBorrador}
-                  className="glass-btn h-11 rounded-input font-inter text-[13px] font-semibold flex items-center justify-center gap-2"
+                  className="glass-btn flex h-11 items-center justify-center gap-2 rounded-input font-inter text-[13px] font-semibold"
                 >
                   {copiado ? (
                     <>
@@ -1176,7 +1130,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
                 <button
                   type="button"
                   onClick={descargarBorrador}
-                  className="glass-btn glass-btn-primary h-11 rounded-input font-inter text-[13px] font-semibold flex items-center justify-center gap-2"
+                  className="glass-btn glass-btn-primary flex h-11 items-center justify-center gap-2 rounded-input font-inter text-[13px] font-semibold"
                 >
                   <Download size={16} />
                   <span>Descargar TXT</span>

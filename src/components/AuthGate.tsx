@@ -7,17 +7,21 @@ interface AuthGateProps {
 }
 
 export function AuthGate({ children }: AuthGateProps) {
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
-  const [tenantName, setTenantName] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) return;
     setLoading(true);
+    setError('');
     try {
-      await login({ email, tenantName });
+      await signIn(email.trim(), password);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo iniciar sesión.');
     } finally {
       setLoading(false);
     }
@@ -26,15 +30,15 @@ export function AuthGate({ children }: AuthGateProps) {
   return (
     <>
       <SignedOut>
-        <div className="min-h-screen flex items-center justify-center bg-surface p-4">
-          <div className="max-w-md w-full p-8 rounded-3xl border border-line bg-white shadow-dome">
-            <div className="flex items-center gap-3 mb-6">
+        <div className="flex min-h-screen items-center justify-center bg-surface p-4">
+          <div className="w-full max-w-md rounded-3xl border border-line bg-white p-8 shadow-dome">
+            <div className="mb-6 flex items-center gap-3">
               <Logo size={36} />
               <div>
-                <h2 className="font-orbitron font-bold text-[14px] tracking-wider text-navy">
+                <h2 className="font-orbitron text-[14px] font-bold tracking-wider text-navy">
                   ARK TOOLS
                 </h2>
-                <p className="text-[10px] text-muted tracking-widest font-semibold uppercase">
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
                   Acceso Multi-Tenant
                 </p>
               </div>
@@ -42,7 +46,7 @@ export function AuthGate({ children }: AuthGateProps) {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1.5 font-orbitron">
+                <label className="mb-1.5 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
                   Correo Electrónico
                 </label>
                 <input
@@ -51,27 +55,37 @@ export function AuthGate({ children }: AuthGateProps) {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="contador@despacho.com"
-                  className="w-full h-11 px-3.5 rounded-xl border border-line bg-surface-2 text-[13px] text-ink outline-none focus:border-navy"
+                  className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none focus:border-navy"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-ink uppercase tracking-wider mb-1.5 font-orbitron">
-                  Nombre del Despacho / Empresa
+                <label className="mb-1.5 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
+                  Contraseña
                 </label>
                 <input
-                  type="text"
-                  value={tenantName}
-                  onChange={(e) => setTenantName(e.target.value)}
-                  placeholder="Mi Firma Contable S.C."
-                  className="w-full h-11 px-3.5 rounded-xl border border-line bg-surface-2 text-[13px] text-ink outline-none focus:border-navy"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none focus:border-navy"
                 />
               </div>
+
+              {error && (
+                <p
+                  role="alert"
+                  className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[12px] text-rose-700"
+                >
+                  {error}
+                </p>
+              )}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-11 rounded-xl bg-navy hover:bg-navy-dark text-white font-orbitron font-bold text-[11px] tracking-wider transition shadow-sm"
+                className="h-11 w-full rounded-xl bg-navy font-orbitron text-[11px] font-bold tracking-wider text-white shadow-sm transition hover:bg-navy-dark"
               >
                 {loading ? 'INGRESANDO...' : 'ENTRAR AL SISTEMA'}
               </button>

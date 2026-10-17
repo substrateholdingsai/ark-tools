@@ -14,6 +14,7 @@ import {
   Plus,
   Check,
   MessageSquare,
+  Crown,
 } from 'lucide-react';
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/cn';
@@ -52,13 +53,14 @@ export function Header({
   className,
   onOpenAuthModal,
 }: HeaderProps) {
-  const { user, tenantName, tenants, activeTenant, switchTenant, createTenant, signOut } =
-    useAuth() as any;
+  const { user, tenantName, tenants, organization, switchTenant, createTenant, signOut, platformRole } =
+    useAuth();
 
   const [orgOpen, setOrgOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [isCreatingTenant, setIsCreatingTenant] = useState(false);
   const [newTenantName, setNewTenantName] = useState('');
+  const [actionError, setActionError] = useState('');
 
   const orgRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
@@ -81,10 +83,25 @@ export function Header({
   const handleCreateTenant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTenantName.trim()) return;
-    await createTenant(newTenantName.trim());
-    setNewTenantName('');
-    setIsCreatingTenant(false);
-    setOrgOpen(false);
+    setActionError('');
+    try {
+      await createTenant(newTenantName.trim());
+      setNewTenantName('');
+      setIsCreatingTenant(false);
+      setOrgOpen(false);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo crear el despacho.');
+    }
+  };
+
+  const handleSignOut = async () => {
+    setActionError('');
+    try {
+      await signOut();
+      setUserMenuOpen(false);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'No se pudo cerrar la sesión.');
+    }
   };
 
   const userInitials = (user?.fullName || user?.email || 'U').slice(0, 2).toUpperCase();
@@ -206,13 +223,21 @@ export function Header({
 
                 {orgOpen && (
                   <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-line bg-white p-2 shadow-dome">
+                    {actionError && (
+                      <p
+                        role="alert"
+                        className="mb-2 rounded-lg bg-rose-50 p-2 text-[11px] text-rose-700"
+                      >
+                        {actionError}
+                      </p>
+                    )}
                     <div className="mb-1 border-b border-line/60 px-3 py-1.5 font-orbitron text-[10px] font-bold uppercase tracking-wider text-muted">
                       Espacio de Trabajo / Despacho
                     </div>
 
                     <div className="max-h-48 space-y-1 overflow-y-auto">
                       {(tenants || []).map((t: any) => {
-                        const isCurrent = (activeTenant?.id || '') === t.id;
+                        const isCurrent = (organization?.id || '') === t.id;
                         return (
                           <button
                             key={t.id}
@@ -277,6 +302,26 @@ export function Header({
                 )}
               </div>
 
+              {/* Botón Acceso Rápido Super Admin */}
+              {platformRole === 'super_admin' && (
+                <button
+                  type="button"
+                  onClick={() => onNavigate?.('admin')}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[11px] font-bold tracking-wide transition shadow-sm',
+                    activeTool === 'admin'
+                      ? 'border-gold bg-gold/20 text-navy'
+                      : 'border-gold/40 bg-gradient-to-r from-amber-50 to-white text-navy hover:border-gold hover:bg-amber-100/50'
+                  )}
+                  title="Consola de Super Administrador"
+                >
+                  <Crown size={13} className="text-gold" />
+                  <span className="hidden font-orbitron text-[10px] font-black tracking-wider sm:inline">
+                    ADMIN
+                  </span>
+                </button>
+              )}
+
               {/* Menú de Usuario */}
               <div className="relative" ref={userRef}>
                 <button
@@ -293,25 +338,48 @@ export function Header({
                 {userMenuOpen && (
                   <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-line bg-white p-2 shadow-dome">
                     <div className="border-b border-line/60 px-3 py-2">
-                      <div className="truncate text-[12px] font-bold text-ink">
-                        {user?.fullName || 'Contador'}
+                      <div className="flex items-center justify-between gap-1">
+                        <div className="truncate text-[12px] font-bold text-ink">
+                          {user?.fullName || 'Contador'}
+                        </div>
+                        {platformRole === 'super_admin' && (
+                          <span className="rounded bg-gold/20 px-1 py-0.2 text-[9px] font-black text-navy">
+                            ADMIN
+                          </span>
+                        )}
                       </div>
                       <div className="truncate text-[10px] text-muted">{user?.email}</div>
                     </div>
 
-                    <div className="pt-1">
+                    <div className="space-y-0.5 pt-1">
+                      {platformRole === 'super_admin' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setUserMenuOpen(false);
+                            onNavigate?.('admin');
+                          }}
+                          className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-bold text-navy transition hover:bg-amber-50"
+                        >
+                          <Crown size={13} className="text-gold" />
+                          <span>Consola Super Admin</span>
+                        </button>
+                      )}
+
                       <button
                         type="button"
-                        onClick={() => {
-                          setUserMenuOpen(false);
-                          signOut();
-                        }}
+                        onClick={() => void handleSignOut()}
                         className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-semibold text-rose-600 transition hover:bg-rose-50"
                       >
                         <LogOut size={13} />
                         <span>Cerrar Sesión</span>
                       </button>
                     </div>
+                    {actionError && (
+                      <p role="alert" className="px-3 pt-2 text-[11px] text-rose-700">
+                        {actionError}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

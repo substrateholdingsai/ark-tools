@@ -54,7 +54,7 @@ export function AiAssistantWidget() {
     },
   ]);
 
-  const { tenantId, tenantName, getToken } = useAuth();
+  const { tenantId, tenantName } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -83,8 +83,6 @@ export function AiAssistantWidget() {
     setIsLoading(true);
 
     try {
-      const token = await getToken().catch(() => null);
-
       // Preparar historial para enviar a Workers AI
       const apiMessages = [...messages, userMsg].map((m) => ({
         role: m.role,
@@ -94,9 +92,8 @@ export function AiAssistantWidget() {
       const res = await apiClient.ai.chat(
         {
           messages: apiMessages,
-          tenant_id: tenantId || 'tenant_default',
+          tenant_id: tenantId || '',
         },
-        token
       );
 
       const assistantMsg: Message = {

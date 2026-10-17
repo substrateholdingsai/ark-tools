@@ -8,10 +8,19 @@
  * - Resiliencia offline con persistencia en localStorage.
  */
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useMemo,
+} from 'react';
 import AuthContext from './AuthContext';
 import {
   apiClient,
+  ApiAuthorizationError,
   type ClientRecord,
   type ExpedienteRecord,
   type TipoCliente,
@@ -68,67 +77,118 @@ const STORAGE_ACTIVE_CLIENT = 'ark_tools_active_client';
 const STORAGE_CLIENTS_CACHE = 'ark_tools_clients_cache';
 const STORAGE_EXPEDIENTES_CACHE = 'ark_tools_expedientes_cache';
 
+function clearTenantCache(tenantId: string): void {
+  if (typeof window === 'undefined') return;
+  const expedientePrefix = `${STORAGE_EXPEDIENTES_CACHE}_${tenantId}`;
+  try {
+    window.localStorage.removeItem(`${STORAGE_ACTIVE_CLIENT}_${tenantId}`);
+    window.localStorage.removeItem(`${STORAGE_CLIENTS_CACHE}_${tenantId}`);
+    for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+      const key = window.localStorage.key(index);
+      if (key?.startsWith(expedientePrefix)) {
+        window.localStorage.removeItem(key);
+      }
+    }
+  } catch (error) {
+    console.warn('[ExpedienteContext] No se pudo limpiar la caché del tenant.', error);
+  }
+}
+
 const ExpedienteContext = createContext<ExpedienteContextType | undefined>(undefined);
 
 export function ExpedienteProvider({ children }: { children: React.ReactNode }) {
   const auth = useContext(AuthContext);
   const authTenantId = auth?.tenantId;
-  const getToken = auth?.getToken ?? (async () => null);
   const tenantId = authTenantId || 'default-tenant';
 
-  const [activeClient, setActiveClientState] = useState<ClientRecord | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const stored = window.localStorage.getItem(STORAGE_ACTIVE_CLIENT);
-      return stored ? (JSON.parse(stored) as ClientRecord) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [clients, setClients] = useState<ClientRecord[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const cached = window.localStorage.getItem(`${STORAGE_CLIENTS_CACHE}_${tenantId}`);
-      return cached ? (JSON.parse(cached) as ClientRecord[]) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  const [expedientes, setExpedientes] = useState<ExpedienteRecord[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const cached = window.localStorage.getItem(`${STORAGE_EXPEDIENTES_CACHE}_${tenantId}`);
-      return cached ? (JSON.parse(cached) as ExpedienteRecord[]) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [activeClient, setActiveClientState] = useState<ClientRecord | null>(null);
+  const [clients, setClients] = useState<ClientRecord[]>([]);
+  const [expedientes, setExpedientes] = useState<ExpedienteRecord[]>([]);
 
   const [isLoadingClients, setIsLoadingClients] = useState(false);
   const [isLoadingExpedientes, setIsLoadingExpedientes] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Sincronizar activeClient en localStorage
-  const setActiveClient = useCallback((client: ClientRecord | null) => {
-    setActiveClientState(client);
-    if (typeof window !== 'undefined') {
-      if (client) {
-        window.localStorage.setItem(STORAGE_ACTIVE_CLIENT, JSON.stringify(client));
-      } else {
-        window.localStorage.removeItem(STORAGE_ACTIVE_CLIENT);
-      }
+  useLayoutEffect(() => {
+    if (!auth?.isLoaded) return;
+    if (!auth.isSignedIn || !authTenantId) {
+      setActiveClientState(null);
+      setClients([]);
+      setExpedientes([]);
+      return;
     }
-  }, []);
 
-  // Cargar lista de clientes desde la API (con fallback de caché)
+    try {
+      const activeKey = `${STORAGE_ACTIVE_CLIENT}_${tenantId}`;
+      const storedClient = window.localStorage.getItem(activeKey);
+      const parsedClient = storedClient ? (JSON.parse(storedClient) as ClientRecord) : null;
+      const active = parsedClient?.tenant_id === tenantId ? parsedClient : null;
+      setActiveClientState(active);
+
+      const cachedClients = window.localStorage.getItem(`${STORAGE_CLIENTS_CACHE}_${tenantId}`);
+      const parsedClients = cachedClients ? (JSON.parse(cachedClients) as ClientRecord[]) : [];
+      setClients(
+        Array.isArray(parsedClients) ? parsedClients.filter((c) => c.tenant_id === tenantId) : []
+      );
+
+      const expedienteKey = active
+        ? `${STORAGE_EXPEDIENTES_CACHE}_${tenantId}_${active.id}`
+        : `${STORAGE_EXPEDIENTES_CACHE}_${tenantId}`;
+      const cachedExpedientes = window.localStorage.getItem(expedienteKey);
+      const parsedExpedientes = cachedExpedientes
+        ? (JSON.parse(cachedExpedientes) as ExpedienteRecord[])
+        : [];
+      setExpedientes(
+        Array.isArray(parsedExpedientes)
+          ? parsedExpedientes.filter((record) => record.tenant_id === tenantId)
+          : []
+      );
+    } catch (err) {
+      console.warn('[ExpedienteContext] No se pudo leer la caché local.', err);
+      setActiveClientState(null);
+      setClients([]);
+      setExpedientes([]);
+    }
+  }, [auth?.isLoaded, auth?.isSignedIn, authTenantId, tenantId]);
+
+  // Persistir el cliente activo dentro del tenant seleccionado.
+  const setActiveClient = useCallback(
+    (client: ClientRecord | null) => {
+      const scopedClient = client?.tenant_id === tenantId ? client : null;
+      setActiveClientState(scopedClient);
+      if (typeof window !== 'undefined') {
+        const key = `${STORAGE_ACTIVE_CLIENT}_${tenantId}`;
+        if (scopedClient) {
+          window.localStorage.setItem(key, JSON.stringify(scopedClient));
+        } else {
+          window.localStorage.removeItem(key);
+        }
+      }
+    },
+    [tenantId]
+  );
+
+  const handleAuthorizationError = useCallback(
+    (error: unknown) => {
+      if (!(error instanceof ApiAuthorizationError)) return;
+      setClients([]);
+      setExpedientes([]);
+      setActiveClient(null);
+      clearTenantCache(tenantId);
+      void auth?.refreshSession().catch((refreshError: unknown) => {
+        console.error('[ExpedienteContext] No se pudo renovar la sesión.', refreshError);
+      });
+    },
+    [auth?.refreshSession, setActiveClient, tenantId]
+  );
+
+  // Cargar lista de clientes desde la API.
   const refreshClients = useCallback(async () => {
+    if (!auth?.isLoaded || !auth.isSignedIn || !authTenantId) return;
     setIsLoadingClients(true);
     setError(null);
     try {
-      const token = await getToken();
-      const list = await apiClient.clients.list({ tenant_id: tenantId }, token);
+      const list = await apiClient.clients.list({ tenant_id: tenantId });
       setClients(list);
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(`${STORAGE_CLIENTS_CACHE}_${tenantId}`, JSON.stringify(list));
@@ -139,30 +199,42 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
         const found = list.find((c) => c.id === activeClient.id);
         if (found) {
           setActiveClientState(found);
-          window.localStorage.setItem(STORAGE_ACTIVE_CLIENT, JSON.stringify(found));
+          window.localStorage.setItem(
+            `${STORAGE_ACTIVE_CLIENT}_${tenantId}`,
+            JSON.stringify(found)
+          );
+        } else {
+          setActiveClient(null);
         }
       }
     } catch (err) {
-      console.warn('[ExpedienteContext] Modo offline/fallback en refreshClients:', err);
-      // Mantener caché local sin interrumpir la UX
+      console.error('[ExpedienteContext] No se pudieron actualizar los clientes.', err);
+      handleAuthorizationError(err);
+      setError(err instanceof Error ? err.message : 'No se pudieron actualizar los clientes.');
     } finally {
       setIsLoadingClients(false);
     }
-  }, [tenantId, getToken, activeClient]);
+  }, [
+    auth?.isLoaded,
+    auth?.isSignedIn,
+    authTenantId,
+    tenantId,
+    activeClient,
+    setActiveClient,
+    handleAuthorizationError,
+  ]);
 
   // Cargar expedientes del cliente activo (o los últimos del tenant)
   const refreshExpedientes = useCallback(async () => {
+    if (!auth?.isLoaded || !auth.isSignedIn || !authTenantId) return;
     setIsLoadingExpedientes(true);
+    setError(null);
     try {
-      const token = await getToken();
-      const list = await apiClient.expedientes.list(
-        {
-          tenant_id: tenantId,
-          client_id: activeClient?.id,
-          limit: 100,
-        },
-        token
-      );
+      const list = await apiClient.expedientes.list({
+        tenant_id: tenantId,
+        client_id: activeClient?.id,
+        limit: 100,
+      });
       setExpedientes(list);
       if (typeof window !== 'undefined') {
         const cacheKey = activeClient
@@ -171,72 +243,50 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
         window.localStorage.setItem(cacheKey, JSON.stringify(list));
       }
     } catch (err) {
-      console.warn('[ExpedienteContext] Modo offline/fallback en refreshExpedientes:', err);
+      console.error('[ExpedienteContext] No se pudieron actualizar los expedientes.', err);
+      handleAuthorizationError(err);
+      setError(err instanceof Error ? err.message : 'No se pudieron actualizar los expedientes.');
     } finally {
       setIsLoadingExpedientes(false);
     }
-  }, [tenantId, activeClient, getToken]);
+  }, [
+    auth?.isLoaded,
+    auth?.isSignedIn,
+    authTenantId,
+    tenantId,
+    activeClient,
+    handleAuthorizationError,
+  ]);
 
   // Recargar al cambiar de tenant o de cliente activo
   useEffect(() => {
     void refreshClients();
-  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [refreshClients]);
 
   useEffect(() => {
     void refreshExpedientes();
-  }, [tenantId, activeClient?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [refreshExpedientes]);
 
   // Crear cliente
   const createClient = useCallback(
     async (input: CreateClientInput): Promise<ClientRecord> => {
       setError(null);
       try {
-        const token = await getToken();
-        let newClient: ClientRecord;
-
-        try {
-          newClient = await apiClient.clients.create(
-            {
-              ...input,
-              tenant_id: tenantId,
-            },
-            token
-          );
-        } catch (apiErr) {
-          console.warn('[ExpedienteContext] Error en API al crear cliente, creando localmente:', apiErr);
-          // Fallback local cuando D1 no responde o no está disponible
-          const fallbackId = `local_${crypto.randomUUID()}`;
-          newClient = {
-            id: fallbackId,
-            tenant_id: tenantId,
-            user_id: null,
-            parent_id: input.parent_id || null,
-            tipo: input.tipo || 'trabajador',
-            nombre: input.nombre.trim(),
-            rfc: input.rfc?.toUpperCase() || null,
-            curp: input.curp?.toUpperCase() || null,
-            nss: input.nss || null,
-            salario_diario: input.salario_diario || 0,
-            salario_diario_integrado: input.salario_diario_integrado || 0,
-            fecha_ingreso: input.fecha_ingreso || null,
-            factor_integracion: input.factor_integracion || 1.049315,
-            estado: input.estado || 'activo',
-            metadata: input.metadata || null,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          };
-        }
-
+        const newClient = await apiClient.clients.create({
+          ...input,
+          tenant_id: tenantId,
+        });
         setClients((prev) => [newClient, ...prev]);
         setActiveClient(newClient);
         return newClient;
       } catch (err) {
         const msg = String(err);
+        handleAuthorizationError(err);
         setError(msg);
         throw err;
       }
     },
-    [tenantId, getToken, setActiveClient]
+    [tenantId, setActiveClient, handleAuthorizationError]
   );
 
   // Actualizar cliente
@@ -244,18 +294,7 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
     async (id: string, updates: Partial<ClientRecord>): Promise<ClientRecord> => {
       setError(null);
       try {
-        const token = await getToken();
-        let updated: ClientRecord;
-
-        try {
-          updated = await apiClient.clients.update(id, { ...updates, tenant_id: tenantId }, token);
-        } catch {
-          // Fallback local
-          const existing = clients.find((c) => c.id === id);
-          if (!existing) throw new Error('Cliente no encontrado');
-          updated = { ...existing, ...updates, updated_at: new Date().toISOString() };
-        }
-
+        const updated = await apiClient.clients.update(id, { ...updates, tenant_id: tenantId });
         setClients((prev) => prev.map((c) => (c.id === id ? updated : c)));
         if (activeClient?.id === id) {
           setActiveClient(updated);
@@ -263,11 +302,12 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
         return updated;
       } catch (err) {
         const msg = String(err);
+        handleAuthorizationError(err);
         setError(msg);
         throw err;
       }
     },
-    [tenantId, getToken, clients, activeClient, setActiveClient]
+    [tenantId, activeClient, setActiveClient, handleAuthorizationError]
   );
 
   // Eliminar cliente
@@ -275,24 +315,19 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
     async (id: string): Promise<void> => {
       setError(null);
       try {
-        const token = await getToken();
-        try {
-          await apiClient.clients.delete(id, tenantId, token);
-        } catch (apiErr) {
-          console.warn('[ExpedienteContext] Eliminando localmente:', apiErr);
-        }
-
+        await apiClient.clients.delete(id, tenantId);
         setClients((prev) => prev.filter((c) => c.id !== id));
         if (activeClient?.id === id) {
           setActiveClient(null);
         }
       } catch (err) {
         const msg = String(err);
+        handleAuthorizationError(err);
         setError(msg);
         throw err;
       }
     },
-    [tenantId, getToken, activeClient, setActiveClient]
+    [tenantId, activeClient, setActiveClient, handleAuthorizationError]
   );
 
   // Guardar cálculo en el expediente
@@ -307,19 +342,15 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
       if (!activeClient) return null;
 
       try {
-        const token = await getToken();
-        const res = await apiClient.expedientes.save(
-          {
-            tenant_id: tenantId,
-            client_id: activeClient.id,
-            tool_id: toolId,
-            titulo,
-            inputs,
-            outputs,
-            force,
-          },
-          token
-        );
+        const res = await apiClient.expedientes.save({
+          tenant_id: tenantId,
+          client_id: activeClient.id,
+          tool_id: toolId,
+          titulo,
+          inputs,
+          outputs,
+          force,
+        });
 
         // Actualizar lista local de expedientes si no es duplicado o si es nuevo
         setExpedientes((prev) => {
@@ -332,11 +363,12 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
 
         return res;
       } catch (err) {
-        console.warn('[ExpedienteContext] Error al guardar expediente en remoto:', err);
-        return null;
+        handleAuthorizationError(err);
+        setError(err instanceof Error ? err.message : 'No se pudo guardar el expediente.');
+        throw err;
       }
     },
-    [tenantId, activeClient, getToken]
+    [tenantId, activeClient, handleAuthorizationError]
   );
 
   // Mapear campos del cliente activo para pre-llenar las calculadoras
@@ -347,7 +379,8 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
       switch (toolId) {
         case 'sbc':
           return {
-            salarioDiario: activeClient.salario_diario > 0 ? activeClient.salario_diario : undefined,
+            salarioDiario:
+              activeClient.salario_diario > 0 ? activeClient.salario_diario : undefined,
             // Si el cliente tiene fecha de ingreso, calcular años para vacaciones sugeridas
             fechaIngreso: activeClient.fecha_ingreso || undefined,
           };
@@ -366,7 +399,8 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
 
         case 'finiquitos':
           return {
-            salarioDiario: activeClient.salario_diario > 0 ? activeClient.salario_diario : undefined,
+            salarioDiario:
+              activeClient.salario_diario > 0 ? activeClient.salario_diario : undefined,
             sdi:
               activeClient.salario_diario_integrado > 0
                 ? activeClient.salario_diario_integrado
@@ -378,7 +412,8 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
           return {
             nombreEmpresa: activeClient.tipo === 'empresa' ? activeClient.nombre : undefined,
             rfc: activeClient.rfc || undefined,
-            salarioBase: activeClient.salario_diario > 0 ? activeClient.salario_diario * 30 : undefined,
+            salarioBase:
+              activeClient.salario_diario > 0 ? activeClient.salario_diario * 30 : undefined,
           };
 
         default:

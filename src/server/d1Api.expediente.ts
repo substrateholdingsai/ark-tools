@@ -7,6 +7,7 @@
  */
 
 import type { Env } from '../index';
+import { requireTenantMembership, type AuthPrincipal } from './auth';
 
 export interface ClientRecord {
   id: string;
@@ -45,6 +46,27 @@ export interface ExpedienteRecord {
 /** Versión oficial del catálogo DOF para sellado */
 export const CURRENT_CATALOG_VERSION = 'DOF-2026-UMA117.31-SMG315.04-TOPESBC2932.75';
 
+async function tenantAccessDenied(
+  env: Env,
+  principal: AuthPrincipal | null,
+  tenantId: string,
+  corsHeaders: Record<string, string>
+): Promise<Response | null> {
+  if (!principal) {
+    return Response.json(
+      { error: 'Autenticación requerida.' },
+      { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+  const membership = await requireTenantMembership(env, principal, tenantId);
+  return membership
+    ? null
+    : Response.json(
+        { error: 'No tienes acceso a este despacho.' },
+        { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+}
+
 /**
  * Genera un hash SHA-256 determinista serializando las llaves de forma ordenada
  */
@@ -77,7 +99,8 @@ export async function computeDeterministicHash(data: unknown): Promise<string> {
 export async function handleExpedienteApiRequest(
   request: Request,
   env: Env,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  principal: AuthPrincipal | null = null
 ): Promise<Response | null> {
   const url = new URL(request.url);
   const db = env.ARK_TOOLS_DB;
@@ -109,6 +132,8 @@ export async function handleExpedienteApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await tenantAccessDenied(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       const q = (url.searchParams.get('q') || '').trim();
       const tipo = url.searchParams.get('tipo');
@@ -118,9 +143,7 @@ export async function handleExpedienteApiRequest(
       // Si busca por ID individual
       if (id) {
         const row = await db
-          .prepare(
-            `SELECT * FROM clients WHERE id = ? AND tenant_id = ? LIMIT 1`
-          )
+          .prepare(`SELECT * FROM clients WHERE id = ? AND tenant_id = ? LIMIT 1`)
           .bind(id, tenantId)
           .first<Record<string, unknown>>();
 
@@ -146,7 +169,9 @@ export async function handleExpedienteApiRequest(
           fecha_ingreso: row.fecha_ingreso ? String(row.fecha_ingreso) : null,
           factor_integracion: Number(row.factor_integracion) || 1.049315,
           estado: (row.estado as ClientRecord['estado']) || 'activo',
-          metadata: row.metadata ? (JSON.parse(String(row.metadata)) as Record<string, unknown>) : null,
+          metadata: row.metadata
+            ? (JSON.parse(String(row.metadata)) as Record<string, unknown>)
+            : null,
           created_at: String(row.created_at),
           updated_at: String(row.updated_at),
         };
@@ -194,7 +219,9 @@ export async function handleExpedienteApiRequest(
         fecha_ingreso: row.fecha_ingreso ? String(row.fecha_ingreso) : null,
         factor_integracion: Number(row.factor_integracion) || 1.049315,
         estado: (row.estado as ClientRecord['estado']) || 'activo',
-        metadata: row.metadata ? (JSON.parse(String(row.metadata)) as Record<string, unknown>) : null,
+        metadata: row.metadata
+          ? (JSON.parse(String(row.metadata)) as Record<string, unknown>)
+          : null,
         created_at: String(row.created_at),
         updated_at: String(row.updated_at),
       }));
@@ -224,8 +251,10 @@ export async function handleExpedienteApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await tenantAccessDenied(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
-      const id = body.id || crypto.randomUUID();
+      const id = crypto.randomUUID();
       const metadataStr = body.metadata ? JSON.stringify(body.metadata) : null;
 
       await db
@@ -254,7 +283,7 @@ export async function handleExpedienteApiRequest(
         .bind(
           id,
           tenantId,
-          body.user_id || null,
+          principal!.id,
           body.parent_id || null,
           body.tipo || 'trabajador',
           body.nombre.trim(),
@@ -283,7 +312,7 @@ export async function handleExpedienteApiRequest(
         : {
             id,
             tenant_id: tenantId,
-            user_id: body.user_id || null,
+            user_id: principal!.id,
             parent_id: body.parent_id || null,
             tipo: body.tipo || 'trabajador',
             nombre: body.nombre.trim(),
@@ -316,6 +345,96 @@ export async function handleExpedienteApiRequest(
     }
   }
 
+  // PUT /api/clients — Actualizar cliente existente del tenant
+  if (url.pathname === '/api/clients' && request.method === 'PUT') {
+    try {
+      const body = (await request.json()) as Partial<ClientRecord> & {
+        id?: string;
+        tenant_id?: string;
+      };
+      const tenantId = body.tenant_id || request.headers.get('x-tenant-id');
+      if (!tenantId || !body.id) {
+        return Response.json(
+          { error: 'Parámetros obligatorios: id, tenant_id' },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+      const denied = await tenantAccessDenied(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
+
+      const existing = await db
+        .prepare('SELECT * FROM clients WHERE id = ? AND tenant_id = ? LIMIT 1')
+        .bind(body.id, tenantId)
+        .first<Record<string, unknown>>();
+      if (!existing) {
+        return Response.json(
+          { error: 'Cliente no encontrado.' },
+          { status: 404, headers: corsHeaders }
+        );
+      }
+      const metadata =
+        body.metadata === undefined
+          ? existing.metadata
+          : body.metadata === null
+            ? null
+            : JSON.stringify(body.metadata);
+      await db
+        .prepare(
+          `UPDATE clients SET
+            parent_id = ?, tipo = ?, nombre = ?, rfc = ?, curp = ?, nss = ?,
+            salario_diario = ?, salario_diario_integrado = ?, fecha_ingreso = ?,
+            factor_integracion = ?, estado = ?, metadata = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND tenant_id = ?`
+        )
+        .bind(
+          body.parent_id === undefined ? existing.parent_id : body.parent_id,
+          body.tipo || existing.tipo,
+          body.nombre?.trim() || existing.nombre,
+          body.rfc === undefined ? existing.rfc : body.rfc?.trim().toUpperCase() || null,
+          body.curp === undefined ? existing.curp : body.curp?.trim().toUpperCase() || null,
+          body.nss === undefined ? existing.nss : body.nss?.trim() || null,
+          body.salario_diario ?? existing.salario_diario,
+          body.salario_diario_integrado ?? existing.salario_diario_integrado,
+          body.fecha_ingreso === undefined ? existing.fecha_ingreso : body.fecha_ingreso,
+          body.factor_integracion ?? existing.factor_integracion,
+          body.estado || existing.estado,
+          metadata,
+          body.id,
+          tenantId
+        )
+        .run();
+
+      const updated = await db
+        .prepare('SELECT * FROM clients WHERE id = ? AND tenant_id = ? LIMIT 1')
+        .bind(body.id, tenantId)
+        .first<Record<string, unknown>>();
+      if (!updated) {
+        return Response.json(
+          { error: 'No se pudo actualizar el cliente.' },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+      return Response.json(
+        {
+          ok: true,
+          client: {
+            ...updated,
+            metadata: updated.metadata
+              ? (JSON.parse(String(updated.metadata)) as Record<string, unknown>)
+              : null,
+          },
+        },
+        { headers: corsHeaders }
+      );
+    } catch (err) {
+      console.error('[API Clients PUT Error]', err);
+      return Response.json(
+        { error: 'Error al actualizar cliente', details: String(err) },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+  }
+
   // DELETE /api/clients — Eliminar o archivar cliente
   if (url.pathname === '/api/clients' && request.method === 'DELETE') {
     try {
@@ -328,6 +447,8 @@ export async function handleExpedienteApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await tenantAccessDenied(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       await db
         .prepare(`DELETE FROM clients WHERE id = ? AND tenant_id = ?`)
@@ -361,10 +482,8 @@ export async function handleExpedienteApiRequest(
 
       const row = await db
         .prepare(
-          `SELECT e.*, c.nombre as client_nombre, c.rfc as client_rfc, c.tipo as client_tipo, t.name as tenant_name
+          `SELECT e.input_hash, e.tool_id, e.titulo, e.catalog_version, e.created_at
            FROM expedientes e
-           LEFT JOIN clients c ON e.client_id = c.id
-           LEFT JOIN tenants t ON e.tenant_id = t.id
            WHERE LOWER(e.input_hash) = ?
            ORDER BY e.created_at DESC LIMIT 1`
         )
@@ -390,14 +509,6 @@ export async function handleExpedienteApiRequest(
             titulo: row.titulo ? String(row.titulo) : null,
             catalog_version: String(row.catalog_version),
             created_at: String(row.created_at),
-            despacho: row.tenant_name ? String(row.tenant_name) : 'Despacho Acreditado ARK TOOLS',
-            cliente: {
-              nombre: row.client_nombre ? String(row.client_nombre) : 'Cliente Registrado',
-              rfc: row.client_rfc ? String(row.client_rfc) : null,
-              tipo: row.client_tipo ? String(row.client_tipo) : 'trabajador',
-            },
-            inputs: JSON.parse(String(row.inputs || '{}')) as Record<string, unknown>,
-            outputs: JSON.parse(String(row.outputs || '{}')) as Record<string, unknown>,
           },
         },
         { headers: corsHeaders }
@@ -416,6 +527,7 @@ export async function handleExpedienteApiRequest(
     try {
       const tenantId = url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id');
       const clientId = url.searchParams.get('client_id');
+      const id = url.searchParams.get('id');
       const toolId = url.searchParams.get('tool_id');
       const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)));
 
@@ -425,6 +537,8 @@ export async function handleExpedienteApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await tenantAccessDenied(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       let query = `SELECT * FROM expedientes WHERE tenant_id = ?`;
       const binds: unknown[] = [tenantId];
@@ -432,6 +546,11 @@ export async function handleExpedienteApiRequest(
       if (clientId) {
         query += ` AND client_id = ?`;
         binds.push(clientId);
+      }
+
+      if (id) {
+        query += ` AND id = ?`;
+        binds.push(id);
       }
 
       if (toolId) {
@@ -479,8 +598,6 @@ export async function handleExpedienteApiRequest(
         titulo?: string;
         inputs: Record<string, unknown>;
         outputs: Record<string, unknown>;
-        catalog_version?: string;
-        created_by?: string;
       };
 
       const tenantId = body.tenant_id || request.headers.get('x-tenant-id');
@@ -492,6 +609,8 @@ export async function handleExpedienteApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await tenantAccessDenied(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       // Validar que el client_id pertenezca al tenant_id
       const clientExists = await db
@@ -507,7 +626,7 @@ export async function handleExpedienteApiRequest(
       }
 
       const inputHash = await computeDeterministicHash(inputs);
-      const catalogVersion = body.catalog_version || CURRENT_CATALOG_VERSION;
+      const catalogVersion = CURRENT_CATALOG_VERSION;
 
       // Deduplicación inteligente: si existe cálculo idéntico para este cliente y tool en las últimas 24h
       const existing = await db
@@ -561,7 +680,7 @@ export async function handleExpedienteApiRequest(
           inputsStr,
           outputsStr,
           catalogVersion,
-          body.created_by || null
+          principal!.email
         )
         .run();
 
@@ -575,7 +694,7 @@ export async function handleExpedienteApiRequest(
         inputs,
         outputs,
         catalog_version: catalogVersion,
-        created_by: body.created_by || null,
+        created_by: principal!.email,
         created_at: new Date().toISOString(),
       };
 
@@ -604,6 +723,8 @@ export async function handleExpedienteApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await tenantAccessDenied(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       await db
         .prepare(`DELETE FROM expedientes WHERE id = ? AND tenant_id = ?`)

@@ -12,11 +12,13 @@ import type { Env } from '../../index';
 import { runAiAgent, DEFAULT_MODEL, FAST_MODEL } from './agent';
 import { AI_TOOLS_CATALOG } from './tools';
 import type { AiChatRequestBody } from './types';
+import { requireTenantMembership, type AuthPrincipal } from '../auth';
 
 export async function handleAiApiRequest(
   request: Request,
   env: Env,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  principal: AuthPrincipal | null = null
 ): Promise<Response | null> {
   const url = new URL(request.url);
 
@@ -108,9 +110,21 @@ export async function handleAiApiRequest(
         );
       }
 
-      // Obtener tenantId de cabecera o cuerpo (por defecto tenant general)
+      // Tenant is a selector only; authorization comes from the verified session membership.
       const headerTenant = request.headers.get('x-tenant-id');
-      const tenantId = headerTenant || body.tenant_id || 'tenant_default';
+      const tenantId = headerTenant || body.tenant_id;
+      if (!principal) {
+        return Response.json(
+          { error: 'Autenticación requerida.' },
+          { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+      if (!tenantId || !(await requireTenantMembership(env, principal, tenantId))) {
+        return Response.json(
+          { error: 'No tienes acceso a este despacho.' },
+          { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
 
       const response = await runAiAgent(env, {
         messages: body.messages,

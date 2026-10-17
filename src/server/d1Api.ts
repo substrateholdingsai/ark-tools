@@ -9,6 +9,7 @@
 
 import type { Env } from '../index';
 import { handleExpedienteApiRequest } from './d1Api.expediente';
+import { requireTenantMembership, type AuthPrincipal } from './auth';
 
 /**
  * Calcula el hash SHA-256 inmutable para el ledger
@@ -21,10 +22,33 @@ async function computeSha256(message: string): Promise<string> {
   return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
+async function authorizeTenant(
+  env: Env,
+  principal: AuthPrincipal | null,
+  tenantId: string,
+  corsHeaders: Record<string, string>
+): Promise<Response | null> {
+  if (!principal) {
+    return Response.json(
+      { error: 'Autenticación requerida.' },
+      { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+  const membership = await requireTenantMembership(env, principal, tenantId);
+  if (!membership) {
+    return Response.json(
+      { error: 'No tienes acceso a este despacho.' },
+      { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+  return null;
+}
+
 export async function handleD1ApiRequest(
   request: Request,
   env: Env,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  principal: AuthPrincipal | null
 ): Promise<Response | null> {
   const url = new URL(request.url);
   const db = env.ARK_TOOLS_DB;
@@ -52,68 +76,9 @@ export async function handleD1ApiRequest(
   // ═══════════════════════════════════════════════════════════════════
   // 0. EXPEDIENTE ÚNICO Y CLIENTES (SPRINT 9)
   // ═══════════════════════════════════════════════════════════════════
-  const expedienteResponse = await handleExpedienteApiRequest(request, env, corsHeaders);
+  const expedienteResponse = await handleExpedienteApiRequest(request, env, corsHeaders, principal);
   if (expedienteResponse) {
     return expedienteResponse;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // 0. SINCRONIZACIÓN DE USUARIO Y TENANT (AUTH SYNC)
-  // ═══════════════════════════════════════════════════════════════════
-  if (url.pathname === '/api/auth/sync' && request.method === 'POST') {
-    try {
-      const body = (await request.json()) as {
-        user_id?: string;
-        email?: string;
-        full_name?: string;
-        tenant_id?: string;
-        tenant_name?: string;
-        tenant_slug?: string;
-      };
-
-      const { user_id, email, full_name, tenant_id, tenant_name, tenant_slug } = body;
-
-      if (!user_id || !email) {
-        return Response.json(
-          { error: 'Parámetros requeridos: user_id, email' },
-          { status: 400, headers: corsHeaders }
-        );
-      }
-
-      // Upsert usuario
-      await db
-        .prepare(
-          `INSERT INTO users (id, email, full_name, created_at, updated_at)
-           VALUES (?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-           ON CONFLICT(id) DO UPDATE SET
-             email = excluded.email,
-             full_name = excluded.full_name,
-             updated_at = CURRENT_TIMESTAMP`
-        )
-        .bind(user_id, email, full_name || '')
-        .run();
-
-      // Upsert tenant si se proporcionó
-      if (tenant_id && tenant_name) {
-        await db
-          .prepare(
-            `INSERT INTO tenants (id, name, slug, created_at)
-             VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-             ON CONFLICT(id) DO UPDATE SET
-               name = excluded.name,
-               slug = excluded.slug`
-          )
-          .bind(tenant_id, tenant_name, tenant_slug || null)
-          .run();
-      }
-
-      return Response.json({ success: true }, { headers: corsHeaders });
-    } catch (err) {
-      return Response.json(
-        { error: 'Error sincronizando usuario y tenant', details: String(err) },
-        { status: 500, headers: corsHeaders }
-      );
-    }
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -129,6 +94,8 @@ export async function handleD1ApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await authorizeTenant(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       const { results } = await db
         .prepare(
@@ -140,7 +107,10 @@ export async function handleD1ApiRequest(
         .bind(tenantId)
         .all();
 
-      return Response.json({ success: true, tenant_id: tenantId, progress: results }, { headers: corsHeaders });
+      return Response.json(
+        { success: true, tenant_id: tenantId, progress: results },
+        { headers: corsHeaders }
+      );
     }
 
     // POST: Guardar o actualizar progreso de un paso
@@ -148,20 +118,21 @@ export async function handleD1ApiRequest(
       try {
         const body = (await request.json()) as {
           tenant_id?: string;
-          user_id?: string;
           step_id?: number;
           checklist_state?: Record<string, boolean> | string;
           draft_text?: string;
         };
 
-        const { tenant_id, user_id, step_id, checklist_state, draft_text } = body;
+        const { tenant_id, step_id, checklist_state, draft_text } = body;
 
-        if (!tenant_id || !user_id || typeof step_id !== 'number') {
+        if (!tenant_id || typeof step_id !== 'number') {
           return Response.json(
             { error: 'Parámetros requeridos: tenant_id, user_id, step_id (número)' },
             { status: 400, headers: corsHeaders }
           );
         }
+        const denied = await authorizeTenant(env, principal, tenant_id, corsHeaders);
+        if (denied) return denied;
 
         const stateJson =
           typeof checklist_state === 'object'
@@ -178,7 +149,7 @@ export async function handleD1ApiRequest(
                draft_text = excluded.draft_text,
                updated_at = CURRENT_TIMESTAMP`
           )
-          .bind(tenant_id, step_id, user_id, stateJson, draft_text || '')
+          .bind(tenant_id, step_id, principal!.id, stateJson, draft_text || '')
           .run();
 
         return Response.json(
@@ -212,6 +183,8 @@ export async function handleD1ApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await authorizeTenant(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       let query = `SELECT id, tenant_id, user_id, caso_id, conducta_id, estado, hash_sha256, prev_hash, timestamp
                    FROM arkangel_ledger
@@ -225,8 +198,14 @@ export async function handleD1ApiRequest(
 
       query += ` ORDER BY id ASC`;
 
-      const { results } = await db.prepare(query).bind(...params).all();
-      return Response.json({ success: true, tenant_id: tenantId, entries: results }, { headers: corsHeaders });
+      const { results } = await db
+        .prepare(query)
+        .bind(...params)
+        .all();
+      return Response.json(
+        { success: true, tenant_id: tenantId, entries: results },
+        { headers: corsHeaders }
+      );
     }
 
     // POST: Insertar un dictamen/evento append-only con encadenamiento de hash
@@ -234,20 +213,21 @@ export async function handleD1ApiRequest(
       try {
         const body = (await request.json()) as {
           tenant_id?: string;
-          user_id?: string;
           caso_id?: string;
           conducta_id?: string;
           estado?: 'BLOQUEADO' | 'PERMITIDO';
         };
 
-        const { tenant_id, user_id, caso_id, conducta_id, estado } = body;
+        const { tenant_id, caso_id, conducta_id, estado } = body;
 
-        if (!tenant_id || !user_id || !caso_id || !conducta_id || !estado) {
+        if (!tenant_id || !caso_id || !conducta_id || !estado) {
           return Response.json(
             { error: 'Parámetros requeridos: tenant_id, user_id, caso_id, conducta_id, estado' },
             { status: 400, headers: corsHeaders }
           );
         }
+        const denied = await authorizeTenant(env, principal, tenant_id, corsHeaders);
+        if (denied) return denied;
 
         // Obtener el hash del último bloque de este caso y tenant para encadenarlo
         const lastEntry = await db
@@ -264,7 +244,8 @@ export async function handleD1ApiRequest(
           '0000000000000000000000000000000000000000000000000000000000000000';
 
         const timestamp = new Date().toISOString();
-        const payloadToHash = `${prevHash}|${tenant_id}|${user_id}|${caso_id}|${conducta_id}|${estado}|${timestamp}`;
+        const userId = principal!.id;
+        const payloadToHash = `${prevHash}|${tenant_id}|${userId}|${caso_id}|${conducta_id}|${estado}|${timestamp}`;
         const hashSha256 = await computeSha256(payloadToHash);
 
         const insertResult = await db
@@ -272,7 +253,7 @@ export async function handleD1ApiRequest(
             `INSERT INTO arkangel_ledger (tenant_id, user_id, caso_id, conducta_id, estado, hash_sha256, prev_hash, timestamp)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
           )
-          .bind(tenant_id, user_id, caso_id, conducta_id, estado, hashSha256, prevHash, timestamp)
+          .bind(tenant_id, userId, caso_id, conducta_id, estado, hashSha256, prevHash, timestamp)
           .run();
 
         return Response.json(
@@ -307,6 +288,8 @@ export async function handleD1ApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await authorizeTenant(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       const { results } = await db
         .prepare(
@@ -318,7 +301,10 @@ export async function handleD1ApiRequest(
         .bind(tenantId)
         .all();
 
-      return Response.json({ success: true, tenant_id: tenantId, watchlist: results }, { headers: corsHeaders });
+      return Response.json(
+        { success: true, tenant_id: tenantId, watchlist: results },
+        { headers: corsHeaders }
+      );
     }
 
     // POST: Guardar o actualizar nota de una conducta
@@ -326,19 +312,20 @@ export async function handleD1ApiRequest(
       try {
         const body = (await request.json()) as {
           tenant_id?: string;
-          user_id?: string;
           conducta_id?: number;
           notes?: string;
         };
 
-        const { tenant_id, user_id, conducta_id, notes } = body;
+        const { tenant_id, conducta_id, notes } = body;
 
-        if (!tenant_id || !user_id || typeof conducta_id !== 'number') {
+        if (!tenant_id || typeof conducta_id !== 'number') {
           return Response.json(
             { error: 'Parámetros requeridos: tenant_id, user_id, conducta_id (número)' },
             { status: 400, headers: corsHeaders }
           );
         }
+        const denied = await authorizeTenant(env, principal, tenant_id, corsHeaders);
+        if (denied) return denied;
 
         await db
           .prepare(
@@ -349,7 +336,7 @@ export async function handleD1ApiRequest(
                notes = excluded.notes,
                created_at = CURRENT_TIMESTAMP`
           )
-          .bind(tenant_id, conducta_id, user_id, notes || '')
+          .bind(tenant_id, conducta_id, principal!.id, notes || '')
           .run();
 
         return Response.json(
@@ -379,6 +366,8 @@ export async function handleD1ApiRequest(
           { status: 400, headers: corsHeaders }
         );
       }
+      const denied = await authorizeTenant(env, principal, tenantId, corsHeaders);
+      if (denied) return denied;
 
       await db
         .prepare(`DELETE FROM activos_watchlist WHERE tenant_id = ? AND conducta_id = ?`)

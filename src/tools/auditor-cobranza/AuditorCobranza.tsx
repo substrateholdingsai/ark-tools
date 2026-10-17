@@ -16,14 +16,15 @@ import {
 } from './components';
 import { GlassButton } from '@/components/ui';
 
-
 interface AuditorCobranzaProps {
   onBack?: () => void;
 }
 
 export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
   // Estado de comparadores
-  const [respuestasComparadores, setRespuestasComparadores] = useState<Record<string, EstadoDictamen>>({});
+  const [respuestasComparadores, setRespuestasComparadores] = useState<
+    Record<string, EstadoDictamen>
+  >({});
   const [notasComparadores, setNotasComparadores] = useState<Record<string, string>>({});
 
   // Estado de conductas
@@ -36,10 +37,10 @@ export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
   const [copiado, setCopiado] = useState(false);
 
   // Contexto Multi-Tenant y Ledger
-  const { tenantId, userId, tenantName, getToken } = useAuth();
+  const { tenantId, tenantName } = useAuth();
   const [guardandoLedger, setGuardandoLedger] = useState(false);
   const [hashGenerado, setHashGenerado] = useState<string | null>(null);
-
+  const [errorLedger, setErrorLedger] = useState('');
 
   // Normalizar respuestas junto con notas para el dictamen
   const respuestasConNotas = useMemo(() => {
@@ -78,7 +79,7 @@ export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
 
   const handleToggleConducta = useCallback((id: string) => {
     setConductasDetectadas((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
     );
   }, []);
 
@@ -99,39 +100,38 @@ export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
   }, [dictamen]);
 
   const handleGuardarLedger = useCallback(async () => {
-    if (!tenantId || !userId) return;
+    if (!tenantId) {
+      setErrorLedger('Inicia sesión y selecciona un despacho para guardar el dictamen.');
+      return;
+    }
     setGuardandoLedger(true);
+    setErrorLedger('');
     try {
-      const token = await getToken();
       const esBloqueado = dictamen.resumen.nivel === 'CRITICO' || dictamen.resumen.criticos > 0;
-      const res = await apiClient.ledger.addEntry(
-        {
-          tenant_id: tenantId,
-          user_id: userId,
-          caso_id: cliente.trim() || 'Auditoria-General',
-          conducta_id: conductasDetectadas.length > 0 ? conductasDetectadas.join(',') : 'CONTRATO-CRM',
-          estado: esBloqueado ? 'BLOQUEADO' : 'PERMITIDO',
-        },
-        token
-      );
+      const res = await apiClient.ledger.addEntry({
+        tenant_id: tenantId,
+        caso_id: cliente.trim() || 'Auditoria-General',
+        conducta_id:
+          conductasDetectadas.length > 0 ? conductasDetectadas.join(',') : 'CONTRATO-CRM',
+        estado: esBloqueado ? 'BLOQUEADO' : 'PERMITIDO',
+      });
       setHashGenerado(res.hash_sha256);
     } catch (err) {
-      console.debug('[Ledger] Error al sellar en D1:', err);
+      console.error('[Ledger] No se pudo sellar el dictamen en D1:', err);
+      setErrorLedger(err instanceof Error ? err.message : 'No se pudo guardar el dictamen.');
     } finally {
       setGuardandoLedger(false);
     }
-  }, [tenantId, userId, cliente, conductasDetectadas, dictamen.resumen.nivel, dictamen.resumen.criticos, getToken]);
-
-
+  }, [tenantId, cliente, conductasDetectadas, dictamen.resumen.nivel, dictamen.resumen.criticos]);
 
   return (
-    <main className="mx-auto w-full max-w-[1280px] px-4 sm:px-6 lg:px-8 py-8">
+    <main className="mx-auto w-full max-w-[1280px] px-4 py-8 sm:px-6 lg:px-8">
       {/* Botón de regreso en el header */}
       {onBack && (
         <button
           type="button"
           onClick={onBack}
-          className="mb-4 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--line)] bg-white font-inter text-[12px] font-semibold text-[var(--ink)] hover:bg-[var(--cream)] transition"
+          className="mb-4 inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white px-4 py-2 font-inter text-[12px] font-semibold text-[var(--ink)] transition hover:bg-[var(--cream)]"
         >
           ← Volver al dashboard
         </button>
@@ -139,7 +139,7 @@ export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
 
       {/* Header */}
       <header className="mb-8">
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="mb-4 flex flex-wrap gap-2">
           <span className="rounded-full bg-[var(--navy)] px-3 py-1 font-inter text-[10px] font-bold uppercase tracking-[0.16em] text-white">
             Fase D • Compliance
           </span>
@@ -151,23 +151,23 @@ export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
           </span>
         </div>
 
-        <h1 className="font-playfair text-[32px] sm:text-[42px] font-black leading-[0.95] tracking-[-0.03em] text-[var(--ink)]">
+        <h1 className="font-playfair text-[32px] font-black leading-[0.95] tracking-[-0.03em] text-[var(--ink)] sm:text-[42px]">
           Auditoría Legal de Cobranza
         </h1>
 
         <p className="mt-3 max-w-[640px] font-inter text-[14px] leading-[1.6] text-[var(--muted)]">
-          Evalúe la consistencia entre contrato y CRM, detecte conductas de riesgo
-          y genere un dictamen exportable con fundamento legal.
+          Evalúe la consistencia entre contrato y CRM, detecte conductas de riesgo y genere un
+          dictamen exportable con fundamento legal.
         </p>
       </header>
 
       {/* Grid principal */}
-      <div className="grid lg:grid-cols-[0.9fr_1.1fr] gap-6">
+      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         {/* Columna izquierda: Resumen + Datos + Acciones */}
         <div className="space-y-6">
           {/* Datos del auditor */}
           <div className="rounded-[20px] border border-[var(--line)] bg-white p-5">
-            <h3 className="font-inter font-bold text-[12px] tracking-[0.15em] text-[var(--ink)] mb-4">
+            <h3 className="mb-4 font-inter text-[12px] font-bold tracking-[0.15em] text-[var(--ink)]">
               DATOS DEL AUDITOR
             </h3>
             <div className="space-y-3">
@@ -176,52 +176,39 @@ export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
                 value={cliente}
                 onChange={(e) => setCliente(e.target.value)}
                 placeholder="Cliente / Empresa auditada"
-                className="w-full h-10 rounded-[12px] border border-[var(--line)] bg-[var(--cream)] px-3 font-inter text-[13px] text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--navy)]/20 focus:border-[var(--navy)] transition"
+                className="focus:ring-[var(--navy)]/20 h-10 w-full rounded-[12px] border border-[var(--line)] bg-[var(--cream)] px-3 font-inter text-[13px] text-[var(--ink)] outline-none transition focus:border-[var(--navy)] focus:ring-2"
               />
               <input
                 type="text"
                 value={revisor}
                 onChange={(e) => setRevisor(e.target.value)}
                 placeholder="Nombre del revisor"
-                className="w-full h-10 rounded-[12px] border border-[var(--line)] bg-[var(--cream)] px-3 font-inter text-[13px] text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--navy)]/20 focus:border-[var(--navy)] transition"
+                className="focus:ring-[var(--navy)]/20 h-10 w-full rounded-[12px] border border-[var(--line)] bg-[var(--cream)] px-3 font-inter text-[13px] text-[var(--ink)] outline-none transition focus:border-[var(--navy)] focus:ring-2"
               />
               <textarea
                 value={notasAuditor}
                 onChange={(e) => setNotasAuditor(e.target.value)}
                 placeholder="Notas generales del auditor..."
                 rows={3}
-                className="w-full rounded-[12px] border border-[var(--line)] bg-[var(--cream)] px-3 py-2 font-inter text-[12px] text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--navy)]/20 focus:border-[var(--navy)] transition resize-none"
+                className="focus:ring-[var(--navy)]/20 w-full resize-none rounded-[12px] border border-[var(--line)] bg-[var(--cream)] px-3 py-2 font-inter text-[12px] text-[var(--ink)] outline-none transition focus:border-[var(--navy)] focus:ring-2"
               />
             </div>
           </div>
 
           {/* Resumen */}
-          <ResumenAuditoriaDome
-            resumen={dictamen.resumen}
-            cliente={cliente}
-            revisor={revisor}
-          />
+          <ResumenAuditoriaDome resumen={dictamen.resumen} cliente={cliente} revisor={revisor} />
 
           {/* Acciones */}
           <div className="flex flex-wrap gap-2">
-            <GlassButton
-              onClick={() => descargarCSV(dictamen)}
-              className="flex-1"
-            >
+            <GlassButton onClick={() => descargarCSV(dictamen)} className="flex-1">
               <Download size={14} />
               CSV
             </GlassButton>
-            <GlassButton
-              onClick={() => descargarTXT(dictamen)}
-              className="flex-1"
-            >
+            <GlassButton onClick={() => descargarTXT(dictamen)} className="flex-1">
               <FileText size={14} />
               TXT
             </GlassButton>
-            <GlassButton
-              onClick={handleCopiar}
-              className="flex-1"
-            >
+            <GlassButton onClick={handleCopiar} className="flex-1">
               <Copy size={14} />
               {copiado ? 'Copiado' : 'Copiar'}
             </GlassButton>
@@ -237,47 +224,52 @@ export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
             {guardandoLedger ? 'Sellando en D1...' : 'Sellar en Ledger Inmutable (D1)'}
           </GlassButton>
 
+          {errorLedger && (
+            <p
+              role="alert"
+              className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700"
+            >
+              {errorLedger}
+            </p>
+          )}
+
           {hashGenerado && (
-            <div className="rounded-[14px] bg-emerald-50 border border-emerald-300 p-3.5 text-[11px] font-mono text-emerald-900 shadow-sm animate-fadeIn">
-              <div className="flex items-center gap-1.5 font-bold font-inter text-[12px] mb-1.5 text-emerald-950">
+            <div className="animate-fadeIn rounded-[14px] border border-emerald-300 bg-emerald-50 p-3.5 font-mono text-[11px] text-emerald-900 shadow-sm">
+              <div className="mb-1.5 flex items-center gap-1.5 font-inter text-[12px] font-bold text-emerald-950">
                 <Check size={14} className="text-emerald-600" />
                 <span>Dictamen Sellado en Ledger ({tenantName})</span>
               </div>
-              <div className="break-all text-[10px] text-emerald-800 bg-white/80 p-2 rounded border border-emerald-200">
+              <div className="break-all rounded border border-emerald-200 bg-white/80 p-2 text-[10px] text-emerald-800">
                 SHA-256: {hashGenerado}
               </div>
             </div>
           )}
 
-          <GlassButton
-            onClick={handleReset}
-            className="w-full"
-          >
+          <GlassButton onClick={handleReset} className="w-full">
             <RotateCcw size={14} />
             Reiniciar Evaluación
           </GlassButton>
-
         </div>
 
         {/* Columna derecha: Comparadores + Conductas */}
         <div className="space-y-6">
           {/* Comparadores */}
           <div className="rounded-[24px] border border-[var(--line)] bg-white p-5 sm:p-6">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <h2 className="font-playfair font-bold text-[20px] leading-none text-[var(--ink)]">
+                <h2 className="font-playfair text-[20px] font-bold leading-none text-[var(--ink)]">
                   Contrato vs CRM
                 </h2>
-                <p className="font-inter text-[11px] text-[var(--muted)] mt-1">
+                <p className="mt-1 font-inter text-[11px] text-[var(--muted)]">
                   12 comparadores • Sección VIII — Eje de Gravedad
                 </p>
               </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-700 font-inter text-[10px] font-bold">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1.5 font-inter text-[10px] font-bold text-red-700">
                 CRÍTICO
               </span>
             </div>
 
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid gap-4 sm:grid-cols-2">
               {COMPARADORES_CONTRATO_CRM.map((comp) => (
                 <ComparadorCard
                   key={comp.id}

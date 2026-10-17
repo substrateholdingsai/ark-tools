@@ -5,7 +5,7 @@
  * Fase D: Compliance — Auditoría de Cobranza + Guía SAT/IMSS.
  */
 
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import {
   Calculator,
   FileSpreadsheet,
@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
-import { apiClient } from '@/lib/apiClient';
 
 import {
   Header,
@@ -32,6 +31,7 @@ import {
   AiAssistantWidget,
   ExpedienteSelector,
   VerificacionPublicaModal,
+  AdminPanel,
 } from './components';
 import type { NavItem } from './components';
 
@@ -69,7 +69,8 @@ export type ToolId =
   | 'leasing'
   | 'guia-sat-imss'
   | 'auditor-cobranza'
-  | 'mapa-activos';
+  | 'mapa-activos'
+  | 'admin';
 
 export type ToolRoute = ToolId;
 export type NavFilter = 'dashboard' | 'fiscal' | 'sat' | 'cobros' | 'compliance';
@@ -86,6 +87,7 @@ const navItems: NavItem[] = [
 // APP
 // ═════════════════════════════════════════════════════════════════
 export function App() {
+  const { isLoaded, platformRole } = useAuth();
   const [activeTool, setActiveTool] = useState<ToolId>('dashboard');
   const [activeNavFilter, setActiveNavFilter] = useState<NavFilter>('dashboard');
   const [verifyHash, setVerifyHash] = useState<string | null>(() => {
@@ -93,34 +95,6 @@ export function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('verify') || params.get('hash') || null;
   });
-  const { isSignedIn, userId, email, fullName, tenantId, tenantName, organization, getToken } =
-    useAuth();
-
-  // Sincronización silenciosa de usuario y despacho con D1 en segundo plano
-  useEffect(() => {
-    if (!isSignedIn || !userId || !email) return;
-
-    getToken()
-      .then((token) => {
-        apiClient.auth
-          .sync(
-            {
-              user_id: userId,
-              email,
-              full_name: fullName,
-              tenant_id: tenantId,
-              tenant_name: tenantName,
-              tenant_slug: organization?.slug,
-            },
-            token
-          )
-          .catch((err) => {
-            console.debug('[AuthSync] Silencioso:', err);
-          });
-      })
-      .catch(() => {});
-  }, [isSignedIn, userId, email, fullName, tenantId, tenantName, organization?.slug, getToken]);
-
   const navigateTo = (tool: ToolId) => {
     setActiveTool(tool);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -130,6 +104,13 @@ export function App() {
   const handleNavigate = (id: string) => {
     if (id === 'back') {
       goToDashboard();
+      return;
+    }
+
+    if (id === 'admin') {
+      if (platformRole === 'super_admin') {
+        navigateTo('admin');
+      }
       return;
     }
 
@@ -158,10 +139,18 @@ export function App() {
     'guia-sat-imss': 'Guía SAT/IMSS',
     'auditor-cobranza': 'Auditoría Legal de Cobranza',
     'mapa-activos': 'Mapa de Activos Virtuales',
+    admin: 'Super Admin Console',
   };
 
   const renderTool = () => {
     switch (activeTool) {
+      case 'admin':
+        return platformRole === 'super_admin' ? (
+          <AdminPanel onBack={goToDashboard} />
+        ) : (
+          <Dashboard onSelectTool={navigateTo} navFilter={activeNavFilter} />
+        );
+
       case 'isn':
         return <CalculadoraISN onBack={goToDashboard} />;
 
@@ -220,6 +209,17 @@ export function App() {
     }
   };
 
+  if (!isLoaded) {
+    return (
+      <main
+        role="status"
+        className="flex min-h-screen items-center justify-center bg-surface font-inter text-sm text-muted"
+      >
+        Validando tu sesión segura...
+      </main>
+    );
+  }
+
   return (
     <>
       <SignedOut>
@@ -229,16 +229,19 @@ export function App() {
       <SignedIn>
         <div className="min-h-screen bg-surface font-inter text-ink antialiased">
           <Header
-            activeTool={activeNavFilter}
+            activeTool={activeTool === 'admin' ? 'admin' : activeNavFilter}
             currentToolLabel={activeTool === 'dashboard' ? undefined : toolLabels[activeTool]}
             onNavigate={handleNavigate}
             navItems={navItems}
           />
 
-          {/* Selector y Catálogo de Expediente Único (Sprint 9) */}
-          <ExpedienteSelector />
-
-          <AlertasVigencia />
+          {/* Selector y Catálogo de Expediente Único (Sprint 9) — oculto en consola admin */}
+          {activeTool !== 'admin' && (
+            <>
+              <ExpedienteSelector />
+              <AlertasVigencia />
+            </>
+          )}
 
           <main>
             {activeTool === 'dashboard' ? (
