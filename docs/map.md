@@ -1153,19 +1153,23 @@ ark-tools/
 
 ---
 
-### Sprint 16: Renovación de la Landing Page Pública — Enfoque en Blindaje & Evidencia Fiscal (Completada ✅)
+### Sprint 16: Renovación de la Landing Page Pública & Dashboard — Enfoque en Blindaje & Evidencia Fiscal (Completada ✅)
 
-- [x] **Hero Section con Propuesta de Valor Diferenciada:**
+- [x] **Hero Section Pública & Dashboard Autenticado con Propuesta de Valor Unificada:**
   - [x] Nuevo titular pericial: *"Cálculos auditables. Blindados ante cualquier revisión."*
-  - [x] Badge de confianza: `Blindaje & Evidencia Fiscal 2026 · Cero Riesgo`.
-  - [x] Destacado del Sello Criptográfico SHA-256 y Cédulas de Trabajo Formales con QR verificado para respaldar ante el SAT y tribunales.
-- [x] **Caja Freemium Clara & Transparente:**
+  - [x] Badge de confianza: `El Sistema Operativo de la Defensa Fiscal` / `Blindaje & Evidencia Fiscal 2026`.
+  - [x] Banner de Moat en Dashboard con `Fingerprint`: *"Papel de Trabajo con Sello Criptográfico (SHA-256) Verificable Públicamente"*.
+  - [x] Valores de referencia DOF 2026 destacados (UMA $117.31, SMG $315.04, Tope 25 UMAs).
+- [x] **Badges Claros Freemium en Dashboard:**
+  - [x] Variante `neutral` en `ToolCard` para herramientas de libre uso con badge `GRATIS`.
+  - [x] Badges dorados `PRO` para herramientas avanzadas (Cierre de Nómina Masivo, Timbrado CFDI 4.0, Guía SAT/IMSS y Mapa de Activos Virtuales).
+- [x] **Caja Freemium Clara & Transparente en Landing:**
   - [x] Mensaje de conversión: *"Modelo Transparente: Gratis para calcular, Pro para blindar"*.
   - [x] Explicación diáfana de acceso 100% libre e ilimitado a las calculadoras y conversores básicos, monetizando exclusivamente los servicios de alto valor operativo.
 - [x] **Catálogo Completo de 14 Herramientas & Estandarización de Categorías:**
   - [x] Integración de la tarjeta de **Cierre de Nómina Masivo (Batch DOF)** con badge Pro.
-  - [x] Estandarización de la categoría **Cobros** unificando SPEI/Clip, Timbrado CFDI 4.0 Alegra/Quadrum y Leasing Tecnológico.
-  - [x] Distintivos visuales `Fingerprint` ("Requiere Crédito Pro") en herramientas de timbrado y certificación pericial.
+  - [x] Estandarización de la categoría **Cobros & Finanzas** unificando SPEI/Clip, Timbrado CFDI 4.0 Alegra/Quadrum y Leasing Tecnológico.
+  - [x] Grid de 3 columnas en categoría Fiscal para balance estético de las 6 herramientas.
 - [x] **Nueva Sección de Negocio Transparente:**
   - [x] Sustitución de visión preliminar por: *"Transparencia Total: ¿Cómo ganamos dinero si las calculadoras son gratis?"*.
   - [x] Desglose de 3 pilares: (1) Calculadoras Gratuitas e ilimitadas, (2) Expediente Único con Sello SHA-256 por micro-créditos, (3) Timbrado CFDI 4.0 & Procesamiento Masivo.

@@ -18,8 +18,8 @@ interface ToolCardProps {
   description: string;
   /** Badge opcional (ej. "NUEVO", "IMSS 2026") */
   badge?: string;
-  /** Si el badge es dorado (default) o navy */
-  badgeVariant?: 'gold' | 'navy' | 'muted';
+  /** Si el badge es dorado (default), navy o neutral */
+  badgeVariant?: 'gold' | 'navy' | 'muted' | 'neutral';
   /** Categoría opcional */
   category?: string;
   /** Callback al hacer click */
@@ -35,6 +35,7 @@ const badgeVariantClasses = {
   gold: 'bg-gold text-navy-dark',
   navy: 'bg-navy text-white',
   muted: 'bg-surface-2 border border-line text-muted',
+  neutral: 'bg-surface-2 border border-line text-muted',
 } as const;
 
 export function ToolCard({

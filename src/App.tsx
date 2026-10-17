@@ -18,6 +18,8 @@ import {
   ShieldAlert,
   Users,
   FileCode,
+  Fingerprint,
+  CheckCircle2,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -345,50 +347,57 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
     <div className="mx-auto max-w-[1280px] space-y-16 px-6 py-16 md:px-10">
       {/* Hero */}
       <section>
-        <h1 className="max-w-[24ch] font-playfair text-[48px] font-black leading-[0.92] tracking-[-0.03em] text-ink md:text-[68px]">
-          Herramientas que <span className="text-navy">trabajan</span> mientras tú cobras.
+        <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-navy/20 bg-navy/5 px-3 py-1 font-orbitron text-[10px] font-bold uppercase tracking-[0.16em] text-navy">
+          <ShieldCheck size={14} className="text-navy" />
+          <span>El Sistema Operativo de la Defensa Fiscal</span>
+        </div>
+        <h1 className="max-w-[32ch] font-playfair text-[48px] font-black leading-[0.92] tracking-[-0.03em] text-ink md:text-[68px]">
+          Tus cálculos, <span className="text-navy">blindados</span> con evidencia verificable.
         </h1>
         <p className="mt-6 max-w-[64ch] font-inter text-[16px] leading-[1.5] text-muted md:text-[18px]">
-          Cuadra nóminas, calcula impuestos y emite papeles de trabajo oficiales en segundos. Motor
-          determinista con respaldo jurídico para el cumplimiento fiscal y laboral en México.
+          Calcula nómina, emite CFDI y audita riesgos. Cada resultado se sella con SHA-256 y 
+          versión DOF, generando un QR que cualquier auditor puede verificar sin depender de ti.
         </p>
       </section>
 
-      {/* Banner de Transparencia Jurídica & Papeles de Trabajo */}
-      <section className="rounded-2xl border border-line bg-white p-6 shadow-sm md:p-7">
-        <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+      {/* Banner de Moat: Expediente Único y Sello QR */}
+      <section className="relative overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-r from-surface to-cream/20 p-6 shadow-sm md:p-8">
+        {/* Adorno de fondo */}
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/10 blur-2xl" />
+        
+        <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div className="flex items-start gap-4">
-            <div className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-navy/15 bg-navy/5 text-navy">
-              <Scale size={22} className="text-navy" />
+            <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gold/40 bg-gold/10 text-gold-dark shadow-sm">
+              <Fingerprint size={26} />
             </div>
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-orbitron text-[13px] font-bold uppercase tracking-wider text-navy">
-                  Cálculos con Fundamento Jurídico Transparente
+                <span className="font-orbitron text-[14px] font-bold uppercase tracking-wider text-navy">
+                  Papel de Trabajo con Sello Criptográfico
                 </span>
-                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
-                  Normativa DOF 2026
+                <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
+                  <CheckCircle2 size={12} /> Verificable Públicamente
                 </span>
               </div>
-              <p className="max-w-[760px] font-inter text-[13px] leading-relaxed text-muted">
-                Cada calculadora de la suite desglosa su fórmula matemática y cita el artículo legal
-                exacto (LISR, LSS, LFT, CFF y Códigos Estatales). Diseñado para que puedas
-                justificar cada cifra ante auditorías y en tus papeles de trabajo.
+              <p className="max-w-[760px] font-inter text-[13.5px] leading-relaxed text-muted">
+                Al archivar cualquier cálculo en el <strong>Expediente Único</strong>, el sistema genera una cédula oficial con <strong>Sello SHA-256 inmutable</strong> y un <strong>QR de verificación</strong>. 
+                Cuando el SAT o un cliente te pida evidencia, no entregues un Excel: entrega un documento que se autentica solo.
               </p>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="flex shrink-0 flex-wrap items-center gap-2 font-orbitron text-[11px] font-bold text-muted">
-            <span className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-ink">
-              UMA: $117.31
-            </span>
-            <span className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-ink">
-              SMG: $315.04
-            </span>
-            <span className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-ink">
-              TOPE SBC: 25 UMAs ($2,932.75)
-            </span>
-          </div>
+      {/* Valores de Referencia DOF 2026 */}
+      <section className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-line bg-surface-2 px-5 py-4">
+        <div className="flex items-center gap-2 font-orbitron text-[11px] font-bold text-muted">
+          <Scale size={16} className="text-navy" />
+          TABLAS OFICIALES VIGENTES 2026
+        </div>
+        <div className="flex flex-wrap items-center gap-2 font-orbitron text-[11px] font-bold">
+          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">UMA: $117.31</span>
+          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">SMG: $315.04</span>
+          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">TOPE SBC: 25 UMAs ($2,932.75)</span>
         </div>
       </section>
 
@@ -396,57 +405,57 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
       {(navFilter === 'dashboard' || navFilter === 'fiscal') && (
         <CategorySection
           id="fiscal"
-          title="Fiscal"
-          description="Cálculos estatales y federales. ISN, ISR, IMSS, topes, factores y finiquitos LFT."
-          columns={4}
+          title="Fiscal & Nómina"
+          description="Cálculos deterministas con fundamento en LISR, LSS, LFT y Leyes de Hacienda Estatales."
+          columns={3}
         >
           <ToolCard
             icon={Calculator}
             title="Calculadora ISN 2026"
-            description="Impuesto Sobre Nómina en los 32 estados. Tasas oficiales, base gravable y exportación a Excel."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="Impuesto Sobre Nómina en los 32 estados. Tasas oficiales y base gravable."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('isn')}
           />
           <ToolCard
             icon={Building2}
             title="Calculadora SBC 2026"
-            description="Salario Base de Cotización con factor de integración, tope de 25 UMAs y mínimo frontera."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="Salario Base de Cotización con factor de integración y tope de 25 UMAs."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('sbc')}
           />
           <ToolCard
             icon={Wallet}
             title="Nómina Rápida 2026"
-            description="ISR + IMSS obrero en segundos. Tarifas progresivas 2026, subsidio al empleo y neto a pagar."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="ISR + IMSS obrero. Tarifas progresivas, subsidio al empleo y neto a pagar."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('nomina')}
           />
           <ToolCard
             icon={Scale}
             title="Finiquitos y Liquidaciones"
-            description="Cálculo conforme a la LFT con Vacaciones Dignas 2023, aguinaldo, prima de antigüedad y despido."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="Cálculo LFT con Vacaciones Dignas 2023, aguinaldo y prima de antigüedad."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('finiquitos')}
-          />
-          <ToolCard
-            icon={Users}
-            title="Cierre de Nómina Masivo"
-            description="Procesamiento en lote por período. Retenciones SAT, cuotas IMSS, ISN estatal y Cédula con Sello QR."
-            badge="BATCH DOF"
-            badgeVariant="gold"
-            onSelect={() => onSelectTool('cierre-nomina')}
           />
           <ToolCard
             icon={Calculator}
             title="Calculadora RESICO 2026"
-            description="Determinación mensual de ISR e IVA para Personas Físicas (1%-2.5%) y Morales (30% flujo) con Cédula y QR."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="ISR e IVA para Personas Físicas (1%-2.5%) y Morales (flujo)."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('resico')}
+          />
+          <ToolCard
+            icon={Users}
+            title="Cierre de Nómina Masivo"
+            description="Procesamiento batch por período. Cédula Concentradora con Sello QR y Layout Bancario."
+            badge="PRO"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('cierre-nomina')}
           />
         </CategorySection>
       )}
@@ -455,24 +464,24 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
       {(navFilter === 'dashboard' || navFilter === 'sat') && (
         <CategorySection
           id="sat"
-          title="SAT"
-          description="Herramientas para CFDI 4.0, validación y conversión de XMLs."
+          title="SAT & CFDI"
+          description="Procesamiento local de comprobantes fiscales y auditoría preventiva de listas negras."
           columns={2}
         >
           <ToolCard
             icon={FileSpreadsheet}
             title="Conversor XML → Excel"
             description="Arrastra tus CFDI y exporta CSV para contabilidad. Hasta 200 archivos."
-            badge="NUEVO"
-            badgeVariant="gold"
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('xml-excel')}
           />
           <ToolCard
             icon={ShieldCheck}
             title="Validador de XMLs"
-            description="Verifica UUID, sello y estructura de tus CFDI. Reporte masivo de errores."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="Verifica UUID, sello y estructura. Cotejo preventivo contra Art. 69-B (EFOS)."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('validador')}
           />
         </CategorySection>
@@ -482,32 +491,32 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
       {(navFilter === 'dashboard' || navFilter === 'cobros') && (
         <CategorySection
           id="cobros"
-          title="Cobros"
-          description="Genera links de pago, emite facturas CFDI 4.0 y calcula tu modelo de negocio."
+          title="Cobros & Finanzas"
+          description="Emisión de facturas SAT, pasarelas de pago y modelado financiero."
           columns={3}
         >
           <ToolCard
             icon={Globe}
             title="Generador Links de Pago"
-            description="Cobra a tus clientes con Clip Checkout. Link compartible, sin comisiones ocultas."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="Cobra con Clip Checkout. Link compartible, sin comisiones ocultas."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('spei')}
           />
           <ToolCard
             icon={FileCode}
             title="Timbrado de Facturas"
-            description="Emite y timbra facturas CFDI 4.0 ante el SAT vía PAC Quadrum (Alegra). Descarga XML y PDF al instante."
-            badge="CFDI 4.0"
+            description="Emite CFDI 4.0 ante el SAT vía PAC Quadrum. Descarga XML y PDF."
+            badge="PRO"
             badgeVariant="gold"
             onSelect={() => onSelectTool('timbrado')}
           />
           <ToolCard
             icon={Building2}
             title="Calculadora Leasing"
-            description="Modelo $500 setup → $2,500 renta. Proyección de ingresos para despachos."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="Proyección de ingresos recurrentes y análisis de deducción de ISR."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('leasing')}
           />
         </CategorySection>
@@ -517,31 +526,31 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
       {(navFilter === 'dashboard' || navFilter === 'compliance') && (
         <CategorySection
           id="compliance"
-          title="Compliance"
-          description="Referencia educativa y auditoría regulatoria."
+          title="Compliance & Auditoría"
+          description="Matrices legales, requerimientos y defensa ante autoridades fiscales."
           columns={3}
         >
           <ToolCard
             icon={Scale}
             title="Guía SAT/IMSS"
-            description="8 pasos para responder a un requerimiento. Checklists, plazos y fundamentos."
-            badge="NUEVO"
+            description="8 pasos para responder requerimientos. Checklists, plazos y expediente único."
+            badge="PRO"
             badgeVariant="gold"
             onSelect={() => onSelectTool('guia-sat-imss')}
           />
           <ToolCard
             icon={ShieldAlert}
             title="Auditoría Legal de Cobranza"
-            description="Compara contrato vs CRM, detecta diferencias críticas y genera un dictamen exportable con fundamento legal."
-            badge="NUEVO"
-            badgeVariant="gold"
+            description="Compara contrato vs CRM, detecta conductas ilícitas y emite dictamen exportable."
+            badge="GRATIS"
+            badgeVariant="neutral"
             onSelect={() => onSelectTool('auditor-cobranza')}
           />
           <ToolCard
             icon={Sparkles}
             title="Mapa de Activos Virtuales"
-            description="12 conductas mapeadas con Ley Fintech, LFPIORPI, CPF y CFF. Matriz de consulta legal para contadores."
-            badge="NUEVO"
+            description="12 conductas mapeadas con Ley Fintech, LFPIORPI y CFF."
+            badge="PRO"
             badgeVariant="gold"
             onSelect={() => onSelectTool('mapa-activos')}
           />
