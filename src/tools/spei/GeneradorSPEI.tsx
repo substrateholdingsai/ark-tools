@@ -101,7 +101,9 @@ export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
           const actualizados = [nuevoItem, ...prev].slice(0, 50);
           try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(actualizados));
-          } catch {}
+          } catch {
+            // Ignorar errores de cuota o restricción de localStorage
+          }
           return actualizados;
         });
 
@@ -121,7 +123,9 @@ export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
         const filtrados = prev.filter((item) => item.id !== id);
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(filtrados));
-        } catch {}
+        } catch {
+          // Ignorar errores de cuota o restricción de localStorage
+        }
         return filtrados;
       });
       showToast('Registro eliminado del historial');

@@ -24,6 +24,7 @@ export { PapelDeTrabajoModal } from './PapelDeTrabajoModal';
 export { VerificacionPublicaModal } from './VerificacionPublicaModal';
 export { AdminPanel } from './admin/AdminPanel';
 export { TeamModal, InviteAcceptModal } from './team';
+export { ErrorBoundary } from './ErrorBoundary';
 
 
 // Tipos

@@ -36,3 +36,16 @@ coverage/
 
 # TypeScript
 *.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+stress_test_xmls/
+d1_forensic_backups/
+d1_audit_reports/
+
+
+

@@ -119,9 +119,20 @@ export default {
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // SPA FALLBACK (Assets)
+    // SPA FALLBACK (Assets) con Cabeceras de Seguridad Perimetral
     // ─────────────────────────────────────────────────────────────────
-    return env.ASSETS.fetch(request);
+    const assetResponse = await env.ASSETS.fetch(request);
+    const secureHeaders = new Headers(assetResponse.headers);
+    secureHeaders.set('X-Content-Type-Options', 'nosniff');
+    secureHeaders.set('X-Frame-Options', 'DENY');
+    secureHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+    secureHeaders.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+
+    return new Response(assetResponse.body, {
+      status: assetResponse.status,
+      statusText: assetResponse.statusText,
+      headers: secureHeaders,
+    });
   },
 
   async scheduled(

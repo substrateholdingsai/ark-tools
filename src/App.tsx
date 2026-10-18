@@ -34,23 +34,23 @@ import {
   AiAssistantWidget,
   ExpedienteSelector,
   VerificacionPublicaModal,
-  AdminPanel,
   InviteAcceptModal,
+  ErrorBoundary,
 } from './components';
 import type { NavItem } from './components';
 
-import { CalculadoraISN } from './tools/isn';
-import { CalculadoraSBC } from './tools/sbc';
-import { CalculadoraNomina } from './tools/nomina';
-import { ConversorXML } from './tools/xml-excel';
-import { ValidadorXML } from './tools/xml-validador';
-import { GeneradorSPEI } from './tools/spei';
-import { CalculadoraLeasing } from './tools/leasing';
-import { GuiaSATIMSS } from './tools/guia-sat-imss';
-import { TimbradoFacturas } from './tools/timbrado/TimbradoFacturas';
 import { AlertasVigencia } from '@/data/valores-vigentes';
 
-// Lazy-loaded: reduce bundle inicial (~45 KB c/u)
+// Lazy-loaded tools para optimización máxima de bundle (<150 KB chunk inicial)
+const CalculadoraISN = lazy(() => import('./tools/isn').then((m) => ({ default: m.CalculadoraISN })));
+const CalculadoraSBC = lazy(() => import('./tools/sbc').then((m) => ({ default: m.CalculadoraSBC })));
+const CalculadoraNomina = lazy(() => import('./tools/nomina').then((m) => ({ default: m.CalculadoraNomina })));
+const ConversorXML = lazy(() => import('./tools/xml-excel').then((m) => ({ default: m.ConversorXML })));
+const ValidadorXML = lazy(() => import('./tools/xml-validador').then((m) => ({ default: m.ValidadorXML })));
+const GeneradorSPEI = lazy(() => import('./tools/spei').then((m) => ({ default: m.GeneradorSPEI })));
+const CalculadoraLeasing = lazy(() => import('./tools/leasing').then((m) => ({ default: m.CalculadoraLeasing })));
+const GuiaSATIMSS = lazy(() => import('./tools/guia-sat-imss').then((m) => ({ default: m.GuiaSATIMSS })));
+const TimbradoFacturas = lazy(() => import('./tools/timbrado/TimbradoFacturas').then((m) => ({ default: m.TimbradoFacturas })));
 const AuditorCobranza = lazy(() => import('@/tools/auditor-cobranza'));
 const MapaActivos = lazy(() => import('@/tools/mapa-activos'));
 const CalculadoraFiniquitos = lazy(() => import('@/tools/finiquitos'));
@@ -58,6 +58,7 @@ const CierreNomina = lazy(() =>
   import('@/tools/cierre-nomina').then((m) => ({ default: m.CierreNomina }))
 );
 const CalculadoraResico = lazy(() => import('@/tools/resico'));
+const AdminPanel = lazy(() => import('./components/admin/AdminPanel').then((m) => ({ default: m.AdminPanel })));
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -176,25 +177,13 @@ export function App() {
         return <CalculadoraNomina onBack={goToDashboard} />;
 
       case 'finiquitos':
-        return (
-          <Suspense fallback={<ToolSkeleton />}>
-            <CalculadoraFiniquitos onBack={goToDashboard} />
-          </Suspense>
-        );
+        return <CalculadoraFiniquitos onBack={goToDashboard} />;
 
       case 'cierre-nomina':
-        return (
-          <Suspense fallback={<ToolSkeleton />}>
-            <CierreNomina onBack={goToDashboard} />
-          </Suspense>
-        );
+        return <CierreNomina onBack={goToDashboard} />;
 
       case 'resico':
-        return (
-          <Suspense fallback={<ToolSkeleton />}>
-            <CalculadoraResico onBack={goToDashboard} />
-          </Suspense>
-        );
+        return <CalculadoraResico onBack={goToDashboard} />;
 
       case 'xml-excel':
         return <ConversorXML onBack={goToDashboard} />;
@@ -220,18 +209,10 @@ export function App() {
         return <GuiaSATIMSS onBack={goToDashboard} />;
 
       case 'auditor-cobranza':
-        return (
-          <Suspense fallback={<ToolSkeleton />}>
-            <AuditorCobranza onBack={goToDashboard} />
-          </Suspense>
-        );
+        return <AuditorCobranza onBack={goToDashboard} />;
 
       case 'mapa-activos':
-        return (
-          <Suspense fallback={<ToolSkeleton />}>
-            <MapaActivos onBack={goToDashboard} />
-          </Suspense>
-        );
+        return <MapaActivos onBack={goToDashboard} />;
 
       case 'dashboard':
       default:
@@ -279,7 +260,15 @@ export function App() {
             {activeTool === 'dashboard' ? (
               <Dashboard onSelectTool={navigateTo} navFilter={activeNavFilter} />
             ) : (
-              renderTool()
+              <ErrorBoundary
+                key={activeTool}
+                toolName={toolLabels[activeTool]}
+                onReset={goToDashboard}
+              >
+                <Suspense fallback={<ToolSkeleton />}>
+                  {renderTool()}
+                </Suspense>
+              </ErrorBoundary>
             )}
           </main>
 

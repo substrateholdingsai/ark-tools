@@ -74,7 +74,7 @@ export function ResultadoResicoCard({
           <span className="text-xs font-bold text-muted font-mono">MXN</span>
         </div>
         <p className="text-[11px] font-medium text-navy/80 italic max-w-md mx-auto leading-relaxed border-t border-line/60 pt-2 mt-2">
-          "{resultado.totalEnLetras}"
+          &ldquo;{resultado.totalEnLetras}&rdquo;
         </p>
       </LiquidGlassDome>
 

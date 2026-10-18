@@ -168,6 +168,7 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
     [tenantId]
   );
 
+  const refreshSession = auth?.refreshSession;
   const handleAuthorizationError = useCallback(
     (error: unknown) => {
       if (!(error instanceof ApiAuthorizationError)) return;
@@ -175,11 +176,11 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
       setExpedientes([]);
       setActiveClient(null);
       clearTenantCache(tenantId);
-      void auth?.refreshSession().catch((refreshError: unknown) => {
+      void refreshSession?.().catch((refreshError: unknown) => {
         console.error('[ExpedienteContext] No se pudo renovar la sesión.', refreshError);
       });
     },
-    [auth?.refreshSession, setActiveClient, tenantId]
+    [refreshSession, setActiveClient, tenantId]
   );
 
   // Cargar lista de clientes desde la API.

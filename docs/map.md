@@ -1180,6 +1180,35 @@ ark-tools/
 
 ---
 
+### Sprint 17: Optimización de Rendimiento, Resiliencia Institucional & Herramientas Periciales Python — Completado ✅
+
+- [x] **Reducción de Bundle Inicial (>55%):**
+  - [x] Migración total de las 14 herramientas y la consola de administración a `React.lazy()` con `Suspense` y `ToolSkeleton` unificado en `App.tsx`.
+  - [x] Reducción del chunk JS principal de **502.52 kB a 222.36 kB** (60.88 kB gzip), eliminando la advertencia de límite de tamaño de Vite.
+  - [x] Reducción en tiempo de build de 37s a 22s.
+- [x] **Pipeline de Linting con Cero Advertencias (`.eslintrc.cjs`):**
+  - [x] Configuración completa de ESLint con TypeScript, React Hooks, JSX Runtime y Prettier.
+  - [x] Corrección de caracteres de escape y entidades JSX en `parserPlantilla.ts`, `ResultadoResicoCard.tsx` y `GeneradorSPEI.tsx`.
+  - [x] `pnpm lint` 100% limpio (0 errores, 0 advertencias con `--max-warnings 0`).
+- [x] **Resiliencia & ErrorBoundary Institucional:**
+  - [x] Creación de `src/components/ErrorBoundary.tsx` con estética institucional ARK (tarjeta de aislamiento, desglose técnico amigable, botones *Reintentar* y *Volver al Catálogo*).
+  - [x] Protección global y por herramienta en el router de `App.tsx`.
+  - [x] 3 pruebas unitarias completas en `ErrorBoundary.test.tsx`.
+- [x] **Limpieza de Advertencias en Pruebas Vitest:**
+  - [x] Sincronización asíncrona de eventos con `act(...)` y `waitFor(...)` en `AiAssistantWidget.test.tsx` y `CalculadoraFiniquitos.test.tsx`.
+  - [x] Cobertura incrementada a **318 pruebas pasadas en 43 suites** con salida 100% limpia sin advertencias.
+- [x] **Seguridad HTTP & Metadatos SEO/PWA:**
+  - [x] Inyección de cabeceras de seguridad perimetral en Worker (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy`, `Permissions-Policy`).
+  - [x] Creación de favicon vectorial `public/favicon.svg` con monograma 3D Navy & Gold.
+  - [x] Metadatos SEO, OpenGraph y Twitter en `index.html` para previsualizaciones institucionales al compartir en WhatsApp y LinkedIn.
+- [x] **Tríada de Scripts Periciales en Python (`scripts/`):**
+  - [x] `dof_sat_watcher.py`: Monitor desatendido del feed DOF (`sumario.xml`) con detección de decretos y generación de diffs TypeScript.
+  - [x] `cfdi_stress_generator.py`: Generador de lotes sintéticos CFDI 4.0 con RSA SHA-256 (escenarios EFOS, RESICO 1.25%, Nómina tope 25 UMAs).
+  - [x] `d1_audit_verifier.py`: Auditor forense y reconciliador de Cloudflare D1 con validación determinista de hashes y respaldo SQLite.
+  - [x] Comandos integrados en `package.json`: `watch:dof`, `generate:stress-cfdi`, `audit:d1`.
+
+---
+
 ## 5. Resumen General del Proyecto (Suite de 14 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
 
 | Categoría                     | Herramientas / Módulos                                                                                                          | Estado                                                            |
@@ -1197,10 +1226,12 @@ ark-tools/
 | **Navegación & Usabilidad**   | Filtros de categorías en dashboard y landing, navegación móvil y retorno contextual al catálogo                                 | ✅ Implementada y validada con typecheck, build y suite existente |
 | **Copy & Confianza**          | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica, Landing Freemium                           | ✅ 100% En Producción                                             |
 | **Core Global**               | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage Renovada                       | ✅ 100% Operativo                                                 |
+| **Tríada Scripts Python**     | `dof_sat_watcher.py` (Vigilancia DOF), `cfdi_stress_generator.py` (Estrés CFDI 4.0), `d1_audit_verifier.py` (Forense D1)          | ✅ 100% Operativos e Integrados                                   |
 
 - **Total de herramientas en plataforma:** **14 de 14 (100% Operativas)** + Super Admin Console + ARK Contable AI
-- **Total de pruebas unitarias y de integración:** **315 pasadas en 42 suites (100% éxito)**
+- **Total de pruebas unitarias y de integración:** **318 pasadas en 43 suites (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
+- **Linting:** 0 errores, 0 advertencias (`eslint . --ext .ts,.tsx --max-warnings 0`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
-- **Build Vite (SPA):** 100% funcional con bundle optimizado (Vite build en 16.5s)
-- **Estado general:** Suite de 14 herramientas, Landing Page renovada con propuesta de Blindaje & Evidencia Fiscal, modelo Freemium transparente, Expediente Único multi-tenant, emisión y timbrado CFDI 4.0 con PAC, motor batch de nómina, Calculadora RESICO 2026, Papel de Trabajo Oficial con QR público, y agente de IA con Tool-Calling 100% integrados y documentados.
+- **Build Vite (SPA):** 100% funcional con bundle optimizado (chunk inicial reducido a 222 kB)
+- **Estado general:** Suite de 14 herramientas, Landing Page pericial con modelo Freemium transparente, Expediente Único multi-tenant, emisión y timbrado CFDI 4.0 con PAC, motor batch de nómina, Calculadora RESICO 2026, Papel de Trabajo Oficial con QR público, ErrorBoundary y carga perezosa en todas las herramientas, cabeceras de seguridad perimetral, y tríada de scripts Python para vigilancia, estrés y auditoría forense 100% operativas.

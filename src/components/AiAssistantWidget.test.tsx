@@ -42,19 +42,25 @@ describe('AiAssistantWidget', () => {
     expect(screen.getByText(/Llama 3.3/)).toBeInTheDocument();
   });
 
-  it('abre la ventana de chat al hacer clic en el botón flotante', () => {
+  it('abre la ventana de chat al hacer clic en el botón flotante', async () => {
     render(<AiAssistantWidget />);
     const openBtn = screen.getByTitle('Abrir Asistente ARK AI');
     fireEvent.click(openBtn);
 
-    expect(screen.getByText('Despacho Contable Águila', { exact: false })).toBeInTheDocument();
-    expect(screen.getByText('ARK Contable AI')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/Escribe tu consulta/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Despacho Contable Águila', { exact: false })).toBeInTheDocument();
+      expect(screen.getByText('ARK Contable AI')).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/Escribe tu consulta/i)).toBeInTheDocument();
+    });
   });
 
-  it('permite minimizar y cerrar la ventana de chat', () => {
+  it('permite minimizar y cerrar la ventana de chat', async () => {
     render(<AiAssistantWidget />);
     fireEvent.click(screen.getByTitle('Abrir Asistente ARK AI'));
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Minimizar')).toBeInTheDocument();
+    });
 
     const minimizeBtn = screen.getByTitle('Minimizar');
     fireEvent.click(minimizeBtn);
@@ -64,7 +70,9 @@ describe('AiAssistantWidget', () => {
     const closeBtn = screen.getByTitle('Cerrar');
     fireEvent.click(closeBtn);
     // Vuelve a estar cerrado
-    expect(screen.getByTitle('Abrir Asistente ARK AI')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTitle('Abrir Asistente ARK AI')).toBeInTheDocument();
+    });
   });
 
   it('envía un mensaje y muestra la respuesta con las herramientas ejecutadas', async () => {

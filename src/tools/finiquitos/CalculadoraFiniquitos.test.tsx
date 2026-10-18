@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { CalculadoraFiniquitos } from './CalculadoraFiniquitos';
 
 describe('CalculadoraFiniquitos (src/tools/finiquitos/CalculadoraFiniquitos.tsx)', () => {
@@ -69,7 +69,7 @@ describe('CalculadoraFiniquitos (src/tools/finiquitos/CalculadoraFiniquitos.tsx)
     expect(parseFloat(inputSdi.value)).toBeCloseTo(839.45, 1);
   });
 
-  it('permite copiar el resumen y descargar el CSV', () => {
+  it('permite copiar el resumen y descargar el CSV', async () => {
     // Mock navigator.clipboard
     Object.assign(navigator, {
       clipboard: {
@@ -86,7 +86,9 @@ describe('CalculadoraFiniquitos (src/tools/finiquitos/CalculadoraFiniquitos.tsx)
 
     const botonCopiar = screen.getByRole('button', { name: /Copiar Resumen Ejecutivo/i });
     expect(botonCopiar).toBeInTheDocument();
-    fireEvent.click(botonCopiar);
+    await act(async () => {
+      fireEvent.click(botonCopiar);
+    });
 
     const botonCSV = screen.getByRole('button', { name: /Descargar Excel \(CSV\)/i });
     expect(botonCSV).toBeInTheDocument();

@@ -26,3 +26,13 @@ CLIP_ENVIRONMENT=sandbox # 'sandbox' | 'production'
 
 # Si en el futuro se integra analytics
 # POSTHOG_API_KEY=phc_...
+
+# Webhook para alertas del monitor DOF/SAT (Discord / Slack / Resend)
+# ARK_WATCHER_WEBHOOK_URL=https://discord.com/api/webhooks/...
+
+# Cloudflare API (para auditoría y reconciliación forense D1)
+# CLOUDFLARE_API_TOKEN=cf_token_xxxxxxxxxxxxxxxx
+# CLOUDFLARE_ACCOUNT_ID=account_id_xxxxxxxxxxxxxxxx
+# AUDIT_TENANT_ID=opcional_id_del_despacho
+
+

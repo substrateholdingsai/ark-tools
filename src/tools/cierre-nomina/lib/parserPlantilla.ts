@@ -129,7 +129,7 @@ export function parsearNumero(valor: unknown): number {
   if (typeof valor === 'number') return isNaN(valor) ? 0 : valor;
   if (!valor || typeof valor !== 'string') return 0;
   // Limpia signos de pesos, comas de miles y espacios
-  const limpio = valor.replace(/[\$, ]/g, '').trim();
+  const limpio = valor.replace(/[$ ,]/g, '').trim();
   const num = parseFloat(limpio);
   return isNaN(num) ? 0 : num;
 }

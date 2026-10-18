@@ -15,6 +15,7 @@ export function useValorFiscal(
     const v = VALORES_POR_ID.get(id);
     if (!v) return undefined;
     return { valor: v, vigencia: evaluarVigencia(v, config) };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, config?.fechaReferencia, config?.diasAlerta, config?.infinitosSiSinFecha]);
 }
 
@@ -23,6 +24,7 @@ export function useValorFiscal(
  * Útil para un banner global en el dashboard.
  */
 export function useEstadoCatalogo(config?: Partial<ConfigVigencia>) {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => evaluarLote(CATALOGO_2026, config), [
     config?.fechaReferencia,
     config?.diasAlerta,
