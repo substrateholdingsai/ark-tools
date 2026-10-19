@@ -21,6 +21,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Eye,
+  UserPlus,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface Lead {
@@ -111,6 +114,25 @@ export default function LeadsApp() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
+
+  // Modal de creación de lead
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [creatingLead, setCreatingLead] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [newLeadForm, setNewLeadForm] = useState({
+    contacto_nombre: '',
+    web: '',
+    whatsapp: '',
+    email: '',
+    ciudad: 'Merida',
+    especialidad: 'General',
+    status: 'Nuevo',
+    notas: '',
+  });
+
+  // Modal de eliminación de lead
+  const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
+  const [deletingLead, setDeletingLead] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -222,6 +244,67 @@ export default function LeadsApp() {
     }
   };
 
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreatingLead(true);
+    setCreateError(null);
+
+    try {
+      const res = await fetch('/api/admin/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(newLeadForm),
+      });
+
+      const data = (await res.json()) as { ok?: boolean; error?: string; lead?: Lead };
+      if (!res.ok || !data.ok || !data.lead) {
+        throw new Error(data.error || 'Error al crear el prospecto');
+      }
+
+      setLeads((prev) => [data.lead!, ...prev]);
+      setIsCreateModalOpen(false);
+      setNewLeadForm({
+        contacto_nombre: '',
+        web: '',
+        whatsapp: '',
+        email: '',
+        ciudad: 'Merida',
+        especialidad: 'General',
+        status: 'Nuevo',
+        notas: '',
+      });
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : 'Error inesperado al guardar');
+    } finally {
+      setCreatingLead(false);
+    }
+  };
+
+  const handleDeleteLead = async () => {
+    if (!leadToDelete) return;
+    setDeletingLead(true);
+
+    try {
+      const res = await fetch(`/api/admin/leads/${encodeURIComponent(leadToDelete.id)}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Error al eliminar el prospecto');
+      }
+
+      setLeads((prev) => prev.filter((l) => l.id !== leadToDelete.id));
+      setLeadToDelete(null);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Error al eliminar prospecto');
+    } finally {
+      setDeletingLead(false);
+    }
+  };
+
   const exportCsv = () => {
     const header = [
       'ID',
@@ -287,7 +370,17 @@ export default function LeadsApp() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => {
+              setCreateError(null);
+              setIsCreateModalOpen(true);
+            }}
+            className="flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2 font-orbitron text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-navy-dark active:scale-95"
+          >
+            <UserPlus size={14} />
+            Nuevo Prospecto
+          </button>
           <button
             onClick={load}
             disabled={loading}
@@ -613,20 +706,30 @@ export default function LeadsApp() {
                         </span>
                       </td>
 
-                      {/* Acción Comercial: Botón Enviar Mail */}
+                      {/* Acción Comercial & Eliminación */}
                       <td className="px-5 py-3.5 text-right">
-                        {l.email ? (
+                        <div className="flex items-center justify-end gap-1.5">
+                          {l.email ? (
+                            <button
+                              onClick={() => openEmailModal(l)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-navy/20 bg-navy/5 px-2.5 py-1.5 font-orbitron text-[11px] font-semibold text-navy transition hover:bg-navy hover:text-white active:scale-95 shadow-sm"
+                              title={`Enviar propuesta a ${l.email}`}
+                            >
+                              <Send size={11} />
+                              Enviar Propuesta
+                            </button>
+                          ) : (
+                            <span className="text-[11px] text-muted italic">Sin email</span>
+                          )}
                           <button
-                            onClick={() => openEmailModal(l)}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-navy/20 bg-navy/5 px-3 py-1.5 font-orbitron text-[11px] font-semibold text-navy transition hover:bg-navy hover:text-white active:scale-95 shadow-sm"
-                            title={`Enviar propuesta a ${l.email}`}
+                            onClick={() => setLeadToDelete(l)}
+                            disabled={deletingLead && leadToDelete?.id === l.id}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-muted transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 active:scale-95 disabled:opacity-50"
+                            title="Eliminar prospecto"
                           >
-                            <Send size={12} />
-                            Enviar Propuesta
+                            <Trash2 size={13} />
                           </button>
-                        ) : (
-                          <span className="text-[11px] text-muted italic">Sin email</span>
-                        )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -637,7 +740,251 @@ export default function LeadsApp() {
         </div>
       </div>
 
-      {/* MODAL DE ENVÍO Y PREVISUALIZACIÓN DE CORREO */}
+      {/* MODAL DE CREACIÓN DE PROSPECTO */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
+            <div className="flex items-center justify-between border-b border-line pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/10 text-navy">
+                  <UserPlus size={20} />
+                </div>
+                <div>
+                  <h3 className="font-orbitron text-base font-bold text-navy">
+                    Añadir Nuevo Prospecto
+                  </h3>
+                  <p className="text-xs text-muted">
+                    Registrar despacho o contacto en el CRM de ARK Tools
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
+                disabled={creatingLead}
+                className="rounded-lg p-1.5 text-muted hover:bg-slate-100 hover:text-ink transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateLead} className="mt-5 space-y-4">
+              {createError && (
+                <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
+                  <AlertCircle size={15} className="text-rose-600 shrink-0" />
+                  <span>{createError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  Nombre del Despacho o Contacto *
+                </label>
+                <input
+                  required
+                  value={newLeadForm.contacto_nombre}
+                  onChange={(e) =>
+                    setNewLeadForm({ ...newLeadForm, contacto_nombre: e.target.value })
+                  }
+                  placeholder="ej. Despacho Pérez & Asociados / CP Juan Pérez"
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                    Correo Electrónico
+                  </label>
+                  <input
+                    type="email"
+                    value={newLeadForm.email}
+                    onChange={(e) => setNewLeadForm({ ...newLeadForm, email: e.target.value })}
+                    placeholder="contacto@despacho.mx"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                    WhatsApp (E.164 o 10 dígitos)
+                  </label>
+                  <input
+                    value={newLeadForm.whatsapp}
+                    onChange={(e) => setNewLeadForm({ ...newLeadForm, whatsapp: e.target.value })}
+                    placeholder="ej. 5219991234567 o 9991234567"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                    Sitio Web
+                  </label>
+                  <input
+                    value={newLeadForm.web}
+                    onChange={(e) => setNewLeadForm({ ...newLeadForm, web: e.target.value })}
+                    placeholder="https://despacho.mx"
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                    Ciudad
+                  </label>
+                  <select
+                    value={newLeadForm.ciudad}
+                    onChange={(e) => setNewLeadForm({ ...newLeadForm, ciudad: e.target.value })}
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  >
+                    <option value="Merida">Mérida</option>
+                    <option value="Metropolitana">Metropolitana</option>
+                    <option value="Durango">Durango</option>
+                    <option value="Guadalajara">Guadalajara</option>
+                    <option value="Monterrey">Monterrey</option>
+                    <option value="Nacional">Nacional</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                    Especialidad
+                  </label>
+                  <select
+                    value={newLeadForm.especialidad}
+                    onChange={(e) =>
+                      setNewLeadForm({ ...newLeadForm, especialidad: e.target.value })
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  >
+                    <option value="General">General</option>
+                    <option value="Fiscal">Fiscal</option>
+                    <option value="Crypto">Crypto</option>
+                    <option value="Cobranza">Cobranza</option>
+                    <option value="Abogados">Abogados</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                    Estatus Inicial
+                  </label>
+                  <select
+                    value={newLeadForm.status}
+                    onChange={(e) => setNewLeadForm({ ...newLeadForm, status: e.target.value })}
+                    className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  >
+                    {STATUSES.map((s) => (
+                      <option key={s} value={s}>
+                        {STATUS_LABELS[s]?.label || s}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  Notas / Observaciones
+                </label>
+                <textarea
+                  rows={3}
+                  value={newLeadForm.notas}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, notas: e.target.value })}
+                  placeholder="Información relevante sobre el despacho o necesidades de software..."
+                  className="w-full rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                />
+              </div>
+
+              <div className="mt-6 flex items-center justify-end gap-3 border-t border-line pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  disabled={creatingLead}
+                  className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted hover:bg-slate-50 hover:text-ink transition active:scale-95"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingLead}
+                  className="flex items-center gap-2 rounded-xl bg-navy px-5 py-2 font-orbitron text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-navy-dark active:scale-95 disabled:opacity-50"
+                >
+                  {creatingLead ? (
+                    <>
+                      <RefreshCw size={14} className="animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus size={14} />
+                      Guardar Prospecto
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
+      {leadToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-7">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-200">
+                <AlertTriangle size={22} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-orbitron text-base font-bold text-navy">
+                  ¿Eliminar Prospecto?
+                </h3>
+                <p className="mt-2 text-xs text-muted leading-relaxed">
+                  ¿Estás seguro de que deseas eliminar a{' '}
+                  <strong className="text-ink">
+                    {leadToDelete.contacto_nombre || leadToDelete.web || leadToDelete.email || 'este prospecto'}
+                  </strong>{' '}
+                  del CRM? Esta acción eliminará permanentemente su registro de la base de datos D1.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-line pt-4">
+              <button
+                type="button"
+                onClick={() => setLeadToDelete(null)}
+                disabled={deletingLead}
+                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted hover:bg-slate-50 hover:text-ink transition active:scale-95"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteLead}
+                disabled={deletingLead}
+                className="flex items-center gap-2 rounded-xl bg-rose-600 px-5 py-2 font-orbitron text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-rose-700 active:scale-95 disabled:opacity-50"
+              >
+                {deletingLead ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    Eliminando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    Eliminar Definitivamente
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {selectedLeadForEmail && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
           <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
