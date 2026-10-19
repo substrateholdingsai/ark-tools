@@ -187,4 +187,69 @@ describe('handleLeadsApiRequest', () => {
     expect(json.ok).toBe(true);
     expect(json.deleted).toBe(true);
   });
+
+  it('envía correo de propuesta y actualiza estatus en POST /api/admin/leads/:id/send-email', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = String(url);
+      if (urlStr.includes('api.resend.com/emails')) {
+        return new Response(JSON.stringify({ id: 'resend-msg-123' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return originalFetch(url);
+    });
+
+    try {
+      const env = createEnv();
+      const req = new Request('https://tools.arksystems.site/api/admin/leads/lead-1/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipient_name: 'Lic. Perez' }),
+      });
+      const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
+      expect(res?.status).toBe(200);
+
+      const json = (await res?.json()) as { ok: boolean; resend_id: string; lead: { status: string } };
+      expect(json.ok).toBe(true);
+      expect(json.resend_id).toBe('resend-msg-123');
+      expect(json.lead.status).toMatch(/^Mail_enviado_/);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('soporta enviar correo de prueba a una dirección alternativa sin modificar el estatus del prospecto', async () => {
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn().mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = String(url);
+      if (urlStr.includes('api.resend.com/emails')) {
+        return new Response(JSON.stringify({ id: 'resend-test-456' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return originalFetch(url);
+    });
+
+    try {
+      const env = createEnv();
+      const req = new Request('https://tools.arksystems.site/api/admin/leads/lead-1/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ test_email: 'pavel@arksystems.site' }),
+      });
+      const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
+      expect(res?.status).toBe(200);
+
+      const json = (await res?.json()) as { ok: boolean; message: string; lead: { status: string } };
+      expect(json.ok).toBe(true);
+      expect(json.message).toContain('pavel@arksystems.site');
+      // No debe cambiar el status del prospecto cuando es prueba
+      expect(json.lead.status).toBe('Nuevo');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });

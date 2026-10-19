@@ -18,6 +18,145 @@ interface Lead {
   updated_at?: string;
 }
 
+export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infraestructura Tecnológica para su Firma</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: Arial, Helvetica, sans-serif; color: #334155; -webkit-font-smoothing: antialiased;">
+
+    <!-- Wrapper -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed; background-color: #f8fafc; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                
+                <!-- Main Container -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                    
+                    <!-- Header -->
+                    <tr>
+                        <td align="center" style="padding: 40px 40px 20px 40px; background-color: #ffffff;">
+                            <img src="${logoUrl}" alt="Ark Systems Logo" width="120" style="display: block; max-width: 120px; height: auto;">
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td style="padding: 20px 40px 40px 40px;">
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #1e293b;">
+                                Hola <strong>${nombreSocio}</strong>,
+                            </p>
+                            
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
+                                Notamos que las grandes firmas contables buscan integrar Inteligencia Artificial y automatización masiva, pero las opciones del mercado los obligan a usar software genérico de terceros donde pierden el control y privacidad de sus datos.
+                            </p>
+
+                            <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
+                                En Ark Systems construimos infraestructura dedicada. Hemos desarrollado un motor de cálculo, auditoría fiscal y timbrado —con 15 herramientas especializadas y un Agente de IA entrenado en leyes mexicanas— <strong>diseñado para desplegarse como marca blanca</strong>.
+                            </p>
+
+                            <p style="margin: 0 0 30px 0; font-size: 16px; line-height: 1.6;">
+                                En lugar de vender licencias, instalamos y mantenemos este motor en un entorno privado exclusivo para su despacho, permitiéndoles ofrecer tecnología de punta a sus clientes corporativos como si tuvieran un equipo interno de innovación.
+                            </p>
+
+                            <!-- Pricing/Value Card -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f1f5f9; border-left: 4px solid #0f172a; border-radius: 4px; margin-bottom: 30px;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h3 style="margin: 0 0 10px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: #0f172a;">Plan Corporate Firm (Marca Blanca)</h3>
+                                        <p style="margin: 0 0 15px 0; font-size: 15px; line-height: 1.5;"><strong>Arrendamiento de Infraestructura Fiscal + IA (100% deducible)</strong></p>
+                                        
+                                        <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6; color: #475569;">
+                                            <li style="margin-bottom: 8px;"><strong>Branding Total:</strong> Despliegue en su propio subdominio (ej. <em>tools.sudespacho.com</em>) con su logotipo.</li>
+                                            <li style="margin-bottom: 8px;"><strong>Aislamiento Estricto:</strong> Base de datos dedicada. Sus cuentas corporativas no comparten entorno con terceros.</li>
+                                            <li style="margin-bottom: 8px;"><strong>Papeles de Trabajo Oficiales:</strong> Cédulas PDF con Sello SHA-256 y QR a nombre de su firma.</li>
+                                            <li style="margin-bottom: 8px;"><strong>ARK Contable AI Privado:</strong> Inteligencia Artificial operando dentro de su entorno con cero filtraciones.</li>
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0 0 30px 0; font-size: 16px; line-height: 1.6;">
+                                ¿Tienen 15 minutos la próxima semana para mostrarles cómo se vería su propia plataforma operando en vivo?
+                            </p>
+
+                            <!-- Call to Action -->
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                                <tr>
+                                    <td align="left">
+                                        <a href="https://wa.me/525657062511" style="display: inline-block; background-color: #0f172a; color: #ffffff; font-size: 16px; font-weight: bold; text-decoration: none; padding: 14px 28px; border-radius: 6px;">Coordinar una breve llamada</a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                        </td>
+                    </tr>
+
+                    <!-- Footer / Signature -->
+                    <tr>
+                        <td style="padding: 0 40px 40px 40px;">
+                            <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                                <tr>
+                                    <td style="font-size: 14px; line-height: 1.6; color: #64748b;">
+                                        Saludos,<br><br>
+                                        <strong>Pavel Cortés</strong><br>
+                                        Ark Systems<br>
+                                        <a href="mailto:pavel@arksystems.site" style="color: #0f172a; text-decoration: none;">pavel@arksystems.site</a><br>
+                                        +52 56 5706 2511
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                </table>
+                
+                <!-- Anti-Spam Address Footer -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px;">
+                    <tr>
+                        <td align="center" style="padding: 20px; font-size: 12px; color: #94a3b8;">
+                            Este mensaje fue enviado por Ark Systems. Si no deseas recibir más comunicaciones sobre infraestructura tecnológica, responde a este correo solicitándolo.
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+}
+
+export function buildProposalEmailText(nombreSocio: string): string {
+  return `Hola ${nombreSocio},
+
+Notamos que las grandes firmas contables buscan integrar Inteligencia Artificial y automatización masiva, pero las opciones del mercado los obligan a usar software genérico de terceros donde pierden el control y privacidad de sus datos.
+
+En Ark Systems construimos infraestructura dedicada. Hemos desarrollado un motor de cálculo, auditoría fiscal y timbrado —con 15 herramientas especializadas y un Agente de IA entrenado en leyes mexicanas— diseñado para desplegarse como marca blanca.
+
+En lugar de vender licencias, instalamos y mantenemos este motor en un entorno privado exclusivo para su despacho, permitiéndoles ofrecer tecnología de punta a sus clientes corporativos como si tuvieran un equipo interno de innovación.
+
+Plan Corporate Firm (Marca Blanca) - Arrendamiento de Infraestructura Fiscal + IA (100% deducible):
+- Branding Total: Despliegue en su propio subdominio con su logotipo.
+- Aislamiento Estricto: Base de datos dedicada. Sus cuentas corporativas no comparten entorno con terceros.
+- Papeles de Trabajo Oficiales: Cédulas PDF con Sello SHA-256 y QR a nombre de su firma.
+- ARK Contable AI Privado: Inteligencia Artificial operando dentro de su entorno con cero filtraciones.
+
+¿Tienen 15 minutos la próxima semana para mostrarles cómo se vería su propia plataforma operando en vivo?
+Coordinar una llamada vía WhatsApp: https://wa.me/525657062511
+
+Saludos,
+Pavel Cortés
+Ark Systems
+pavel@arksystems.site
++52 56 5706 2511
+
+Este mensaje fue enviado por Ark Systems. Si no deseas recibir más comunicaciones sobre infraestructura tecnológica, responde a este correo solicitándolo.`;
+}
+
 function rowToLead(row: Record<string, unknown>): Lead {
   return {
     id: String(row.id),
@@ -353,6 +492,128 @@ export async function handleLeadsApiRequest(
         .run();
       return Response.json(
         { success: true, ok: true, deleted: true },
+        { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    // SEND PROPOSAL EMAIL /api/admin/leads/:id/send-email
+    const sendEmailMatch = path.match(/^\/api\/admin\/leads\/([^/]+)\/send-email$/);
+    if (sendEmailMatch && request.method === 'POST') {
+      const id = sendEmailMatch[1] ? decodeURIComponent(sendEmailMatch[1]) : '';
+      if (!id) return null;
+
+      const row = await db
+        .prepare('SELECT * FROM leads_ark_tools WHERE id = ? AND tenant_id = ? LIMIT 1')
+        .bind(id, tenantId)
+        .first<Record<string, unknown>>();
+
+      if (!row) {
+        return Response.json(
+          { error: 'Lead no encontrado.' },
+          { status: 404, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const lead = rowToLead(row);
+      const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+      const targetEmail =
+        typeof body.test_email === 'string' && body.test_email.trim()
+          ? body.test_email.trim()
+          : lead.email;
+
+      if (!targetEmail || !targetEmail.includes('@')) {
+        return Response.json(
+          { error: 'El prospecto no cuenta con una dirección de correo válida.' },
+          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      if (!env.RESEND_API_KEY) {
+        return Response.json(
+          { error: 'Servicio Resend no configurado (RESEND_API_KEY no presente).' },
+          { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const recipientName =
+        typeof body.recipient_name === 'string' && body.recipient_name.trim()
+          ? body.recipient_name.trim()
+          : (lead.contacto_nombre?.trim() || 'Director(a)');
+
+      const baseUrl = env.APP_URL || 'https://tools.arksystems.site';
+      const logoUrl = `${baseUrl.replace(/\/$/, '')}/logo-email.png`;
+
+      const html = buildProposalEmailHtml(recipientName, logoUrl);
+      const text = buildProposalEmailText(recipientName);
+
+      const fromAddress = env.AUTH_EMAIL_FROM || 'Pavel Cortés <pavel@mail.arksystems.site>';
+      const replyTo = 'pavel@arksystems.site';
+      const subject = 'Infraestructura Tecnológica para su Firma';
+
+      const resendRes = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: fromAddress,
+          reply_to: replyTo,
+          to: [targetEmail],
+          subject,
+          text,
+          html,
+        }),
+      });
+
+      if (!resendRes.ok) {
+        const errorText = await resendRes.text();
+        console.error('[Leads API] Resend error:', resendRes.status, errorText);
+        return Response.json(
+          { error: `Resend rechazó el envío (HTTP ${resendRes.status}): ${errorText}` },
+          { status: 502, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const resendData = (await resendRes.json().catch(() => ({}))) as { id?: string };
+
+      // Si fue envío real (no prueba), actualizar estatus en D1
+      const isTest = Boolean(body.test_email && body.test_email !== lead.email);
+      let updatedLead = lead;
+
+      if (!isTest) {
+        const now = new Date();
+        const dd = String(now.getDate()).padStart(2, '0');
+        const mm = String(now.getMonth() + 1).padStart(2, '0');
+        const yy = String(now.getFullYear()).slice(-2);
+        const newStatus = `Mail_enviado_${dd}${mm}${yy}`;
+        const todayIso = now.toISOString().slice(0, 10);
+
+        await db
+          .prepare(
+            `UPDATE leads_ark_tools SET status = ?, last_contact = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ?`
+          )
+          .bind(newStatus, todayIso, id, tenantId)
+          .run();
+
+        updatedLead = {
+          ...lead,
+          status: newStatus,
+          last_contact: todayIso,
+        };
+      }
+
+      return Response.json(
+        {
+          success: true,
+          ok: true,
+          message: isTest
+            ? `Correo de prueba enviado con éxito a ${targetEmail}`
+            : `Propuesta enviada con éxito a ${targetEmail}`,
+          resend_id: resendData.id,
+          lead: updatedLead,
+          data: updatedLead,
+        },
         { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
       );
     }

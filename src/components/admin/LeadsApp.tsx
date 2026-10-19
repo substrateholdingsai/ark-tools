@@ -16,6 +16,11 @@ import {
   Clock,
   FilterX,
   Building2,
+  Send,
+  X,
+  CheckCircle2,
+  AlertCircle,
+  Eye,
 } from 'lucide-react';
 
 interface Lead {
@@ -72,6 +77,23 @@ const STATUS_LABELS: Record<string, { label: string; badgeClass: string }> = {
   },
 };
 
+function getStatusBadge(status: string | null): { label: string; badgeClass: string } {
+  const s = status || 'Nuevo';
+  if (STATUS_LABELS[s]) return STATUS_LABELS[s];
+  if (s.startsWith('Mail_enviado')) {
+    const match = s.match(/Mail_enviado_(\d{2})(\d{2})(\d{2})/);
+    const dateLabel = match ? `Mail (${match[1]}/${match[2]})` : 'Mail Enviado';
+    return {
+      label: dateLabel,
+      badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+    };
+  }
+  return {
+    label: s,
+    badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
+  };
+}
+
 export default function LeadsApp() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
@@ -81,6 +103,14 @@ export default function LeadsApp() {
   const [status, setStatus] = useState('');
   const [especialidad, setEspecialidad] = useState('');
   const [q, setQ] = useState('');
+
+  // Modal de envío de email
+  const [selectedLeadForEmail, setSelectedLeadForEmail] = useState<Lead | null>(null);
+  const [emailRecipientName, setEmailRecipientName] = useState('');
+  const [emailTestTarget, setEmailTestTarget] = useState('');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailFeedback, setEmailFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [showHtmlPreview, setShowHtmlPreview] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -136,6 +166,59 @@ export default function LeadsApp() {
       alert(e instanceof Error ? e.message : 'Error al actualizar estatus');
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const openEmailModal = (lead: Lead) => {
+    setSelectedLeadForEmail(lead);
+    setEmailRecipientName(lead.contacto_nombre?.trim() || 'Director(a)');
+    setEmailTestTarget('');
+    setEmailFeedback(null);
+    setShowHtmlPreview(false);
+  };
+
+  const closeEmailModal = () => {
+    setSelectedLeadForEmail(null);
+    setEmailFeedback(null);
+  };
+
+  const handleSendProposalEmail = async () => {
+    if (!selectedLeadForEmail) return;
+    setSendingEmail(true);
+    setEmailFeedback(null);
+
+    try {
+      const res = await fetch(`/api/admin/leads/${encodeURIComponent(selectedLeadForEmail.id)}/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          recipient_name: emailRecipientName,
+          test_email: emailTestTarget.trim() || undefined,
+        }),
+      });
+
+      const data = (await res.json()) as { ok?: boolean; error?: string; message?: string; lead?: Lead };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Error al enviar el correo');
+      }
+
+      setEmailFeedback({
+        type: 'success',
+        message: data.message || 'Correo entregado exitosamente a Resend.',
+      });
+
+      if (data.lead && (!emailTestTarget || emailTestTarget === selectedLeadForEmail.email)) {
+        const updated = data.lead;
+        setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+      }
+    } catch (e) {
+      setEmailFeedback({
+        type: 'error',
+        message: e instanceof Error ? e.message : 'Error inesperado al conectar con Resend',
+      });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -396,14 +479,15 @@ export default function LeadsApp() {
                 <th className="px-5 py-3.5">Canales Directos</th>
                 <th className="px-5 py-3.5">Ubicación</th>
                 <th className="px-5 py-3.5">Especialidad</th>
-                <th className="px-5 py-3.5">Estatus (Acción)</th>
+                <th className="px-5 py-3.5">Estatus</th>
                 <th className="px-5 py-3.5">Último Contacto</th>
+                <th className="px-5 py-3.5 text-right">Acción Comercial</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {leads.length === 0 && !loading ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-12 text-center text-muted">
+                  <td colSpan={8} className="px-5 py-12 text-center text-muted">
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-muted">
                       <Target size={24} />
                     </div>
@@ -417,10 +501,7 @@ export default function LeadsApp() {
                 </tr>
               ) : (
                 leads.map((l) => {
-                  const statusConfig = STATUS_LABELS[l.status || 'Nuevo'] || {
-                    label: l.status || 'Nuevo',
-                    badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
-                  };
+                  const statusConfig = getStatusBadge(l.status);
 
                   return (
                     <tr key={l.id} className="hover:bg-slate-50/80 transition">
@@ -441,7 +522,7 @@ export default function LeadsApp() {
                           <span className="text-muted italic">Sin web registrada</span>
                         )}
                         {l.notas && (
-                          <p className="mt-0.5 max-w-[220px] truncate text-[11px] text-muted">
+                          <p className="mt-0.5 max-w-[200px] truncate text-[11px] text-muted">
                             {l.notas}
                           </p>
                         )}
@@ -531,6 +612,22 @@ export default function LeadsApp() {
                           {l.last_contact || 'Sin registrar'}
                         </span>
                       </td>
+
+                      {/* Acción Comercial: Botón Enviar Mail */}
+                      <td className="px-5 py-3.5 text-right">
+                        {l.email ? (
+                          <button
+                            onClick={() => openEmailModal(l)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-navy/20 bg-navy/5 px-3 py-1.5 font-orbitron text-[11px] font-semibold text-navy transition hover:bg-navy hover:text-white active:scale-95 shadow-sm"
+                            title={`Enviar propuesta a ${l.email}`}
+                          >
+                            <Send size={12} />
+                            Enviar Propuesta
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-muted italic">Sin email</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })
@@ -539,6 +636,170 @@ export default function LeadsApp() {
           </table>
         </div>
       </div>
+
+      {/* MODAL DE ENVÍO Y PREVISUALIZACIÓN DE CORREO */}
+      {selectedLeadForEmail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between border-b border-line pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/10 text-navy">
+                  <Mail size={20} />
+                </div>
+                <div>
+                  <h3 className="font-orbitron text-base font-bold text-navy">
+                    Enviar Propuesta Institucional
+                  </h3>
+                  <p className="text-xs text-muted">
+                    Arrendamiento de Infraestructura Fiscal + IA (Marca Blanca)
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeEmailModal}
+                disabled={sendingEmail}
+                className="rounded-lg p-1.5 text-muted hover:bg-slate-100 hover:text-ink transition"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Formulario de parámetros */}
+            <div className="mt-5 space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                    Destinatario Oficial
+                  </label>
+                  <div className="rounded-xl border border-line bg-slate-50 px-3 py-2 text-xs font-mono font-medium text-ink">
+                    {selectedLeadForEmail.email}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                    Nombre del Socio / Director
+                  </label>
+                  <input
+                    value={emailRecipientName}
+                    onChange={(e) => setEmailRecipientName(e.target.value)}
+                    placeholder="ej. Lic. Pérez / Director(a)"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Opción de prueba */}
+              <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5">
+                <label className="block text-[11px] font-orbitron font-bold uppercase tracking-wider text-amber-900 mb-1">
+                  Dirección de Prueba (Opcional)
+                </label>
+                <input
+                  value={emailTestTarget}
+                  onChange={(e) => setEmailTestTarget(e.target.value)}
+                  placeholder="ej. tu-correo@ejemplo.com (dejar vacío para enviar al prospecto real)"
+                  className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-mono font-medium text-ink placeholder:text-muted focus:border-navy focus:outline-none"
+                />
+                <p className="mt-1 text-[11px] text-amber-800">
+                  Si escribes un correo aquí, Resend lo enviará solo a esa dirección para que lo revises primero y no cambiará el estatus del prospecto en la base de datos.
+                </p>
+              </div>
+
+              {/* Botón para alternar Previsualización */}
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs font-semibold text-muted">
+                  Remitente: <strong className="text-navy">Pavel Cortés &lt;pavel@mail.arksystems.site&gt;</strong> (Reply-To: pavel@arksystems.site)
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowHtmlPreview(!showHtmlPreview)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-navy hover:underline"
+                >
+                  <Eye size={14} />
+                  {showHtmlPreview ? 'Ocultar Vista Previa' : 'Ver Vista Previa'}
+                </button>
+              </div>
+
+              {/* Vista previa colapsable */}
+              {showHtmlPreview && (
+                <div className="rounded-2xl border border-line bg-slate-50 p-4 max-h-[280px] overflow-y-auto text-xs space-y-3">
+                  <div className="flex items-center justify-between border-b border-line pb-2">
+                    <span className="font-orbitron font-bold text-navy">Asunto: Infraestructura Tecnológica para su Firma</span>
+                    <span className="text-[11px] text-muted">Logo: /logo-email.png</span>
+                  </div>
+                  <p className="text-ink font-semibold">
+                    Hola <strong>{emailRecipientName || 'Director(a)'}</strong>,
+                  </p>
+                  <p className="text-muted leading-relaxed">
+                    Notamos que las grandes firmas contables buscan integrar Inteligencia Artificial y automatización masiva, pero las opciones del mercado los obligan a usar software genérico de terceros donde pierden el control y privacidad de sus datos...
+                  </p>
+                  <div className="rounded-xl border border-slate-200 bg-white p-3 font-mono text-[11px] text-slate-700">
+                    <strong>Plan Corporate Firm (Marca Blanca)</strong>
+                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                      <li>Branding Total en su propio subdominio</li>
+                      <li>Aislamiento Estricto en D1 dedicado</li>
+                      <li>Cédulas PDF con Sello SHA-256 + QR oficial</li>
+                      <li>ARK Contable AI Privado</li>
+                    </ul>
+                  </div>
+                  <p className="text-muted text-[11px]">
+                    Llamada de coordinación vía WhatsApp: <strong>+52 56 5706 2511</strong>
+                  </p>
+                </div>
+              )}
+
+              {/* Feedback de resultado */}
+              {emailFeedback && (
+                <div
+                  className={`flex items-center gap-2 rounded-2xl border p-3.5 text-xs font-medium ${
+                    emailFeedback.type === 'success'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border-rose-200 bg-rose-50 text-rose-800'
+                  }`}
+                >
+                  {emailFeedback.type === 'success' ? (
+                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle size={16} className="text-rose-600 shrink-0" />
+                  )}
+                  <span>{emailFeedback.message}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer con acciones */}
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-line pt-4">
+              <button
+                type="button"
+                onClick={closeEmailModal}
+                disabled={sendingEmail}
+                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted hover:bg-slate-50 hover:text-ink transition active:scale-95"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={handleSendProposalEmail}
+                disabled={sendingEmail}
+                className="flex items-center gap-2 rounded-xl bg-navy px-5 py-2 font-orbitron text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-navy-dark active:scale-95 disabled:opacity-50"
+              >
+                {sendingEmail ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    Enviando vía Resend...
+                  </>
+                ) : (
+                  <>
+                    <Send size={14} />
+                    {emailTestTarget.trim() ? 'Enviar Correo de Prueba' : 'Confirmar y Enviar al Prospecto'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
