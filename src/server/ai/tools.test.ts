@@ -124,4 +124,57 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     expect(data.ivaNetoPagar).toBe(5000); // 8000 - 3000
     expect(data.totalImpuestosPagar).toBe(5050);
   });
+
+  it('ejecuta consultar_leads_crm retornando métricas y prospectos filtrados', async () => {
+    const mockDb = {
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () => {
+          if (query.includes('COUNT(*) AS total')) return { total: 45 };
+          return null;
+        }),
+        all: vi.fn(async () => {
+          if (query.includes('GROUP BY status')) {
+            return { results: [{ status: 'Nuevo', count: 30 }, { status: 'WhatsApp_enviado', count: 15 }] };
+          }
+          if (query.includes('GROUP BY ciudad')) {
+            return { results: [{ ciudad: 'Merida', count: 25 }, { ciudad: 'Metropolitana', count: 20 }] };
+          }
+          if (query.includes('FROM leads_ark_tools')) {
+            return {
+              results: [
+                {
+                  id: 'lead-101',
+                  web: 'https://despachomerida.mx',
+                  contacto_nombre: 'CP Garcia',
+                  ciudad: 'Merida',
+                  status: 'Nuevo',
+                },
+              ],
+            };
+          }
+          return { results: [] };
+        }),
+      })),
+    } as unknown as D1Database;
+
+    const mockEnv = { ARK_TOOLS_DB: mockDb } as Env;
+
+    const res = await executeAiTool(
+      'consultar_leads_crm',
+      { ciudad: 'Merida', status: 'Nuevo', limit: 5 },
+      mockEnv,
+      'ark'
+    );
+
+    expect(res.success).toBe(true);
+    expect(res.data).toBeDefined();
+    const data = res.data as any;
+    expect(data.total_leads).toBe(45);
+    expect(data.por_status).toHaveLength(2);
+    expect(data.por_ciudad).toHaveLength(2);
+    expect(data.prospectos).toHaveLength(1);
+    expect(data.prospectos[0].id).toBe('lead-101');
+    expect(data.filtros_aplicados.ciudad).toBe('Merida');
+  });
 });

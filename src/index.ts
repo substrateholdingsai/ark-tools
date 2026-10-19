@@ -13,6 +13,7 @@ import { handleD1ApiRequest } from './server/d1Api';
 import { handleAiApiRequest } from './server/ai/aiApi';
 import { authenticateRequest, handleAuthApiRequest } from './server/auth';
 import { handleAdminApiRequest } from './server/adminApi';
+import { handleLeadsApiRequest } from './server/leadsApi';
 import { handleInvitationsApiRequest } from './server/invitationsApi';
 import { handleAlegraApiRequest } from './server/alegra/alegraApi';
 import { checkAlegraAccountsHealth } from './server/alegra/cron';
@@ -186,6 +187,11 @@ async function handleApiRequest(
   const authResponse = await handleAuthApiRequest(request, env, corsHeaders, authPrincipal);
   if (authResponse) {
     return authResponse;
+  }
+
+  const leadsResponse = await handleLeadsApiRequest(request, env, corsHeaders, authPrincipal);
+  if (leadsResponse) {
+    return leadsResponse;
   }
 
   const adminResponse = await handleAdminApiRequest(request, env, corsHeaders, authPrincipal);

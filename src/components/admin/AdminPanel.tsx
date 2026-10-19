@@ -16,6 +16,7 @@ import {
   Mail,
   Search,
   UserCheck,
+  Target,
 } from 'lucide-react';
 import {
   apiClient,
@@ -24,6 +25,7 @@ import {
   type AdminTenant,
 } from '@/lib/apiClient';
 import { useAuth } from '@/context/AuthContext';
+import LeadsApp from './LeadsApp';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -31,7 +33,7 @@ interface AdminPanelProps {
 
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'users' | 'leads'>('overview');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -219,6 +221,17 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           >
             <Users size={16} />
             USUARIOS ({users.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('leads')}
+            className={`flex items-center gap-2 border-b-2 px-5 py-3 font-orbitron text-[12px] font-bold tracking-wider transition ${
+              activeTab === 'leads'
+                ? 'border-navy text-navy'
+                : 'border-transparent text-muted hover:text-ink'
+            }`}
+          >
+            <Target size={16} />
+            CRM PROSPECTOS
           </button>
         </div>
 
@@ -603,6 +616,13 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                 </table>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* TAB 4: LEADS CRM */}
+        {activeTab === 'leads' && (
+          <div className="space-y-6">
+            <LeadsApp />
           </div>
         )}
       </div>

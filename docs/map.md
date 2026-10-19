@@ -1299,3 +1299,27 @@ ark-tools/
 - **src/server/ai/agent.ts**: Actualizado cat醠ogo y directrices para an醠isis de salud financiera.
 
 **M閠ricas:** +3 pruebas unitarias. Chunk lazy esperado < 30 kB. Integraci髇 completa con Expediente 趎ico y verificaci髇 p鷅lica.
+### Sprint 20 (Octubre 2026) - Consolidaci贸n CRM de Prospectos (Super Admin) e Integraci贸n con Workers AI - Completado
+
+**Objetivo:** Consolidar, estabilizar y homologar el m贸dulo CRM de prospectos comerciales (leads_ark_tools) en la consola Super Admin, blindar la API con pruebas unitarias, homologar visualmente LeadsApp.tsx al ARK Design System institucional y exponer la herramienta de IA consultar_leads_crm en Workers AI / Llama 3.3 70B.
+
+#### 1. Backend y Persistencia D1 (src/server/leadsApi.ts & migrations/0007_leads_crm.sql)
+- **migrations/0007_leads_crm.sql**: Creaci贸n de tabla leads_ark_tools con 铆ndices por 	enant_id, ciudad, status y especialidad.
+- **src/server/leadsApi.ts**: Endpoints /api/admin/leads (listado y filtros), /api/admin/leads/stats (KPIs agregados), /api/admin/leads/:id (GET, PUT, PATCH, DELETE) con aislamiento multi-tenant y soporte para super_admin.
+- **src/server/leadsApi.test.ts**: 9 pruebas unitarias cubriendo autenticaci贸n, validaci贸n D1, filtros, detalle, creaci贸n, actualizaci贸n y eliminaci贸n.
+- **scripts/python/import_leads_sheet.py**: Script ETL para ingesta y normalizaci贸n de n煤meros WhatsApp a est谩ndar E.164.
+
+#### 2. Frontend Institucional (src/components/admin/LeadsApp.tsx)
+- **Homologaci贸n al ARK Design System**: Reemplazo de tema oscuro por blanco institucional, Navy Trust (#002B7F), Gold Value (#D4AF37) y tipograf铆a Orbitron.
+- **5 KPI Cards**: Total Leads, Nuevos, Contactados, Respondieron (dorado) y Bajas/Spam.
+- **Filtros Reactivos**: B煤squeda por texto (web, contacto, correo), filtro por Ciudad, Especialidad y Estatus con bot贸n de limpieza.
+- **Tabla Operativa**: Enlace directo a WhatsApp Web (wa.me), mailto, y selector inline de estatus con actualizaci贸n optimista v铆a PATCH /api/admin/leads/:id.
+- **Exportaci贸n CSV**: Soporte de BOM UTF-8 (\uFEFF) para visualizaci贸n nativa de acentos en Microsoft Excel.
+
+#### 3. Workers AI & Agentic Tool Calling (src/server/ai/tools.ts & agent.ts)
+- **AI_TOOLS_CATALOG**: Registro de consultar_leads_crm con par谩metros opcionales (ciudad, status, especialidad, limit).
+- **executeAiTool**: Orquestador seguro que consulta m茅tricas agrupadas y lista de prospectos sobre D1.
+- **agent.ts**: Actualizaci贸n del system prompt de ARK Contable AI para responder consultas de prospecci贸n y embudo de ventas.
+- **tools.test.ts**: Prueba unitaria espec铆fica verificando la respuesta estructurada de la herramienta de IA.
+
+**M茅tricas del Sprint:** +10 pruebas unitarias nuevas (330 pruebas totales pasando). 0 errores de TypeScript (	sc --noEmit). 0 errores de linting (eslint). Compilaci贸n Vite SPA limpia (chunk de AdminPanel: 33.47 kB).

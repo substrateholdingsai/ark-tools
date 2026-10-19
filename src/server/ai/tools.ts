@@ -136,7 +136,47 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
       properties: {},
       required: [],
     },
-  },\r\n  {\r\n    name: 'consultar_balance_general',\r\n    description: 'Consulta/analiza estructura patrimonial del Balance General archivado para el tenant actual.',\r\n    parameters: {\r\n      type: 'object',\r\n      properties: {\r\n        cliente_id: { type: 'string', description: 'ID de cliente opcional para filtrar por expediente.' },\r\n        limit: { type: 'number', description: 'N�mero m�ximo de registros a devolver (por defecto 10).' },\r\n      },\r\n      required: [],\r\n    },\r\n  },\r\n];
+  },
+  {
+    name: 'consultar_balance_general',
+    description: 'Consulta/analiza estructura patrimonial del Balance General archivado para el tenant actual.',
+    parameters: {
+      type: 'object',
+      properties: {
+        cliente_id: { type: 'string', description: 'ID de cliente opcional para filtrar por expediente.' },
+        limit: { type: 'number', description: 'Número máximo de registros a devolver (por defecto 10).' },
+      },
+      required: [],
+    },
+  },
+  {
+    name: 'consultar_leads_crm',
+    description:
+      'Consulta métricas agregadas y prospectos contables del CRM (leads_ark_tools) por ciudad, estatus o especialidad.',
+    parameters: {
+      type: 'object',
+      properties: {
+        ciudad: {
+          type: 'string',
+          description: 'Filtro opcional por ciudad (ej. "Merida", "Metropolitana", "Durango").',
+        },
+        status: {
+          type: 'string',
+          description: 'Filtro opcional por estatus (ej. "Nuevo", "WhatsApp_enviado", "Respondio_2_whats", "Anti_spam").',
+        },
+        especialidad: {
+          type: 'string',
+          description: 'Filtro opcional por especialidad (ej. "Crypto", "General", "Cobranza", "Abogados").',
+        },
+        limit: {
+          type: 'number',
+          description: 'Límite máximo de prospectos en el desglose (por defecto 10, máximo 50).',
+        },
+      },
+      required: [],
+    },
+  },
+];
 
 /**
  * Ejecutor seguro de herramientas.
@@ -298,6 +338,63 @@ export async function executeAiTool(
         };
       }
 
+      case 'consultar_leads_crm': {
+        const ciudad = typeof args.ciudad === 'string' ? args.ciudad.trim() : null;
+        const status = typeof args.status === 'string' ? args.status.trim() : null;
+        const especialidad = typeof args.especialidad === 'string' ? args.especialidad.trim() : null;
+        const limit = Math.min(Math.max(Number(args.limit) || 10, 1), 50);
+
+        const statsRow = await db
+          .prepare('SELECT COUNT(*) AS total FROM leads_ark_tools WHERE tenant_id = ?')
+          .bind(tenantId)
+          .first<{ total: number }>();
+
+        const statusGroup = await db
+          .prepare(
+            'SELECT status, COUNT(*) AS count FROM leads_ark_tools WHERE tenant_id = ? GROUP BY status'
+          )
+          .bind(tenantId)
+          .all<{ status: string | null; count: number }>();
+
+        const ciudadGroup = await db
+          .prepare(
+            'SELECT ciudad, COUNT(*) AS count FROM leads_ark_tools WHERE tenant_id = ? GROUP BY ciudad'
+          )
+          .bind(tenantId)
+          .all<{ ciudad: string | null; count: number }>();
+
+        let listQuery =
+          'SELECT id, web, whatsapp, email, contacto_nombre, ciudad, especialidad, status, last_contact FROM leads_ark_tools WHERE tenant_id = ?';
+        const binds: unknown[] = [tenantId];
+        if (ciudad) {
+          listQuery += ' AND ciudad = ?';
+          binds.push(ciudad);
+        }
+        if (status) {
+          listQuery += ' AND status = ?';
+          binds.push(status);
+        }
+        if (especialidad) {
+          listQuery += ' AND especialidad = ?';
+          binds.push(especialidad);
+        }
+        listQuery += ' ORDER BY created_at DESC LIMIT ?';
+        binds.push(limit);
+
+        const listResult = await db.prepare(listQuery).bind(...binds).all();
+
+        return {
+          success: true,
+          data: {
+            total_leads: statsRow?.total || 0,
+            por_status: statusGroup.results || [],
+            por_ciudad: ciudadGroup.results || [],
+            filtros_aplicados: { ciudad, status, especialidad, limit },
+            prospectos: listResult.results || [],
+          },
+        };
+      }
+
       case 'obtener_info_despacho': {
         const result = await db
           .prepare('SELECT id, name, slug, created_at FROM tenants WHERE id = ?')
@@ -319,3 +416,4 @@ export async function executeAiTool(
       error: `Error al ejecutar la herramienta "${toolName}": ${errorMsg}`,
     };
   }
+}
