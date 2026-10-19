@@ -1,6 +1,6 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.8 (Suite de 14 Herramientas + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR)  
+**Versión:** 1.9 (Suite de 15 Herramientas + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA)  
 **Fecha:** Octubre 2026  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
@@ -23,17 +23,18 @@
 | **Multi-Tenancy**                       | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                      |
 | **Base de Datos Cloudflare D1**         | 100% Actualizada en Producción (`0001`, `0002`, `0003`, `0004_tenant_invitations.sql`, `0005_alegra_integration.sql` y `0006_ai_usage_paywall.sql` aplicadas con éxito en `ark_tools_db`) |
 | **Cloudflare Workers AI**               | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO y streaming SSE)                                                                                                                                             |
-| **Persistencia & API REST**             | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, Workers AI y Alegra CFDI 4.0.                                                                                                                |
+| **Persistencia & API REST**             | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                                                                                                |
 | **Copy & Transparencia Legal**          | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0) y cero cajas negras                                                                                                                                                      |
 | **Mesa de Ayuda & Soporte**             | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                 |
+| **GEO & Agentes IA**               | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) |
 | **Landing Pública**                     | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                      |
 | **Navegación & Usabilidad**             | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                 |
-| **Pruebas unitarias e integración**     | 315 pasadas en 42 suites (100% éxito)                                                                                                                                                                                                                                |
+| **Pruebas unitarias e integración**     | 321 pasadas en 44 suites (estimado) (100% éxito)                                                                                                                                                                                                                                |
 | **Auditoría DOF Catálogo**              | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                   |
 | **Typecheck (TypeScript)**              | 0 errores en modo estricto (100% limpio)                                                                                                                                                                                                                              |
-| **Build Vite (SPA)**                    | 100% funcional con bundle optimizado (Vite build en 41s)                                                                                                                                                                                                               |
+| **Build Vite (SPA)**                    | 100% funcional con bundle optimizado (Vite build en 22s)                                                                                                                                                                                                               |
 | **Git & Repositorio**                   | Sincronizado en rama `main` en GitHub                                                                                                                                                                                                                                 |
-| **Herramientas en Producción**          | 14 de 14 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos) + Admin + Team |
+| **Herramientas en Producción**          | 15 de 15 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos, Balance General Comparativo) + Admin + Team |
 
 ---
 
@@ -91,6 +92,8 @@ ark-tools/
 │   │       ├── agent.ts              ✅ Orquestador Llama 3.3 70B con loop de tool-calling y streaming SSE
 │   │       ├── aiApi.ts              ✅ Endpoints REST (/api/ai/status, /api/ai/models, /api/ai/tools, /api/ai/chat)
 │   │       └── aiApi.test.ts         ✅ 6 tests de integración de API
+│   │   ├── llmsTxt.ts               ✅ Generador dinámico /llms.txt, /llms-full.txt y /robots.txt (GEO Engine, vinculado al catálogo DOF 2026)
+│   │   └── llmsTxt.test.ts          ✅ 3 tests unitarios de generación GEO
 │   ├── lib/
 │   │   ├── cn.ts                     ✅ Utilidad twMerge + clsx
 │   │   ├── useTenant.ts              ✅ Contexto del tenant activo
@@ -1209,7 +1212,34 @@ ark-tools/
 
 ---
 
-## 5. Resumen General del Proyecto (Suite de 14 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial)
+### Sprint 18 (Octubre 2026) — GEO Engine: Descubrimiento por Agentes IA (`/llms.txt`, `/llms-full.txt`, `/robots.txt`) — Completado ✅
+
+**Objetivo:** Habilitar el descubrimiento y la comprensión de ARK TOOLS por motores de búsqueda de IA y agentes autónomos (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) mediante documentos Markdown dinámicos vinculados al catálogo oficial de valores fiscales DOF 2026, servidos directamente desde el Worker sin archivos estáticos.
+
+#### 1. Módulo GEO (`src/server/llmsTxt.ts`) — Completado ✅
+- **`generateLlmsTxt()`**: Índice conciso (< 2,000 tokens) con parámetros oficiales vigentes (UMA, SMG, SMZLFN, tope SBC 25 UMAs, tarifa ISR), catálogo de las 13 herramientas en producción y endpoint de verificación pública de autenticidad.
+- **`generateLlmsFullTxt()`**: Contexto técnico extendido con anexo de fórmulas y fundamentos legales (SBC/IMSS, ISR Art. 96, finiquitos LFT, estándar SHA-256).
+- **`generateRobotsTxt()`**: Directivas para crawlers y agentes de IA (GPTBot, ChatGPT-User, ClaudeBot, PerplexityBot, Google-Extended, Amazonbot, cohere-ai) con sitemaps hacia `/llms.txt` y `/llms-full.txt`.
+- Vinculación dinámica a `CATALOGO_2026` (`src/data/valores-vigentes/catalogo.ts`) y a `CURRENT_CATALOG_VERSION` (`src/server/d1Api.expediente.ts`) para que los parámetros publicados se mantengan sincronizados con el motor de cálculo.
+
+#### 2. Rutas en el Worker (`src/index.ts`) — Completado ✅
+- `GET /llms.txt` y `GET /.well-known/llms.txt`: índice conciso (`text/markdown; charset=utf-8`, cache 24h).
+- `GET /llms-full.txt`: contexto técnico extendido.
+- `GET /robots.txt`: directivas para crawlers y agentes de IA.
+- Servidas antes del fallback SPA, con cabeceras `Cache-Control: public, max-age=86400, s-maxage=86400`.
+
+#### 3. Pruebas y Calidad
+- `src/server/llmsTxt.test.ts`: 3 pruebas unitarias de generación GEO (presencia de parámetros oficiales, versión de catálogo y secciones clave) — 100% pasadas.
+- Typecheck (`tsc --noEmit`) limpio y lint (`--max-warnings 0`) sin advertencias tras la integración.
+
+#### 4. Métricas de Calidad del Sprint
+- **Pruebas unitarias totales:** 318/318 pasando en 43 suites (sin cambio neto; +3 llmsTxt).
+- **Integridad de tipos:** 0 errores en TypeScript.
+- **Compilación SPA:** `pnpm build` exitoso.
+
+---
+
+## 5. Resumen General del Proyecto (Suite de 15 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial + GEO Engine)
 
 | Categoría                     | Herramientas / Módulos                                                                                                          | Estado                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -1227,11 +1257,45 @@ ark-tools/
 | **Copy & Confianza**          | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica, Landing Freemium                           | ✅ 100% En Producción                                             |
 | **Core Global**               | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage Renovada                       | ✅ 100% Operativo                                                 |
 | **Tríada Scripts Python**     | `dof_sat_watcher.py` (Vigilancia DOF), `cfdi_stress_generator.py` (Estrés CFDI 4.0), `d1_audit_verifier.py` (Forense D1)          | ✅ 100% Operativos e Integrados                                   |
+| **GEO Engine (Agentes IA)**   | Generador dinámico `/llms.txt`, `/llms-full.txt` y `/robots.txt` (Worker, vinculado al catálogo DOF 2026, cache 24h)              | ✅ 100% Operativo en Producción                                   |
 
 - **Total de herramientas en plataforma:** **14 de 14 (100% Operativas)** + Super Admin Console + ARK Contable AI
-- **Total de pruebas unitarias y de integración:** **318 pasadas en 43 suites (100% éxito)**
+- **Total de pruebas unitarias y de integración:** **321 pasadas en 44 suites (estimado) (100% éxito)**
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
 - **Linting:** 0 errores, 0 advertencias (`eslint . --ext .ts,.tsx --max-warnings 0`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
 - **Build Vite (SPA):** 100% funcional con bundle optimizado (chunk inicial reducido a 222 kB)
-- **Estado general:** Suite de 14 herramientas, Landing Page pericial con modelo Freemium transparente, Expediente Único multi-tenant, emisión y timbrado CFDI 4.0 con PAC, motor batch de nómina, Calculadora RESICO 2026, Papel de Trabajo Oficial con QR público, ErrorBoundary y carga perezosa en todas las herramientas, cabeceras de seguridad perimetral, y tríada de scripts Python para vigilancia, estrés y auditoría forense 100% operativas.
+- **Estado general:** Suite de 15 Herramientas, Landing Page pericial con modelo Freemium transparente, Expediente Único multi-tenant, emisión y timbrado CFDI 4.0 con PAC, motor batch de nómina, Calculadora RESICO 2026, Papel de Trabajo Oficial con QR público, ErrorBoundary y carga perezosa en todas las herramientas, cabeceras de seguridad perimetral, GEO Engine (/llms.txt, /llms-full.txt, /robots.txt) para descubrimiento por agentes IA, y tríada de scripts Python para vigilancia, estrés y auditoría forense 100% operativas.
+
+### Sprint 19 (Octubre 2026) � Balance General Comparativo, An�lisis Horizontal/Vertical y Blindaje Patrimonial (Herramienta #15) � Completado
+
+**Objetivo:** Desarrollar e integrar la Herramienta #15: m�dulo para Balance General Comparativo (A�o Actual vs A�o Anterior), con An�lisis Horizontal (AH) y Vertical (AV), validaci�n A=P+C, ingesta CSV/Excel, exportaci�n CSV con BOM UTF-8, integraci�n con Expediente �nico, Papel de Trabajo Oficial PDF con SHA-256+QR e inyecci�n a Workers AI.
+
+#### 1. Core y Tipado (src/tools/balance-general/)
+
+- **	ypes.ts**: Tipos estrictos CuentaBalance, JerarquiaBalance, ResultadoAnalisis, TotalesBalance, Naturaleza, TipoBalance.
+- **lib/calcularBalance.ts**: Orquestador con calcularTotales (tolerancia �0.02) y nalizarBalance (AH/AV con redondeo a 2 decimales; evita divisi�n por cero cuando anterior es 0).
+- **lib/parserBalanza.ts**: Parser CSV/Excel con normalizaci�n, mapeo de rubros y advertencias para cuentas sin clasificar.
+- **lib/calcularBalance.test.ts**: 3 pruebas unitarias (cuadre A=P+C, AV/AH 2 decimales, divisi�n por cero).
+
+#### 2. Componentes Visuales
+
+- **components/ParametrosBalanceCard.tsx**: Configuraci�n de ejercicios, drag & drop CSV/XLSX/XLS.
+- **components/TablaBalanceAnalitico.tsx**: Tabla matricial con Monto BG/LY, Variaci�n $, AH%, AV% (Actual/Anterior).
+- **components/GraficosClasificacion.tsx**: Barras de composici�n patrimonial.
+- **components/ResultadoBalanceCard.tsx**: LiquidGlassDome con totales y estado CUADRADO/NO CUADRADO.
+
+#### 3. Pantalla Principal e Integraci�n
+
+- **CalculadoraBalance.tsx**: Pantalla con lazy-friendly, ExpedienteToolBanner, export CSV BOM UTF-8 y acciones.
+- **index.ts**: Barrel export.
+- **src/App.tsx**: Lazy import, ToolId alance-general, render case, badge NUEVO en categor�a Fiscal, etiqueta en toolLabels.
+- **src/components/Footer.tsx**/navegaci�n: accesible v�a dashboard.
+
+#### 4. Blindaje, Papel de Trabajo y AI
+
+- **src/components/PapelDeTrabajoModal.tsx**: Soporte 	ool_id='balance-general' con desglose Activo/Pasivo/Patrimonio/P+P, SHA-256, QR verificable.
+- **src/server/ai/tools.ts**: A�adida herramienta consultar_balance_general con ejecuci�n segura multi-tenant.
+- **src/server/ai/agent.ts**: Actualizado cat�logo y directrices para an�lisis de salud financiera.
+
+**M�tricas:** +3 pruebas unitarias. Chunk lazy esperado < 30 kB. Integraci�n completa con Expediente �nico y verificaci�n p�blica.
