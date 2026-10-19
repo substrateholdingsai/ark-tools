@@ -1,0 +1,89 @@
+[
+  {
+    "id": "navaja-suiza-15-herramientas",
+    "type": "milestone_release",
+    "category": "SUITE COMPLETA",
+    "slides": [
+      {
+        "layout": "problem",
+        "badge": "EL CAOS CONTABLE",
+        "badge_color": "#ef4444",
+        "title": "15 pestañas de Excel abiertas = Caos.",
+        "description": "Brincar entre macros rotas, páginas caídas del SAT y fórmulas obsoletas destruye tu tiempo y tu certeza."
+      },
+      {
+        "layout": "solution_glass",
+        "badge": "LA SOLUCIÓN ARK",
+        "badge_color": "#D4AF37",
+        "title": "La Navaja Suiza<br>del Contador.",
+        "tag": "15 HERRAMIENTAS • DOF 2026 • AI EDGE",
+        "description": "Desde <b>Balance General (#15)</b> hasta Auditoría CFDI y Nómina. Toda la potencia técnica en un solo clic."
+      },
+      {
+        "layout": "cta",
+        "logo_text": "A",
+        "title": "15 herramientas fiscales. Cero fricción.",
+        "button_text": "EXPLORAR LA SUITE →",
+        "url": "TOOLS.ARKSYSTEMS.SITE"
+      }
+    ]
+  },
+  {
+    "id": "release-validador-xml",
+    "type": "feature_release",
+    "category": "NUEVA HERRAMIENTA",
+    "slides": [
+      {
+        "layout": "problem",
+        "badge": "EL PROBLEMA",
+        "badge_color": "#ef4444",
+        "title": "12 columnas iguales = Ansiedad.",
+        "description": "Los contadores ven muros de números. Si todo es igual, la certeza se pierde."
+      },
+      {
+        "layout": "solution_glass",
+        "badge": "LA SOLUCIÓN ARK",
+        "badge_color": "#6B7A99",
+        "title": "Blindaje<br>Fiscal.",
+        "tag": "SELLO SHA-256 • DOF 2026",
+        "description": "Los totales como <b>objetos físicos</b>.<br>El dinero se entiende sin leer."
+      },
+      {
+        "layout": "cta",
+        "logo_text": "A",
+        "title": "Recupera 3 horas de talacha contable hoy.",
+        "button_text": "ÚSALO GRATIS →",
+        "url": "TOOLS.ARKSYSTEMS.SITE"
+      }
+    ]
+  },
+  {
+    "id": "resico-2026-launch",
+    "type": "feature_release",
+    "category": "FISCAL",
+    "slides": [
+      {
+        "layout": "problem",
+        "badge": "EL PROBLEMA",
+        "badge_color": "#ef4444",
+        "title": "RESICO 2026: ¿1% o 2.5%?",
+        "description": "La diferencia entre pagar $250 o $625 por cada $100k facturados. Un error cuesta miles."
+      },
+      {
+        "layout": "solution_glass",
+        "badge": "LA SOLUCIÓN ARK",
+        "badge_color": "#6B7A99",
+        "title": "Cédula<br>Oficial.",
+        "tag": "PF 113-E • PM 206 • IVA ACREEDITABLE",
+        "description": "Calculadora con <b>retención 1.25%</b> automática.<br>Tope $3.5M monitoreado en tiempo real."
+      },
+      {
+        "layout": "cta",
+        "logo_text": "A",
+        "title": "Determina tu pago provisional en 30 segundos.",
+        "button_text": "CALCULAR AHORA →",
+        "url": "TOOLS.ARKSYSTEMS.SITE"
+      }
+    ]
+  }
+]

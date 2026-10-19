@@ -175,9 +175,39 @@ export function PapelDeTrabajoModal({
       fundamento: d.fundamento || 'LISR Art. 113-E / 206',
       importe: Number(d.importe) || 0,
     }));
+  } else if (tool_id === 'balance-general') {
+    const totales = (outputs.totales as Record<string, number | boolean>) || {};
+    totalMonto = Number(totales.totalActivo) || 0;
+    filasConceptos = [
+      {
+        concepto: 'Total Activo',
+        formula: 'Suma de Activo Corriente y No Corriente',
+        fundamento: 'NIF B-6 (Balance General)',
+        importe: Number(totales.totalActivo) || 0,
+      },
+      {
+        concepto: 'Total Pasivo',
+        formula: 'Suma de Pasivo a Corto y Largo Plazo',
+        fundamento: 'NIF B-6 (Balance General)',
+        importe: Number(totales.totalPasivo) || 0,
+      },
+      {
+        concepto: 'Total Patrimonio / Capital Contable',
+        formula: 'Capital Social + Utilidades/Pérdidas',
+        fundamento: 'NIF B-6 (Balance General)',
+        importe: Number(totales.totalPatrimonio) || 0,
+      },
+      {
+        concepto: 'Total Pasivo + Patrimonio',
+        formula: 'Pasivo Total + Capital Contable Total',
+        fundamento: 'Ecuación Contable: A = P + C',
+        importe: Number(totales.totalPasivoPatrimonio) || 0,
+      },
+    ];
   } else {
     totalMonto = 0;
   }
+
 
   const importeEnLetras = numeroALetras(totalMonto);
   const folio = `ARK-${expediente.input_hash.slice(0, 8).toUpperCase()}`;

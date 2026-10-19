@@ -46,6 +46,5 @@ env/
 stress_test_xmls/
 d1_forensic_backups/
 d1_audit_reports/
-
-
-
+# Creatives Generator output
+instagram-creatives/creatives/output/

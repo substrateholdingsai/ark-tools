@@ -20,6 +20,7 @@ import {
   FileCode,
   Fingerprint,
   CheckCircle2,
+  BarChart3,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -59,6 +60,8 @@ const CierreNomina = lazy(() =>
 );
 const CalculadoraResico = lazy(() => import('@/tools/resico'));
 const AdminPanel = lazy(() => import('./components/admin/AdminPanel').then((m) => ({ default: m.AdminPanel })));
+const CalculadoraBalance = lazy(() => import('./tools/balance-general').then((m) => ({ default: m.CalculadoraBalance })));
+
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -78,8 +81,7 @@ export type ToolId =
   | 'leasing'
   | 'guia-sat-imss'
   | 'auditor-cobranza'
-  | 'mapa-activos'
-  | 'admin';
+  | 'mapa-activos' | 'balance-general' | 'admin';
 
 export type ToolRoute = ToolId;
 export type NavFilter = 'dashboard' | 'fiscal' | 'sat' | 'cobros' | 'compliance';
@@ -155,6 +157,7 @@ export function App() {
     'guia-sat-imss': 'Guía SAT/IMSS',
     'auditor-cobranza': 'Auditoría Legal de Cobranza',
     'mapa-activos': 'Mapa de Activos Virtuales',
+    'balance-general': 'Balance General Comparativo',
     admin: 'Super Admin Console',
   };
 
@@ -213,6 +216,10 @@ export function App() {
 
       case 'mapa-activos':
         return <MapaActivos onBack={goToDashboard} />;
+
+      case 'balance-general':
+        return <CalculadoraBalance onBack={goToDashboard} />;
+
 
       case 'dashboard':
       default:
@@ -448,7 +455,16 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
             badgeVariant="gold"
             onSelect={() => onSelectTool('cierre-nomina')}
           />
+          <ToolCard
+            icon={BarChart3}
+            title="Balance General Comparativo"
+            description="Análisis horizontal y vertical, cuadre A=P+C y blindaje patrimonial con Sello QR."
+            badge="NUEVO"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('balance-general')}
+          />
         </CategorySection>
+
       )}
 
       {/* SAT */}
