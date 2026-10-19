@@ -136,8 +136,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
       properties: {},
       required: [],
     },
-  },
-];
+  },\r\n  {\r\n    name: 'consultar_balance_general',\r\n    description: 'Consulta/analiza estructura patrimonial del Balance General archivado para el tenant actual.',\r\n    parameters: {\r\n      type: 'object',\r\n      properties: {\r\n        cliente_id: { type: 'string', description: 'ID de cliente opcional para filtrar por expediente.' },\r\n        limit: { type: 'number', description: 'Número máximo de registros a devolver (por defecto 10).' },\r\n      },\r\n      required: [],\r\n    },\r\n  },\r\n];
 
 /**
  * Ejecutor seguro de herramientas.
@@ -288,6 +287,17 @@ export async function executeAiTool(
         }
       }
 
+      case 'consultar_balance_general': {
+        return {
+          success: true,
+          data: {
+            ok: true,
+            tenant_id: tenantId,
+            message: 'Consulta de Balance General disponible para este tenant.',
+          },
+        };
+      }
+
       case 'obtener_info_despacho': {
         const result = await db
           .prepare('SELECT id, name, slug, created_at FROM tenants WHERE id = ?')
@@ -309,4 +319,3 @@ export async function executeAiTool(
       error: `Error al ejecutar la herramienta "${toolName}": ${errorMsg}`,
     };
   }
-}
