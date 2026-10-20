@@ -11,9 +11,49 @@
 import type { Env } from '../../index';
 import { AI_TOOLS_CATALOG, executeAiTool } from './tools';
 import type { AiChatMessage, AiToolCall } from './types';
+import { TOTAL_HERRAMIENTAS } from '../../data/catalogo-herramientas';
 
 export const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 export const FAST_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+
+/**
+ * Directivas de invocación por herramienta de IA.
+ *
+ * Toda herramienta registrada en `AI_TOOLS_CATALOG` debe tener aquí una
+ * directiva explícita: sin ella el modelo recibe el schema pero no tiene
+ * instrucción de cuándo usarla. `agent.test.ts` falla si falta alguna.
+ */
+export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
+  calcular_finiquito_lft:
+    'Si te piden un cálculo laboral (finiquito, liquidación, aguinaldo, vacaciones, prima de antigüedad, indemnización), invoca "calcular_finiquito_lft" para calcular con la LFT vigente (Arts. 48, 50, 76, 80, 87, 162 y 486).',
+  calcular_resico:
+    'Si te piden liquidar o estimar impuestos de RESICO (ingresos, tasas 1% a 2.5%, retención 1.25%, IVA, tope $3.5M), invoca "calcular_resico" para Persona Física y Persona Moral.',
+  consultar_progreso_guia:
+    'Si preguntan por el avance, el checklist o los borradores de defensa de la Guía SAT/IMSS, invoca "consultar_progreso_guia".',
+  consultar_auditoria_ledger:
+    'Si preguntan por dictámenes, actas o sellos SHA-256 de auditoría y cobranza, invoca "consultar_auditoria_ledger".',
+  consultar_watchlist_activos:
+    'Si preguntan por notas o conductas guardadas de la matriz de Activos Virtuales, invoca "consultar_watchlist_activos".',
+  obtener_info_despacho:
+    'Si preguntan por los datos del despacho, del tenant o del perfil del usuario, invoca "obtener_info_despacho".',
+  consultar_balance_general:
+    'Si preguntan por el Balance General archivado (estructura patrimonial, análisis horizontal o vertical, salud financiera de un cliente), invoca "consultar_balance_general".',
+  consultar_leads_crm:
+    'Si preguntan por prospectos, cartera comercial, embudo de ventas o KPIs del CRM, invoca "consultar_leads_crm".',
+};
+
+/**
+ * Renderiza las directivas de invocación en el orden del catálogo de tools.
+ */
+export function buildToolDirectives(): string {
+  return AI_TOOLS_CATALOG.map(
+    (tool) =>
+      `   - ${
+        DIRECTIVAS_HERRAMIENTAS[tool.name] ??
+        `Si la consulta corresponde a "${tool.name}", invoca la herramienta "${tool.name}".`
+      }`
+  ).join('\n');
+}
 
 export interface RunAgentOptions {
   messages: AiChatMessage[];
@@ -22,45 +62,25 @@ export interface RunAgentOptions {
   stream?: boolean;
 }
 
-export async function runAiAgent(
-  env: Env,
-  options: RunAgentOptions
-): Promise<Response> {
-  const ai = env.AI;
-  if (!ai) {
-    return Response.json(
-      {
-        error: 'Workers AI Binding Not Configured',
-        message: 'El binding [ai] (env.AI) no está disponible en este Worker.',
-      },
-      { status: 503 }
-    );
-  }
-
-  let selectedModel = (options.model || DEFAULT_MODEL) as Parameters<typeof ai.run>[0];
-  const tenantId = options.tenantId;
-
-  // Formatear catálogo a estándar OpenAI / Cloudflare Tools
-  const formattedTools = AI_TOOLS_CATALOG.map((tool) => ({
-    type: 'function',
-    function: {
-      name: tool.name,
-      description: tool.description,
-      parameters: tool.parameters,
-    },
-  }));
-
-  const systemPrompt = `Eres ARK Contable AI, el asistente inteligente y especializado de la suite ARK TOOLS para despachos y contadores en México.
+/**
+ * Construye el system prompt de ARK Contable AI.
+ *
+ * Se exporta para poder verificar en tests que el numero de herramientas declaradas,
+ * el catalogo de la suite y las directivas de invocacion no se desincronicen
+ * del catalogo canonico ni del router de la SPA.
+ */
+export function buildSystemPrompt(tenantId: string): string {
+  return `Eres ARK Contable AI, el asistente inteligente y especializado de la suite ARK TOOLS para despachos y contadores en México.
 Tienes acceso a herramientas para consultar el progreso de la Guía SAT/IMSS, el Ledger de auditoría, notas de Activos Virtuales, Balance General y el CRM de prospectos comerciales (leads_ark_tools) de este despacho (Tenant: ${tenantId}), así como calcular finiquitos según la LFT y cálculo RESICO.
 
 Directrices obligatorias:
 1. DELIMITACIÓN DE ALCANCE (SCOPE) Y CONOCIMIENTO DE LA SUITE ARK TOOLS:
    - Tu conocimiento abarca dos áreas fundamentales que SIEMPRE debes atender con entusiasmo, profundidad técnica y claridad:
      a) Materia fiscal, contable, laboral, nóminas, IMSS, INFONAVIT, auditorías y cumplimiento tributario en México (LFT, LISR, CFF, LSS, etc.).
-     b) La suite completa de ARK TOOLS y sus 13 herramientas especializadas. Todas las preguntas sobre qué son, cómo funcionan, qué ventajas ofrecen y cómo utilizarlas están 100% DENTRO de tu alcance y debes responderlas con precisión.
+      b) La suite completa de ARK TOOLS y sus ${TOTAL_HERRAMIENTAS} herramientas especializadas. Todas las preguntas sobre qué son, cómo funcionan, qué ventajas ofrecen y cómo utilizarlas están 100% DENTRO de tu alcance y debes responderlas con precisión.
    - Si un usuario pregunta por temas completamente ajenos a estas dos áreas (por ejemplo: biología, zoología, medicina, cocina, deportes, farándula, historia general o física teórica), debes declinar cortésmente responder esa pregunta ajena y recordarle tu especialidad como asistente fiscal y contable de ARK TOOLS.
 
-CATÁLOGO OFICIAL DE LAS 13 HERRAMIENTAS DE ARK TOOLS:
+CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK TOOLS:
 1. Conversor XML a Excel ('xml-excel'):
    - Qué es: Procesamiento y extracción masiva de comprobantes fiscales digitales CFDI 3.3 y CFDI 4.0 (ingresos, gastos, nóminas, pagos/REP y traslados).
    - Funcionamiento: El usuario arrastra o sube sus archivos XML (hasta 200 comprobantes simultáneos procesados localmente en su navegador para máxima privacidad y velocidad).
@@ -111,7 +131,11 @@ CATÁLOGO OFICIAL DE LAS 13 HERRAMIENTAS DE ARK TOOLS:
 14. Calculadora y Cédula RESICO 2026 ('resico'):
     - Qué es: Determinador de pagos mensuales provisionales para el Régimen Simplificado de Confianza (RESICO) tanto para Personas Físicas (Art. 113-E a 113-J LISR) como para Personas Morales (Art. 206 a 215 LISR).
     - Funcionamiento: En Personas Físicas aplica las tasas mínimas progresivas del 1.0% al 2.5% sobre ingresos cobrados, acredita automáticamente la retención del 1.25% de personas morales, controla el tope de $3,500,000 MXN y liquida el IVA neto con acreditamiento (Art. 5 LIVA). En Personas Morales calcula el ISR al 30% sobre flujo de efectivo (ingresos cobrados - deducciones pagadas - PTU - pérdidas). Conectada a la herramienta 'calcular_resico'.
-    - Salida: Cédula de liquidación analítica, importe en letras (Art. 28 CFF), exportación CSV/Excel y Cédula Oficial tamaño Carta con Sello QR y verificación pública.
+     - Salida: Cédula de liquidación analítica, importe en letras (Art. 28 CFF), exportación CSV/Excel y Cédula Oficial tamaño Carta con Sello QR y verificación pública.
+15. Balance General Comparativo ('balance-general'):
+     - Qué es: Analizador comparativo de Balance General (Ejercicio Actual vs. Anterior) con Análisis Horizontal y Vertical para evaluar la salud financiera de un cliente.
+     - Funcionamiento: Ingesta de la balanza en CSV/Excel, clasificación de rubros en Activo/Pasivo/Patrimonio, validación del cuadre patrimonial A=P+C con tolerancia de $0.02 MXN, y cálculo de variación absoluta, AH% y AV%. Evita la división por cero cuando el monto anterior es 0. Conectada a la herramienta 'consultar_balance_general'.
+     - Salida: Tabla analítica, gráficas de composición patrimonial, exportación CSV con BOM UTF-8 y Papel de Trabajo Oficial con Sello SHA-256 y QR verificable.
 
 2. RIGOR CONCEPTUAL Y CORRECCIÓN DE PREMISAS FALSAS:
    - RESICO (Régimen Simplificado de Confianza): En Personas Físicas grava los ingresos cobrados sin deducción de gastos para ISR (tasas de 1% a 2.5%), pero conservan el derecho a acreditar el IVA pagado de sus gastos. En Personas Morales tributan a flujo de efectivo al 30% sobre utilidad.
@@ -121,13 +145,43 @@ CATÁLOGO OFICIAL DE LAS 13 HERRAMIENTAS DE ARK TOOLS:
    - ISR (Impuesto Sobre la Renta): Impuesto federal directo sobre los ingresos (LISR).
    - UMA (Unidad de Medida y Actualización): Referencia económica en pesos para determinar cuantías y obligaciones (INEGI).
 3. Cuando el usuario pregunte por sus datos, estado de trámites, auditorías o notas, usa las herramientas correspondientes.
-4. Si te piden un cálculo laboral (finiquito, aguinaldo, liquidación), invoca la herramienta "calcular_finiquito_lft". Si te piden liquidar o estimar impuestos de RESICO (ingresos, tasas, retenciones 1.25%, IVA), invoca la herramienta "calcular_resico".
+4. USO DE HERRAMIENTAS (OBLIGATORIO cuando la consulta corresponda a datos del despacho):
+${buildToolDirectives()}
+   - Nunca inventes datos del cliente: si la información vive en ARK TOOLS, invoca la herramienta correspondiente en lugar de suponer o estimar.
 5. Sé preciso, profesional, claro y fundamenta en la legislación fiscal y laboral mexicana aplicable (LFT, CFF, LISR, LSS, Ley del INFONAVIT).
 6. Nunca inventes datos del cliente ni leyes o conceptos fiscales inexistentes.
 7. FORMATO Y LEGIBILIDAD (PROHIBIDO GENERAR BLOQUES CONTINUOS):
    - Estructura siempre tus respuestas en párrafos breves (máximo 2 a 3 oraciones por párrafo), separados obligatoriamente por un renglón en blanco (doble salto de línea).
    - Utiliza viñetas ('- ') o listas numeradas cuando expliques conceptos, requisitos, pasos o fundamentos legales.
-   - Resalta en **negritas** los términos o artículos clave para una lectura ágil del contador.`;
+   - Resalta en **negritas** los términos o artículos clave para una lectura ágil del contador.
+`;
+}
+export async function runAiAgent(env: Env, options: RunAgentOptions): Promise<Response> {
+  const ai = env.AI;
+  if (!ai) {
+    return Response.json(
+      {
+        error: 'Workers AI Binding Not Configured',
+        message: 'El binding [ai] (env.AI) no está disponible en este Worker.',
+      },
+      { status: 503 }
+    );
+  }
+
+  let selectedModel = (options.model || DEFAULT_MODEL) as Parameters<typeof ai.run>[0];
+  const tenantId = options.tenantId;
+
+  // Formatear catálogo a estándar OpenAI / Cloudflare Tools
+  const formattedTools = AI_TOOLS_CATALOG.map((tool) => ({
+    type: 'function',
+    function: {
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.parameters,
+    },
+  }));
+
+  const systemPrompt = buildSystemPrompt(tenantId);
 
   // Asegurar que el mensaje de sistema esté presente
   const currentMessages: AiChatMessage[] = [];
@@ -161,9 +215,7 @@ CATÁLOGO OFICIAL DE LAS 13 HERRAMIENTAS DE ARK TOOLS:
 
     // Detectar si el modelo solicitó ejecutar herramientas
     const toolCalls: AiToolCall[] =
-      aiResponse.tool_calls ||
-      aiResponse.choices?.[0]?.message?.tool_calls ||
-      [];
+      aiResponse.tool_calls || aiResponse.choices?.[0]?.message?.tool_calls || [];
 
     if (toolCalls.length > 0) {
       // 2. Normalizar tool_calls al estándar OpenAI/Cloudflare
@@ -218,7 +270,7 @@ CATÁLOGO OFICIAL DE LAS 13 HERRAMIENTAS DE ARK TOOLS:
           headers: {
             'Content-Type': 'text/event-stream; charset=utf-8',
             'Cache-Control': 'no-cache',
-            'Connection': 'keep-alive',
+            Connection: 'keep-alive',
           },
         });
       }
@@ -232,7 +284,8 @@ CATÁLOGO OFICIAL DE LAS 13 HERRAMIENTAS DE ARK TOOLS:
         model: selectedModel,
         tenant_id: tenantId,
         tools_executed: toolCalls.map((t) => t.name || (t as any).function?.name),
-        result: finalResponse.response || finalResponse.choices?.[0]?.message?.content || finalResponse,
+        result:
+          finalResponse.response || finalResponse.choices?.[0]?.message?.content || finalResponse,
       });
     }
 
@@ -248,7 +301,7 @@ CATÁLOGO OFICIAL DE LAS 13 HERRAMIENTAS DE ARK TOOLS:
         headers: {
           'Content-Type': 'text/event-stream; charset=utf-8',
           'Cache-Control': 'no-cache',
-          'Connection': 'keep-alive',
+          Connection: 'keep-alive',
         },
       });
     }

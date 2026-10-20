@@ -7,6 +7,7 @@
  */
 
 import { CATALOGO_2026 } from '../data/valores-vigentes/catalogo';
+import { CATALOGO_HERRAMIENTAS, TOTAL_HERRAMIENTAS } from '../data/catalogo-herramientas';
 import { CURRENT_CATALOG_VERSION } from './d1Api.expediente';
 
 function obtenerValor(id: string, fallback: number): number {
@@ -23,6 +24,27 @@ const UMA_MENSUAL = obtenerValor('UMA_MENSUAL_2026', 3566.22);
 const SMG = obtenerValor('SALARIO_MINIMO_GENERAL_2026', 315.04);
 const SMZLFN = obtenerValor('SALARIO_MINIMO_FRONTERA_2026', 440.87);
 const TOPE_SBC_25_UMA = obtenerValor('TOPE_SBC_25_UMA_2026', 2932.75);
+
+/**
+ * Renderiza el catálogo agrupado por categoría conservando el orden de aparición.
+ */
+function renderCatalogoHerramientas(): string {
+  const categorias: string[] = [];
+  for (const herramienta of CATALOGO_HERRAMIENTAS) {
+    if (!categorias.includes(herramienta.categoria)) {
+      categorias.push(herramienta.categoria);
+    }
+  }
+
+  return categorias
+    .map((categoria, indice) => {
+      const items = CATALOGO_HERRAMIENTAS.filter((h) => h.categoria === categoria)
+        .map((h) => `- **${h.nombre}:** ${h.descripcion}`)
+        .join('\n');
+      return `### ${indice + 1}. ${categoria}\n${items}`;
+    })
+    .join('\n\n');
+}
 
 /**
  * Genera /llms.txt (Índice conciso, < 2,000 tokens)
@@ -46,28 +68,9 @@ export function generateLlmsTxt(): string {
 - **Tope Salario Base de Cotización (SBC 25 UMAs):** $${fmt(TOPE_SBC_25_UMA)} MXN diarios — Fuente: Art. 28 LSS / IMSS
 - **Tarifa ISR:** Anexo 8 RMF 2026 (Art. 96 LISR) progresiva de 11 rangos + Subsidio para el Empleo vigente
 
-## Catálogo de las 13 Herramientas en Producción
+## Catálogo de las ${TOTAL_HERRAMIENTAS} Herramientas en Producción
 
-### 1. Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)
-- **Cierre de Nómina Masivo (Batch DOF):** Ingesta de plantillas CSV/Excel. Determina simultáneamente por colaborador ISR Art. 96, Subsidio al Empleo, factor de integración y SBC topado a 25 UMAs, cuotas IMSS Obrero e ISN estatal de las 32 entidades. Emite Cédula Concentradora Carta horizontal con Sello SHA-256 + QR descargable en PDF y Layout de Dispersión Bancaria.
-- **Calculadora de Nómina Rápida 2026:** Cálculo de sueldo bruto a neto (periodicidad diaria, semanal, quincenal, mensual) con desglose de retención de ISR y cuotas obreras IMSS.
-- **Calculadora SBC (Salario Base de Cotización IMSS):** Factor de integración exacto conforme a Arts. 27 y 28 LSS considerando prestaciones de ley y la reforma de Vacaciones Dignas (Art. 76 LFT).
-- **Calculadora ISN (Impuesto Sobre Nómina):** Tasas nominales, sobretasas de fomento, deducciones y fundamentos legales para las 32 entidades federativas de México.
-- **Calculadora de Finiquitos y Liquidaciones LFT:** Determinación de partes proporcionales (aguinaldo, vacaciones, prima vacacional), prima de antigüedad topada a 2 veces el SMG ($${(SMG * 2).toFixed(2)} MXN) conforme al Art. 162 LFT, e indemnización constitucional (Arts. 48, 50 y 123 CPEUM).
-
-### 2. SAT y Auditoría CFDI 4.0 (100% Local en Navegador)
-- **Conversor XML a Excel (CFDI 4.0 / 3.3):** Extracción masiva cliente-side de hasta 200 XMLs a CSV con BOM UTF-8 (compatibilidad Excel). No envía archivos a servidores para garantizar confidencialidad bancaria y contable.
-- **Validador y Auditor de XMLs:** Motor de 8 reglas técnicas (Anexo 20 RMF), consistencia de régimen fiscal, cuadratura matemática y detección preventiva contra listas negras del SAT CFF Art. 69-B (EFOS/EDOS).
-
-### 3. Cobros y Facturación Fiscal B2B
-- **Timbrado de Facturas CFDI 4.0 vía Alegra / Quadrum PAC:** Emisión y timbrado legal de CFDI 4.0 ante el SAT sin salir de ARK TOOLS. Encriptación AES-GCM en reposo de API keys por despacho, soporte multi-cuenta y descarga de XML y PDF timbrados.
-- **Generador de Enlaces de Pago Clip / SPEI:** Cálculo automático de comisiones (3.6% + IVA y sobretasas por Meses Sin Intereses) y generación de links de pago con compartición pre-redactada por WhatsApp.
-- **Simulador de Leasing Tecnológico:** Proyección financiera de suscripciones B2B ($500 setup + $2,500/mes) con cálculo de MRR, ARR, LTV, tasa de retención y análisis de cohortes.
-
-### 4. Compliance y Defensa Jurídica
-- **Guía Interactiva SAT / IMSS:** 8 pasos de atención y defensa contra actos de molestia, catálogo de 8 actos de fiscalización, plazos legales y generador de escritos de respuesta.
-- **Auditoría Legal de Cobranza:** Evaluación preventiva de 43 conductas tipificadas conforme a CONDUSEF, Código Penal Federal y Ley Fintech, con 12 comparadores de consistencia Contrato vs CRM.
-- **Mapa de Regulación de Activos Virtuales:** Matriz normativa conforme a LFPIORPI y Ley Fintech para contadores y asesores, con umbrales antilavado en UMAs (210 UMA para reporte, 4 UMA para comisiones).
+${renderCatalogoHerramientas()}
 
 ## Verificación Pública de Autenticidad (API Abierta)
 Cualquier agente de IA, auditor o tercero puede verificar la autenticidad e integridad de un cálculo o Papel de Trabajo emitido por ARK TOOLS sin autenticación:
@@ -150,7 +153,35 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 
 ---
 
-## 4. Estándar de Integridad SHA-256 y Verificación Pública
+## 4. RESICO — Pagos Provisionales Mensuales (Arts. 113-E a 113-J y 206 a 215 LISR)
+
+### Persona Física (Régimen Simplificado de Confianza)
+1. **Base:** Ingresos cobrados del mes (sin deducción de gastos para ISR).
+2. **Tasa progresiva:** 1.00% hasta $25,000; 1.10% hasta $50,000; 1.50% hasta $83,300; 2.00% hasta $208,300; 2.50% hasta $3,500,000 MXN.
+3. **Acreditamiento de retención PM:** ISR retenido por personas morales al 1.25% (Art. 113-J LISR), sin generar saldo negativo a pagar.
+4. **IVA (Art. 5 LIVA):** IVA trasladado cobrado menos IVA acreditable pagado y retenciones de IVA.
+5. **Tope de ingresos:** $3,500,000 MXN anuales, con umbrales preventivos (seguro, preventivo 75%, crítico 90%, excedido).
+
+### Persona Moral (Flujo de Efectivo)
+1. **Base gravable:** Ingresos cobrados − deducciones autorizadas pagadas − PTU amortizable − pérdidas fiscales pendientes.
+2. **Tasa corporativa:** 30.0% (Art. 211 LISR) sobre la base acumulada.
+3. **Acreditamientos:** Pagos provisionales previos y retenciones acumuladas.
+4. **Tope de ingresos:** $35,000,000 MXN anuales.
+
+---
+
+## 5. Balance General Comparativo — Análisis Horizontal y Vertical
+
+### Procedimiento
+1. **Cuadre patrimonial:** \`Total Activo = Total Pasivo + Total Patrimonio\`, validado con tolerancia de $0.02 MXN. Resultado: CUADRADO / NO CUADRADO.
+2. **Análisis Horizontal (AH %):** \`AH% = ((Monto Actual - Monto Anterior) / |Monto Anterior|) * 100\`. Si el monto anterior es 0, la variación se reporta como no definida para evitar división por cero.
+3. **Análisis Vertical (AV %):** \`AV% = (Monto de la Cuenta / Total de su Grupo Patrimonial) * 100\`.
+4. **Variación absoluta:** \`Variación $ = Monto Actual - Monto Anterior\`.
+5. **Naturaleza y jerarquía:** Activo (circulante / no circulante), Pasivo (circulante / no circulante) y Patrimonio, con clasificación por rubro y advertencias explícitas para cuentas no clasificadas.
+
+---
+
+## 6. Estándar de Integridad SHA-256 y Verificación Pública
 
 Cada cálculo procesado en ARK TOOLS genera un hash SHA-256 canónico determinista:
 \`\`\`

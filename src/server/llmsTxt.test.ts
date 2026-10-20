@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './llmsTxt';
+import { CATALOGO_HERRAMIENTAS, TOTAL_HERRAMIENTAS } from '../data/catalogo-herramientas';
 import { CURRENT_CATALOG_VERSION } from './d1Api.expediente';
 
 describe('GEO Engine — llms.txt & llms-full.txt', () => {
-  it('genera /llms.txt con el catálogo completo de 13 herramientas y valores DOF', () => {
+  it('genera /llms.txt con el catálogo completo de herramientas y valores DOF', () => {
     const text = generateLlmsTxt();
 
     expect(text).toContain('# ARK TOOLS — Suite Fiscal, Laboral y de Compliance MX (DOF 2026)');
-    expect(text).toContain('Catálogo de las 13 Herramientas en Producción');
+    expect(text).toContain(`Catálogo de las ${TOTAL_HERRAMIENTAS} Herramientas en Producción`);
     expect(text).toContain(CURRENT_CATALOG_VERSION);
 
     // Parámetros clave
@@ -15,23 +16,29 @@ describe('GEO Engine — llms.txt & llms-full.txt', () => {
     expect(text).toContain('**Salario Mínimo General (SMG) 2026:** $315.04 MXN');
     expect(text).toContain('**Tope Salario Base de Cotización (SBC 25 UMAs):** $2,932.75 MXN');
 
-    // Herramientas clave
-    expect(text).toContain('Cierre de Nómina Masivo (Batch DOF)');
-    expect(text).toContain('Calculadora de Nómina Rápida 2026');
-    expect(text).toContain('Calculadora SBC');
-    expect(text).toContain('Calculadora ISN');
-    expect(text).toContain('Calculadora de Finiquitos y Liquidaciones LFT');
-    expect(text).toContain('Conversor XML a Excel');
-    expect(text).toContain('Validador y Auditor de XMLs');
-    expect(text).toContain('Timbrado de Facturas CFDI 4.0 vía Alegra / Quadrum PAC');
-    expect(text).toContain('Generador de Enlaces de Pago Clip');
-    expect(text).toContain('Simulador de Leasing Tecnológico');
-    expect(text).toContain('Guía Interactiva SAT / IMSS');
-    expect(text).toContain('Auditoría Legal de Cobranza');
-    expect(text).toContain('Mapa de Regulación de Activos Virtuales');
+    // El catálogo publicado debe reflejar la suite completa, sin conteos desactualizados
+    expect(TOTAL_HERRAMIENTAS).toBe(15);
+    expect(text).toContain('Catálogo de las 15 Herramientas en Producción');
+    expect(text).not.toContain('Catálogo de las 13 Herramientas');
+
+    // Toda herramienta del catálogo debe estar efectivamente publicada en el documento
+    for (const herramienta of CATALOGO_HERRAMIENTAS) {
+      expect(text).toContain(`**${herramienta.nombre}:**`);
+    }
 
     // Verificación pública
-    expect(text).toContain('https://tools.arksystems.site/api/expedientes/verify?hash={sha256_hash}');
+    expect(text).toContain(
+      'https://tools.arksystems.site/api/expedientes/verify?hash={sha256_hash}'
+    );
+  });
+
+  it('publica las herramientas insignia de cada vertical (RESICO y Balance General)', () => {
+    const text = generateLlmsTxt();
+
+    expect(text).toContain('Calculadora y Cédula RESICO 2026');
+    expect(text).toContain('Balance General Comparativo');
+    expect(text).toContain('Arts. 113-E a 113-J LISR');
+    expect(text).toContain('A=P+C');
   });
 
   it('genera /llms-full.txt con fundamentos matemáticos y legales exhaustivos', () => {
@@ -40,10 +47,17 @@ describe('GEO Engine — llms.txt & llms-full.txt', () => {
     expect(fullText).toContain('ANEXO TÉCNICO Y FUNDAMENTOS MATEMÁTICOS / LEGALES');
     expect(fullText).toContain('Fórmula del Factor de Integración');
     expect(fullText).toContain('Tabla de Vacaciones Dignas (Art. 76 LFT)');
-    expect(fullText).toContain('Mecánica de Retención de ISR por Sueldos y Salarios (Art. 96 LISR)');
+    expect(fullText).toContain(
+      'Mecánica de Retención de ISR por Sueldos y Salarios (Art. 96 LISR)'
+    );
     expect(fullText).toContain('Finiquitos y Liquidaciones conforme a la LFT');
     expect(fullText).toContain('topado al doble del Salario Mínimo General vigente');
     expect(fullText).toContain('Estándar de Integridad SHA-256');
+
+    // Anexo de las herramientas insignia recientes
+    expect(fullText).toContain('RESICO — Pagos Provisionales Mensuales');
+    expect(fullText).toContain('Balance General Comparativo — Análisis Horizontal y Vertical');
+    expect(fullText).toContain('AH% = ((Monto Actual - Monto Anterior) / |Monto Anterior|) * 100');
   });
 
   it('genera /robots.txt con directivas explícitas para crawlers de IA', () => {

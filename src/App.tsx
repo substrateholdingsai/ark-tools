@@ -81,7 +81,9 @@ export type ToolId =
   | 'leasing'
   | 'guia-sat-imss'
   | 'auditor-cobranza'
-  | 'mapa-activos' | 'balance-general' | 'admin';
+  | 'mapa-activos'
+  | 'balance-general'
+  | 'admin';
 
 export type ToolRoute = ToolId;
 export type NavFilter = 'dashboard' | 'fiscal' | 'sat' | 'cobros' | 'compliance';

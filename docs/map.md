@@ -1,7 +1,7 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 1.9 (Suite de 15 Herramientas + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA)  
-**Fecha:** Octubre 2026  
+**Versión:** 2.0 — Suite de 15 Herramientas + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
+**Fecha:** Octubre 2026 (verificado contra `main` @ `a673bb9`)  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
 **Repositorio:** [https://github.com/substrateholdingsai/ark-tools](https://github.com/substrateholdingsai/ark-tools)
@@ -13,56 +13,80 @@
 | Métrica                                 | Estado                                                                                                                                                                                                                                                                |
 | --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Calculadora y Cédula RESICO 2026**    | 100% Operativo (Doble modalidad Persona Física Art. 113-E 1%-2.5% con tope $3.5M y retención 1.25% PM, Persona Moral Art. 206 30% flujo, Cédula oficial Carta, QR público y Workers AI)                                                                        |
+| **Balance General Comparativo (#15)**    | 100% Implementado e integrado (Análisis Horizontal y Vertical, validación A=P+C con tolerancia $0.02, parser CSV/Excel, export CSV BOM UTF-8, Papel de Trabajo PDF con SHA-256+QR y tool `consultar_balance_general`)                                                  |
 | **Timbrado CFDI 4.0 (Alegra / PAC)**    | 100% Operativo en Producción (Emisión SAT delegada vía PAC Quadrum, multi-cuenta por despacho, encriptación AES-GCM 256-bit, verificación en vivo de CSD, descarga de XML/PDF y Cron de health check cada 6h con alertas Resend)                                 |
 | **Colaboración en Equipo e Invitaciones**| 100% Operativo en Producción (Gestión de miembros, roles owner/admin/member, invitaciones seguras por correo vía Resend, aceptación pública o autenticada y aislamiento multi-tenant)                                                                               |
 | **Cierre de Nómina Masivo (Batch DOF)** | 100% Operativo (Ingesta CSV/Excel, cálculo simultáneo de retenciones SAT, IMSS Obrero, ISN, Cédula Concentradora y Dispersión Bancaria)                                                                                                                               |
 | **Papel de Trabajo Oficial (PDF/QR)**   | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública)                                                                                                                      |
 | **Verificación Pública de Expedientes** | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores)                                                                                                                   |
+| **CRM de Prospectos (Super Admin)**     | 100% Implementado e integrado (Pestaña `leads` en la consola de Super Admin, tabla `leads_ark_tools` en D1, KPIs de embudo, filtros por ciudad/especialidad/estatus, alta y baja de prospectos, envío de propuesta comercial vía Resend y tool de IA `consultar_leads_crm`)                                                         |
 | **Expediente Único & Catálogo**         | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF)                                                                                                                                                        |
 | **Autenticación & AuthGate**            | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant) |
 | **Multi-Tenancy**                       | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                      |
-| **Base de Datos Cloudflare D1**         | 100% Actualizada en Producción (`0001`, `0002`, `0003`, `0004_tenant_invitations.sql`, `0005_alegra_integration.sql` y `0006_ai_usage_paywall.sql` aplicadas con éxito en `ark_tools_db`) |
-| **Cloudflare Workers AI**               | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO y streaming SSE)                                                                                                                                             |
-| **Persistencia & API REST**             | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                                                                                                |
+| **Base de Datos Cloudflare D1**         | 100% Actualizada (`0001`–`0006` verificadas aplicadas en `ark_tools_db`; `0007_leads_crm.sql` incluida en el repo y requerida por el CRM de prospectos) |
+| **Cloudflare Workers AI**               | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM y streaming SSE — 8 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación) |
+| **Persistencia & API REST**             | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, CRM de Leads, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                    |
 | **Copy & Transparencia Legal**          | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0) y cero cajas negras                                                                                                                                                      |
 | **Mesa de Ayuda & Soporte**             | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                 |
-| **GEO & Agentes IA**               | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) |
+| **GEO & Agentes IA**               | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (15 herramientas)** |
 | **Landing Pública**                     | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                      |
 | **Navegación & Usabilidad**             | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                 |
-| **Pruebas unitarias e integración**     | 321 pasadas en 44 suites (estimado) (100% éxito)                                                                                                                                                                                                                                |
+| **Pruebas unitarias e integración**     | **345 pasadas en 47 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                          |
 | **Auditoría DOF Catálogo**              | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                   |
-| **Typecheck (TypeScript)**              | 0 errores en modo estricto (100% limpio)                                                                                                                                                                                                                              |
-| **Build Vite (SPA)**                    | 100% funcional con bundle optimizado (Vite build en 22s)                                                                                                                                                                                                               |
-| **Git & Repositorio**                   | Sincronizado en rama `main` en GitHub                                                                                                                                                                                                                                 |
-| **Herramientas en Producción**          | 15 de 15 operativas integradas con Expediente Único (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza y Mapa de Activos, Balance General Comparativo) + Admin + Team |
+| **Typecheck (TypeScript)**              | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                       |
+| **Linting (ESLint)**                    | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`)                                                                                                                       |
+| **Build Vite (SPA)**                    | 100% funcional con bundle optimizado (Vite build en 29s; chunk inicial 223.56 kB / 61.24 kB gzip)                                                                                             |
+| **Git & Repositorio**                   | Sincronizado en rama `main` en GitHub (`a673bb9` — CRM: alta/baja de prospectos y propuesta comercial)                                                                                          |
+| **Herramientas Integradas**              | 15 de 15 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo) + Admin (con CRM de Prospectos) + Team |
 
 ---
 
 ## 2. Mapa de Arquitectura y Estado de Componentes
 
+> Árbol verificado contra el repositorio en `main` @ `a673bb9` (Octubre 2026). Los módulos marcados ✅ existen físicamente y están integrados en el Worker o en la SPA.
+
 ```
 ark-tools/
 ├── docs/
 │   ├── design-system.md              ✅ Completo (Especificación visual ARK)
+│   ├── calendario-mantenimiento.md  ✅ Cronograma anual de actualización del catálogo de valores fiscales
 │   └── map.md                        ✅ Este documento
 ├── scripts/
-│   └── verificar-catalogo.ts         ✅ CLI auditoría DOF de vigencias fiscales (pnpm verify:catalogo)
+│   ├── verificar-catalogo.ts         ✅ CLI auditoría DOF de vigencias fiscales (pnpm verify:catalogo)
+│   ├── dof_sat_watcher.py            ✅ Vigilancia desatendida del feed DOF y diffs TypeScript (pnpm watch:dof)
+│   ├── cfdi_stress_generator.py      ✅ Generador de lotes CFDI 4.0 sintéticos con RSA SHA-256 (pnpm generate:stress-cfdi)
+│   ├── d1_audit_verifier.py          ✅ Auditor forense y reconciliador de Cloudflare D1 (pnpm audit:d1)
+│   ├── requirements.txt              ✅ Dependencias Python de la tríada pericial
+│   ├── python/
+│   │   └── import_leads_sheet.py     ✅ ETL de ingesta y normalización E.164 de prospectos
+│   └── sql/
+│       ├── schema_leads.sql          ✅ Definición SQL de `leads_ark_tools`
+│       └── seed_leads.sql            ✅ Carga inicial de prospectos
 ├── migrations/
 │   ├── 0001_initial_schema.sql       ✅ Esquema D1 inicial (aplicado en producción)
 │   ├── 0002_expediente_unico.sql     ✅ D1 Expediente Único (aplicado en producción)
 │   ├── 0003_native_auth.sql          ✅ Auth nativo, sesiones y rate limits (aplicado en producción)
 │   ├── 0004_tenant_invitations.sql   ✅ Invitaciones y membresías de despacho (aplicado en producción)
-│   └── 0005_alegra_integration.sql   ✅ Cuentas Alegra multi-empresa y facturas timbradas (aplicado en producción)
-├── public/ & index.html              ✅ Montaje de React y fuentes Google
+│   ├── 0005_alegra_integration.sql   ✅ Cuentas Alegra multi-empresa y facturas timbradas (aplicado en producción)
+│   ├── 0006_ai_usage_paywall.sql     ✅ Cuota y paywall de consultas de Workers AI (aplicado en producción)
+│   └── 0007_leads_crm.sql            ✅ Tabla `leads_ark_tools` del CRM de prospectos (aplicado en producción)
+├── instagram-creatives/              ✅ Generador de creativos Instagram 1080×1080 (Playwright + Jinja2)
+│   ├── generate.py                   ✅ Renderizador headless de carruseles (problem/solution_glass/cta)
+│   ├── posts.json                    ✅ Definición declarativa de campañas y slides
+│   ├── template.html                 ✅ Plantilla Jinja2 con tokens ARK (Navy/Gold)
+│   └── requirements.txt              ✅ Dependencias Python (playwright, jinja2)
+├── public/ & index.html              ✅ Montaje de React, favicon vectorial y fuentes Google
 ├── wrangler.toml                     ✅ SPA assets, observabilidad, D1 binding, Workers AI binding [ai], cron triggers y vars
-├── package.json                      ✅ pnpm@9.7.0, scripts de build, deploy, test (sin dependencias externas de auth)
+├── package.json                      ✅ pnpm@9.7.0, scripts de build, deploy, test, lint, typecheck y tríada Python
 ├── tailwind.config.js                ✅ Tokens ARK (Navy, Gold, LCD, Sombras, Radios)
 ├── tsconfig.json & vite.config.ts    ✅ Configuración estricta y aliases de ruta
 ├── vitest.config.ts                  ✅ Cobertura V8 y configuración de testing
+├── .eslintrc.cjs                     ✅ ESLint + TypeScript + React Hooks + Prettier (0 advertencias)
 ├── src/
-│   ├── index.ts                      ✅ Worker Entry Point (/health, auth, admin, invitaciones, D1, AI, Alegra, cron y SPA fallback)
+│   ├── index.ts                      ✅ Worker Entry Point (/health, auth, admin, invitaciones, D1, CRM leads, AI, Alegra, cron y SPA fallback)
 │   ├── index.tsx                     ✅ React DOM Root con AuthProvider y ExpedienteProvider
-│   ├── App.tsx                       ✅ Router principal con Gating (Landing pública / Dashboard autenticado)
+│   ├── App.tsx                       ✅ Router principal con Gating (Landing pública / Dashboard autenticado) y 15 herramientas lazy
+│   ├── test-setup.ts                 ✅ Setup global de Vitest (jest-dom)
 │   ├── context/
 │   │   ├── AuthContext.tsx           ✅ Sesión verificada en Worker y selección de tenant
 │   │   └── ExpedienteContext.tsx     ✅ Clientes/expedientes con caché aislada por tenant
@@ -76,6 +100,8 @@ ark-tools/
 │   │   ├── adminApi.test.ts          ✅ Pruebas de seguridad y endpoints de administración
 │   │   ├── invitationsApi.ts         ✅ Gestión de miembros de despacho, invitaciones por correo y roles
 │   │   ├── invitationsApi.test.ts    ✅ 16 pruebas de colaboración en equipo e invitaciones
+│   │   ├── leadsApi.ts               ✅ CRM de prospectos: listado/filtros, KPIs, alta/edición/baja y envío de propuesta vía Resend
+│   │   ├── leadsApi.test.ts          ✅ 11 pruebas de autenticación, validación D1, filtros y propuesta
 │   │   ├── d1Api.ts                  ✅ Handlers D1 con autorización de membresía
 │   │   ├── d1Api.expediente.ts       ✅ Endpoints REST para clients y expedientes con SHA-256 determinista
 │   │   ├── d1Api.expediente.test.ts  ✅ 15 pruebas de hashing, autorización tenant y privacidad
@@ -87,20 +113,21 @@ ark-tools/
 │   │   │   └── alegraApi.test.ts     ✅ 11 pruebas de integración y seguridad
 │   │   └── ai/                       ✅ Cloudflare Workers AI & Agentic Tool-Calling
 │   │       ├── types.ts              ✅ Tipos para mensajes, tool definitions y requests
-│   │       ├── tools.ts              ✅ Catálogo de 4 herramientas y ejecutor con aislamiento D1 por tenant
-│   │       ├── tools.test.ts         ✅ 6 tests unitarios de ejecución y seguridad multi-tenant
-│   │       ├── agent.ts              ✅ Orquestador Llama 3.3 70B con loop de tool-calling y streaming SSE
-│   │       ├── aiApi.ts              ✅ Endpoints REST (/api/ai/status, /api/ai/models, /api/ai/tools, /api/ai/chat)
+│   │       ├── tools.ts              ✅ Catálogo de 8 herramientas (LFT, RESICO, D1, Balance, CRM) con aislamiento por tenant
+│   │       ├── tools.test.ts         ✅ 8 tests unitarios de ejecución y seguridad multi-tenant
+│   │       ├── agent.ts              ✅ Orquestador Llama 3.3 70B con loop de tool-calling, streaming SSE y `buildSystemPrompt()` exportable
+│   │       ├── agent.test.ts         ✅ 7 tests de consistencia del system prompt (conteo, catálogo y directivas de las 8 tools)
+│   │       ├── aiApi.ts              ✅ Endpoints REST (/api/ai/status, /api/ai/models, /api/ai/tools, /api/ai/chat, /api/ai/quota)
 │   │       └── aiApi.test.ts         ✅ 6 tests de integración de API
-│   │   ├── llmsTxt.ts               ✅ Generador dinámico /llms.txt, /llms-full.txt y /robots.txt (GEO Engine, vinculado al catálogo DOF 2026)
-│   │   └── llmsTxt.test.ts          ✅ 3 tests unitarios de generación GEO
+│   │   ├── llmsTxt.ts               ✅ Generador dinámico /llms.txt, /llms-full.txt y /robots.txt (GEO Engine, derivado del catálogo canónico)
+│   │   └── llmsTxt.test.ts          ✅ 4 tests unitarios de generación GEO y sync del catálogo
 │   ├── lib/
 │   │   ├── cn.ts                     ✅ Utilidad twMerge + clsx
 │   │   ├── useTenant.ts              ✅ Contexto del tenant activo
 │   │   ├── numeroALetras.ts          ✅ Conversor de importes a moneda nacional en texto (Art. 28 CFF)
 │   │   ├── numeroALetras.test.ts     ✅ 3 tests unitarios pasados
-│   │   └── apiClient.ts              ✅ Cliente tipado con cookies de sesión, D1, Auth, Teams y Alegra
-│   ├── styles/
+│   │   ├── apiClient.ts              ✅ Cliente tipado con cookies de sesión, D1, Auth, Teams y Alegra
+│   │   └── apiClient.test.ts         ✅ 2 tests del cliente HTTP (errores y payloads)│   ├── styles/
 │   │   └── ark-system.css            ✅ Estilos base, fuentes, variables y componentes físicos (@media print)
 │   ├── components/
 │   │   ├── ui/                       ✅ Componentes Atómicos (100%)
@@ -117,14 +144,18 @@ ark-tools/
 │   │   ├── AuthGate.tsx              ✅ Acceso por email y contraseña
 │   │   ├── LandingPage.tsx           ✅ Registro, login, verificación y recuperación de contraseña
 │   │   ├── AiAssistantWidget.tsx     ✅ Widget flotante de chat con Workers AI (Llama 3.3 70B + D1 Tools)
-│   │   ├── AiAssistantWidget.test.tsx ✅ 4 tests de integración y UI del widget
+│   │   ├── AiAssistantWidget.test.tsx ✅ 5 tests de integración y UI del widget
+│   │   ├── ErrorBoundary.tsx         ✅ Frontera de errores institucional (Reintentar / Volver al Catálogo)
+│   │   ├── ErrorBoundary.test.tsx    ✅ 3 tests de captura y recuperación de errores
 │   │   ├── admin/
-│   │   │   └── AdminPanel.tsx        ✅ Consola de Super Admin (métricas de plataforma, usuarios, despachos)
+│   │   │   ├── AdminPanel.tsx        ✅ Consola de Super Admin (métricas de plataforma, usuarios, despachos, pestañas)
+│   │   │   └── LeadsApp.tsx          ✅ CRM de prospectos: KPIs de embudo, filtros, alta/baja, envío de propuesta y export CSV
 │   │   ├── team/
 │   │   │   ├── TeamModal.tsx         ✅ Modal de gestión de equipo, invitaciones por correo y cambio de roles
 │   │   │   ├── TeamModal.test.tsx    ✅ 3 tests de interfaz de gestión de equipo
 │   │   │   ├── InviteAcceptModal.tsx ✅ Modal de aceptación de invitación a despacho
-│   │   │   └── InviteAcceptModal.test.tsx ✅ 2 tests de aceptación de invitación
+│   │   │   ├── InviteAcceptModal.test.tsx ✅ 2 tests de aceptación de invitación
+│   │   │   └── index.ts              ✅ Barrel export
 │   │   └── index.ts                  ✅ Barrel export
 
 │   │
@@ -137,6 +168,8 @@ ark-tools/
 │   │   │   ├── tipos.ts              ✅ Tipos ValorFiscal (fuente DOF, urlDOF, criticidad), ConfigVigencia
 │   │   │   └── index.ts              ✅ Barrel export completo
 │   │   ├── estados.ts                ✅ Re-export desde ISN (fuente única de verdad)
+│   │   ├── catalogo-herramientas.ts   ✅ Catálogo canónico de las 15 herramientas (fuente única del conteo publicado)
+│   │   ├── catalogo-herramientas.test.ts ✅ 4 tests de sincronía con el router `ToolId` de App.tsx
 │   │   ├── conductas.ts              ✅ Catálogo de Activos Virtuales (12 conductas, autoridades, hitos, umbrales)
 │   │   ├── conductas.test.ts         ✅ 15 tests unitarios pasados
 │   │   ├── actos.ts                  ✅ Completado (Guía SAT/IMSS: 8 pasos, 8 actos, 3 plazos)
@@ -281,6 +314,15 @@ ark-tools/
 │           ├── components/
 │           │   └── AlegraConnectModal.tsx ✅ Modal de vinculación de credenciales con cifrado seguro
 │           └── TimbradoFacturas.test.tsx ✅ 3 tests de UI e integración pasados (100% éxito)
+│       │
+│       └── balance-general/           ✅ 100% COMPLETADA Y DESPLEGADA (Herramienta #15)
+│           ├── types.ts              ✅ Tipos CuentaBalance, JerarquiaBalance, ResultadoAnalisis, TotalesBalance
+│           ├── lib/calcularBalance.ts ✅ Motor de AH/AV, totales y cuadre A=P+C (tolerancia $0.02)
+│           ├── lib/parserBalanza.ts  ✅ Parser CSV/Excel con normalización de rubros y advertencias
+│           ├── lib/calcularBalance.test.ts ✅ 3 tests unitarios (cuadre, AH/AV, división por cero)
+│           ├── components/           ✅ ParametrosBalanceCard, TablaBalanceAnalitico, GraficosClasificacion, ResultadoBalanceCard
+│           ├── CalculadoraBalance.tsx ✅ Pantalla principal con Expediente Único y export CSV BOM UTF-8
+│           └── index.ts              ✅ Barrel export
 ```
 
 ---
@@ -393,6 +435,58 @@ ark-tools/
   - [x] Integrado en `App.tsx` (Dashboard 4 columnas, router y banner oficial).
   - [x] Integrado en `LandingPage.tsx` (`TOOLS_PREVIEW`).
   - [x] Integrado en `Footer.tsx` (columna Fiscal & Nómina).
+
+---
+
+### Fase F: Patrimonial & Comercial (Completada ✅)
+
+- [x] **Balance General Comparativo — Herramienta #15 (`src/tools/balance-general/`):**
+  - [x] `types.ts` con `CuentaBalance`, `JerarquiaBalance`, `ResultadoAnalisis`, `TotalesBalance`, `Naturaleza` y `TipoBalance`.
+  - [x] `lib/calcularBalance.ts` con totales, cuadre A=P+C (tolerancia $0.02) y AH/AV redondeados a 2 decimales sin división por cero.
+  - [x] `lib/parserBalanza.ts` con ingesta CSV/Excel, normalización de rubros y advertencias por cuentas sin clasificar.
+  - [x] Componentes `ParametrosBalanceCard`, `TablaBalanceAnalitico`, `GraficosClasificacion` y `ResultadoBalanceCard` (LiquidGlassDome con estado CUADRADO / NO CUADRADO).
+  - [x] Exportación CSV con BOM UTF-8, `ExpedienteToolBanner` y Papel de Trabajo Oficial (`tool_id='balance-general'`) con SHA-256 y QR verificable.
+  - [x] Integración en `App.tsx` (`ToolId 'balance-general'`, lazy loading, badge NUEVO en categoría Fiscal).
+  - [x] Tool de IA `consultar_balance_general` en `src/server/ai/tools.ts` con aislamiento multi-tenant.
+  - [x] 3 tests unitarios en `lib/calcularBalance.test.ts` (100% éxito).
+- [x] **CRM de Prospectos Comerciales (`src/server/leadsApi.ts` + `src/components/admin/LeadsApp.tsx`):**
+  - [x] Migración `migrations/0007_leads_crm.sql` con tabla `leads_ark_tools` e índices por tenant, ciudad, estatus y especialidad.
+  - [x] Endpoints `/api/admin/leads` (GET con filtros, POST), `/api/admin/leads/stats` (KPIs), `/api/admin/leads/:id` (GET/PUT/PATCH/DELETE) y `/api/admin/leads/:id/send-email`.
+  - [x] Autenticación por sesión, aislamiento por `tenant_id` y soporte de `super_admin`.
+  - [x] Pestaña `leads` en la consola de Super Admin con 5 KPIs (Total, Nuevos, Contactados, Respondieron, Bajas/Spam).
+  - [x] Filtros reactivos por texto, ciudad, especialidad y estatus; enlace directo a WhatsApp (`wa.me`), `mailto:` y selector inline de estatus con actualización optimista.
+  - [x] Exportación CSV con BOM UTF-8 y botones de alta/baja de prospectos.
+  - [x] Envío de propuesta comercial vía Resend con modal interactivo y previsualización previa (sin alterar el estatus en base de datos).
+  - [x] ETL `scripts/python/import_leads_sheet.py` con normalización de números WhatsApp a E.164.
+  - [x] Tool de IA `consultar_leads_crm` registrada en `AI_TOOLS_CATALOG` y documentada en el system prompt de ARK Contable AI.
+  - [x] 11 tests unitarios en `src/server/leadsApi.test.ts` (100% éxito).
+
+---
+
+### Pendientes y Deuda Técnica Detectada (Octubre 2026) ⚠️
+
+#### P0 — Sincronización del Catálogo de Herramientas (RESUELTO ✅ en Sprint 22)
+
+- [x] **Catálogo canónico único** (`src/data/catalogo-herramientas.ts`): nueva fuente de verdad con los 15 identificadores, nombres, categorías y descripciones públicas de la suite. `TOTAL_HERRAMIENTAS` se **deriva** del arreglo (`CATALOGO_HERRAMIENTAS.length`), ya no se escribe a mano.
+- [x] **GEO Engine** (`src/server/llmsTxt.ts`): el encabezado pasó de *"Catálogo de las 13 Herramientas en Producción"* a derivarse de `TOTAL_HERRAMIENTAS` (15). Se incorporaron **RESICO 2026** y **Balance General Comparativo** (antes ausentes) y una nueva sección **"Patrimonial y Análisis Financiero"**.
+- [x] **Anexo técnico** (`llms-full.txt`): nuevas secciones **§4 RESICO** (Arts. 113-E a 113-J y 206 a 215 LISR) y **§5 Balance General** (fórmulas de AH%, AV%, cuadre A=P+C y tolerancia $0.02); el estándar SHA-256 pasó a §6.
+- [x] **System prompt de ARK Contable AI** (`src/server/ai/agent.ts`): "13 herramientas" → `${TOTAL_HERRAMIENTAS}` (15); se agregó la **herramienta #15 Balance General** al catálogo del prompt y se exportó `buildSystemPrompt(tenantId)` para poder validarlo en tests.
+- [x] **Directivas de invocación de las 8 tools de IA**: el bloque 4 de las directrices ahora se genera desde `DIRECTIVAS_HERRAMIENTAS` + `buildToolDirectives()`, con instrucción explícita para cada tool (incluidas `consultar_balance_general` y `consultar_leads_crm`, que antes estaban registradas pero nunca invocadas) y la prohibición de inventar datos del cliente.
+- [x] **Meta Open Graph** (`index.html`): *"Suite de 14 herramientas"* → *"Suite de 15 herramientas"*.
+- [x] **Guardas de regresión** (`src/data/catalogo-herramientas.test.ts` y `src/server/ai/agent.test.ts`): el catálogo canónico se contrasta contra el union type `ToolId` de `src/App.tsx`; el prompt se valida contra el catálogo y contra `AI_TOOLS_CATALOG`; y `llmsTxt.test.ts` verifica que toda herramienta del catálogo esté publicada y que no reaparezcan conteos desactualizados.
+
+#### P1 / P2 — Pendientes
+
+- [ ] **Pruebas de UI del CRM**: `LeadsApp.tsx` (1,152 líneas con alta/baja de prospectos y envío de propuesta vía Resend) no cuenta con suite `.test.tsx` propia (cubierto solo por `leadsApi.test.ts` a nivel backend).
+- [ ] **Tests de UI del Balance General**: `CalculadoraBalance.tsx` no cuenta con suite `.test.tsx` (solo 3 tests del motor de cálculo).
+- [ ] **`docs/calendario-mantenimiento.md`**: el checklist aún referencia *"suite completa: 111 tests"*; debe actualizarse al total vigente.
+
+#### Estado verificado en Producción (Octubre 2026) — sin pendientes
+
+- **Deploy:** el bundle servido en `tools.arksystems.site` (`/assets/index-FBFAvHrj.js`, `/assets/index-Ct3hPF5d.css`) coincide hash a hash con el build local de `main` @ `a673bb9`. **El código de Sprints 19–21 está en producción.**
+- **`GET /api/ai/tools`** responde `tools_count: 8` incluyendo `consultar_balance_general` y `consultar_leads_crm`.
+- **Cloudflare D1 remoto (`ark_tools_db`):** las 7 migraciones están aplicadas y registradas en `d1_migrations` (`0007_leads_crm.sql` aplicada el 2026-10-19 07:47:01). `wrangler d1 migrations list --remote` responde *"No migrations to apply!"*.
+- **Tablas remotas presentes:** `clients`, `expedientes`, `auth_sessions`, `auth_tokens`, `auth_rate_limits`, `tenant_memberships`, `tenant_invitations`, `tenant_alegra_accounts`, `alegra_invoices`, `ai_usage`, `leads_ark_tools`.
 
 ---
 
@@ -877,7 +971,7 @@ ark-tools/
 
 ---
 
-### 4.3 Sprint 10 — Papel de Trabajo Oficial en PDF con Sello QR y Verificación Pública
+### Sprint 10 — Papel de Trabajo Oficial en PDF con Sello QR y Verificación Pública
 
 **Objetivo:** Transformar los expedientes digitales en cédulas contables y papeles de trabajo impresos con validez fiscal y laboral formal (Art. 28 CFF, LISR, LFT, LSS), incorporando sello digital criptográfico SHA-256 inmutable, código QR y verificación pública sin login para terceros y auditores.
 
@@ -918,7 +1012,7 @@ ark-tools/
 
 ---
 
-### 4.4 Sprint 11 — Cierre de Nómina Masivo, Motor Batch y Cédula Concentradora (SUA/SIPARE & Dispersión Ready)
+### Sprint 11 — Cierre de Nómina Masivo, Motor Batch y Cédula Concentradora (SUA/SIPARE & Dispersión Ready)
 
 **Objetivo:** Permitir el procesamiento masivo de plantillas completas de trabajadores (CSV/Excel) por período (quincenal, semanal o mensual), determinando simultáneamente retenciones de ISR (Art. 96 LISR), subsidio al empleo 2026, cuotas IMSS obrero (LSS Art. 27/28 tope 25 UMAs), ISN estatal y emitiendo la Cédula Concentradora Oficial con Sello QR y archivo de dispersión bancaria.
 
@@ -1239,87 +1333,172 @@ ark-tools/
 
 ---
 
-## 5. Resumen General del Proyecto (Suite de 15 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial + GEO Engine)
+## 5. Resumen General del Proyecto (Suite de 15 Herramientas + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial + CRM de Prospectos + GEO Engine)
 
 | Categoría                     | Herramientas / Módulos                                                                                                          | Estado                                                            |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | **Fiscal / Laboral**          | Calculadora ISN 2026, Calculadora SBC 2026, Nómina Rápida 2026, Calculadora de Finiquitos LFT, **Calculadora RESICO 2026**      | ✅ 100% Conectadas a Expediente Único (5/5)                       |
+| **Patrimonial**               | **Balance General Comparativo #15** (AH/AV, cuadre A=P+C, parser CSV/Excel, export CSV, Papel de Trabajo PDF/QR)                 | ✅ 100% Implementado e integrado (3 tests del motor)              |
 | **Cierre de Nómina Masivo**   | Motor Batch DOF 2026, Ingesta CSV/Excel, Cédula Concentradora Carta, Layout Dispersión, Sello QR                                | ✅ 100% Operativo en Producción (Herramienta #12)                 |
 | **Papel de Trabajo (PDF/QR)** | Cédula institucional Carta, `@media print`, Sello SHA-256, Importe en Letras, QR y Verificación Pública                         | ✅ 100% Operativo en Producción                                   |
 | **SAT**                       | Conversor XML → Excel, Validador y Auditor de XMLs (CFDI 4.0)                                                                   | ✅ 100% Operativas (2/2)                                          |
 | **Cobros**                    | Links de Pago Clip, Timbrado CFDI 4.0 vía Alegra/Quadrum, Calculadora de Leasing Tecnológico                                      | ✅ 100% Operativas (3/3)                                          |
 | **Compliance**                | Guía SAT/IMSS, Auditoría Legal de Cobranza, Mapa de Activos Virtuales                                                           | ✅ 100% Operativas + Persistencia D1 (3/3)                        |
 | **Multi-Tenancy & Equipos**   | Invitaciones a despachos vía Resend, control de roles (`admin`/`member`/`viewer`), aislamiento estricto en D1                    | ✅ 100% Operativo en Producción                                   |
-| **Super Admin Console**       | Métricas globales, auditoría de infraestructura, directorio de despachos y gestión de roles                                      | ✅ 100% Operativo en Producción                                   |
+| **Super Admin Console**       | Métricas globales, auditoría de infraestructura, directorio de despachos, gestión de roles y **CRM de prospectos (`LeadsApp`)** | ✅ 100% Operativo en Producción                                   |
+| **CRM de Prospectos**         | Tabla `leads_ark_tools` en D1, KPIs de embudo, filtros por ciudad/especialidad/estatus, alta/baja, **propuesta comercial vía Resend** | ✅ 100% Implementado e integrado (11 tests de API)                 |
 | **Expediente Único**          | Catálogo Clientes/Trabajadores, Auto-Prefill, Sello SHA-256 + Versión DOF                                                       | ✅ 100% Operativo en Producción                                   |
-| **Workers AI & Chatbot**      | Binding `[ai]`, Llama 3.3 70B, Agentic Tool-Calling con D1/LFT/RESICO, Paywall D1 + Clip, Typewriter, Dataset 14 Tools         | ✅ 100% Integrado y Desplegado en Producción                       |
-| **Navegación & Usabilidad**   | Filtros de categorías en dashboard y landing, navegación móvil y retorno contextual al catálogo                                 | ✅ Implementada y validada con typecheck, build y suite existente |
+| **Workers AI & Chatbot**      | Binding `[ai]`, Llama 3.3 70B, Agentic Tool-Calling con D1/LFT/RESICO/Balance/CRM, Paywall D1 + Clip, Typewriter, 8 tools      | ✅ 100% Integrado y Desplegado en Producción                       |
+| **Navegación & Usabilidad**   | Filtros de categorías en dashboard y landing, navegación móvil, retorno contextual, `ErrorBoundary` institucional                  | ✅ Implementada y validada con typecheck, lint, build y suite       |
 | **Copy & Confianza**          | Header fiscal, Footer institucional, Privacidad XMLs, Sección Transparencia Jurídica, Landing Freemium                           | ✅ 100% En Producción                                             |
 | **Core Global**               | Catálogo de Valores Fiscales 2026, AlertasVigencia, Design System ARK, ToolSkeleton, LandingPage Renovada                       | ✅ 100% Operativo                                                 |
 | **Tríada Scripts Python**     | `dof_sat_watcher.py` (Vigilancia DOF), `cfdi_stress_generator.py` (Estrés CFDI 4.0), `d1_audit_verifier.py` (Forense D1)          | ✅ 100% Operativos e Integrados                                   |
+| **Creative Studio**           | Generador de creativos Instagram 1080×1080 con Playwright + Jinja2 (`instagram-creatives/`)                                      | ✅ Operativo (asset de marketing, fuera de la SPA)                |
 | **GEO Engine (Agentes IA)**   | Generador dinámico `/llms.txt`, `/llms-full.txt` y `/robots.txt` (Worker, vinculado al catálogo DOF 2026, cache 24h)              | ✅ 100% Operativo en Producción                                   |
 
-- **Total de herramientas en plataforma:** **14 de 14 (100% Operativas)** + Super Admin Console + ARK Contable AI
-- **Total de pruebas unitarias y de integración:** **321 pasadas en 44 suites (estimado) (100% éxito)**
-- **Typecheck:** 0 errores en modo estricto de TypeScript (`tsc --noEmit`)
+- **Total de herramientas en plataforma:** **15 de 15 (100% Operativas)** + Super Admin Console (con CRM de Prospectos) + ARK Contable AI
+- **Total de pruebas unitarias y de integración:** **345 pasadas en 47 suites (100% éxito)** — verificado con `pnpm test`
+- **Migraciones D1 aplicadas:** 7 (`0001` → `0007_leads_crm.sql`) en `ark_tools_db`
+- **Herramientas de IA registradas en `AI_TOOLS_CATALOG`:** 8 (`calcular_finiquito_lft`, `calcular_resico`, `consultar_progreso_guia`, `consultar_auditoria_ledger`, `consultar_watchlist_activos`, `obtener_info_despacho`, `consultar_balance_general`, `consultar_leads_crm`), todas con directiva de invocación en el system prompt
+- **Catálogo público de herramientas:** fuente única en `src/data/catalogo-herramientas.ts`; el conteo publicado en `/llms.txt`, el system prompt de IA y las guardas de tests se derivan de él (nunca se escribe a mano)
+- **Typecheck:** 0 errores en modo estricto de TypeScript (`pnpm typecheck` → `tsc --noEmit`)
 - **Linting:** 0 errores, 0 advertencias (`eslint . --ext .ts,.tsx --max-warnings 0`)
 - **Auditoría de Vigencias Fiscales:** 6/6 valores oficiales 2026 validados (`pnpm verify:catalogo`)
-- **Build Vite (SPA):** 100% funcional con bundle optimizado (chunk inicial reducido a 222 kB)
-- **Estado general:** Suite de 15 Herramientas, Landing Page pericial con modelo Freemium transparente, Expediente Único multi-tenant, emisión y timbrado CFDI 4.0 con PAC, motor batch de nómina, Calculadora RESICO 2026, Papel de Trabajo Oficial con QR público, ErrorBoundary y carga perezosa en todas las herramientas, cabeceras de seguridad perimetral, GEO Engine (/llms.txt, /llms-full.txt, /robots.txt) para descubrimiento por agentes IA, y tríada de scripts Python para vigilancia, estrés y auditoría forense 100% operativas.
+- **Build Vite (SPA):** 100% funcional con bundle optimizado (chunk inicial 223.56 kB / 61.24 kB gzip; build en 29s)
+- **Estado general:** Suite de 15 Herramientas (ISN, SBC, Nómina, Finiquitos, RESICO, Balance General, Cierre de Nómina Masivo, Conversor XML, Validador XML, Clip, Timbrado CFDI 4.0, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos), Landing Page pericial con modelo Freemium transparente, Expediente Único multi-tenant, CRM de Prospectos en la consola de Super Admin con envío de propuesta comercial vía Resend, emisión y timbrado CFDI 4.0 con PAC, motor batch de nómina, Papel de Trabajo Oficial con QR público, ErrorBoundary y carga perezosa en todas las herramientas, cabeceras de seguridad perimetral, GEO Engine (/llms.txt, /llms-full.txt, /robots.txt) para descubrimiento por agentes IA, generador de creativos Instagram, y tríada de scripts Python para vigilancia, estrés y auditoría forense 100% operativas.
 
-### Sprint 19 (Octubre 2026) � Balance General Comparativo, An�lisis Horizontal/Vertical y Blindaje Patrimonial (Herramienta #15) � Completado
+---
 
-**Objetivo:** Desarrollar e integrar la Herramienta #15: m�dulo para Balance General Comparativo (A�o Actual vs A�o Anterior), con An�lisis Horizontal (AH) y Vertical (AV), validaci�n A=P+C, ingesta CSV/Excel, exportaci�n CSV con BOM UTF-8, integraci�n con Expediente �nico, Papel de Trabajo Oficial PDF con SHA-256+QR e inyecci�n a Workers AI.
+## 6. Bitácora de los Últimos Sprints (Sprint 19 → Sprint 21)
 
-#### 1. Core y Tipado (src/tools/balance-general/)
+### Sprint 19 (Octubre 2026) — Balance General Comparativo, Análisis Horizontal/Vertical y Blindaje Patrimonial (Herramienta #15) — Completado ✅
 
-- **	ypes.ts**: Tipos estrictos CuentaBalance, JerarquiaBalance, ResultadoAnalisis, TotalesBalance, Naturaleza, TipoBalance.
-- **lib/calcularBalance.ts**: Orquestador con calcularTotales (tolerancia �0.02) y nalizarBalance (AH/AV con redondeo a 2 decimales; evita divisi�n por cero cuando anterior es 0).
-- **lib/parserBalanza.ts**: Parser CSV/Excel con normalizaci�n, mapeo de rubros y advertencias para cuentas sin clasificar.
-- **lib/calcularBalance.test.ts**: 3 pruebas unitarias (cuadre A=P+C, AV/AH 2 decimales, divisi�n por cero).
+**Objetivo:** Desarrollar e integrar la Herramienta #15: Balance General Comparativo (Año Actual vs Año Anterior) con Análisis Horizontal (AH) y Vertical (AV), validación del cuadre A=P+C, ingesta CSV/Excel, exportación CSV con BOM UTF-8, integración con Expediente Único, Papel de Trabajo Oficial PDF con SHA-256 + QR e inyección a Workers AI.
+
+#### 1. Core y Tipado (`src/tools/balance-general/`)
+
+- **`types.ts`**: Tipos estrictos `CuentaBalance`, `JerarquiaBalance`, `ResultadoAnalisis`, `TotalesBalance`, `Naturaleza` y `TipoBalance`.
+- **`lib/calcularBalance.ts`**: Orquestador con `calcularTotales` (tolerancia $0.02) y `finalizarBalance` (AH/AV redondeados a 2 decimales, sin división por cero cuando el año anterior es 0).
+- **`lib/parserBalanza.ts`**: Parser CSV/Excel con normalización, mapeo de rubros y advertencias por cuentas sin clasificar.
+- **`lib/calcularBalance.test.ts`**: 3 pruebas unitarias (cuadre A=P+C, AH/AV a 2 decimales, división por cero).
 
 #### 2. Componentes Visuales
 
-- **components/ParametrosBalanceCard.tsx**: Configuraci�n de ejercicios, drag & drop CSV/XLSX/XLS.
-- **components/TablaBalanceAnalitico.tsx**: Tabla matricial con Monto BG/LY, Variaci�n $, AH%, AV% (Actual/Anterior).
-- **components/GraficosClasificacion.tsx**: Barras de composici�n patrimonial.
-- **components/ResultadoBalanceCard.tsx**: LiquidGlassDome con totales y estado CUADRADO/NO CUADRADO.
+- **`components/ParametrosBalanceCard.tsx`**: Configuración de ejercicios con drag & drop de CSV/XLSX/XLS.
+- **`components/TablaBalanceAnalitico.tsx`**: Tabla matricial con Monto BG/LY, Variación $, AH% y AV% (Actual/Anterior).
+- **`components/GraficosClasificacion.tsx`**: Barras de composición patrimonial.
+- **`components/ResultadoBalanceCard.tsx`**: `LiquidGlassDome` con totales y estado CUADRADO / NO CUADRADO.
 
-#### 3. Pantalla Principal e Integraci�n
+#### 3. Pantalla Principal e Integración
 
-- **CalculadoraBalance.tsx**: Pantalla con lazy-friendly, ExpedienteToolBanner, export CSV BOM UTF-8 y acciones.
-- **index.ts**: Barrel export.
-- **src/App.tsx**: Lazy import, ToolId alance-general, render case, badge NUEVO en categor�a Fiscal, etiqueta en toolLabels.
-- **src/components/Footer.tsx**/navegaci�n: accesible v�a dashboard.
+- **`CalculadoraBalance.tsx`**: Pantalla con carga diferida, `ExpedienteToolBanner`, export CSV BOM UTF-8 y acciones.
+- **`index.ts`**: Barrel export.
+- **`src/App.tsx`**: Lazy import, `ToolId 'balance-general'`, render case, badge NUEVO en categoría Fiscal y etiqueta en `toolLabels`.
+- **`src/components/Footer.tsx`** y navegación: acceso desde el dashboard.
 
 #### 4. Blindaje, Papel de Trabajo y AI
 
-- **src/components/PapelDeTrabajoModal.tsx**: Soporte 	ool_id='balance-general' con desglose Activo/Pasivo/Patrimonio/P+P, SHA-256, QR verificable.
-- **src/server/ai/tools.ts**: A�adida herramienta consultar_balance_general con ejecuci�n segura multi-tenant.
-- **src/server/ai/agent.ts**: Actualizado cat�logo y directrices para an�lisis de salud financiera.
+- **`src/components/PapelDeTrabajoModal.tsx`**: Soporte `tool_id='balance-general'` con desglose Activo/Pasivo/Patrimonio/P+P, SHA-256 y QR verificable.
+- **`src/server/ai/tools.ts`**: Añadida la herramienta `consultar_balance_general` con ejecución segura multi-tenant.
+- **`src/server/ai/agent.ts`**: Actualizado el catálogo y las directrices para análisis de salud financiera.
 
-**M�tricas:** +3 pruebas unitarias. Chunk lazy esperado < 30 kB. Integraci�n completa con Expediente �nico y verificaci�n p�blica.
-### Sprint 20 (Octubre 2026) - Consolidación CRM de Prospectos (Super Admin) e Integración con Workers AI - Completado
+**Métricas:** +3 pruebas unitarias. Chunk lazy < 30 kB. Integración completa con Expediente Único y verificación pública.
 
-**Objetivo:** Consolidar, estabilizar y homologar el módulo CRM de prospectos comerciales (leads_ark_tools) en la consola Super Admin, blindar la API con pruebas unitarias, homologar visualmente LeadsApp.tsx al ARK Design System institucional y exponer la herramienta de IA consultar_leads_crm en Workers AI / Llama 3.3 70B.
+---
 
-#### 1. Backend y Persistencia D1 (src/server/leadsApi.ts & migrations/0007_leads_crm.sql)
-- **migrations/0007_leads_crm.sql**: Creación de tabla leads_ark_tools con índices por 	enant_id, ciudad, status y especialidad.
-- **src/server/leadsApi.ts**: Endpoints /api/admin/leads (listado y filtros), /api/admin/leads/stats (KPIs agregados), /api/admin/leads/:id (GET, PUT, PATCH, DELETE) con aislamiento multi-tenant y soporte para super_admin.
-- **src/server/leadsApi.test.ts**: 9 pruebas unitarias cubriendo autenticación, validación D1, filtros, detalle, creación, actualización y eliminación.
-- **scripts/python/import_leads_sheet.py**: Script ETL para ingesta y normalización de números WhatsApp a estándar E.164.
+### Sprint 20 (Octubre 2026) — Consolidación del CRM de Prospectos (Super Admin) e Integración con Workers AI — Completado ✅
 
-#### 2. Frontend Institucional (src/components/admin/LeadsApp.tsx)
-- **Homologación al ARK Design System**: Reemplazo de tema oscuro por blanco institucional, Navy Trust (#002B7F), Gold Value (#D4AF37) y tipografía Orbitron.
+**Objetivo:** Consolidar, estabilizar y homologar el módulo CRM de prospectos comerciales (`leads_ark_tools`) en la consola Super Admin, blindar la API con pruebas unitarias, homologar visualmente `LeadsApp.tsx` al ARK Design System institucional y exponer la herramienta de IA `consultar_leads_crm` en Workers AI / Llama 3.3 70B.
+
+#### 1. Backend y Persistencia D1 (`src/server/leadsApi.ts` & `migrations/0007_leads_crm.sql`)
+
+- **`migrations/0007_leads_crm.sql`**: Creación de la tabla `leads_ark_tools` (`id`, `web`, `whatsapp`, `email`, `ciudad`, `especialidad`, `status`, `last_contact`, `contacto_nombre`, `notas`, `tenant_id`, `created_at`, `updated_at`) con índices por `tenant_id`, `ciudad`, `status` y `especialidad`.
+- **`src/server/leadsApi.ts`**: Endpoints `GET/POST /api/admin/leads`, `GET /api/admin/leads/stats` (KPIs agregados), `GET/PUT/PATCH/DELETE /api/admin/leads/:id`, con aislamiento multi-tenant y soporte para `super_admin`.
+- **`src/server/leadsApi.test.ts`**: 11 pruebas unitarias cubriendo autenticación, validación D1, filtros, detalle, creación, actualización y eliminación.
+- **`scripts/python/import_leads_sheet.py`**: Script ETL para ingesta y normalización de números WhatsApp a estándar E.164.
+
+#### 2. Frontend Institucional (`src/components/admin/LeadsApp.tsx`)
+
+- **Homologación al ARK Design System**: Reemplazo del tema oscuro por blanco institucional, Navy Trust (`#002B7F`), Gold Value (`#D4AF37`) y tipografía Orbitron.
 - **5 KPI Cards**: Total Leads, Nuevos, Contactados, Respondieron (dorado) y Bajas/Spam.
-- **Filtros Reactivos**: Búsqueda por texto (web, contacto, correo), filtro por Ciudad, Especialidad y Estatus con botón de limpieza.
-- **Tabla Operativa**: Enlace directo a WhatsApp Web (wa.me), mailto, y selector inline de estatus con actualización optimista vía PATCH /api/admin/leads/:id.
-- **Exportación CSV**: Soporte de BOM UTF-8 (\uFEFF) para visualización nativa de acentos en Microsoft Excel.
+- **Filtros Reactivos**: Búsqueda por texto (web, contacto, correo) y filtros por Ciudad, Especialidad y Estatus con botón de limpieza.
+- **Tabla Operativa**: Enlace directo a WhatsApp Web (`wa.me`), `mailto:` y selector inline de estatus con actualización optimista vía `PATCH /api/admin/leads/:id`.
+- **Exportación CSV**: Soporte de BOM UTF-8 (`\uFEFF`) para visualización nativa de acentos en Microsoft Excel.
+- **Integración en `src/components/admin/AdminPanel.tsx`**: Nueva pestaña `leads` (`'overview' | 'tenants' | 'users' | 'leads'`).
 
-#### 3. Workers AI & Agentic Tool Calling (src/server/ai/tools.ts & agent.ts)
-- **AI_TOOLS_CATALOG**: Registro de consultar_leads_crm con parámetros opcionales (ciudad, status, especialidad, limit).
-- **executeAiTool**: Orquestador seguro que consulta métricas agrupadas y lista de prospectos sobre D1.
-- **agent.ts**: Actualización del system prompt de ARK Contable AI para responder consultas de prospección y embudo de ventas.
-- **tools.test.ts**: Prueba unitaria específica verificando la respuesta estructurada de la herramienta de IA.
+#### 3. Workers AI & Agentic Tool Calling (`src/server/ai/tools.ts` & `agent.ts`)
 
-**Métricas del Sprint:** +10 pruebas unitarias nuevas (330 pruebas totales pasando). 0 errores de TypeScript (	sc --noEmit). 0 errores de linting (eslint). Compilación Vite SPA limpia (chunk de AdminPanel: 33.47 kB).
+- **`AI_TOOLS_CATALOG`**: Registro de `consultar_leads_crm` con parámetros opcionales (`ciudad`, `status`, `especialidad`, `limit`).
+- **`executeAiTool`**: Orquestador seguro que consulta métricas agrupadas y lista de prospectos sobre D1.
+- **`agent.ts`**: Actualización del system prompt de ARK Contable AI para responder consultas de prospección y embudo de ventas.
+- **`tools.test.ts`**: Prueba unitaria específica verificando la respuesta estructurada de la herramienta de IA.
+
+**Métricas del Sprint:** +10 pruebas unitarias nuevas. 0 errores de TypeScript (`tsc --noEmit`). 0 errores de linting. Chunk de AdminPanel en 51.07 kB (10.15 kB gzip).
+
+---
+
+### Sprint 21 (Octubre 2026) — Propuesta Comercial vía Resend y Ciclo Completo de Gestión de Prospectos — Completado ✅
+
+**Objetivo:** Cerrar el flujo comercial del CRM: permitir enviar una propuesta comercial personalizada a un prospecto por correo (Resend) con previsualización previa, y completar el ciclo de alta y baja de prospectos desde la interfaz de Super Admin.
+
+#### 1. Envío de Propuesta Comercial vía Resend
+
+- **`src/server/leadsApi.ts`**: Endpoint `POST /api/admin/leads/:id/send-email` que valida la sesión, arma el correo (texto + HTML) y lo entrega vía API de Resend. En envíos reales actualiza `status` a `Mail_enviado_DDMMYY` y `last_contact` en D1; en envíos de prueba no toca la base de datos. Errores de Resend se traducen a HTTP `502`.
+- **`src/components/admin/LeadsApp.tsx`**: Modal interactivo con previsualización del mensaje, opción de envío de prueba, aviso explícito de que el envío a un destinatario de prueba **no** modifica el estatus del prospecto en la base de datos, estado de carga y feedback de entrega.
+- **`src/server/leadsApi.test.ts`**: Pruebas del endpoint de envío (entrega correcta y manejo de error de Resend).
+
+#### 2. Alta y Baja de Prospectos
+
+- **`src/components/admin/LeadsApp.tsx`**: Botón *Añadir Nuevo Prospecto* con formulario de alta (web, WhatsApp, correo, ciudad, especialidad, contacto, notas) y modal de confirmación de eliminación con acción explícita y estado de carga.
+- **`src/server/leadsApi.ts`**: `POST /api/admin/leads` (alta con estatus inicial `Nuevo`) y `DELETE /api/admin/leads/:id` (baja) con aislamiento por `tenant_id`.
+
+#### 3. Estado de Calidad del Sprint
+
+- **Suite completa:** 333 pruebas en 45 suites — 100% éxito (`pnpm test`).
+- **Typecheck:** 0 errores (`pnpm typecheck`).
+- **Linting:** 0 errores, 0 advertencias (`pnpm lint`).
+- **Auditoría fiscal:** 6/6 valores oficiales vigentes, 0 proyecciones (`pnpm verify:catalogo`).
+- **Build:** exitoso en 29.02s; chunk principal 223.56 kB (61.24 kB gzip).
+- **Commits:** `e98d048` (CRM de Leads + homologación ARK), `beeed57` (propuesta comercial vía Resend), `a673bb9` (botones y modales de alta/baja de prospectos).
+
+---
+
+### Sprint 22 (Octubre 2026) — Sincronización del Catálogo de Herramientas y Guardas de Regresión — Completado ✅
+
+**Objetivo:** Eliminar la deriva entre el catálogo real de la suite y los tres puntos donde se publica (GEO `/llms.txt`, system prompt de ARK Contable AI y meta Open Graph), queannounced **13, 14 y 15 herramientas** respectivamente. La corrección no se limitó a corregir los números: se eliminó la causa raíz sustituyendo los conteos escritos a mano por una **fuente canónica única**, protegida con pruebas que fallan ante cualquier desincronización futura.
+
+#### 1. Catálogo Canónico de Herramientas (`src/data/catalogo-herramientas.ts`)
+
+- Arreglo `CATALOGO_HERRAMIENTAS` con los **15** identificadores, nombres públicos, categorías y descripciones de la suite.
+- `TOTAL_HERRAMIENTAS` se **deriva** de `CATALOGO_HERRAMIENTAS.length`: es imposible que el encabezado y el contenido discrepen.
+- Cada entrada incluye el `id` que debe coincidir con el `ToolId` del router de `src/App.tsx`.
+
+#### 2. GEO Engine (`src/server/llmsTxt.ts`)
+
+- El encabezado pasó de *"Catálogo de las 13 Herramientas en Producción"* a **"Catálogo de las 15 Herramientas en Producción"**, derivado por interpolación.
+- Se renderiza el catálogo agrupado por categoría desde el arreglo canónico; se incorporan **RESICO 2026** y **Balance General Comparativo** (antes ausentes del documento) y la nueva sección **"Patrimonial y Análisis Financiero"**.
+- Se eliminó la copia local del catálogo que existía dentro del módulo.
+- Anexo técnico de `llms-full.txt`: nuevas secciones **§4 RESICO** (Arts. 113-E a 113-J y 206 a 215 LISR) y **§5 Balance General** (fórmulas de AH%, AV% y cuadre A=P+C con tolerancia $0.02); el estándar SHA-256 pasa a §6.
+- Tamaño del índice: ~1,434 tokens (por debajo del presupuesto de 2,000).
+
+#### 3. ARK Contable AI (`src/server/ai/agent.ts`)
+
+- El system prompt se extrajo a una función exportable **`buildSystemPrompt(tenantId)`**, habilitando su verificación en tests.
+- Conteos corregidos a `${TOTAL_HERRAMIENTAS}` (15) en las dos menciones del prompt; se agregó la **herramienta #15 Balance General** al catálogo embebido.
+- Las **directivas de invocación** de la directive 4 ahora se generan desde `DIRECTIVAS_HERRAMIENTAS` + `buildToolDirectives()`: las 8 tools de `AI_TOOLS_CATALOG` tienen instrucción explícita, incluidas `consultar_balance_general` y `consultar_leads_crm`, que antes estaban registradas pero nunca invocadas por el modelo.
+- Se añadió la instrucción *"Nunca inventes datos del cliente: si la información vive en ARK TOOLS, invoca la herramienta correspondiente"*.
+
+#### 4. Meta Open Graph (`index.html`)
+
+- `og:description` corregida de *"Suite de 14 herramientas"* a *"Suite de 15 herramientas"*.
+
+#### 5. Guardas de Regresión (12 pruebas nuevas)
+
+| Archivo                                  | Tests | Qué valida                                                                                     |
+| ---------------------------------------- | ----- | --------------------------------------------------------------------------------------------- |
+| `src/data/catalogo-herramientas.test.ts` | 4     | 15 herramientas, ids únicos, metadata completa y **sincronía con el union type `ToolId` de `src/App.tsx`** |
+| `src/server/ai/agent.test.ts`            | 7     | Conteo declarado en el prompt, cobertura de las 15 herramientas, **directiva para cada tool de IA**, orden de las directivas e interpolación del tenant |
+| `src/server/llmsTxt.test.ts`             | +1    | Toda herramienta del catálogo está publicada y **no reaparecen conteos desactualizados** ("13 Herramientas") |
+
+**Métricas del Sprint:** 345/345 pruebas en 47 suites (100% éxito). 0 errores de TypeScript. 0 errores de linting (`--max-warnings 0`). Build SPA exitoso. Catálogo GEO: 15 herramientas / 5 categorías / ~1,434 tokens.
+
