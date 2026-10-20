@@ -1,0 +1,22 @@
+# Normalizar finales de línea a LF en el repositorio y en el checkout.
+#
+# Sin esto, `core.autocrlf=true` (por defecto en Windows) reescribe los archivos
+# con CRLF al hacer checkout, y como Prettier exige `endOfLine: "lf"`, el comando
+# `pnpm format:check` falla en cuanto se hace un pull, rebase o checkout.
+* text=auto eol=lf
+
+# Binarios que no deben ser normalizados
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.webp binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.xlsx binary
+*.xls binary
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
