@@ -1,0 +1,34 @@
+# Dependencias y artefactos de build
+node_modules/
+dist/
+coverage/
+.vitest/
+
+# Estado local de Cloudflare (base de datos SQLite de desarrollo)
+.wrangler/
+.wrangler.tmp/
+
+# Internals de husky (generados por `husky`)
+.husky/_/
+
+# Lockfiles y estado de paquetes
+pnpm-lock.yaml
+.pnpm-store/
+
+# Artefactos de la tríada de scripts Python
+__pycache__/
+*.py[cod]
+stress_test_xmls/
+d1_forensic_backups/
+d1_audit_reports/
+
+# Locales y secretos
+.env
+.env.local
+.env.*.local
+.dev.vars
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+*.log
