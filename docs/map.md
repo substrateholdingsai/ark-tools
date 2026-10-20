@@ -1567,9 +1567,13 @@ ark-tools/
 
 **Métricas del Sprint:** +22 pruebas (367 en 49 suites, 100% éxito). 0 errores de TypeScript. 0 errores de linting. Build SPA sin cambios en el bundle (los tests no afectan los assets de producción).
 
----
+#### 6. Normalización de finales de línea (`.gitattributes`)
 
-### Sprint 24 (Octubre 2026) — Cierre de la Deuda Técnica de Formato, Hooks y CI — Completado ✅
+Al rebasing `docs/map.md` tras el commit anterior, `pnpm format:check` volvió a fallar. La causa no era el contenido sino los finales de línea: `core.autocrlf=true` (por defecto en Windows) reescribe el working tree con CRLF en cada checkout, y como Prettier exige `endOfLine: "lf"`, el comando falla en cuanto se hace un pull, rebase o checkout.
+
+- **`.gitattributes`** con `* text=auto eol=lf` y los formatos binarios marcados como `binary`.
+- Verificado que el **índice ya almacena LF en todos los archivos**, por lo que el contenido versionado no cambia: la normalización solo afecta al working tree.
+- Antes de esto, cualquier contribuidor en Windows habría tenido `format:check` en rojo de forma permanente, lo que además habría hecho fallar el pipeline de CI desde su primer día.
 
 **Objetivo:** Cerrar la última deuda técnica: `pnpm format:check` estaba en rojo desde hacía semanas, el hook de pre-commit nunca se había creado (aun cuando `package.json` ya declaraba `lint-staged`), y la colisión entre el script `deploy` y el comando nativo de pnpm hacía fallar el despliegue con un error confuso.
 
@@ -1599,10 +1603,11 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 #### 5. Continuous Integration y documentación
 
 - **`.github/workflows/ci.yml`**: pipeline en `push` a `main` y pull requests, con `typecheck`, `lint`, `format:check`, `verify:catalogo`, `test` y `build`. Es la diferencia entre un script declarado y un script realmente aplicado.
+- **`.gitattributes`**: normaliza los finales de línea a LF (`* text=auto eol=lf`). Sin él, `core.autocrlf=true` (por defecto en Windows) reescribe el working tree con CRLF en cada checkout y `format:check` falla de inmediato.
 - **`AGENTS.md`**: guía de trabajo para agentes y mantenedores con los comandos, las 5 reglas de la casa (fuente única del catálogo, prohibición de hardcodear valores fiscales, no saltar el hook, puerta completa antes de commitear y documentación del estado real) y el mapa rápido del repo.
 
 **Métricas del Sprint:** 367/367 pruebas en 49 suites (100% éxito) tras el reformateo de 175 archivos. 0 errores de TypeScript. 0 errores y 0 advertencias de linting. `format:check` verde en todo el repo. Bundle de producción sin cambios materiales (223.59 kB / 60.74 kB gzip). Catálogo fiscal 6/6 vigente.
 
 **Despliegue:** commits `3b881a0` (hook + colisión de deploy) y `78180b9` (formato + CI) → `main` → `origin/main`. Worker `ark-tools-production`, Version ID `69540930-4d34-447b-8301-f07776c6c07e`.
 
-> **Pendiente de push:** el commit `25ad7ee` con `.github/workflows/ci.yml` requiere un token de GitHub con scope `workflow` para poder subirse (el token OAuth del entorno solo tiene `gist`, `read:org` y `repo`, y GitHub rechaza crear workflows sin ese scope). Hasta que se suba, el pipeline existe en el repositorio local pero no se ejecuta en GitHub. Para publicarlo: `gh auth refresh --hostname github.com -s workflow` y después `git push`.
+> **Pendiente de push:** el commit `25ad7ee` con `.github/workflows/ci.yml` (rama local `feature/ci-workflow`) requiere un token de GitHub con scope `workflow` para poder subirse: el token OAuth del entorno solo tiene `gist`, `read:org` y `repo`, y GitHub rechaza crear o actualizar workflows sin ese scope. Para publicarlo: `gh auth refresh --hostname github.com -s workflow` y después `git push origin feature/ci-workflow`.
