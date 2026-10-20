@@ -492,7 +492,7 @@ ark-tools/
 
 #### Estado verificado en Producción (Octubre 2026) — sin pendientes
 
-- **Deploy vigente:** Version ID `60d3529a-e31e-4181-9e89-02b3fc978bf2` (worker `ark-tools-production`, route `tools.arksystems.site` custom domain, cron `0 */6 * * *`). Construido desde el commit `cc9fd6f`.
+- **Deploy vigente:** Version ID `69540930-4d34-447b-8301-f07776c6c07e` (worker `ark-tools-production`, route `tools.arksystems.site` custom domain, cron `0 */6 * * *`). Construido desde el commit `78180b9`.
 - **`GET /llms.txt`:** responde _"Catálogo de las 15 Herramientas en Producción"_ con 5 categorías; incluye **RESICO 2026** y **Balance General Comparativo**; ya no aparece el conteo de 13.
 - **`GET /llms-full.txt`:** anexo con §4 RESICO, §5 Balance General y §6 Estándar SHA-256.
 - **`GET /`:** meta `og:description` con _"Suite de 15 herramientas"_.
@@ -1602,3 +1602,7 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **`AGENTS.md`**: guía de trabajo para agentes y mantenedores con los comandos, las 5 reglas de la casa (fuente única del catálogo, prohibición de hardcodear valores fiscales, no saltar el hook, puerta completa antes de commitear y documentación del estado real) y el mapa rápido del repo.
 
 **Métricas del Sprint:** 367/367 pruebas en 49 suites (100% éxito) tras el reformateo de 175 archivos. 0 errores de TypeScript. 0 errores y 0 advertencias de linting. `format:check` verde en todo el repo. Bundle de producción sin cambios materiales (223.59 kB / 60.74 kB gzip). Catálogo fiscal 6/6 vigente.
+
+**Despliegue:** commits `3b881a0` (hook + colisión de deploy) y `78180b9` (formato + CI) → `main` → `origin/main`. Worker `ark-tools-production`, Version ID `69540930-4d34-447b-8301-f07776c6c07e`.
+
+> **Pendiente de push:** el commit `25ad7ee` con `.github/workflows/ci.yml` requiere un token de GitHub con scope `workflow` para poder subirse (el token OAuth del entorno solo tiene `gist`, `read:org` y `repo`, y GitHub rechaza crear workflows sin ese scope). Hasta que se suba, el pipeline existe en el repositorio local pero no se ejecuta en GitHub. Para publicarlo: `gh auth refresh --hostname github.com -s workflow` y después `git push`.
