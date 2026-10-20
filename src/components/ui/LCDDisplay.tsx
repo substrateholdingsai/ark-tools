@@ -41,23 +41,14 @@ export function LCDDisplay({
   className,
 }: LCDDisplayProps) {
   return (
-    <div
-      className={cn(
-        'lcd-display rounded-[12px]',
-        paddingClasses[padding],
-        className
-      )}
-    >
+    <div className={cn('lcd-display rounded-[12px]', paddingClasses[padding], className)}>
       {label && (
-        <div className="text-[9px] tracking-[0.2em] opacity-70 mb-1 font-orbitron uppercase">
+        <div className="mb-1 font-orbitron text-[9px] uppercase tracking-[0.2em] opacity-70">
           {label}
         </div>
       )}
       <div
-        className={cn(
-          'font-orbitron font-bold tabular-nums tracking-tight',
-          alignClasses[align]
-        )}
+        className={cn('font-orbitron font-bold tabular-nums tracking-tight', alignClasses[align])}
       >
         {children}
       </div>

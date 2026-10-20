@@ -59,21 +59,21 @@ export function ToolCard({
       onClick={handleClick}
       disabled={disabled}
       className={cn(
-        'group text-left rounded-[20px] border border-line bg-surface p-6',
+        'group rounded-[20px] border border-line bg-surface p-6 text-left',
         'transition-all duration-200',
         'hover:border-gold hover:shadow-[0_20px_40px_rgba(0,43,127,0.08)]',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2',
-        disabled && 'opacity-50 cursor-not-allowed hover:border-line hover:shadow-none',
+        disabled && 'cursor-not-allowed opacity-50 hover:border-line hover:shadow-none',
         className
       )}
     >
       {/* Header de la card: icono + badge */}
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="mb-4 flex items-start justify-between gap-3">
         {Icon ? (
           <div
             className={cn(
-              'w-11 h-11 rounded-[12px] grid place-items-center',
-              'bg-surface-2 border border-line text-navy',
+              'grid h-11 w-11 place-items-center rounded-[12px]',
+              'border border-line bg-surface-2 text-navy',
               'transition-colors',
               !disabled && 'group-hover:bg-navy group-hover:text-white'
             )}
@@ -81,7 +81,7 @@ export function ToolCard({
             <Icon size={20} strokeWidth={1.75} />
           </div>
         ) : category ? (
-          <span className="text-[10px] font-bold uppercase tracking-wider text-muted font-orbitron">
+          <span className="font-orbitron text-[10px] font-bold uppercase tracking-wider text-muted">
             {category}
           </span>
         ) : (
@@ -90,7 +90,7 @@ export function ToolCard({
         {badge && (
           <span
             className={cn(
-              'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-[0.12em] uppercase',
+              'inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]',
               badgeVariantClasses[badgeVariant]
             )}
           >
@@ -101,17 +101,13 @@ export function ToolCard({
       </div>
 
       {/* Título y descripción */}
-      <h3 className="font-playfair font-black text-[20px] leading-[1.15] text-ink">
-        {title}
-      </h3>
-      <p className="mt-2 text-[13px] leading-[1.5] text-muted inter font-inter">
-        {description}
-      </p>
+      <h3 className="font-playfair text-[20px] font-black leading-[1.15] text-ink">{title}</h3>
+      <p className="inter mt-2 font-inter text-[13px] leading-[1.5] text-muted">{description}</p>
 
       {/* Footer: CTA + Reconocimiento Pro */}
-      <div className="mt-5 flex items-center justify-between border-t border-line/40 pt-4 text-[11px] font-bold tracking-[0.14em] orbitron font-orbitron">
+      <div className="orbitron mt-5 flex items-center justify-between border-t border-line/40 pt-4 font-orbitron text-[11px] font-bold tracking-[0.14em]">
         {isPro ? (
-          <div className="flex items-center gap-1.5 text-gold-dark font-semibold text-[10px]">
+          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-gold-dark">
             <Fingerprint size={13} className="text-gold-dark" />
             <span>CRÉDITO PRO</span>
           </div>
@@ -122,10 +118,7 @@ export function ToolCard({
         )}
         <div className="flex items-center gap-1.5 text-navy group-hover:text-navy-dark">
           <span>ABRIR</span>
-          <ArrowRight
-            size={14}
-            className="transition-transform group-hover:translate-x-1"
-          />
+          <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
         </div>
       </div>
     </button>

@@ -4,7 +4,7 @@ import { evaluarVigencia } from './vigencia';
 
 describe('catálogo de valores vigentes', () => {
   it('no tiene IDs duplicados', () => {
-    const ids = CATALOGO_2026.map(v => v.id);
+    const ids = CATALOGO_2026.map((v) => v.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
@@ -31,10 +31,9 @@ describe('catálogo de valores vigentes', () => {
   it('vigencia.fin nunca es anterior a vigencia.inicio', () => {
     for (const v of CATALOGO_2026) {
       if (v.vigencia.fin) {
-        expect(
-          v.vigencia.fin >= v.vigencia.inicio,
-          `${v.id}: vigencia.fin < vigencia.inicio`
-        ).toBe(true);
+        expect(v.vigencia.fin >= v.vigencia.inicio, `${v.id}: vigencia.fin < vigencia.inicio`).toBe(
+          true
+        );
       }
     }
   });
@@ -42,10 +41,9 @@ describe('catálogo de valores vigentes', () => {
   it('valores proyectados tienen criticidad ALTA', () => {
     for (const v of CATALOGO_2026) {
       if (v.esProyeccion) {
-        expect(
-          v.criticidad === 'ALTA',
-          `${v.id}: proyección con criticidad distinta de ALTA`
-        ).toBe(true);
+        expect(v.criticidad === 'ALTA', `${v.id}: proyección con criticidad distinta de ALTA`).toBe(
+          true
+        );
       }
     }
   });
@@ -57,12 +55,12 @@ describe('catálogo de valores vigentes', () => {
   });
 
   it('ningún valor crítico está vencido hoy', () => {
-    const criticosVencidos = CATALOGO_2026
-      .filter(v => v.criticidad === 'ALTA')
-      .filter(v => evaluarVigencia(v).estado === 'vencido');
+    const criticosVencidos = CATALOGO_2026.filter((v) => v.criticidad === 'ALTA').filter(
+      (v) => evaluarVigencia(v).estado === 'vencido'
+    );
 
     expect(
-      criticosVencidos.map(v => v.id),
+      criticosVencidos.map((v) => v.id),
       'CRÍTICO: valores fiscales vencidos sin reemplazo'
     ).toEqual([]);
   });

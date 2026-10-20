@@ -16,8 +16,4 @@ export type {
   DictamenCobranza,
 } from './lib/calcularDictamen';
 
-export {
-  ESTADOS_DICTAMEN,
-  PESO_RIESGO,
-  FACTOR_ESTADO,
-} from './lib/calcularDictamen';
+export { ESTADOS_DICTAMEN, PESO_RIESGO, FACTOR_ESTADO } from './lib/calcularDictamen';

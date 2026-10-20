@@ -21,7 +21,9 @@ describe('generarBorrador — Motor de Redacción Legal SAT / IMSS', () => {
     expect(resultado).toContain(`Fundamento de referencia: ${paso.fundamento}`);
     expect(resultado).toContain(`SAT — ${acto.titulo}`);
     expect(resultado).toContain(`Código interno: ${acto.codigo}`);
-    expect(resultado).toContain(`Acción sugerida:\n${acto.accion}`.replace('Acción sugerida:\n', '4. ACCIÓN SUGERIDA\n'));
+    expect(resultado).toContain(
+      `Acción sugerida:\n${acto.accion}`.replace('Acción sugerida:\n', '4. ACCIÓN SUGERIDA\n')
+    );
     expect(resultado).toContain('   - Captura fecha y hora de notificación');
     expect(resultado).toContain('   - Verifica destinatario');
     expect(resultado).toContain('Fecha de preparación: 14 de octubre de 2026');

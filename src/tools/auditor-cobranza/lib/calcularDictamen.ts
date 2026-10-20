@@ -15,30 +15,16 @@ export const ESTADOS_DICTAMEN = [
   'SIN_DATO',
 ] as const;
 
-export type EstadoDictamen =
-  (typeof ESTADOS_DICTAMEN)[number];
+export type EstadoDictamen = (typeof ESTADOS_DICTAMEN)[number];
 
-export type RiesgoCobranza =
-  | 'BAJO'
-  | 'MEDIO'
-  | 'ALTO'
-  | 'CRITICO';
+export type RiesgoCobranza = 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO';
 
 export type NivelRiesgoDictamen =
-  | 'SIN_EVALUAR'
-  | 'SIN_HALLAZGOS'
-  | 'BAJO'
-  | 'MEDIO'
-  | 'ALTO'
-  | 'CRITICO';
+  'SIN_EVALUAR' | 'SIN_HALLAZGOS' | 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO';
 
-export type CategoriaDetalle =
-  | 'hallazgo'
-  | 'observacion';
+export type CategoriaDetalle = 'hallazgo' | 'observacion';
 
-export type TipoDetalle =
-  | 'comparador'
-  | 'conducta';
+export type TipoDetalle = 'comparador' | 'conducta';
 
 export interface RespuestaComparador {
   id: string;
@@ -52,8 +38,7 @@ export interface RespuestaComparadorObjeto {
 }
 
 export type RespuestasComparadores =
-  | RespuestaComparador[]
-  | Record<string, EstadoDictamen | RespuestaComparadorObjeto>;
+  RespuestaComparador[] | Record<string, EstadoDictamen | RespuestaComparadorObjeto>;
 
 export interface EntradaDictamen {
   cliente?: string;
@@ -136,11 +121,9 @@ interface ConductaFuente {
   recomendacion?: string;
 }
 
-const comparadores =
-  COMPARADORES_CONTRATO_CRM as readonly ComparadorFuente[];
+const comparadores = COMPARADORES_CONTRATO_CRM as readonly ComparadorFuente[];
 
-const conductas =
-  CONDUCTAS_COBRANZA as readonly ConductaFuente[];
+const conductas = CONDUCTAS_COBRANZA as readonly ConductaFuente[];
 
 // =====================================================
 // Pesos y factores
@@ -169,20 +152,14 @@ function redondear2(valor: number): number {
   return Math.round((valor + Number.EPSILON) * 100) / 100;
 }
 
-export function esEstadoDictamen(
-  valor: unknown,
-): valor is EstadoDictamen {
+export function esEstadoDictamen(valor: unknown): valor is EstadoDictamen {
   return (
     typeof valor === 'string' &&
-    (ESTADOS_DICTAMEN as readonly string[]).includes(
-      valor.toUpperCase() as EstadoDictamen,
-    )
+    (ESTADOS_DICTAMEN as readonly string[]).includes(valor.toUpperCase() as EstadoDictamen)
   );
 }
 
-function normalizarEstado(
-  valor: unknown,
-): EstadoDictamen | null {
+function normalizarEstado(valor: unknown): EstadoDictamen | null {
   if (typeof valor !== 'string') return null;
 
   const upper = valor.toUpperCase();
@@ -190,18 +167,11 @@ function normalizarEstado(
   return esEstadoDictamen(upper) ? upper : null;
 }
 
-export function normalizarRiesgo(
-  valor: unknown,
-): RiesgoCobranza {
+export function normalizarRiesgo(valor: unknown): RiesgoCobranza {
   if (typeof valor === 'string') {
     const upper = valor.toUpperCase();
 
-    if (
-      upper === 'BAJO' ||
-      upper === 'MEDIO' ||
-      upper === 'ALTO' ||
-      upper === 'CRITICO'
-    ) {
+    if (upper === 'BAJO' || upper === 'MEDIO' || upper === 'ALTO' || upper === 'CRITICO') {
       return upper;
     }
   }
@@ -218,9 +188,7 @@ interface RespuestaNormalizada {
   nota?: string;
 }
 
-function normalizarRespuestas(
-  respuestas: RespuestasComparadores | undefined,
-): {
+function normalizarRespuestas(respuestas: RespuestasComparadores | undefined): {
   mapa: Map<string, RespuestaNormalizada>;
   advertencias: string[];
 } {
@@ -231,9 +199,7 @@ function normalizarRespuestas(
     return { mapa, advertencias };
   }
 
-  const idsValidos = new Set(
-    comparadores.map(comparador => comparador.id),
-  );
+  const idsValidos = new Set(comparadores.map((comparador) => comparador.id));
 
   const registrar = (id: string, valor: unknown) => {
     if (!idsValidos.has(id)) {
@@ -254,17 +220,14 @@ function normalizarRespuestas(
 
       estado = normalizarEstado(objeto.estado);
 
-      if (
-        typeof objeto.nota === 'string' &&
-        objeto.nota.trim().length > 0
-      ) {
+      if (typeof objeto.nota === 'string' && objeto.nota.trim().length > 0) {
         nota = objeto.nota;
       }
     }
 
     if (!estado) {
       advertencias.push(
-        `Estado inválido en comparador ${id}. Se esperaba uno de: ${ESTADOS_DICTAMEN.join(', ')}.`,
+        `Estado inválido en comparador ${id}. Se esperaba uno de: ${ESTADOS_DICTAMEN.join(', ')}.`
       );
       return;
     }
@@ -274,25 +237,15 @@ function normalizarRespuestas(
 
   if (Array.isArray(respuestas)) {
     respuestas.forEach((respuesta, index) => {
-      if (
-        typeof respuesta !== 'object' ||
-        respuesta === null
-      ) {
-        advertencias.push(
-          `Respuesta de comparador en posición ${index} inválida.`,
-        );
+      if (typeof respuesta !== 'object' || respuesta === null) {
+        advertencias.push(`Respuesta de comparador en posición ${index} inválida.`);
         return;
       }
 
       const item = respuesta as Partial<RespuestaComparador>;
 
-      if (
-        typeof item.id !== 'string' ||
-        item.id.trim().length === 0
-      ) {
-        advertencias.push(
-          `Respuesta de comparador en posición ${index} sin id.`,
-        );
+      if (typeof item.id !== 'string' || item.id.trim().length === 0) {
+        advertencias.push(`Respuesta de comparador en posición ${index} sin id.`);
         return;
       }
 
@@ -322,14 +275,7 @@ function determinarNivel(params: {
   medios: number;
   bajos: number;
 }): NivelRiesgoDictamen {
-  const {
-    puntosMaximos,
-    score,
-    criticos,
-    altos,
-    medios,
-    bajos,
-  } = params;
+  const { puntosMaximos, score, criticos, altos, medios, bajos } = params;
 
   if (puntosMaximos === 0) {
     return 'SIN_EVALUAR';
@@ -361,39 +307,22 @@ function determinarNivel(params: {
 function construirResumen(
   detalles: DetalleDictamen[],
   puntosRiesgo: number,
-  puntosMaximos: number,
+  puntosMaximos: number
 ): ResumenDictamen {
-  const hallazgos = detalles.filter(
-    detalle => detalle.categoria === 'hallazgo',
-  ).length;
+  const hallazgos = detalles.filter((detalle) => detalle.categoria === 'hallazgo').length;
 
-  const observaciones = detalles.filter(
-    detalle => detalle.categoria === 'observacion',
-  ).length;
+  const observaciones = detalles.filter((detalle) => detalle.categoria === 'observacion').length;
 
-  const criticos = detalles.filter(
-    detalle => detalle.riesgo === 'CRITICO',
-  ).length;
+  const criticos = detalles.filter((detalle) => detalle.riesgo === 'CRITICO').length;
 
-  const altos = detalles.filter(
-    detalle => detalle.riesgo === 'ALTO',
-  ).length;
+  const altos = detalles.filter((detalle) => detalle.riesgo === 'ALTO').length;
 
-  const medios = detalles.filter(
-    detalle => detalle.riesgo === 'MEDIO',
-  ).length;
+  const medios = detalles.filter((detalle) => detalle.riesgo === 'MEDIO').length;
 
-  const bajos = detalles.filter(
-    detalle => detalle.riesgo === 'BAJO',
-  ).length;
+  const bajos = detalles.filter((detalle) => detalle.riesgo === 'BAJO').length;
 
   const score =
-    puntosMaximos === 0
-      ? 0
-      : Math.min(
-          100,
-          Math.round((puntosRiesgo / puntosMaximos) * 100),
-        );
+    puntosMaximos === 0 ? 0 : Math.min(100, Math.round((puntosRiesgo / puntosMaximos) * 100));
 
   const nivel = determinarNivel({
     puntosMaximos,
@@ -422,10 +351,7 @@ function construirResumen(
 // Recomendaciones
 // =====================================================
 
-function construirRecomendaciones(
-  resumen: ResumenDictamen,
-  detalles: DetalleDictamen[],
-): string[] {
+function construirRecomendaciones(resumen: ResumenDictamen, detalles: DetalleDictamen[]): string[] {
   const set = new Set<string>();
   const recomendaciones: string[] = [];
 
@@ -440,7 +366,7 @@ function construirRecomendaciones(
 
   if (resumen.nivel === 'SIN_EVALUAR') {
     agregar(
-      'Define el alcance del dictamen: comparadores Contrato vs CRM y/o conductas detectadas.',
+      'Define el alcance del dictamen: comparadores Contrato vs CRM y/o conductas detectadas.'
     );
 
     return recomendaciones;
@@ -448,46 +374,40 @@ function construirRecomendaciones(
 
   if (resumen.nivel === 'SIN_HALLAZGOS') {
     agregar(
-      'Conserva la evidencia y vuelve a auditar si cambia el contrato, el CRM o el flujo de cobro.',
+      'Conserva la evidencia y vuelve a auditar si cambia el contrato, el CRM o el flujo de cobro.'
     );
   }
 
   if (resumen.nivel === 'CRITICO') {
     agregar(
-      'Conciliar de inmediato contrato vs CRM antes de continuar cualquier gestión, respuesta o cobro.',
+      'Conciliar de inmediato contrato vs CRM antes de continuar cualquier gestión, respuesta o cobro.'
     );
 
     agregar(
-      'Documentar evidencia del hallazgo crítico y evaluar comunicación al área legal o cumplimiento.',
+      'Documentar evidencia del hallazgo crítico y evaluar comunicación al área legal o cumplimiento.'
     );
   }
 
   if (resumen.nivel === 'ALTO') {
     agregar(
-      'Integrar papeles de trabajo con la conciliación entre contrato, CRM, pagos y facturación.',
+      'Integrar papeles de trabajo con la conciliación entre contrato, CRM, pagos y facturación.'
     );
   }
 
   if (resumen.observaciones > 0) {
-    agregar(
-      'Completar evidencia faltante o no verificable antes de emitir una conclusión final.',
-    );
+    agregar('Completar evidencia faltante o no verificable antes de emitir una conclusión final.');
   }
 
   for (const detalle of detalles) {
     if (detalle.recomendacion) {
       agregar(detalle.recomendacion);
     } else if (detalle.categoria === 'hallazgo') {
-      agregar(
-        `Revisar ${detalle.titulo} y documentar evidencia suficiente.`,
-      );
+      agregar(`Revisar ${detalle.titulo} y documentar evidencia suficiente.`);
     }
   }
 
   if (recomendaciones.length === 0) {
-    agregar(
-      'Documentar la revisión y conservar evidencia para auditoría.',
-    );
+    agregar('Documentar la revisión y conservar evidencia para auditoría.');
   }
 
   return recomendaciones.slice(0, 12);
@@ -497,24 +417,20 @@ function construirRecomendaciones(
 // Cálculo principal
 // =====================================================
 
-export function calcularDictamenCobranza(
-  entrada: EntradaDictamen,
-): DictamenCobranza {
+export function calcularDictamenCobranza(entrada: EntradaDictamen): DictamenCobranza {
   const fecha = entrada.fecha ?? new Date().toISOString();
   const advertencias: string[] = [];
 
-  const { mapa: respuestas, advertencias: advertenciasRespuestas } =
-    normalizarRespuestas(entrada.respuestasComparadores);
+  const { mapa: respuestas, advertencias: advertenciasRespuestas } = normalizarRespuestas(
+    entrada.respuestasComparadores
+  );
 
   advertencias.push(...advertenciasRespuestas);
 
   const incluirComparadores =
-    entrada.incluirComparadores ??
-    entrada.respuestasComparadores !== undefined;
+    entrada.incluirComparadores ?? entrada.respuestasComparadores !== undefined;
 
-  const incluirConductas =
-    entrada.incluirConductas ??
-    Array.isArray(entrada.conductasDetectadas);
+  const incluirConductas = entrada.incluirConductas ?? Array.isArray(entrada.conductasDetectadas);
 
   const detalles: DetalleDictamen[] = [];
 
@@ -526,14 +442,10 @@ export function calcularDictamenCobranza(
   // ---------------------------------------------------
 
   if (incluirComparadores) {
-    const faltantes = comparadores.filter(
-      comparador => !respuestas.has(comparador.id),
-    ).length;
+    const faltantes = comparadores.filter((comparador) => !respuestas.has(comparador.id)).length;
 
     if (faltantes > 0) {
-      advertencias.push(
-        `${faltantes} comparador(es) sin respuesta se marcaron como SIN_DATO.`,
-      );
+      advertencias.push(`${faltantes} comparador(es) sin respuesta se marcaron como SIN_DATO.`);
     }
 
     for (const comparador of comparadores) {
@@ -543,8 +455,7 @@ export function calcularDictamenCobranza(
       puntosMaximos += peso;
 
       const respuesta = respuestas.get(comparador.id);
-      const estado: EstadoDictamen =
-        respuesta?.estado ?? 'SIN_DATO';
+      const estado: EstadoDictamen = respuesta?.estado ?? 'SIN_DATO';
 
       if (estado === 'COINCIDE') {
         continue;
@@ -556,9 +467,7 @@ export function calcularDictamenCobranza(
       puntosRiesgo += puntos;
 
       const categoria: CategoriaDetalle =
-        estado === 'DIFIERE' || estado === 'PARCIAL'
-          ? 'hallazgo'
-          : 'observacion';
+        estado === 'DIFIERE' || estado === 'PARCIAL' ? 'hallazgo' : 'observacion';
 
       detalles.push({
         tipo: 'comparador',
@@ -582,21 +491,15 @@ export function calcularDictamenCobranza(
   // ---------------------------------------------------
 
   if (incluirConductas) {
-    const idsValidosConductas = new Set(
-      conductas.map(conducta => conducta.id),
-    );
+    const idsValidosConductas = new Set(conductas.map((conducta) => conducta.id));
 
     const detectadas = new Set(
-      (entrada.conductasDetectadas ?? [])
-        .map(id => String(id).trim())
-        .filter(Boolean),
+      (entrada.conductasDetectadas ?? []).map((id) => String(id).trim()).filter(Boolean)
     );
 
     for (const idDetectada of detectadas) {
       if (!idsValidosConductas.has(idDetectada)) {
-        advertencias.push(
-          `Conducta desconocida: ${idDetectada}.`,
-        );
+        advertencias.push(`Conducta desconocida: ${idDetectada}.`);
       }
     }
 
@@ -642,16 +545,9 @@ export function calcularDictamenCobranza(
     return a.titulo.localeCompare(b.titulo);
   });
 
-  const resumen = construirResumen(
-    detalles,
-    puntosRiesgo,
-    puntosMaximos,
-  );
+  const resumen = construirResumen(detalles, puntosRiesgo, puntosMaximos);
 
-  const recomendaciones = construirRecomendaciones(
-    resumen,
-    detalles,
-  );
+  const recomendaciones = construirRecomendaciones(resumen, detalles);
 
   return {
     generadoEl: fecha,
@@ -661,12 +557,8 @@ export function calcularDictamenCobranza(
     alcance: {
       incluirComparadores,
       incluirConductas,
-      totalComparadoresEvaluados: incluirComparadores
-        ? comparadores.length
-        : 0,
-      totalConductasEvaluadas: incluirConductas
-        ? conductas.length
-        : 0,
+      totalComparadoresEvaluados: incluirComparadores ? comparadores.length : 0,
+      totalConductasEvaluadas: incluirConductas ? conductas.length : 0,
     },
     resumen,
     detalles,

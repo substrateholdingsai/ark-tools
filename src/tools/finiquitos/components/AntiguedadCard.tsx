@@ -52,10 +52,10 @@ export function AntiguedadCard({ resultado }: Props) {
   const estaTopado = salarioTope < calcularSalarioDiarioDesdeMensual(salarioMensual);
 
   return (
-    <div className="rounded-[20px] border border-line bg-surface p-6 sm:p-8 shadow-[0_20px_40px_rgba(0,43,127,0.06)]">
+    <div className="rounded-[20px] border border-line bg-surface p-6 shadow-[0_20px_40px_rgba(0,43,127,0.06)] sm:p-8">
       {/* === Encabezado === */}
       <div className="mb-6">
-        <h2 className="font-playfair text-2xl sm:text-3xl font-black tracking-[-0.02em] text-ink">
+        <h2 className="font-playfair text-2xl font-black tracking-[-0.02em] text-ink sm:text-3xl">
           Antigüedad
         </h2>
         <p className="mt-1 font-inter text-sm text-muted">
@@ -70,14 +70,8 @@ export function AntiguedadCard({ resultado }: Props) {
           etiqueta="Años"
           destacado={descomposicion.anios > 0}
         />
-        <BloqueMetrica
-          valor={descomposicion.meses}
-          etiqueta="Meses"
-        />
-        <BloqueMetrica
-          valor={descomposicion.dias}
-          etiqueta="Días"
-        />
+        <BloqueMetrica valor={descomposicion.meses} etiqueta="Meses" />
+        <BloqueMetrica valor={descomposicion.dias} etiqueta="Días" />
       </div>
 
       {/* === Total de días (barra inferior) === */}
@@ -87,7 +81,7 @@ export function AntiguedadCard({ resultado }: Props) {
         </span>
         <span className="font-orbitron text-base font-bold tabular-nums text-ink">
           {diasAntiguedad.toLocaleString('es-MX')} días{' '}
-          <span className="text-[12px] font-normal text-muted font-inter">
+          <span className="font-inter text-[12px] font-normal text-muted">
             ({aniosExactos.toFixed(2)} años exactos)
           </span>
         </span>
@@ -123,17 +117,14 @@ export function AntiguedadCard({ resultado }: Props) {
           fundamento="Arts. 79 y 87 LFT"
         />
 
-        <TarjetaTopeArt486
-          salarioTope={salarioTope}
-          estaTopado={estaTopado}
-        />
+        <TarjetaTopeArt486 salarioTope={salarioTope} estaTopado={estaTopado} />
       </div>
 
       {/* === Nota informativa del tope === */}
       <div className="mt-6 rounded-[12px] border border-line bg-surface-2 p-4">
         <p className="font-inter text-[12px] leading-relaxed text-muted">
-          <span className="font-bold text-ink">Nota sobre el tope (Art. 486 LFT):</span>{' '}
-          La prima de antigüedad se calcula sobre el salario diario topado a{' '}
+          <span className="font-bold text-ink">Nota sobre el tope (Art. 486 LFT):</span> La prima de
+          antigüedad se calcula sobre el salario diario topado a{' '}
           <span className="font-orbitron font-bold tabular-nums text-ink">
             ${TOPE_PRIMA_ANTIGUEDAD.toFixed(2)}
           </span>{' '}
@@ -163,12 +154,10 @@ function BloqueMetrica({ valor, etiqueta, destacado }: BloqueMetricaProps) {
     <div
       className={cn(
         'rounded-[14px] border p-4 text-center transition-all',
-        destacado
-          ? 'border-navy/20 bg-navy/[0.03]'
-          : 'border-line bg-surface-2'
+        destacado ? 'border-navy/20 bg-navy/[0.03]' : 'border-line bg-surface-2'
       )}
     >
-      <div className="font-orbitron text-2xl sm:text-3xl font-bold tabular-nums text-ink">
+      <div className="font-orbitron text-2xl font-bold tabular-nums text-ink sm:text-3xl">
         {valor}
       </div>
       <div className="mt-1 font-inter text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
@@ -186,13 +175,7 @@ interface TarjetaDerivadaProps {
   fundamento: string;
 }
 
-function TarjetaDerivada({
-  titulo,
-  valor,
-  sufijo,
-  descripcion,
-  fundamento,
-}: TarjetaDerivadaProps) {
+function TarjetaDerivada({ titulo, valor, sufijo, descripcion, fundamento }: TarjetaDerivadaProps) {
   return (
     <div className="rounded-[14px] border border-line bg-surface-2 p-4">
       <div className="mb-2 flex items-start justify-between gap-2">
@@ -204,18 +187,14 @@ function TarjetaDerivada({
         </span>
       </div>
       <div className="flex items-baseline gap-2">
-        <span className="font-orbitron text-xl font-bold tabular-nums text-ink">
-          {valor}
-        </span>
+        <span className="font-orbitron text-xl font-bold tabular-nums text-ink">{valor}</span>
         {sufijo && (
           <span className="font-inter text-[11px] font-bold uppercase tracking-[0.12em] text-muted">
             {sufijo}
           </span>
         )}
       </div>
-      <p className="mt-2 font-inter text-[12px] leading-snug text-muted">
-        {descripcion}
-      </p>
+      <p className="mt-2 font-inter text-[12px] leading-snug text-muted">{descripcion}</p>
     </div>
   );
 }
@@ -230,9 +209,7 @@ function TarjetaTopeArt486({ salarioTope, estaTopado }: TarjetaTopeArt486Props) 
     <div
       className={cn(
         'rounded-[14px] border p-4 transition-all',
-        estaTopado
-          ? 'border-amber-200 bg-amber-50/40'
-          : 'border-line bg-surface-2'
+        estaTopado ? 'border-amber-200 bg-amber-50/40' : 'border-line bg-surface-2'
       )}
     >
       <div className="mb-2 flex items-start justify-between gap-2">

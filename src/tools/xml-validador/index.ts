@@ -7,9 +7,5 @@ export type {
   TipoSeveridad,
   CategoriaRegla,
 } from './types';
-export {
-  validarCFDI,
-  validarArchivosXML,
-  calcularResumenAuditoria,
-} from './lib/validadorCFDI';
+export { validarCFDI, validarArchivosXML, calcularResumenAuditoria } from './lib/validadorCFDI';
 export { generarCSVDictamenes, descargarCSVDictamenes } from './lib/exportarDictamen';

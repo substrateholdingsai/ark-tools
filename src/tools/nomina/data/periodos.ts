@@ -6,10 +6,10 @@
 import type { Periodo, PeriodoInfo } from '../types';
 
 export const PERIODOS: Record<Periodo, PeriodoInfo> = {
-  diario:    { id: 'diario',    label: 'Día',  dias: 1,  vecesAlAnio: 365 },
-  semanal:   { id: 'semanal',   label: 'Sem',  dias: 7,  vecesAlAnio: 52  },
-  quincenal: { id: 'quincenal', label: 'Qna',  dias: 15, vecesAlAnio: 24  },
-  mensual:   { id: 'mensual',   label: 'Mes',  dias: 30, vecesAlAnio: 12  },
+  diario: { id: 'diario', label: 'Día', dias: 1, vecesAlAnio: 365 },
+  semanal: { id: 'semanal', label: 'Sem', dias: 7, vecesAlAnio: 52 },
+  quincenal: { id: 'quincenal', label: 'Qna', dias: 15, vecesAlAnio: 24 },
+  mensual: { id: 'mensual', label: 'Mes', dias: 30, vecesAlAnio: 12 },
 };
 
 /**

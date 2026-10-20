@@ -8,7 +8,7 @@
  * - Tope: LSS Art. 28 (25 UMAs)
  *
  * Última actualización: Octubre 2026
- * 
+ *
  * NOTA: Valores provenientes del catálogo centralizado de valores vigentes.
  * El test de integridad del catálogo valida que tengan fuente, referencia y no estén vencidos.
  */
@@ -18,7 +18,7 @@ import { CATALOGO_2026 } from '@/data/valores-vigentes/catalogo';
 
 // Helper para obtener valor por ID
 const getValor = (id: string): number => {
-  const item = CATALOGO_2026.find(v => v.id === id);
+  const item = CATALOGO_2026.find((v) => v.id === id);
   if (!item) throw new Error(`Valor no encontrado en catálogo: ${id}`);
   return item.valor as number;
 };

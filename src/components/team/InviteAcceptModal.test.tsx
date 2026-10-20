@@ -53,7 +53,14 @@ describe('InviteAcceptModal Component', () => {
       message: 'Te has unido exitosamente.',
       session: {
         user: { id: 'user-1', email: 'invitado@aguila.com', fullName: 'Carlos Invitado' },
-        tenants: [{ id: 't-horizonte', name: 'Despacho Horizonte', slug: 'despacho-horizonte', role: 'member' }],
+        tenants: [
+          {
+            id: 't-horizonte',
+            name: 'Despacho Horizonte',
+            slug: 'despacho-horizonte',
+            role: 'member',
+          },
+        ],
         platformRole: 'user',
       },
     });
@@ -107,7 +114,9 @@ describe('InviteAcceptModal Component', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Invitación no disponible')).toBeInTheDocument();
-      expect(screen.getByText('Esta invitación ha sido revocada por el despacho.')).toBeInTheDocument();
+      expect(
+        screen.getByText('Esta invitación ha sido revocada por el despacho.')
+      ).toBeInTheDocument();
     });
   });
 });

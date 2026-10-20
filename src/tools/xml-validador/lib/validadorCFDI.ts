@@ -3,12 +3,7 @@
  * Motor de Auditoría y Verificación de Reglas SAT (Anexo 20)
  */
 
-import type {
-  DictamenCFDI,
-  ReglaAuditoria,
-  EstatusDictamen,
-  ResumenAuditoriaLote,
-} from '../types';
+import type { DictamenCFDI, ReglaAuditoria, EstatusDictamen, ResumenAuditoriaLote } from '../types';
 
 /**
  * Regex para validar RFC de Personas Físicas (13 chars), Morales (12 chars) o Genéricos
@@ -246,7 +241,11 @@ export function validarCFDI(xmlText: string, fileName: string = 'factura.xml'): 
       descripcion: 'El comprobante no incluye el RFC del contribuyente emisor.',
       severidad: 'error',
     });
-  } else if (!RFC_REGEX.test(rfcEmisor) && rfcEmisor !== 'XAXX010101000' && rfcEmisor !== 'XEXX010101000') {
+  } else if (
+    !RFC_REGEX.test(rfcEmisor) &&
+    rfcEmisor !== 'XAXX010101000' &&
+    rfcEmisor !== 'XEXX010101000'
+  ) {
     reglas.push({
       codigo: 'FISC-01',
       categoria: 'fiscal',
@@ -281,7 +280,11 @@ export function validarCFDI(xmlText: string, fileName: string = 'factura.xml'): 
       descripcion: 'El comprobante no incluye el RFC del receptor.',
       severidad: 'error',
     });
-  } else if (!RFC_REGEX.test(rfcReceptor) && rfcReceptor !== 'XAXX010101000' && rfcReceptor !== 'XEXX010101000') {
+  } else if (
+    !RFC_REGEX.test(rfcReceptor) &&
+    rfcReceptor !== 'XAXX010101000' &&
+    rfcReceptor !== 'XEXX010101000'
+  ) {
     reglas.push({
       codigo: 'FISC-02',
       categoria: 'fiscal',
@@ -346,7 +349,8 @@ export function validarCFDI(xmlText: string, fileName: string = 'factura.xml'): 
         codigo: 'FISC-05',
         categoria: 'fiscal',
         titulo: 'Atributo Exportacion ausente en CFDI 4.0',
-        descripcion: 'El atributo "Exportacion" es requerido por la matriz de llenado SAT (ej. "01" No aplica).',
+        descripcion:
+          'El atributo "Exportacion" es requerido por la matriz de llenado SAT (ej. "01" No aplica).',
         severidad: 'advertencia',
       });
     }
@@ -405,7 +409,8 @@ export function validarCFDI(xmlText: string, fileName: string = 'factura.xml'): 
   const totalRetenciones = parseFloat(impuestosAttrs['totalimpuestosretenidos'] || '0') || 0;
 
   // Total esperado = Subtotal - Descuento + Traslados - Retenciones
-  const totalEsperado = Math.round((subtotal - descuento + totalTraslados - totalRetenciones) * 100) / 100;
+  const totalEsperado =
+    Math.round((subtotal - descuento + totalTraslados - totalRetenciones) * 100) / 100;
   const diferenciaAritmetica = Math.abs(Math.round((total - totalEsperado) * 100) / 100);
 
   // La tolerancia estándar por redondeo de ítems del SAT es de hasta $1.00 MXN
@@ -444,7 +449,8 @@ export function validarCFDI(xmlText: string, fileName: string = 'factura.xml'): 
       codigo: 'MON-01',
       categoria: 'fiscal',
       titulo: `Tipo de cambio no especificado para divisa extranjera (${moneda})`,
-      descripcion: 'Al facturar en moneda extranjera, debe especificarse el tipo de cambio oficial FIX del DOF.',
+      descripcion:
+        'Al facturar en moneda extranjera, debe especificarse el tipo de cambio oficial FIX del DOF.',
       severidad: 'advertencia',
       fundamentoLegal: 'Art. 20 CFF',
     });
@@ -526,8 +532,7 @@ export async function validarArchivosXML(files: File[]): Promise<DictamenCFDI[]>
                 codigo: 'ESTR-ERR',
                 categoria: 'estructura',
                 titulo: 'Error fatal de lectura',
-                descripcion:
-                  err instanceof Error ? err.message : 'No se pudo leer el archivo XML',
+                descripcion: err instanceof Error ? err.message : 'No se pudo leer el archivo XML',
                 severidad: 'error',
               },
             ],

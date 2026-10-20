@@ -1,8 +1,4 @@
-import type {
-  ValorFiscal,
-  ResultadoVigencia,
-  ConfigVigencia,
-} from './tipos';
+import type { ValorFiscal, ResultadoVigencia, ConfigVigencia } from './tipos';
 
 const CONFIG_DEFAULT: ConfigVigencia = {
   diasAlerta: 60,

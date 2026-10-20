@@ -70,10 +70,7 @@ export function generarCSVDictamenes(dictamenes: DictamenCFDI[]): string {
   return '\uFEFF' + lineas.join('\r\n');
 }
 
-export function descargarCSVDictamenes(
-  dictamenes: DictamenCFDI[],
-  nombreArchivo?: string
-): void {
+export function descargarCSVDictamenes(dictamenes: DictamenCFDI[], nombreArchivo?: string): void {
   const contenido = generarCSVDictamenes(dictamenes);
   const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
   const fechaIso = new Date().toISOString().slice(0, 10);

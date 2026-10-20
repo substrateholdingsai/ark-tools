@@ -43,9 +43,9 @@ export const GlassButton = forwardRef<HTMLButtonElement, GlassButtonProps>(
         ref={ref}
         type={type}
         className={cn(
-          'glass-btn rounded-full font-bold tracking-[0.14em] orbitron font-orbitron',
+          'glass-btn orbitron rounded-full font-orbitron font-bold tracking-[0.14em]',
           'inline-flex items-center justify-center gap-2',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
+          'disabled:cursor-not-allowed disabled:opacity-50',
           variant === 'primary' && 'glass-btn-primary',
           sizeClasses[size],
           fullWidth && 'w-full',

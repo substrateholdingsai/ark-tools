@@ -43,15 +43,33 @@ import type { NavItem } from './components';
 import { AlertasVigencia } from '@/data/valores-vigentes';
 
 // Lazy-loaded tools para optimización máxima de bundle (<150 KB chunk inicial)
-const CalculadoraISN = lazy(() => import('./tools/isn').then((m) => ({ default: m.CalculadoraISN })));
-const CalculadoraSBC = lazy(() => import('./tools/sbc').then((m) => ({ default: m.CalculadoraSBC })));
-const CalculadoraNomina = lazy(() => import('./tools/nomina').then((m) => ({ default: m.CalculadoraNomina })));
-const ConversorXML = lazy(() => import('./tools/xml-excel').then((m) => ({ default: m.ConversorXML })));
-const ValidadorXML = lazy(() => import('./tools/xml-validador').then((m) => ({ default: m.ValidadorXML })));
-const GeneradorSPEI = lazy(() => import('./tools/spei').then((m) => ({ default: m.GeneradorSPEI })));
-const CalculadoraLeasing = lazy(() => import('./tools/leasing').then((m) => ({ default: m.CalculadoraLeasing })));
-const GuiaSATIMSS = lazy(() => import('./tools/guia-sat-imss').then((m) => ({ default: m.GuiaSATIMSS })));
-const TimbradoFacturas = lazy(() => import('./tools/timbrado/TimbradoFacturas').then((m) => ({ default: m.TimbradoFacturas })));
+const CalculadoraISN = lazy(() =>
+  import('./tools/isn').then((m) => ({ default: m.CalculadoraISN }))
+);
+const CalculadoraSBC = lazy(() =>
+  import('./tools/sbc').then((m) => ({ default: m.CalculadoraSBC }))
+);
+const CalculadoraNomina = lazy(() =>
+  import('./tools/nomina').then((m) => ({ default: m.CalculadoraNomina }))
+);
+const ConversorXML = lazy(() =>
+  import('./tools/xml-excel').then((m) => ({ default: m.ConversorXML }))
+);
+const ValidadorXML = lazy(() =>
+  import('./tools/xml-validador').then((m) => ({ default: m.ValidadorXML }))
+);
+const GeneradorSPEI = lazy(() =>
+  import('./tools/spei').then((m) => ({ default: m.GeneradorSPEI }))
+);
+const CalculadoraLeasing = lazy(() =>
+  import('./tools/leasing').then((m) => ({ default: m.CalculadoraLeasing }))
+);
+const GuiaSATIMSS = lazy(() =>
+  import('./tools/guia-sat-imss').then((m) => ({ default: m.GuiaSATIMSS }))
+);
+const TimbradoFacturas = lazy(() =>
+  import('./tools/timbrado/TimbradoFacturas').then((m) => ({ default: m.TimbradoFacturas }))
+);
 const AuditorCobranza = lazy(() => import('@/tools/auditor-cobranza'));
 const MapaActivos = lazy(() => import('@/tools/mapa-activos'));
 const CalculadoraFiniquitos = lazy(() => import('@/tools/finiquitos'));
@@ -59,9 +77,12 @@ const CierreNomina = lazy(() =>
   import('@/tools/cierre-nomina').then((m) => ({ default: m.CierreNomina }))
 );
 const CalculadoraResico = lazy(() => import('@/tools/resico'));
-const AdminPanel = lazy(() => import('./components/admin/AdminPanel').then((m) => ({ default: m.AdminPanel })));
-const CalculadoraBalance = lazy(() => import('./tools/balance-general').then((m) => ({ default: m.CalculadoraBalance })));
-
+const AdminPanel = lazy(() =>
+  import('./components/admin/AdminPanel').then((m) => ({ default: m.AdminPanel }))
+);
+const CalculadoraBalance = lazy(() =>
+  import('./tools/balance-general').then((m) => ({ default: m.CalculadoraBalance }))
+);
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -222,7 +243,6 @@ export function App() {
       case 'balance-general':
         return <CalculadoraBalance onBack={goToDashboard} />;
 
-
       case 'dashboard':
       default:
         return <Dashboard onSelectTool={navigateTo} navFilter={activeNavFilter} />;
@@ -274,9 +294,7 @@ export function App() {
                 toolName={toolLabels[activeTool]}
                 onReset={goToDashboard}
               >
-                <Suspense fallback={<ToolSkeleton />}>
-                  {renderTool()}
-                </Suspense>
+                <Suspense fallback={<ToolSkeleton />}>{renderTool()}</Suspense>
               </ErrorBoundary>
             )}
           </main>
@@ -355,8 +373,8 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
           Tus cálculos, <span className="text-navy">blindados</span> con evidencia verificable.
         </h1>
         <p className="mt-6 max-w-[64ch] font-inter text-[16px] leading-[1.5] text-muted md:text-[18px]">
-          Calcula nómina, emite CFDI y audita riesgos. Cada resultado se sella con SHA-256 y 
-          versión DOF, generando un QR que cualquier auditor puede verificar sin depender de ti.
+          Calcula nómina, emite CFDI y audita riesgos. Cada resultado se sella con SHA-256 y versión
+          DOF, generando un QR que cualquier auditor puede verificar sin depender de ti.
         </p>
       </section>
 
@@ -364,7 +382,7 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
       <section className="relative overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-r from-surface to-cream/20 p-6 shadow-sm md:p-8">
         {/* Adorno de fondo */}
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/10 blur-2xl" />
-        
+
         <div className="relative flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
           <div className="flex items-start gap-4">
             <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gold/40 bg-gold/10 text-gold-dark shadow-sm">
@@ -380,8 +398,10 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
                 </span>
               </div>
               <p className="max-w-[760px] font-inter text-[13.5px] leading-relaxed text-muted">
-                Al archivar cualquier cálculo en el <strong>Expediente Único</strong>, el sistema genera una cédula oficial con <strong>Sello SHA-256 inmutable</strong> y un <strong>QR de verificación</strong>. 
-                Cuando el SAT o un cliente te pida evidencia, no entregues un Excel: entrega un documento que se autentica solo.
+                Al archivar cualquier cálculo en el <strong>Expediente Único</strong>, el sistema
+                genera una cédula oficial con <strong>Sello SHA-256 inmutable</strong> y un{' '}
+                <strong>QR de verificación</strong>. Cuando el SAT o un cliente te pida evidencia,
+                no entregues un Excel: entrega un documento que se autentica solo.
               </p>
             </div>
           </div>
@@ -395,9 +415,15 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
           TABLAS OFICIALES VIGENTES 2026
         </div>
         <div className="flex flex-wrap items-center gap-2 font-orbitron text-[11px] font-bold">
-          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">UMA: $117.31</span>
-          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">SMG: $315.04</span>
-          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">TOPE SBC: 25 UMAs ($2,932.75)</span>
+          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">
+            UMA: $117.31
+          </span>
+          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">
+            SMG: $315.04
+          </span>
+          <span className="rounded-lg border border-line bg-white px-3 py-1.5 text-ink">
+            TOPE SBC: 25 UMAs ($2,932.75)
+          </span>
         </div>
       </section>
 
@@ -466,7 +492,6 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
             onSelect={() => onSelectTool('balance-general')}
           />
         </CategorySection>
-
       )}
 
       {/* SAT */}

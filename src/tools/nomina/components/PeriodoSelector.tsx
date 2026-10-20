@@ -18,19 +18,17 @@ interface PeriodoSelectorProps {
 
 export function PeriodoSelector({ value, onChange }: PeriodoSelectorProps) {
   return (
-    <div className="rounded-[20px] bg-surface border border-line overflow-hidden">
+    <div className="overflow-hidden rounded-[20px] border border-line bg-surface">
       {/* Barra decorativa superior */}
       <div className="h-1 w-full bg-gradient-to-r from-navy via-navy to-gold" />
 
       <div className="p-5 md:p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
             1. Período de pago
           </h2>
-          <span className="text-[10px] font-mono text-muted">
-            {LISTA_PERIODOS.length} opciones
-          </span>
+          <span className="font-mono text-[10px] text-muted">{LISTA_PERIODOS.length} opciones</span>
         </div>
 
         {/* Grid de 4 botones */}
@@ -42,22 +40,16 @@ export function PeriodoSelector({ value, onChange }: PeriodoSelectorProps) {
                 key={periodo.id}
                 type="button"
                 onClick={() => onChange(periodo.id)}
-                className={`
-                  flex flex-col items-center gap-1
-                  px-2 py-3 rounded-[14px]
-                  transition-all
-                  font-orbitron font-bold tracking-[0.12em]
-                  ${
-                    activo
-                      ? 'bg-navy text-white shadow-[0_4px_12px_rgba(0,43,127,0.25)]'
-                      : 'bg-surface-2 border border-line text-muted hover:border-gold hover:text-navy'
-                  }
-                `}
+                className={`flex flex-col items-center gap-1 rounded-[14px] px-2 py-3 font-orbitron font-bold tracking-[0.12em] transition-all ${
+                  activo
+                    ? 'bg-navy text-white shadow-[0_4px_12px_rgba(0,43,127,0.25)]'
+                    : 'border border-line bg-surface-2 text-muted hover:border-gold hover:text-navy'
+                } `}
                 aria-pressed={activo}
               >
                 <span className="text-[12px] uppercase">{periodo.label}</span>
                 <span
-                  className={`text-[9px] font-mono tracking-normal ${
+                  className={`font-mono text-[9px] tracking-normal ${
                     activo ? 'text-white/70' : 'text-muted'
                   }`}
                 >
@@ -69,17 +61,13 @@ export function PeriodoSelector({ value, onChange }: PeriodoSelectorProps) {
         </div>
 
         {/* Info del período activo */}
-        <div className="mt-4 rounded-[12px] bg-surface-2 border border-line px-4 py-3 flex items-center justify-between">
+        <div className="mt-4 flex items-center justify-between rounded-[12px] border border-line bg-surface-2 px-4 py-3">
           <div className="text-[11px] text-muted">
-            <span className="font-bold text-navy font-orbitron uppercase">
-              {value}
-            </span>
+            <span className="font-orbitron font-bold uppercase text-navy">{value}</span>
             {' · '}
             {LISTA_PERIODOS.find((p) => p.id === value)?.vecesAlAnio} pagos/año
           </div>
-          <div className="text-[10px] font-mono text-muted">
-            Tabla ISR mensual adaptada
-          </div>
+          <div className="font-mono text-[10px] text-muted">Tabla ISR mensual adaptada</div>
         </div>
       </div>
     </div>

@@ -46,7 +46,9 @@ describe('CalculadoraFiniquitos (src/tools/finiquitos/CalculadoraFiniquitos.tsx)
     expect(btnFiniquito).toHaveAttribute('aria-pressed', 'false');
 
     // Debe mostrar la opción de indemnización constitucional de 90 días
-    expect(screen.getAllByText(/Indemnización Constitucional \(90 días\)/i).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/Indemnización Constitucional \(90 días\)/i).length
+    ).toBeGreaterThanOrEqual(1);
   });
 
   it('muestra el desglose de conceptos con fundamentos legales de la LFT', () => {

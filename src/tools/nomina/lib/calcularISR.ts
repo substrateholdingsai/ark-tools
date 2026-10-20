@@ -11,12 +11,7 @@
  * Base legal: Art. 96 LISR + Anexo 8 RMF 2026
  */
 
-import type {
-  Periodo,
-  RangoISR,
-  RangoSubsidio,
-  ResultadoISR,
-} from '../types';
+import type { Periodo, RangoISR, RangoSubsidio, ResultadoISR } from '../types';
 import { TABLA_ISR_MENSUAL, TABLA_SUBSIDIO_MENSUAL } from '../data/tablasISR';
 import { factorMensual } from '../data/periodos';
 
@@ -109,10 +104,7 @@ export function calcularSubsidioMensual(baseMensual: number): {
  *   3. Calcular ISR mensual = max(0, tarifa - subsidio)
  *   4. Reconvenir ISR mensual al período original
  */
-export function calcularISR(
-  basePeriodo: number,
-  periodo: Periodo
-): ResultadoISR {
+export function calcularISR(basePeriodo: number, periodo: Periodo): ResultadoISR {
   // Caso 0: sin base
   if (basePeriodo <= 0) {
     return {
@@ -131,10 +123,8 @@ export function calcularISR(
   const baseMensual = basePeriodo * factor;
 
   // Paso 2: calcular tarifa y subsidio mensuales
-  const { isrTarifa: isrTarifaMensual, rango: rangoTarifa } =
-    calcularISRTarifaMensual(baseMensual);
-  const { subsidio: subsidioMensual, rango: rangoSubsidio } =
-    calcularSubsidioMensual(baseMensual);
+  const { isrTarifa: isrTarifaMensual, rango: rangoTarifa } = calcularISRTarifaMensual(baseMensual);
+  const { subsidio: subsidioMensual, rango: rangoSubsidio } = calcularSubsidioMensual(baseMensual);
 
   // Paso 3: ISR mensual neto (nunca negativo)
   const isrMensualNeto = Math.max(0, isrTarifaMensual - subsidioMensual);
@@ -201,8 +191,7 @@ export function formatearPorcentaje(valor: number): string {
  */
 export function formatearRango(rango: RangoISR): string {
   const inferior = formatearMXN(rango.limiteInferior);
-  const superior = rango.limiteSuperior !== null
-    ? formatearMXN(rango.limiteSuperior)
-    : 'en adelante';
+  const superior =
+    rango.limiteSuperior !== null ? formatearMXN(rango.limiteSuperior) : 'en adelante';
   return `${inferior} - ${superior}`;
 }

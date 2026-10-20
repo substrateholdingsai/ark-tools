@@ -35,9 +35,15 @@ export function exportarConcentradoCSV(cierre: CierreNominaCompleto): string {
     lineas.push(`RFC Empresa,${escaparCSV(parametros.empresaRfc)}`);
   }
   lineas.push(`Período,${escaparCSV(parametros.periodo.toUpperCase())}`);
-  lineas.push(`Fechas del Período,${escaparCSV(`${parametros.fechaInicio} al ${parametros.fechaFin}`)}`);
-  lineas.push(`Entidad Federativa (ISN),${escaparCSV(`${parametros.estadoIsnNombre} (${parametros.tasaIsn}%)`)}`);
-  lineas.push(`Fecha de Emisión,${escaparCSV(new Date(resumen.fechaEmision).toLocaleString('es-MX'))}`);
+  lineas.push(
+    `Fechas del Período,${escaparCSV(`${parametros.fechaInicio} al ${parametros.fechaFin}`)}`
+  );
+  lineas.push(
+    `Entidad Federativa (ISN),${escaparCSV(`${parametros.estadoIsnNombre} (${parametros.tasaIsn}%)`)}`
+  );
+  lineas.push(
+    `Fecha de Emisión,${escaparCSV(new Date(resumen.fechaEmision).toLocaleString('es-MX'))}`
+  );
   lineas.push(`Sello Digital SHA-256,${escaparCSV(resumen.hashLote)}`);
   lineas.push(`Versión Tablas Oficiales,${escaparCSV(resumen.catalogVersion)}`);
   lineas.push('');

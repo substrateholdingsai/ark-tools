@@ -29,10 +29,7 @@ import { GlassButton } from '@/components/ui/GlassButton';
 import { ESTADOS } from '../isn/data/estados';
 import type { Periodo } from '../nomina/types';
 import type { TrabajadorFilaInput, ParametrosCierreNomina, CierreNominaCompleto } from './types';
-import {
-  parsearPlantillaNomina,
-  generarPlantillaEjemploCSV,
-} from './lib/parserPlantilla';
+import { parsearPlantillaNomina, generarPlantillaEjemploCSV } from './lib/parserPlantilla';
 import { procesarCierreNomina } from './lib/calcularCierreNomina';
 import { descargarArchivo } from './lib/exportarCierre';
 import { CedulaConcentradoraModal } from './components/CedulaConcentradoraModal';
@@ -210,29 +207,30 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
   };
 
   return (
-    <div className="mx-auto max-w-[1280px] px-6 md:px-10 py-10 space-y-8 font-inter text-ink">
+    <div className="mx-auto max-w-[1280px] space-y-8 px-6 py-10 font-inter text-ink md:px-10">
       {/* ═══ ENCABEZADO Y REGRESO ═══ */}
       <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-6">
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={onBack}
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-line bg-surface-2 text-ink hover:bg-surface-2/80 transition-colors cursor-pointer"
+            className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-line bg-surface-2 text-ink transition-colors hover:bg-surface-2/80"
             title="Volver al catálogo de herramientas"
           >
             <ArrowLeft size={18} />
           </button>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-playfair text-2xl sm:text-3xl font-black tracking-tight text-ink">
+              <h1 className="font-playfair text-2xl font-black tracking-tight text-ink sm:text-3xl">
                 Cierre de Nómina Masivo
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full bg-gold/15 text-navy font-orbitron font-bold text-[11px] tracking-wide border border-gold/30">
+              <span className="rounded-full border border-gold/30 bg-gold/15 px-2.5 py-0.5 font-orbitron text-[11px] font-bold tracking-wide text-navy">
                 BATCH DOF 2026
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-muted mt-1">
-              Procesamiento de plantilla completa, retenciones LISR Art. 96, cuotas obreras LSS, ISN estatal y Cédula Concentradora con Sello QR.
+            <p className="mt-1 text-xs text-muted sm:text-sm">
+              Procesamiento de plantilla completa, retenciones LISR Art. 96, cuotas obreras LSS, ISN
+              estatal y Cédula Concentradora con Sello QR.
             </p>
           </div>
         </div>
@@ -263,43 +261,43 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
       </div>
 
       {/* ═══ SECCIÓN 1: PARÁMETROS DEL PERÍODO Y EMPRESA ═══ */}
-      <div className="rounded-2xl border border-line bg-surface p-6 shadow-sm space-y-4">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-navy font-orbitron">
+      <div className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-sm">
+        <div className="flex items-center gap-2 font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
           <Building2 size={16} className="text-gold" />
           <span>Configuración del Cierre & Entidad Federativa</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+        <div className="grid grid-cols-1 gap-4 text-xs sm:grid-cols-2 lg:grid-cols-4">
           {/* Empresa */}
           <div>
-            <label className="block text-muted font-semibold mb-1">Empresa / Razón Social</label>
+            <label className="mb-1 block font-semibold text-muted">Empresa / Razón Social</label>
             <input
               type="text"
               value={empresaNombre}
               onChange={(e) => setEmpresaNombre(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-line bg-surface-2 text-ink font-medium focus:outline-none focus:border-navy"
+              className="w-full rounded-xl border border-line bg-surface-2 px-3 py-2 font-medium text-ink focus:border-navy focus:outline-none"
             />
           </div>
 
           {/* RFC Empresa */}
           <div>
-            <label className="block text-muted font-semibold mb-1">RFC de la Empresa</label>
+            <label className="mb-1 block font-semibold text-muted">RFC de la Empresa</label>
             <input
               type="text"
               value={empresaRfc}
               onChange={(e) => setEmpresaRfc(e.target.value.toUpperCase())}
               placeholder="OIN180425AB1"
-              className="w-full px-3 py-2 rounded-xl border border-line bg-surface-2 text-ink font-mono uppercase focus:outline-none focus:border-navy"
+              className="w-full rounded-xl border border-line bg-surface-2 px-3 py-2 font-mono uppercase text-ink focus:border-navy focus:outline-none"
             />
           </div>
 
           {/* Período */}
           <div>
-            <label className="block text-muted font-semibold mb-1">Periodicidad de Pago</label>
+            <label className="mb-1 block font-semibold text-muted">Periodicidad de Pago</label>
             <select
               value={periodo}
               onChange={(e) => handlePeriodoChange(e.target.value as Periodo)}
-              className="w-full px-3 py-2 rounded-xl border border-line bg-surface-2 text-ink font-semibold focus:outline-none focus:border-navy cursor-pointer"
+              className="w-full cursor-pointer rounded-xl border border-line bg-surface-2 px-3 py-2 font-semibold text-ink focus:border-navy focus:outline-none"
             >
               <option value="quincenal">Quincenal (15 días)</option>
               <option value="semanal">Semanal (7 días)</option>
@@ -309,11 +307,11 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
 
           {/* Estado para ISN */}
           <div>
-            <label className="block text-muted font-semibold mb-1">Estado (Tasa ISN Estatal)</label>
+            <label className="mb-1 block font-semibold text-muted">Estado (Tasa ISN Estatal)</label>
             <select
               value={estadoIsnId}
               onChange={(e) => handleEstadoChange(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl border border-line bg-surface-2 text-ink font-semibold focus:outline-none focus:border-navy cursor-pointer"
+              className="w-full cursor-pointer rounded-xl border border-line bg-surface-2 px-3 py-2 font-semibold text-ink focus:border-navy focus:outline-none"
             >
               {ESTADOS.map((est) => (
                 <option key={est.id} value={est.id}>
@@ -325,32 +323,34 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
         </div>
 
         {/* Fechas de corte */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2 border-t border-line/60 text-xs">
+        <div className="grid grid-cols-1 gap-4 border-t border-line/60 pt-2 text-xs sm:grid-cols-3">
           <div>
-            <label className="block text-muted font-semibold mb-1">Fecha Inicio del Período</label>
+            <label className="mb-1 block font-semibold text-muted">Fecha Inicio del Período</label>
             <input
               type="date"
               value={fechaInicio}
               onChange={(e) => setFechaInicio(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-xl border border-line bg-surface-2 font-mono text-ink"
+              className="w-full rounded-xl border border-line bg-surface-2 px-3 py-1.5 font-mono text-ink"
             />
           </div>
           <div>
-            <label className="block text-muted font-semibold mb-1">Fecha Fin del Período</label>
+            <label className="mb-1 block font-semibold text-muted">Fecha Fin del Período</label>
             <input
               type="date"
               value={fechaFin}
               onChange={(e) => setFechaFin(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-xl border border-line bg-surface-2 font-mono text-ink"
+              className="w-full rounded-xl border border-line bg-surface-2 px-3 py-1.5 font-mono text-ink"
             />
           </div>
           <div>
-            <label className="block text-muted font-semibold mb-1">Fecha de Corte (Antigüedad LFT)</label>
+            <label className="mb-1 block font-semibold text-muted">
+              Fecha de Corte (Antigüedad LFT)
+            </label>
             <input
               type="date"
               value={fechaCorte}
               onChange={(e) => setFechaCorte(e.target.value)}
-              className="w-full px-3 py-1.5 rounded-xl border border-line bg-surface-2 font-mono text-ink"
+              className="w-full rounded-xl border border-line bg-surface-2 px-3 py-1.5 font-mono text-ink"
             />
           </div>
         </div>
@@ -360,7 +360,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
       {trabajadores.length === 0 && (
         <div
           onClick={() => fileInputRef.current?.click()}
-          className="rounded-2xl border-2 border-dashed border-line hover:border-gold/60 bg-surface-2/40 p-10 text-center cursor-pointer transition-all hover:bg-surface-2/70"
+          className="cursor-pointer rounded-2xl border-2 border-dashed border-line bg-surface-2/40 p-10 text-center transition-all hover:border-gold/60 hover:bg-surface-2/70"
         >
           <input
             ref={fileInputRef}
@@ -369,14 +369,15 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
             onChange={handleFileUpload}
             className="hidden"
           />
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-navy/10 text-navy flex items-center justify-center mb-3">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-navy/10 text-navy">
             <UploadCloud size={24} />
           </div>
           <h3 className="font-playfair text-lg font-bold text-ink">
             Arrastra tu plantilla de nómina en formato CSV o haz clic aquí
           </h3>
-          <p className="text-xs text-muted mt-1 max-w-md mx-auto">
-            Acepta archivos exportados desde Excel, NOI, Compaq o tu ERP con columnas de Nombre, Salario Diario, Ingreso, RFC y Percepciones.
+          <p className="mx-auto mt-1 max-w-md text-xs text-muted">
+            Acepta archivos exportados desde Excel, NOI, Compaq o tu ERP con columnas de Nombre,
+            Salario Diario, Ingreso, RFC y Percepciones.
           </p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <GlassButton
@@ -398,12 +399,12 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
 
       {/* Errores o advertencias de importación */}
       {erroresImport.length > 0 && (
-        <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-1">
-          <div className="font-bold flex items-center gap-1.5">
+        <div className="space-y-1 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs text-rose-800">
+          <div className="flex items-center gap-1.5 font-bold">
             <AlertTriangle size={15} />
             Errores detectados en la plantilla:
           </div>
-          <ul className="list-disc pl-5 space-y-0.5">
+          <ul className="list-disc space-y-0.5 pl-5">
             {erroresImport.map((err, i) => (
               <li key={i}>{err}</li>
             ))}
@@ -412,8 +413,8 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
       )}
 
       {advertenciasImport.length > 0 && (
-        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs space-y-1">
-          <div className="font-semibold flex items-center gap-1.5">
+        <div className="space-y-1 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+          <div className="flex items-center gap-1.5 font-semibold">
             <AlertTriangle size={14} />
             Avisos de formato:
           </div>
@@ -427,13 +428,13 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
 
       {/* ═══ SECCIÓN 3: TABLA DE TRABAJADORES CARGADOS ═══ */}
       {trabajadores.length > 0 && (
-        <div className="rounded-2xl border border-line bg-surface p-6 shadow-sm space-y-4">
+        <div className="space-y-4 rounded-2xl border border-line bg-surface p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="font-orbitron font-bold text-xs uppercase tracking-wider text-navy">
+              <span className="font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
                 Colaboradores Listos ({trabajadores.length})
               </span>
-              <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 font-semibold text-[10px] border border-emerald-200">
+              <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">
                 Plantilla Validada
               </span>
             </div>
@@ -449,7 +450,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs text-navy hover:underline cursor-pointer font-semibold px-2 py-1"
+                className="cursor-pointer px-2 py-1 text-xs font-semibold text-navy hover:underline"
               >
                 Reemplazar CSV
               </button>
@@ -459,57 +460,60 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                   setTrabajadores([]);
                   setCierreCalculado(null);
                 }}
-                className="text-xs text-rose-600 hover:underline cursor-pointer font-semibold px-2 py-1"
+                className="cursor-pointer px-2 py-1 text-xs font-semibold text-rose-600 hover:underline"
               >
                 Limpiar lista
               </button>
             </div>
           </div>
 
-          <div className="overflow-x-auto max-h-[380px] overflow-y-auto border border-line rounded-xl">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-surface-2 sticky top-0 text-[10px] uppercase font-bold text-muted border-b border-line">
+          <div className="max-h-[380px] overflow-x-auto overflow-y-auto rounded-xl border border-line">
+            <table className="w-full border-collapse text-left text-xs">
+              <thead className="sticky top-0 border-b border-line bg-surface-2 text-[10px] font-bold uppercase text-muted">
                 <tr>
-                  <th className="py-2.5 px-3">No</th>
-                  <th className="py-2.5 px-3">Nombre</th>
-                  <th className="py-2.5 px-3">RFC / NSS</th>
-                  <th className="py-2.5 px-3">Fecha Ingreso</th>
-                  <th className="py-2.5 px-3 text-right">Salario Diario</th>
-                  <th className="py-2.5 px-3 text-center">Días Trab.</th>
-                  <th className="py-2.5 px-3 text-right">Bonos / Extras</th>
-                  <th className="py-2.5 px-3 text-right">Otras Deduc.</th>
-                  <th className="py-2.5 px-3 text-center">Acciones</th>
+                  <th className="px-3 py-2.5">No</th>
+                  <th className="px-3 py-2.5">Nombre</th>
+                  <th className="px-3 py-2.5">RFC / NSS</th>
+                  <th className="px-3 py-2.5">Fecha Ingreso</th>
+                  <th className="px-3 py-2.5 text-right">Salario Diario</th>
+                  <th className="px-3 py-2.5 text-center">Días Trab.</th>
+                  <th className="px-3 py-2.5 text-right">Bonos / Extras</th>
+                  <th className="px-3 py-2.5 text-right">Otras Deduc.</th>
+                  <th className="px-3 py-2.5 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line/60 font-mono text-[11px]">
                 {trabajadores.map((t, idx) => (
                   <tr key={t.id || idx} className="hover:bg-surface-2/40">
-                    <td className="py-2 px-3 text-muted">{idx + 1}</td>
-                    <td className="py-2 px-3 font-inter font-medium text-ink whitespace-nowrap">
+                    <td className="px-3 py-2 text-muted">{idx + 1}</td>
+                    <td className="whitespace-nowrap px-3 py-2 font-inter font-medium text-ink">
                       {t.nombre}
                     </td>
-                    <td className="py-2 px-3 text-muted text-[10px]">
+                    <td className="px-3 py-2 text-[10px] text-muted">
                       <div>{t.rfc || '—'}</div>
                       <div className="text-[9px] text-muted/70">{t.nss || ''}</div>
                     </td>
-                    <td className="py-2 px-3 text-muted">{t.fechaIngreso || '—'}</td>
-                    <td className="py-2 px-3 text-right tabular-nums text-ink font-semibold">
+                    <td className="px-3 py-2 text-muted">{t.fechaIngreso || '—'}</td>
+                    <td className="px-3 py-2 text-right font-semibold tabular-nums text-ink">
                       ${t.salarioDiario.toFixed(2)}
                     </td>
-                    <td className="py-2 px-3 text-center tabular-nums">
+                    <td className="px-3 py-2 text-center tabular-nums">
                       {t.diasTrabajados ?? diasPeriodo}
                     </td>
-                    <td className="py-2 px-3 text-right tabular-nums text-emerald-800">
-                      ${((t.bonos || 0) + (t.horasExtras || 0) + (t.otrasPercepciones || 0)).toFixed(2)}
+                    <td className="px-3 py-2 text-right tabular-nums text-emerald-800">
+                      $
+                      {((t.bonos || 0) + (t.horasExtras || 0) + (t.otrasPercepciones || 0)).toFixed(
+                        2
+                      )}
                     </td>
-                    <td className="py-2 px-3 text-right tabular-nums text-rose-800">
+                    <td className="px-3 py-2 text-right tabular-nums text-rose-800">
                       ${(t.otrasDeducciones || 0).toFixed(2)}
                     </td>
-                    <td className="py-2 px-3 text-center">
+                    <td className="px-3 py-2 text-center">
                       <button
                         type="button"
                         onClick={() => handleEliminarTrabajador(idx)}
-                        className="p-1 rounded text-muted hover:text-rose-600 cursor-pointer"
+                        className="cursor-pointer rounded p-1 text-muted hover:text-rose-600"
                         title="Eliminar trabajador"
                       >
                         <Trash2 size={13} />
@@ -522,9 +526,10 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
           </div>
 
           {/* BOTÓN CTA PRINCIPAL DE PROCESAMIENTO */}
-          <div className="pt-4 flex flex-wrap items-center justify-between gap-4 border-t border-line">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line pt-4">
             <div className="text-xs text-muted">
-              Se calculará la retención de ISR Art. 96, cuotas IMSS obreras y {tasaIsn}% de ISN para los {trabajadores.length} colaboradores.
+              Se calculará la retención de ISR Art. 96, cuotas IMSS obreras y {tasaIsn}% de ISN para
+              los {trabajadores.length} colaboradores.
             </div>
 
             <GlassButton
@@ -533,7 +538,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
               size="md"
               disabled={isProcessing}
               onClick={handleEjecutarCierre}
-              className="text-xs uppercase tracking-wider font-bold"
+              className="text-xs font-bold uppercase tracking-wider"
             >
               <Play size={15} className="mr-2 text-navy" />
               {isProcessing ? 'Procesando Lote...' : 'Procesar Cierre y Generar Cédula'}
@@ -544,13 +549,13 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
 
       {/* ═══ SECCIÓN 4: RESUMEN DEL CIERRE CALCULADO ═══ */}
       {cierreCalculado && (
-        <div className="rounded-2xl border-2 border-navy/30 bg-surface p-6 sm:p-8 shadow-xl space-y-6">
+        <div className="space-y-6 rounded-2xl border-2 border-navy/30 bg-surface p-6 shadow-xl sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
             <div>
-              <div className="font-orbitron font-bold text-xs uppercase tracking-wider text-gold">
+              <div className="font-orbitron text-xs font-bold uppercase tracking-wider text-gold">
                 Cierre Procesado & Sellado con Éxito
               </div>
-              <h2 className="font-playfair text-xl sm:text-2xl font-black text-ink mt-0.5">
+              <h2 className="mt-0.5 font-playfair text-xl font-black text-ink sm:text-2xl">
                 Resumen Ejecutivo — {empresaNombre}
               </h2>
             </div>
@@ -570,61 +575,76 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
           </div>
 
           {/* 5 KPIs */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            <div className="p-4 rounded-xl bg-surface-2 border border-line">
-              <span className="text-[10px] font-bold uppercase text-muted tracking-wider block">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+            <div className="rounded-xl border border-line bg-surface-2 p-4">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
                 Nómina Bruta
               </span>
-              <div className="font-orbitron text-lg font-bold text-ink mt-1 tabular-nums">
-                ${cierreCalculado.resumen.totalPercepcionesBrutas.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              <div className="mt-1 font-orbitron text-lg font-bold tabular-nums text-ink">
+                $
+                {cierreCalculado.resumen.totalPercepcionesBrutas.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                })}
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-rose-50/70 border border-rose-200">
-              <span className="text-[10px] font-bold uppercase text-rose-800 tracking-wider block">
+            <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-4">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-rose-800">
                 ISR Retenido SAT
               </span>
-              <div className="font-orbitron text-lg font-bold text-rose-950 mt-1 tabular-nums">
-                ${cierreCalculado.resumen.totalISRRetenido.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              <div className="mt-1 font-orbitron text-lg font-bold tabular-nums text-rose-950">
+                $
+                {cierreCalculado.resumen.totalISRRetenido.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                })}
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-blue-50/70 border border-blue-200">
-              <span className="text-[10px] font-bold uppercase text-blue-800 tracking-wider block">
+            <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-4">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-blue-800">
                 IMSS Obrero
               </span>
-              <div className="font-orbitron text-lg font-bold text-blue-950 mt-1 tabular-nums">
-                ${cierreCalculado.resumen.totalIMSSObrero.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              <div className="mt-1 font-orbitron text-lg font-bold tabular-nums text-blue-950">
+                $
+                {cierreCalculado.resumen.totalIMSSObrero.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                })}
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200">
-              <span className="text-[10px] font-bold uppercase text-amber-800 tracking-wider block">
+            <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-amber-800">
                 ISN Estatal
               </span>
-              <div className="font-orbitron text-lg font-bold text-amber-950 mt-1 tabular-nums">
-                ${cierreCalculado.resumen.totalISNEstatal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              <div className="mt-1 font-orbitron text-lg font-bold tabular-nums text-amber-950">
+                $
+                {cierreCalculado.resumen.totalISNEstatal.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                })}
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-emerald-50 border-2 border-emerald-400 col-span-2 sm:col-span-1">
-              <span className="text-[10px] font-bold uppercase text-emerald-900 tracking-wider block">
+            <div className="col-span-2 rounded-xl border-2 border-emerald-400 bg-emerald-50 p-4 sm:col-span-1">
+              <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-900">
                 Neto a Dispersar
               </span>
-              <div className="font-orbitron text-xl font-bold text-emerald-950 mt-1 tabular-nums">
-                ${cierreCalculado.resumen.totalNetoDispersar.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              <div className="mt-1 font-orbitron text-xl font-bold tabular-nums text-emerald-950">
+                $
+                {cierreCalculado.resumen.totalNetoDispersar.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                })}
               </div>
             </div>
           </div>
 
           {/* Sello y Guardado en Expediente */}
-          <div className="p-4 rounded-xl bg-navy/5 border border-navy/15 flex flex-wrap items-center justify-between gap-4 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-navy/15 bg-navy/5 p-4 text-xs">
             <div className="space-y-1">
-              <div className="font-mono text-[11px] text-navy font-semibold flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-navy">
                 <ShieldCheck size={14} className="text-gold" />
                 <span>Sello SHA-256: {cierreCalculado.resumen.hashLote.slice(0, 32)}...</span>
               </div>
-              <div className="text-[10px] text-muted font-mono">
+              <div className="font-mono text-[10px] text-muted">
                 {cierreCalculado.resumen.importeNetoEnLetras}
               </div>
             </div>
@@ -653,7 +673,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                 )}
               </GlassButton>
             ) : (
-              <span className="text-[11px] text-muted italic">
+              <span className="text-[11px] italic text-muted">
                 Selecciona un cliente arriba para archivar esta cédula en su historial.
               </span>
             )}

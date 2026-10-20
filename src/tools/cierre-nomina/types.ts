@@ -66,7 +66,7 @@ export interface ResultadoTrabajadorNomina {
   salarioDiario: number;
   sbcDiario: number;
   diasTrabajados: number;
-  
+
   // Percepciones
   sueldoOrdinario: number;
   percepcionesAdicionales: number;

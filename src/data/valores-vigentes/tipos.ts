@@ -2,21 +2,12 @@
  * Origen oficial de un valor fiscal.
  * Permite trazabilidad y auditoría.
  */
-export type OrganismoOficial =
-  | 'INEGI'
-  | 'CONASAMI'
-  | 'IMSS'
-  | 'SAT'
-  | 'CONGRESO_ESTATAL';
+export type OrganismoOficial = 'INEGI' | 'CONASAMI' | 'IMSS' | 'SAT' | 'CONGRESO_ESTATAL';
 
 /**
  * Unidad de medida del valor fiscal.
  */
-export type UnidadFiscal =
-  | 'MXN'
-  | 'MXN_DIARIO'
-  | 'MXN_MENSUAL'
-  | 'PORCENTAJE';
+export type UnidadFiscal = 'MXN' | 'MXN_DIARIO' | 'MXN_MENSUAL' | 'PORCENTAJE';
 
 /**
  * Nivel de criticidad si el valor caduca.
@@ -31,17 +22,17 @@ export type Criticidad = 'ALTA' | 'MEDIA' | 'BAJA';
  */
 export interface FuenteOficial {
   readonly organismo: OrganismoOficial;
-  readonly publicacion: string;    // Ej: "DOF 09/12/2025"
-  readonly urlDOF: string;         // Link directo al documento oficial en DOF
-  readonly referencia: string;     // Referencia legal: "Art. 26 Apartado B Constitucional" / "Art. 96 LISR"
+  readonly publicacion: string; // Ej: "DOF 09/12/2025"
+  readonly urlDOF: string; // Link directo al documento oficial en DOF
+  readonly referencia: string; // Referencia legal: "Art. 26 Apartado B Constitucional" / "Art. 96 LISR"
 }
 
 /**
  * Periodo de vigencia del valor.
  */
 export interface Vigencia {
-  readonly inicio: string;         // ISO date "2026-01-01"
-  readonly fin: string | null;     // null = vigente indefinidamente
+  readonly inicio: string; // ISO date "2026-01-01"
+  readonly fin: string | null; // null = vigente indefinidamente
 }
 
 /**
@@ -54,8 +45,8 @@ export interface ValorFiscal {
   readonly unidad: UnidadFiscal;
   readonly vigencia: Vigencia;
   readonly fuente: FuenteOficial;
-  readonly esProyeccion: false;           // Forzar verificación: no hay false por defecto
-  readonly verificadoPor: string;         // "Pavel M. — 2026-01-15"
+  readonly esProyeccion: false; // Forzar verificación: no hay false por defecto
+  readonly verificadoPor: string; // "Pavel M. — 2026-01-15"
   readonly criticidad: Criticidad;
 }
 

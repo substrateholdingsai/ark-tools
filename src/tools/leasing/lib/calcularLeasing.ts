@@ -3,11 +3,7 @@
  * Lógica matemática de proyección financiera, retención y LTV
  */
 
-import type {
-  ParametrosLeasing,
-  ProyeccionMes,
-  ResumenLeasing,
-} from '../types';
+import type { ParametrosLeasing, ProyeccionMes, ResumenLeasing } from '../types';
 
 export const PARAMETROS_DEFAULT: ParametrosLeasing = {
   clientesIniciales: 5,
@@ -155,13 +151,12 @@ export function calcularResumenLeasing(
 
   // Cálculo de LTV (Lifetime Value)
   const churnDecimal = parametros.tasaChurnPorcentaje / 100;
-  const mesesRetencion =
-    churnDecimal > 0 ? Math.min(60, Math.round(1 / churnDecimal)) : 36;
-  const margenUnitarioMensual =
-    Math.max(0, parametros.rentaMensual - parametros.costoDirectoPorCliente);
-  const ltvEstimado = Math.round(
-    parametros.setupFee + margenUnitarioMensual * mesesRetencion
+  const mesesRetencion = churnDecimal > 0 ? Math.min(60, Math.round(1 / churnDecimal)) : 36;
+  const margenUnitarioMensual = Math.max(
+    0,
+    parametros.rentaMensual - parametros.costoDirectoPorCliente
   );
+  const ltvEstimado = Math.round(parametros.setupFee + margenUnitarioMensual * mesesRetencion);
 
   return {
     mrrFinal,

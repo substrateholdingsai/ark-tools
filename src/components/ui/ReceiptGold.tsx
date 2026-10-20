@@ -23,18 +23,10 @@ const paddingClasses = {
   lg: 'p-8',
 } as const;
 
-export function ReceiptGold({
-  children,
-  padding = 'md',
-  className,
-}: ReceiptGoldProps) {
+export function ReceiptGold({ children, padding = 'md', className }: ReceiptGoldProps) {
   return (
     <div
-      className={cn(
-        'receipt-gold rounded-[16px] bg-surface',
-        paddingClasses[padding],
-        className
-      )}
+      className={cn('receipt-gold rounded-[16px] bg-surface', paddingClasses[padding], className)}
     >
       {children}
     </div>

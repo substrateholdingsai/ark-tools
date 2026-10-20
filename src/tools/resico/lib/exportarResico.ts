@@ -25,13 +25,17 @@ export function exportarResicoCSV(
   lineas.push('ARK TOOLS — PAPEL DE TRABAJO Y CÉDULA DE DETERMINACIÓN RESICO');
   lineas.push(`Contribuyente,${escaparCSV(clienteNombre)}`);
   lineas.push(`RFC,${escaparCSV(clienteRfc)}`);
-  lineas.push(`Tipo de Persona,${resultado.tipoPersona === 'fisica' ? 'Persona Física (Art. 113-E LISR)' : 'Persona Moral (Art. 206 LISR)'}`);
+  lineas.push(
+    `Tipo de Persona,${resultado.tipoPersona === 'fisica' ? 'Persona Física (Art. 113-E LISR)' : 'Persona Moral (Art. 206 LISR)'}`
+  );
   lineas.push(`Período Fiscal,${escaparCSV(`${nombreMes} ${resultado.ejercicio}`)}`);
   lineas.push(`Fundamento Legal,${escaparCSV(resultado.fundamentoLegal)}`);
   lineas.push('');
 
   // 2. Desglose de conceptos
-  lineas.push('No,Concepto,Base Gravable (MXN),Tasa Aplicable,Importe Determinado (MXN),Naturaleza,Fundamento');
+  lineas.push(
+    'No,Concepto,Base Gravable (MXN),Tasa Aplicable,Importe Determinado (MXN),Naturaleza,Fundamento'
+  );
   resultado.desglose.forEach((d, idx) => {
     lineas.push(
       [

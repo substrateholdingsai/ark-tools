@@ -63,7 +63,9 @@ export function CalculadoraFiniquitos({ onBack }: CalculadoraFiniquitosProps) {
 
     if (dias < 0) {
       meses--;
-      const ultimoDiaMesAnterior = new Date(Date.UTC(fBaja.getUTCFullYear(), fBaja.getUTCMonth(), 0)).getUTCDate();
+      const ultimoDiaMesAnterior = new Date(
+        Date.UTC(fBaja.getUTCFullYear(), fBaja.getUTCMonth(), 0)
+      ).getUTCDate();
       dias += ultimoDiaMesAnterior;
     }
     if (meses < 0) {
@@ -98,17 +100,21 @@ export function CalculadoraFiniquitos({ onBack }: CalculadoraFiniquitosProps) {
     if (activeClient) {
       setEntrada((prev) => ({
         ...prev,
-        salarioDiario: activeClient.salario_diario > 0 ? activeClient.salario_diario : prev.salarioDiario,
-        sdi: activeClient.salario_diario_integrado > 0 ? activeClient.salario_diario_integrado : prev.sdi,
+        salarioDiario:
+          activeClient.salario_diario > 0 ? activeClient.salario_diario : prev.salarioDiario,
+        sdi:
+          activeClient.salario_diario_integrado > 0
+            ? activeClient.salario_diario_integrado
+            : prev.sdi,
         fechaIngreso: activeClient.fecha_ingreso || prev.fechaIngreso,
       }));
     }
   }, [activeClient]);
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6 animate-fadeIn">
+    <div className="animate-fadeIn mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       {/* Botón de regreso y encabezado */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line pb-6">
+      <div className="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           {onBack && (
             <button
@@ -125,18 +131,18 @@ export function CalculadoraFiniquitos({ onBack }: CalculadoraFiniquitosProps) {
               <span className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark">
                 HERRAMIENTA LABORAL · LFT 2026
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                <Scale className="w-3 h-3" /> OFICIAL LFT
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                <Scale className="h-3 w-3" /> OFICIAL LFT
               </span>
             </div>
-            <h1 className="font-playfair text-2xl sm:text-4xl font-black tracking-[-0.02em] text-navy mt-1">
+            <h1 className="mt-1 font-playfair text-2xl font-black tracking-[-0.02em] text-navy sm:text-4xl">
               Calculadora de Finiquitos y Liquidaciones
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[12px] text-muted font-inter">
-          <Sparkles className="w-4 h-4 text-gold flex-shrink-0" />
+        <div className="flex items-center gap-2 font-inter text-[12px] text-muted">
+          <Sparkles className="h-4 w-4 flex-shrink-0 text-gold" />
           <span>Vacaciones Dignas 2023 · Tope 2×SMG Art. 486</span>
         </div>
       </div>
@@ -146,14 +152,16 @@ export function CalculadoraFiniquitos({ onBack }: CalculadoraFiniquitosProps) {
         toolId="finiquitos"
         titulo={`Cálculo de ${entrada.tipoBaja === 'liquidacion' ? 'Liquidación' : 'Finiquito'} LFT`}
         inputs={entrada as unknown as Record<string, unknown>}
-        outputs={resultadoCalculo.ok ? (resultadoCalculo.valor as unknown as Record<string, unknown>) : {}}
+        outputs={
+          resultadoCalculo.ok ? (resultadoCalculo.valor as unknown as Record<string, unknown>) : {}
+        }
         disabled={!resultadoCalculo.ok}
       />
 
       {/* Grid principal de la herramienta: Entrada + Resultado */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         {/* Columna izquierda: Parámetros de Entrada (5 de 12 cols en desktop) */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="space-y-6 lg:col-span-5">
           <ParametrosFiniquitoCard
             entrada={entrada}
             onChange={setEntrada}
@@ -164,14 +172,11 @@ export function CalculadoraFiniquitos({ onBack }: CalculadoraFiniquitosProps) {
         </div>
 
         {/* Columna derecha: Resultados, Métricas y Desglose (7 de 12 cols en desktop) */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="space-y-6 lg:col-span-7">
           {resultadoCalculo.ok ? (
             <>
               {/* Card visual de impacto: Cifra total, desglose y exportaciones */}
-              <ResultadoFiniquitoCard
-                entrada={entrada}
-                resultado={resultadoCalculo.valor}
-              />
+              <ResultadoFiniquitoCard entrada={entrada} resultado={resultadoCalculo.valor} />
 
               {/* Card de Antigüedad y parámetros derivados */}
               <AntiguedadCard resultado={resultadoCalculo.valor} />
@@ -181,11 +186,11 @@ export function CalculadoraFiniquitos({ onBack }: CalculadoraFiniquitosProps) {
             </>
           ) : (
             <div className="rounded-[20px] border border-red-200 bg-red-50/40 p-6 text-center">
-              <Info className="w-8 h-8 text-red-500 mx-auto mb-2" />
-              <h3 className="font-playfair font-bold text-lg text-red-900">
+              <Info className="mx-auto mb-2 h-8 w-8 text-red-500" />
+              <h3 className="font-playfair text-lg font-bold text-red-900">
                 Parámetros Incompletos o Inválidos
               </h3>
-              <p className="font-inter text-sm text-red-700 mt-1">
+              <p className="mt-1 font-inter text-sm text-red-700">
                 Por favor revisa los campos señalados en el formulario para generar el cálculo.
               </p>
             </div>

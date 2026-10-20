@@ -167,14 +167,7 @@ export async function checkAlegraAccountsHealth(env: Env): Promise<{
                  updated_at = ?
              WHERE tenant_id = ? AND alegra_account_id = ?`
           )
-          .bind(
-            newStatus,
-            now,
-            errorMessage,
-            now,
-            account.tenant_id,
-            account.alegra_account_id
-          )
+          .bind(newStatus, now, errorMessage, now, account.tenant_id, account.alegra_account_id)
           .run();
 
         if (isRevoked) {

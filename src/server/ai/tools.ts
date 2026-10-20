@@ -22,18 +22,43 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         tipoBaja: {
           type: 'string',
           enum: ['finiquito', 'liquidacion'],
-          description: 'Naturaleza de la terminación laboral: "finiquito" (renuncia voluntaria) o "liquidacion" (despido injustificado).',
+          description:
+            'Naturaleza de la terminación laboral: "finiquito" (renuncia voluntaria) o "liquidacion" (despido injustificado).',
         },
-        fechaIngreso: { type: 'string', description: 'Fecha de ingreso en formato ISO YYYY-MM-DD.' },
+        fechaIngreso: {
+          type: 'string',
+          description: 'Fecha de ingreso en formato ISO YYYY-MM-DD.',
+        },
         fechaBaja: { type: 'string', description: 'Fecha de baja en formato ISO YYYY-MM-DD.' },
         salarioDiario: { type: 'number', description: 'Salario diario ordinario en MXN.' },
-        sdi: { type: 'number', description: 'Salario Diario Integrado para indemnizaciones en MXN.' },
-        vacacionesPendientes: { type: 'number', description: 'Días de vacaciones pendientes de años anteriores (opcional, default: 0).' },
-        aguinaldoPendiente: { type: 'number', description: 'Días de aguinaldo adeudados (opcional, default: 0).' },
-        primaVacacionalPct: { type: 'number', description: 'Porcentaje de prima vacacional (default: 25).' },
-        incluirPrimaAntiguedad: { type: 'boolean', description: 'Activar prima de antigüedad (Art. 162 LFT).' },
-        incluirIndem90Dias: { type: 'boolean', description: 'Activar indemnización constitucional 90 días (solo liquidación).' },
-        incluir20DiasAnio: { type: 'boolean', description: 'Activar 20 días por año de servicio (Art. 50 Fracc. II LFT).' },
+        sdi: {
+          type: 'number',
+          description: 'Salario Diario Integrado para indemnizaciones en MXN.',
+        },
+        vacacionesPendientes: {
+          type: 'number',
+          description: 'Días de vacaciones pendientes de años anteriores (opcional, default: 0).',
+        },
+        aguinaldoPendiente: {
+          type: 'number',
+          description: 'Días de aguinaldo adeudados (opcional, default: 0).',
+        },
+        primaVacacionalPct: {
+          type: 'number',
+          description: 'Porcentaje de prima vacacional (default: 25).',
+        },
+        incluirPrimaAntiguedad: {
+          type: 'boolean',
+          description: 'Activar prima de antigüedad (Art. 162 LFT).',
+        },
+        incluirIndem90Dias: {
+          type: 'boolean',
+          description: 'Activar indemnización constitucional 90 días (solo liquidación).',
+        },
+        incluir20DiasAnio: {
+          type: 'boolean',
+          description: 'Activar 20 días por año de servicio (Art. 50 Fracc. II LFT).',
+        },
       },
       required: ['tipoBaja', 'fechaIngreso', 'fechaBaja', 'salarioDiario', 'sdi'],
     },
@@ -48,19 +73,23 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         tipoPersona: {
           type: 'string',
           enum: ['fisica', 'moral'],
-          description: 'Tipo de contribuyente: "fisica" (Art. 113-E LISR) o "moral" (Art. 206 LISR).',
+          description:
+            'Tipo de contribuyente: "fisica" (Art. 113-E LISR) o "moral" (Art. 206 LISR).',
         },
         ingresosCobrados: {
           type: 'number',
-          description: 'Monto de ingresos efectivamente cobrados amparados por CFDI en el mes (para PF) o acumulados en el ejercicio (para PM).',
+          description:
+            'Monto de ingresos efectivamente cobrados amparados por CFDI en el mes (para PF) o acumulados en el ejercicio (para PM).',
         },
         deduccionesCobros: {
           type: 'number',
-          description: 'Deducciones autorizadas pagadas acumuladas (solo aplica para Persona Moral).',
+          description:
+            'Deducciones autorizadas pagadas acumuladas (solo aplica para Persona Moral).',
         },
         retencionISR: {
           type: 'number',
-          description: 'Monto de retención de ISR (1.25% por PM para PF, o retenciones bancarias acumuladas para PM).',
+          description:
+            'Monto de retención de ISR (1.25% por PM para PF, o retenciones bancarias acumuladas para PM).',
         },
         ivaCobrado: {
           type: 'number',
@@ -87,7 +116,8 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
       properties: {
         step_id: {
           type: 'number',
-          description: 'Número de paso específico (del 1 al 8). Si no se proporciona, devuelve todos los pasos registrados.',
+          description:
+            'Número de paso específico (del 1 al 8). Si no se proporciona, devuelve todos los pasos registrados.',
         },
       },
       required: [],
@@ -121,7 +151,8 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
       properties: {
         conducta_id: {
           type: 'number',
-          description: 'ID de la conducta específica (1 al 12). Si se omite, retorna todas las notas guardadas.',
+          description:
+            'ID de la conducta específica (1 al 12). Si se omite, retorna todas las notas guardadas.',
         },
       },
       required: [],
@@ -129,8 +160,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   },
   {
     name: 'obtener_info_despacho',
-    description:
-      'Obtiene información general y metadatos del despacho contable o tenant actual.',
+    description: 'Obtiene información general y metadatos del despacho contable o tenant actual.',
     parameters: {
       type: 'object',
       properties: {},
@@ -139,12 +169,19 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   },
   {
     name: 'consultar_balance_general',
-    description: 'Consulta/analiza estructura patrimonial del Balance General archivado para el tenant actual.',
+    description:
+      'Consulta/analiza estructura patrimonial del Balance General archivado para el tenant actual.',
     parameters: {
       type: 'object',
       properties: {
-        cliente_id: { type: 'string', description: 'ID de cliente opcional para filtrar por expediente.' },
-        limit: { type: 'number', description: 'Número máximo de registros a devolver (por defecto 10).' },
+        cliente_id: {
+          type: 'string',
+          description: 'ID de cliente opcional para filtrar por expediente.',
+        },
+        limit: {
+          type: 'number',
+          description: 'Número máximo de registros a devolver (por defecto 10).',
+        },
       },
       required: [],
     },
@@ -162,11 +199,13 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
         status: {
           type: 'string',
-          description: 'Filtro opcional por estatus (ej. "Nuevo", "WhatsApp_enviado", "Respondio_2_whats", "Anti_spam").',
+          description:
+            'Filtro opcional por estatus (ej. "Nuevo", "WhatsApp_enviado", "Respondio_2_whats", "Anti_spam").',
         },
         especialidad: {
           type: 'string',
-          description: 'Filtro opcional por especialidad (ej. "Crypto", "General", "Cobranza", "Abogados").',
+          description:
+            'Filtro opcional por especialidad (ej. "Crypto", "General", "Cobranza", "Abogados").',
         },
         limit: {
           type: 'number',
@@ -206,7 +245,7 @@ export async function executeAiTool(
         aguinaldoPendiente: Number(args.aguinaldoPendiente || 0),
         primaVacacionalPct: Number(args.primaVacacionalPct ?? 25),
         incluirPrimaAntiguedad: Boolean(args.incluirPrimaAntiguedad ?? false),
-        incluirIndem90Dias: Boolean(args.incluirIndem90Dias ?? (args.tipoBaja === 'liquidacion')),
+        incluirIndem90Dias: Boolean(args.incluirIndem90Dias ?? args.tipoBaja === 'liquidacion'),
         incluir20DiasAnio: Boolean(args.incluir20DiasAnio ?? false),
       });
 
@@ -271,7 +310,10 @@ export async function executeAiTool(
             )
             .bind(tenantId, stepId)
             .first();
-          return { success: true, data: result ?? { message: `No hay progreso registrado para el paso ${stepId}.` } };
+          return {
+            success: true,
+            data: result ?? { message: `No hay progreso registrado para el paso ${stepId}.` },
+          };
         } else {
           const results = await db
             .prepare(
@@ -315,7 +357,10 @@ export async function executeAiTool(
             )
             .bind(tenantId, conductaId)
             .first();
-          return { success: true, data: result ?? { message: `No hay notas para la conducta ${conductaId}.` } };
+          return {
+            success: true,
+            data: result ?? { message: `No hay notas para la conducta ${conductaId}.` },
+          };
         } else {
           const results = await db
             .prepare(
@@ -341,7 +386,8 @@ export async function executeAiTool(
       case 'consultar_leads_crm': {
         const ciudad = typeof args.ciudad === 'string' ? args.ciudad.trim() : null;
         const status = typeof args.status === 'string' ? args.status.trim() : null;
-        const especialidad = typeof args.especialidad === 'string' ? args.especialidad.trim() : null;
+        const especialidad =
+          typeof args.especialidad === 'string' ? args.especialidad.trim() : null;
         const limit = Math.min(Math.max(Number(args.limit) || 10, 1), 50);
 
         const statsRow = await db
@@ -381,7 +427,10 @@ export async function executeAiTool(
         listQuery += ' ORDER BY created_at DESC LIMIT ?';
         binds.push(limit);
 
-        const listResult = await db.prepare(listQuery).bind(...binds).all();
+        const listResult = await db
+          .prepare(listQuery)
+          .bind(...binds)
+          .all();
 
         return {
           success: true,

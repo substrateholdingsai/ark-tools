@@ -427,12 +427,7 @@ export async function handleInvitationsApiRequest(
     /^\/api\/tenants\/([a-zA-Z0-9_-]+)\/members\/([a-zA-Z0-9_-]+)$/
   );
 
-  if (
-    !tenantMembersMatch &&
-    !tenantInvitationsMatch &&
-    !revokeInviteMatch &&
-    !memberActionMatch
-  ) {
+  if (!tenantMembersMatch && !tenantInvitationsMatch && !revokeInviteMatch && !memberActionMatch) {
     return null; // No corresponde a este módulo
   }
 
@@ -540,7 +535,11 @@ export async function handleInvitationsApiRequest(
     }
 
     // Un admin solo puede invitar a miembros; solo el owner puede invitar a otros administradores
-    if (requestedRole === 'admin' && callerRole !== 'owner' && principal.platformRole !== 'super_admin') {
+    if (
+      requestedRole === 'admin' &&
+      callerRole !== 'owner' &&
+      principal.platformRole !== 'super_admin'
+    ) {
       return json(
         { error: 'Solo el titular del despacho puede invitar a nuevos administradores.' },
         corsHeaders,
@@ -618,16 +617,7 @@ export async function handleInvitationsApiRequest(
           `INSERT INTO tenant_invitations (id, tenant_id, email, role, token_hash, invited_by, created_at, expires_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
         )
-        .bind(
-          invitationId,
-          tenantId,
-          email,
-          requestedRole,
-          tokenHash,
-          principal.id,
-          now,
-          expiresAt
-        )
+        .bind(invitationId, tenantId, email, requestedRole, tokenHash, principal.id, now, expiresAt)
         .run();
     }
 
@@ -684,18 +674,10 @@ export async function handleInvitationsApiRequest(
       .run();
 
     if (!result.meta.changes) {
-      return json(
-        { error: 'Invitación no encontrada o ya procesada/revocada.' },
-        corsHeaders,
-        404
-      );
+      return json({ error: 'Invitación no encontrada o ya procesada/revocada.' }, corsHeaders, 404);
     }
 
-    return json(
-      { success: true, message: 'Invitación revocada exitosamente.' },
-      corsHeaders,
-      200
-    );
+    return json({ success: true, message: 'Invitación revocada exitosamente.' }, corsHeaders, 200);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -762,7 +744,11 @@ export async function handleInvitationsApiRequest(
       return json({ error: 'No se puede remover al titular del despacho.' }, corsHeaders, 403);
     }
 
-    if (targetMembership.role === 'admin' && callerRole !== 'owner' && principal.platformRole !== 'super_admin') {
+    if (
+      targetMembership.role === 'admin' &&
+      callerRole !== 'owner' &&
+      principal.platformRole !== 'super_admin'
+    ) {
       return json(
         { error: 'Solo el titular del despacho puede remover a un administrador.' },
         corsHeaders,

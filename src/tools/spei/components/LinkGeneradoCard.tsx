@@ -4,15 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  CheckCircle2,
-  Copy,
-  Check,
-  ExternalLink,
-  MessageCircle,
-  Share2,
-  Info,
-} from 'lucide-react';
+import { CheckCircle2, Copy, Check, ExternalLink, MessageCircle, Share2, Info } from 'lucide-react';
 import { BadgeGold } from '@/components/ui';
 import { generarMensajeWhatsApp, formatearMXN } from '../lib/clipClient';
 import type { ClipCheckoutResult } from '../types';
@@ -48,18 +40,16 @@ export const LinkGeneradoCard: React.FC<LinkGeneradoCardProps> = ({
   });
 
   return (
-    <div className="rounded-2xl border-2 border-gold/40 bg-surface-raised/80 p-6 md:p-8 space-y-6 shadow-2xl shadow-gold/15">
+    <div className="bg-surface-raised/80 space-y-6 rounded-2xl border-2 border-gold/40 p-6 shadow-2xl shadow-gold/15 md:p-8">
       {/* Cabecera */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+      <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-inner">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-500/40 bg-emerald-500/20 text-emerald-400 shadow-inner">
             <CheckCircle2 className="h-6 w-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-playfair text-xl font-bold text-ink">
-                ¡Link de Pago Generado!
-              </h3>
+              <h3 className="font-playfair text-xl font-bold text-ink">¡Link de Pago Generado!</h3>
               <BadgeGold size="sm">ACTIVO</BadgeGold>
             </div>
             <p className="text-xs text-muted">
@@ -69,9 +59,7 @@ export const LinkGeneradoCard: React.FC<LinkGeneradoCardProps> = ({
         </div>
 
         <div className="text-right">
-          <span className="text-[10px] uppercase font-bold text-muted block">
-            Monto a cobrar
-          </span>
+          <span className="block text-[10px] font-bold uppercase text-muted">Monto a cobrar</span>
           <span className="font-mono text-xl font-black text-gold">
             {formatearMXN(resultado.amount)}
           </span>
@@ -80,17 +68,17 @@ export const LinkGeneradoCard: React.FC<LinkGeneradoCardProps> = ({
 
       {/* URL para Copiar */}
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
           <Share2 className="h-3.5 w-3.5 text-gold" />
           Enlace Clip Checkout
         </label>
         <div className="flex items-center gap-2">
-          <div className="flex-1 overflow-x-auto rounded-xl bg-surface p-3 border border-white/10 font-mono text-xs text-ink select-all">
+          <div className="flex-1 select-all overflow-x-auto rounded-xl border border-white/10 bg-surface p-3 font-mono text-xs text-ink">
             {resultado.payment_request_url}
           </div>
           <button
             onClick={handleCopiar}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-xl bg-gold text-navy font-bold text-xs hover:bg-gold/90 transition-all shrink-0 shadow-md"
+            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-gold px-4 py-3 text-xs font-bold text-navy shadow-md transition-all hover:bg-gold/90"
           >
             {copiado ? (
               <>
@@ -108,12 +96,12 @@ export const LinkGeneradoCard: React.FC<LinkGeneradoCardProps> = ({
       </div>
 
       {/* Botones de Acción Inmediata */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-2">
+      <div className="flex flex-col gap-3 pt-2 sm:flex-row">
         <a
           href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex-1 inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-colors shadow-lg shadow-emerald-950/40 text-center"
+          className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3.5 text-center text-xs font-bold text-white shadow-lg shadow-emerald-950/40 transition-colors hover:bg-emerald-500"
         >
           <MessageCircle className="h-4 w-4" />
           ENVIAR POR WHATSAPP AHORA
@@ -123,7 +111,7 @@ export const LinkGeneradoCard: React.FC<LinkGeneradoCardProps> = ({
           href={resultado.payment_request_url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-xl bg-surface-raised hover:bg-surface text-ink font-semibold text-xs border border-white/15 transition-colors text-center"
+          className="bg-surface-raised inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 px-5 py-3.5 text-center text-xs font-semibold text-ink transition-colors hover:bg-surface"
         >
           <ExternalLink className="h-4 w-4 text-gold" />
           Probar Link en Clip
@@ -132,8 +120,8 @@ export const LinkGeneradoCard: React.FC<LinkGeneradoCardProps> = ({
 
       {/* Aviso de Modo o Certificación */}
       {resultado.is_mock && (
-        <div className="flex items-start gap-2 text-xs text-amber-200/90 bg-amber-950/30 p-3.5 rounded-xl border border-amber-500/30">
-          <Info className="h-4 w-4 shrink-0 text-amber-400 mt-0.5" />
+        <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-950/30 p-3.5 text-xs text-amber-200/90">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
           <div>
             <strong className="font-semibold text-amber-300">Modo de Demostración:</strong>{' '}
             {resultado.notice ||

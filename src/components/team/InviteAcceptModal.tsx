@@ -122,15 +122,12 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
 
   const invitation = info?.invitation;
   const isEmailMismatch =
-    isSignedIn &&
-    user &&
-    invitation &&
-    user.email.toLowerCase() !== invitation.email.toLowerCase();
+    isSignedIn && user && invitation && user.email.toLowerCase() !== invitation.email.toLowerCase();
 
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 backdrop-blur-xs p-4"
+      className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -181,7 +178,8 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
                   Invitación no disponible
                 </h4>
                 <p className="mt-1.5 text-[12px] text-muted">
-                  {errorMsg || 'El enlace de invitación no es válido, ya fue utilizado o ha expirado.'}
+                  {errorMsg ||
+                    'El enlace de invitación no es válido, ya fue utilizado o ha expirado.'}
                 </p>
               </div>
               <button
@@ -274,8 +272,9 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
                   {info.userExists ? (
                     <div>
                       <p className="mb-3 text-[12px] text-ink">
-                        Tu cuenta <strong>{invitation.email}</strong> ya está registrada en ARK TOOLS.
-                        Ingresa tu contraseña para aceptar la invitación e ingresar al despacho:
+                        Tu cuenta <strong>{invitation.email}</strong> ya está registrada en ARK
+                        TOOLS. Ingresa tu contraseña para aceptar la invitación e ingresar al
+                        despacho:
                       </p>
                       <div>
                         <label className="mb-1 block font-orbitron text-[10px] font-bold uppercase tracking-wider text-ink">
@@ -345,7 +344,8 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
                             />
                           </div>
                           <p className="mt-1 text-[10px] text-muted">
-                            Por seguridad nativa del sistema fiscal, la contraseña debe contener al menos 15 caracteres.
+                            Por seguridad nativa del sistema fiscal, la contraseña debe contener al
+                            menos 15 caracteres.
                           </p>
                         </div>
                       </div>
@@ -364,7 +364,9 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
                       </>
                     ) : (
                       <>
-                        <span>{info.userExists ? 'ACEPTAR E INICIAR SESIÓN' : 'CREAR CUENTA Y UNIRME'}</span>
+                        <span>
+                          {info.userExists ? 'ACEPTAR E INICIAR SESIÓN' : 'CREAR CUENTA Y UNIRME'}
+                        </span>
                         <ArrowRight size={14} className="text-gold" />
                       </>
                     )}
@@ -387,7 +389,7 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-line bg-white px-4 py-1.5 font-orbitron text-[10px] font-bold text-navy shadow-xs transition hover:bg-surface-2"
+            className="shadow-xs rounded-xl border border-line bg-white px-4 py-1.5 font-orbitron text-[10px] font-bold text-navy transition hover:bg-surface-2"
           >
             CERRAR
           </button>

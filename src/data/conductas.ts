@@ -20,29 +20,13 @@
 // Tipos base
 // =====================================================
 
-export type MarcoLegalAV =
-  | 'Ley Fintech'
-  | 'LFPIORPI'
-  | 'CPF'
-  | 'CFF'
-  | 'Iniciativa 2026';
+export type MarcoLegalAV = 'Ley Fintech' | 'LFPIORPI' | 'CPF' | 'CFF' | 'Iniciativa 2026';
 
-export type GravedadAV =
-  | 'MEDIA'
-  | 'ALTA'
-  | 'CRITICA'
-  | 'CRITICA_MAX'
-  | 'FUTURA';
+export type GravedadAV = 'MEDIA' | 'ALTA' | 'CRITICA' | 'CRITICA_MAX' | 'FUTURA';
 
-export type TipoSancionAV =
-  | 'PENAL'
-  | 'ADMINISTRATIVA'
-  | 'FISCAL'
-  | 'PROPUESTA';
+export type TipoSancionAV = 'PENAL' | 'ADMINISTRATIVA' | 'FISCAL' | 'PROPUESTA';
 
-export type EstatusLegalAV =
-  | 'LEGAL'
-  | 'ILEGAL';
+export type EstatusLegalAV = 'LEGAL' | 'ILEGAL';
 
 export interface ConductaAV {
   id: number;
@@ -126,8 +110,7 @@ export const TIPOS_SANCION_AV: readonly TipoSancionAV[] = [
 export const CONDUCTAS_AV: ConductaAV[] = [
   {
     id: 1,
-    conducta:
-      'Operar plataforma de activos virtuales sin autorización de la CNBV',
+    conducta: 'Operar plataforma de activos virtuales sin autorización de la CNBV',
     marcoLegal: 'Ley Fintech',
     articulo: 'Art. 30 y régimen de autorización',
     calificacion: 'Actividad financiera no autorizada',
@@ -143,8 +126,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 2,
-    conducta:
-      'Usar, obtener o transferir activos virtuales de clientes',
+    conducta: 'Usar, obtener o transferir activos virtuales de clientes',
     marcoLegal: 'Ley Fintech',
     articulo: 'Art. 119',
     calificacion: 'Delito contra el patrimonio del cliente',
@@ -176,8 +158,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 4,
-    conducta:
-      'Obtener, extraer o transferir activos virtuales sin autorización (hackeo)',
+    conducta: 'Obtener, extraer o transferir activos virtuales sin autorización (hackeo)',
     marcoLegal: 'Ley Fintech',
     articulo: 'Art. 133',
     calificacion: 'Intrusión y apropiación ilícita',
@@ -193,8 +174,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 5,
-    conducta:
-      'Divulgar información financiera o confidencial de clientes',
+    conducta: 'Divulgar información financiera o confidencial de clientes',
     marcoLegal: 'Ley Fintech',
     articulo: 'Art. 122',
     calificacion: 'Vulneración de datos personales y financieros',
@@ -210,8 +190,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 6,
-    conducta:
-      'Negarse a devolver activos virtuales encomendados',
+    conducta: 'Negarse a devolver activos virtuales encomendados',
     marcoLegal: 'Ley Fintech',
     articulo: 'Art. 120',
     calificacion: 'Posesión ilícita',
@@ -227,8 +206,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 7,
-    conducta:
-      'No presentar los avisos de operaciones con activos virtuales ante la UIF',
+    conducta: 'No presentar los avisos de operaciones con activos virtuales ante la UIF',
     marcoLegal: 'LFPIORPI',
     articulo: 'Art. 32 y reglas conexas',
     calificacion: 'Incumplimiento antilavado',
@@ -244,8 +222,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 8,
-    conducta:
-      'Lavado de dinero mediante activos virtuales',
+    conducta: 'Lavado de dinero mediante activos virtuales',
     marcoLegal: 'CPF',
     articulo: 'Código Penal Federal y LFPIORPI',
     calificacion: 'Delito de lavado de dinero',
@@ -261,8 +238,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 9,
-    conducta:
-      'Robo violento de activos virtuales (key wrench attack)',
+    conducta: 'Robo violento de activos virtuales (key wrench attack)',
     marcoLegal: 'CPF',
     articulo: 'Robo / homicidio',
     calificacion: 'Delito penal común agravado',
@@ -278,8 +254,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 10,
-    conducta:
-      'Omitir o falsear ganancias por operaciones con activos virtuales',
+    conducta: 'Omitir o falsear ganancias por operaciones con activos virtuales',
     marcoLegal: 'CFF',
     articulo: 'Código Fiscal de la Federación',
     calificacion: 'Infracción fiscal / defraudación',
@@ -295,8 +270,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 11,
-    conducta:
-      'Emitir stablecoins (AVE) sin autorización de Banxico',
+    conducta: 'Emitir stablecoins (AVE) sin autorización de Banxico',
     marcoLegal: 'Iniciativa 2026',
     articulo: 'Pendiente — iniciativa Sen. Murat mayo 2026',
     calificacion: 'Se tipificaría como ilegal',
@@ -312,8 +286,7 @@ export const CONDUCTAS_AV: ConductaAV[] = [
   },
   {
     id: 12,
-    conducta:
-      'Ocultar reservas de stablecoins o proporcionar información falsa',
+    conducta: 'Ocultar reservas de stablecoins o proporcionar información falsa',
     marcoLegal: 'Iniciativa 2026',
     articulo: 'Ídem — reserva y transparencia',
     calificacion: 'Se tipificaría como ilegal',
@@ -338,8 +311,7 @@ export const AUTORIDADES_AV: AutoridadAV[] = [
     id: 'cnbv',
     sigla: 'CNBV',
     nombre: 'Comisión Nacional Bancaria y de Valores',
-    funcion:
-      'Autoriza y supervisa a las ITF, incluidas plataformas de activos virtuales.',
+    funcion: 'Autoriza y supervisa a las ITF, incluidas plataformas de activos virtuales.',
   },
   {
     id: 'banxico',
@@ -352,22 +324,20 @@ export const AUTORIDADES_AV: AutoridadAV[] = [
     id: 'uif',
     sigla: 'UIF',
     nombre: 'Unidad de Inteligencia Financiera',
-    funcion:
-      'Vigila cumplimiento antilavado y recibe reportes de operaciones de alto riesgo.',
+    funcion: 'Vigila cumplimiento antilavado y recibe reportes de operaciones de alto riesgo.',
   },
   {
     id: 'sat',
     sigla: 'SAT',
     nombre: 'Servicio de Administración Tributaria',
-    funcion:
-      'Exige declarar ganancias y mantiene obligaciones de registro antilavado.',
+    funcion: 'Exige declarar ganancias y mantiene obligaciones de registro antilavado.',
   },
   {
     id: 'condusef',
     sigla: 'CONDUSEF',
-    nombre: 'Comisión Nacional para la Protección y Defensa de los Usuarios de Servicios Financieros',
-    funcion:
-      'Protege derechos del usuario y atiende quejas, reclamaciones y publicidad engañosa.',
+    nombre:
+      'Comisión Nacional para la Protección y Defensa de los Usuarios de Servicios Financieros',
+    funcion: 'Protege derechos del usuario y atiende quejas, reclamaciones y publicidad engañosa.',
   },
 ];
 
@@ -535,20 +505,13 @@ export const RESUMEN_MAPA_AV = {
   totalHitos: TIMELINE_REGULATORIO_AV.length,
   totalUmbrales: UMBRALES_REPORTE_AV.length,
   totalReglasFrontera: FRONTERA_LEGAL_AV.length,
-  conductasNoIgnorables: CONDUCTAS_AV.filter(
-    conducta => conducta.noIgnorable,
-  ).length,
+  conductasNoIgnorables: CONDUCTAS_AV.filter((conducta) => conducta.noIgnorable).length,
   conductasCriticas: CONDUCTAS_AV.filter(
-    conducta =>
-      conducta.gravedad === 'CRITICA' ||
-      conducta.gravedad === 'CRITICA_MAX',
+    (conducta) => conducta.gravedad === 'CRITICA' || conducta.gravedad === 'CRITICA_MAX'
   ).length,
-  conductasFiscales: CONDUCTAS_AV.filter(conducta =>
-    conducta.tipos.includes('FISCAL'),
-  ).length,
-  conductasRelevantesParaContador: CONDUCTAS_AV.filter(
-    conducta => conducta.relevanteParaContador,
-  ).length,
+  conductasFiscales: CONDUCTAS_AV.filter((conducta) => conducta.tipos.includes('FISCAL')).length,
+  conductasRelevantesParaContador: CONDUCTAS_AV.filter((conducta) => conducta.relevanteParaContador)
+    .length,
 };
 
 // =====================================================

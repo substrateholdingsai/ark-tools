@@ -5,10 +5,7 @@
  * Combina ISR + IMSS obrero para obtener el neto a pagar.
  */
 
-import type {
-  ParametrosNomina,
-  ResultadoNomina,
-} from '../types';
+import type { ParametrosNomina, ResultadoNomina } from '../types';
 import { calcularISR, formatearMXN } from './calcularISR';
 import { calcularIMSS } from './calcularIMSS';
 import { PERIODOS } from '../data/periodos';
@@ -29,17 +26,13 @@ import { PERIODOS } from '../data/periodos';
  *   6. Total deducciones = ISR + IMSS
  *   7. Neto = sueldo bruto - total deducciones
  */
-export function calcularNomina(
-  parametros: ParametrosNomina
-): ResultadoNomina {
-  const { periodo, sueldoBruto, diasTrabajados, diasPeriodo, sbcDiario } =
-    parametros;
+export function calcularNomina(parametros: ParametrosNomina): ResultadoNomina {
+  const { periodo, sueldoBruto, diasTrabajados, diasPeriodo, sbcDiario } = parametros;
 
   const infoPeriodo = PERIODOS[periodo];
 
   // Paso 1: Sueldo bruto ajustado por días trabajados
-  const factorDias =
-    diasPeriodo > 0 ? Math.min(1, diasTrabajados / diasPeriodo) : 1;
+  const factorDias = diasPeriodo > 0 ? Math.min(1, diasTrabajados / diasPeriodo) : 1;
   const sueldoAjustado = redondear2(sueldoBruto * factorDias);
 
   // Paso 2: Base gravable para ISR (sin deducciones en este MVP)

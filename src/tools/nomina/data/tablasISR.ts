@@ -23,14 +23,14 @@ interface TarifaISRRango {
  * Tabla ISR mensual 2026 — fuente centralizada en catálogo de valores vigentes.
  * El test de integridad del catálogo valida que TARIFA_ISR_MENSUAL_2026
  * tenga fuente, referencia y no esté vencida.
- * 
+ *
  * Conversión: el catálogo usa `tasa` (decimal, ej. 0.0192) y el tipo local
  * usa `tasaExcedente` (porcentaje, ej. 1.92).
  */
-const tarifaIsr = CATALOGO_2026.find(v => v.id === 'TARIFA_ISR_MENSUAL_2026');
+const tarifaIsr = CATALOGO_2026.find((v) => v.id === 'TARIFA_ISR_MENSUAL_2026');
 if (!tarifaIsr) throw new Error('TARIFA_ISR_MENSUAL_2026 no encontrado en catálogo');
 
-export const TABLA_ISR_MENSUAL: RangoISR[] = (tarifaIsr.valor as TarifaISRRango[]).map(r => ({
+export const TABLA_ISR_MENSUAL: RangoISR[] = (tarifaIsr.valor as TarifaISRRango[]).map((r) => ({
   limiteInferior: r.limiteInferior,
   limiteSuperior: r.limiteSuperior,
   cuotaFija: r.cuotaFija,
@@ -42,15 +42,15 @@ export const TABLA_ISR_MENSUAL: RangoISR[] = (tarifaIsr.valor as TarifaISRRango[
  * Se aplica a salarios bajos para reducir el ISR a retener.
  */
 export const TABLA_SUBSIDIO_MENSUAL: RangoSubsidio[] = [
-  { limiteInferior: 0.01,      limiteSuperior: 1768.96,  subsidio: 407.02 },
-  { limiteInferior: 1768.97,   limiteSuperior: 2653.38,  subsidio: 406.83 },
-  { limiteInferior: 2653.39,   limiteSuperior: 3472.84,  subsidio: 406.62 },
-  { limiteInferior: 3472.85,   limiteSuperior: 3537.87,  subsidio: 392.77 },
-  { limiteInferior: 3537.88,   limiteSuperior: 4446.15,  subsidio: 382.46 },
-  { limiteInferior: 4446.16,   limiteSuperior: 4717.18,  subsidio: 354.23 },
-  { limiteInferior: 4717.19,   limiteSuperior: 5335.42,  subsidio: 324.87 },
-  { limiteInferior: 5335.43,   limiteSuperior: 6221.59,  subsidio: 294.63 },
-  { limiteInferior: 6221.60,   limiteSuperior: 7113.90,  subsidio: 253.54 },
-  { limiteInferior: 7113.91,   limiteSuperior: 7382.33,  subsidio: 217.61 },
-  { limiteInferior: 7382.34,   limiteSuperior: null,     subsidio: 0      },
+  { limiteInferior: 0.01, limiteSuperior: 1768.96, subsidio: 407.02 },
+  { limiteInferior: 1768.97, limiteSuperior: 2653.38, subsidio: 406.83 },
+  { limiteInferior: 2653.39, limiteSuperior: 3472.84, subsidio: 406.62 },
+  { limiteInferior: 3472.85, limiteSuperior: 3537.87, subsidio: 392.77 },
+  { limiteInferior: 3537.88, limiteSuperior: 4446.15, subsidio: 382.46 },
+  { limiteInferior: 4446.16, limiteSuperior: 4717.18, subsidio: 354.23 },
+  { limiteInferior: 4717.19, limiteSuperior: 5335.42, subsidio: 324.87 },
+  { limiteInferior: 5335.43, limiteSuperior: 6221.59, subsidio: 294.63 },
+  { limiteInferior: 6221.6, limiteSuperior: 7113.9, subsidio: 253.54 },
+  { limiteInferior: 7113.91, limiteSuperior: 7382.33, subsidio: 217.61 },
+  { limiteInferior: 7382.34, limiteSuperior: null, subsidio: 0 },
 ];

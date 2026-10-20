@@ -14,10 +14,7 @@ function escaparCSV(valor: string | number | undefined | null): string {
   return str;
 }
 
-export function generarCSVProyeccion(
-  proyeccion: ProyeccionMes[],
-  resumen: ResumenLeasing
-): string {
+export function generarCSVProyeccion(proyeccion: ProyeccionMes[], resumen: ResumenLeasing): string {
   const lineas: string[] = [];
 
   lineas.push('PROYECCIÓN DE LEASING RECURRENTE ($500 SETUP → $2,500 RENTA) — ARK TOOLS');

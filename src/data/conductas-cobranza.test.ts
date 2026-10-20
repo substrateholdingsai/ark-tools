@@ -38,9 +38,7 @@ describe('Catálogo de Conductas de Cobranza (Fase D: Compliance)', () => {
   });
 
   it('todas las conductas pertenecen a una sección válida existente', () => {
-    const seccionesValidas = new Set<SeccionCobranzaId>(
-      SECCIONES_COBRANZA.map((s) => s.id)
-    );
+    const seccionesValidas = new Set<SeccionCobranzaId>(SECCIONES_COBRANZA.map((s) => s.id));
 
     for (const conducta of CONDUCTAS_COBRANZA) {
       expect(seccionesValidas.has(conducta.seccion)).toBe(true);
@@ -53,11 +51,11 @@ describe('Catálogo de Conductas de Cobranza (Fase D: Compliance)', () => {
       conteoPorSeccion[conducta.seccion] = (conteoPorSeccion[conducta.seccion] ?? 0) + 1;
     }
 
-    expect(conteoPorSeccion['I']).toBe(7);  // 1.1 a 1.7
+    expect(conteoPorSeccion['I']).toBe(7); // 1.1 a 1.7
     expect(conteoPorSeccion['II']).toBe(9); // 2.1 a 2.9
     expect(conteoPorSeccion['III']).toBe(7); // 3.1 a 3.7
     expect(conteoPorSeccion['IV']).toBe(7); // 4.1 a 4.7
-    expect(conteoPorSeccion['V']).toBe(3);  // 5.1 a 5.3
+    expect(conteoPorSeccion['V']).toBe(3); // 5.1 a 5.3
     expect(conteoPorSeccion['VI']).toBe(4); // 6.1 a 6.4
     expect(conteoPorSeccion['VII']).toBe(6); // 7.1 a 7.6
   });

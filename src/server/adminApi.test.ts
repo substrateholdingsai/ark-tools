@@ -159,7 +159,10 @@ describe('Admin API Handlers', () => {
     );
 
     expect(response?.status).toBe(200);
-    const body = (await response?.json()) as { success: boolean; users: Array<{ id: string; tenants: unknown[] }> };
+    const body = (await response?.json()) as {
+      success: boolean;
+      users: Array<{ id: string; tenants: unknown[] }>;
+    };
     expect(body.success).toBe(true);
     expect(body.users.length).toBeGreaterThan(0);
     expect(body.users[0]?.tenants.length).toBe(1);

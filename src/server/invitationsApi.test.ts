@@ -61,12 +61,15 @@ describe('Invitations & Team Collaboration API', () => {
   describe('GET /api/invitations/info', () => {
     it('returns 400 for invalid token format', async () => {
       const env = createMockEnv();
-      const req = new Request('https://tools.arksystems.site/api/invitations/info?token=invalid-short', {
-        method: 'GET',
-      });
+      const req = new Request(
+        'https://tools.arksystems.site/api/invitations/info?token=invalid-short',
+        {
+          method: 'GET',
+        }
+      );
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, null);
       expect(res?.status).toBe(400);
-      const data = await res?.json() as { valid: boolean; error: string };
+      const data = (await res?.json()) as { valid: boolean; error: string };
       expect(data.valid).toBe(false);
       expect(data.error).toContain('Token');
     });
@@ -80,12 +83,15 @@ describe('Invitations & Team Collaboration API', () => {
       };
       const env = createMockEnv(mockDb);
       const validHexToken = 'a'.repeat(64);
-      const req = new Request(`https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`, {
-        method: 'GET',
-      });
+      const req = new Request(
+        `https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`,
+        {
+          method: 'GET',
+        }
+      );
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, null);
       expect(res?.status).toBe(404);
-      const data = await res?.json() as { valid: boolean; error: string };
+      const data = (await res?.json()) as { valid: boolean; error: string };
       expect(data.valid).toBe(false);
       expect(data.error).toContain('no encontrada');
     });
@@ -112,12 +118,15 @@ describe('Invitations & Team Collaboration API', () => {
       };
       const env = createMockEnv(mockDb);
       const validHexToken = 'b'.repeat(64);
-      const req = new Request(`https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`, {
-        method: 'GET',
-      });
+      const req = new Request(
+        `https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`,
+        {
+          method: 'GET',
+        }
+      );
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, null);
       expect(res?.status).toBe(410);
-      const data = await res?.json() as { valid: boolean; error: string };
+      const data = (await res?.json()) as { valid: boolean; error: string };
       expect(data.valid).toBe(false);
       expect(data.error).toContain('expirado');
     });
@@ -152,12 +161,15 @@ describe('Invitations & Team Collaboration API', () => {
       };
       const env = createMockEnv(mockDb);
       const validHexToken = 'c'.repeat(64);
-      const req = new Request(`https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`, {
-        method: 'GET',
-      });
+      const req = new Request(
+        `https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`,
+        {
+          method: 'GET',
+        }
+      );
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, null);
       expect(res?.status).toBe(200);
-      const data = await res?.json() as {
+      const data = (await res?.json()) as {
         valid: boolean;
         invitation: { email: string; tenantName: string; role: string; inviterName: string };
         userExists: boolean;
@@ -208,14 +220,28 @@ describe('Invitations & Team Collaboration API', () => {
             if (query.includes('FROM tenant_memberships m') && query.includes('JOIN users u')) {
               return {
                 results: [
-                  { userId: 'user-owner-1', email: 'owner@example.com', fullName: 'Owner', role: 'owner', joinedAt: 1792000000 },
+                  {
+                    userId: 'user-owner-1',
+                    email: 'owner@example.com',
+                    fullName: 'Owner',
+                    role: 'owner',
+                    joinedAt: 1792000000,
+                  },
                 ],
               };
             }
             if (query.includes('FROM tenant_invitations i')) {
               return {
                 results: [
-                  { id: 'inv-1', email: 'pending@example.com', role: 'member', createdAt: 1792100000, expiresAt: 1792700000, invitedByEmail: 'owner@example.com', invitedByName: 'Owner' },
+                  {
+                    id: 'inv-1',
+                    email: 'pending@example.com',
+                    role: 'member',
+                    createdAt: 1792100000,
+                    expiresAt: 1792700000,
+                    invitedByEmail: 'owner@example.com',
+                    invitedByName: 'Owner',
+                  },
                 ],
               };
             }
@@ -229,7 +255,7 @@ describe('Invitations & Team Collaboration API', () => {
       });
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, ownerUser);
       expect(res?.status).toBe(200);
-      const data = await res?.json() as {
+      const data = (await res?.json()) as {
         tenantId: string;
         currentUserRole: string;
         members: unknown[];
@@ -275,7 +301,7 @@ describe('Invitations & Team Collaboration API', () => {
       });
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, adminUser);
       expect(res?.status).toBe(403);
-      const data = await res?.json() as { error: string };
+      const data = (await res?.json()) as { error: string };
       expect(data.error).toContain('Solo el titular');
     });
 
@@ -317,7 +343,10 @@ describe('Invitations & Team Collaboration API', () => {
       });
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, ownerUser);
       expect(res?.status).toBe(201);
-      const data = await res?.json() as { success: boolean; invitation: { email: string; role: string } };
+      const data = (await res?.json()) as {
+        success: boolean;
+        invitation: { email: string; role: string };
+      };
       expect(data.success).toBe(true);
       expect(data.invitation.email).toBe('nuevo.contador@example.com');
       expect(data.invitation.role).toBe('member');
@@ -354,7 +383,9 @@ describe('Invitations & Team Collaboration API', () => {
             return null;
           }),
           all: vi.fn(async () => ({
-            results: [{ id: 't-123', name: 'Despacho Alianza', slug: 'despacho-alianza', role: 'member' }],
+            results: [
+              { id: 't-123', name: 'Despacho Alianza', slug: 'despacho-alianza', role: 'member' },
+            ],
           })),
           run: vi.fn(async () => ({ success: true })),
         })),
@@ -371,7 +402,10 @@ describe('Invitations & Team Collaboration API', () => {
 
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, regularMember);
       expect(res?.status).toBe(200);
-      const data = await res?.json() as { success: boolean; session: { user: { email: string } } };
+      const data = (await res?.json()) as {
+        success: boolean;
+        session: { user: { email: string } };
+      };
       expect(data.success).toBe(true);
       expect(data.session.user.email).toBe('colaborador@example.com');
       expect(res?.headers.get('Set-Cookie')).toContain('ark_session=');
@@ -404,7 +438,7 @@ describe('Invitations & Team Collaboration API', () => {
 
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, regularMember);
       expect(res?.status).toBe(403);
-      const data = await res?.json() as { error: string };
+      const data = (await res?.json()) as { error: string };
       expect(data.error).toContain('La invitación fue enviada a other@example.com');
     });
 
@@ -439,7 +473,9 @@ describe('Invitations & Team Collaboration API', () => {
             return null;
           }),
           all: vi.fn(async () => ({
-            results: [{ id: 't-123', name: 'Despacho Alianza', slug: 'despacho-alianza', role: 'member' }],
+            results: [
+              { id: 't-123', name: 'Despacho Alianza', slug: 'despacho-alianza', role: 'member' },
+            ],
           })),
           run: vi.fn(async () => ({ success: true })),
         })),
@@ -460,7 +496,10 @@ describe('Invitations & Team Collaboration API', () => {
 
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, null);
       expect(res?.status).toBe(200);
-      const data = await res?.json() as { success: boolean; session: { user: { fullName: string } } };
+      const data = (await res?.json()) as {
+        success: boolean;
+        session: { user: { fullName: string } };
+      };
       expect(data.success).toBe(true);
       expect(data.session.user.fullName).toBe('Nuevo Contador');
       expect(res?.headers.get('Set-Cookie')).toContain('ark_session=');
@@ -487,7 +526,7 @@ describe('Invitations & Team Collaboration API', () => {
       });
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, ownerUser);
       expect(res?.status).toBe(200);
-      const data = await res?.json() as { success: boolean };
+      const data = (await res?.json()) as { success: boolean };
       expect(data.success).toBe(true);
     });
 
@@ -499,7 +538,11 @@ describe('Invitations & Team Collaboration API', () => {
             if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
               return { id: 't-123', name: 'Despacho', role: 'owner' };
             }
-            if (query.includes('SELECT role FROM tenant_memberships WHERE tenant_id = ? AND user_id = ?')) {
+            if (
+              query.includes(
+                'SELECT role FROM tenant_memberships WHERE tenant_id = ? AND user_id = ?'
+              )
+            ) {
               return { role: 'owner' };
             }
             return null;
@@ -507,12 +550,15 @@ describe('Invitations & Team Collaboration API', () => {
         })),
       };
       const env = createMockEnv(mockDb);
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/members/user-owner-1', {
-        method: 'DELETE',
-      });
+      const req = new Request(
+        'https://tools.arksystems.site/api/tenants/t-123/members/user-owner-1',
+        {
+          method: 'DELETE',
+        }
+      );
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, superAdmin);
       expect(res?.status).toBe(403);
-      const data = await res?.json() as { error: string };
+      const data = (await res?.json()) as { error: string };
       expect(data.error).toContain('No se puede remover al titular');
     });
 
@@ -524,7 +570,11 @@ describe('Invitations & Team Collaboration API', () => {
             if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
               return { id: 't-123', name: 'Despacho', role: 'owner' };
             }
-            if (query.includes('SELECT role FROM tenant_memberships WHERE tenant_id = ? AND user_id = ?')) {
+            if (
+              query.includes(
+                'SELECT role FROM tenant_memberships WHERE tenant_id = ? AND user_id = ?'
+              )
+            ) {
               return { role: 'member' };
             }
             return null;
@@ -533,14 +583,17 @@ describe('Invitations & Team Collaboration API', () => {
         })),
       };
       const env = createMockEnv(mockDb);
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/members/user-member-1', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: 'admin' }),
-      });
+      const req = new Request(
+        'https://tools.arksystems.site/api/tenants/t-123/members/user-member-1',
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: 'admin' }),
+        }
+      );
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, ownerUser);
       expect(res?.status).toBe(200);
-      const data = await res?.json() as { success: boolean; role: string };
+      const data = (await res?.json()) as { success: boolean; role: string };
       expect(data.success).toBe(true);
       expect(data.role).toBe('admin');
     });

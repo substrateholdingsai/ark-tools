@@ -42,7 +42,9 @@ describe('exportarDictamenCobranza — Exportador TXT y CSV para Auditoría de C
     expect(csv.startsWith('\uFEFF')).toBe(true);
 
     // Encabezados
-    expect(csv).toContain('TIPO,CATEGORIA,ID,CODIGO,TITULO,ESTADO,RIESGO,PUNTOS,FUNDAMENTO,IMPACTO_CONTABLE,RECOMENDACION,NOTA');
+    expect(csv).toContain(
+      'TIPO,CATEGORIA,ID,CODIGO,TITULO,ESTADO,RIESGO,PUNTOS,FUNDAMENTO,IMPACTO_CONTABLE,RECOMENDACION,NOTA'
+    );
 
     // Filas de detalle
     expect(csv).toContain('8.1');

@@ -11,24 +11,10 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import {
-  ArrowLeft,
-  ShieldCheck,
-  Check,
-  Sparkles,
-  Lock,
-  FileSpreadsheet,
-} from 'lucide-react';
+import { ArrowLeft, ShieldCheck, Check, Sparkles, Lock, FileSpreadsheet } from 'lucide-react';
 import { DropZoneXML } from '../xml-excel/components/DropZoneXML';
-import {
-  ResumenAuditoriaCard,
-  ListaDictamenes,
-} from './components';
-import {
-  validarCFDI,
-  validarArchivosXML,
-  calcularResumenAuditoria,
-} from './lib/validadorCFDI';
+import { ResumenAuditoriaCard, ListaDictamenes } from './components';
+import { validarCFDI, validarArchivosXML, calcularResumenAuditoria } from './lib/validadorCFDI';
 import { descargarCSVDictamenes } from './lib/exportarDictamen';
 import type { DictamenCFDI } from './types';
 
@@ -119,9 +105,7 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
       try {
         const nuevosDictamenes = await validarArchivosXML(files);
         setDictamenes((prev) => {
-          const uuidsExistentes = new Set(
-            prev.map((d) => d.uuid).filter((u) => u !== 'SIN UUID')
-          );
+          const uuidsExistentes = new Set(prev.map((d) => d.uuid).filter((u) => u !== 'SIN UUID'));
           const unicos = nuevosDictamenes.filter((d) => !uuidsExistentes.has(d.uuid));
           return [...prev, ...unicos];
         });
@@ -162,18 +146,15 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
     [showToast]
   );
 
-  const resumen = useMemo(
-    () => calcularResumenAuditoria(dictamenes),
-    [dictamenes]
-  );
+  const resumen = useMemo(() => calcularResumenAuditoria(dictamenes), [dictamenes]);
 
   return (
-    <div className="mx-auto max-w-[1280px] px-6 md:px-10 py-12 space-y-10">
+    <div className="mx-auto max-w-[1280px] space-y-10 px-6 py-12 md:px-10">
       {/* Botón Volver */}
       {onBack && (
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-muted hover:text-gold transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-muted transition-colors hover:text-gold"
         >
           <ArrowLeft className="h-4 w-4" />
           VOLVER AL DASHBOARD
@@ -181,29 +162,29 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
       )}
 
       {/* Encabezado Principal */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-8">
+      <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 md:flex-row md:items-end">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-[0.2em] text-gold uppercase orbitron font-orbitron">
+            <span className="orbitron font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
               AUDITORÍA FISCAL SAT
             </span>
             <span className="text-white/20">•</span>
             <span className="text-xs text-muted">Anexo 20 RMF & CFF</span>
           </div>
-          <h1 className="mt-2 font-playfair font-black text-3xl md:text-5xl text-ink tracking-tight">
+          <h1 className="mt-2 font-playfair text-3xl font-black tracking-tight text-ink md:text-5xl">
             Validador de XMLs CFDI
           </h1>
-          <p className="mt-2 text-sm text-muted max-w-2xl">
-            Inspecciona UUIDs, sellos criptográficos, obligatoriedad de datos
-            en CFDI 4.0 (CP y régimen receptor), y cuadratura aritmética para
-            garantizar la deducibilidad de tus comprobantes.
+          <p className="mt-2 max-w-2xl text-sm text-muted">
+            Inspecciona UUIDs, sellos criptográficos, obligatoriedad de datos en CFDI 4.0 (CP y
+            régimen receptor), y cuadratura aritmética para garantizar la deducibilidad de tus
+            comprobantes.
           </p>
         </div>
 
         {dictamenes.length === 0 && (
           <button
             onClick={handleCargarEjemplos}
-            className="inline-flex items-center gap-2 self-start md:self-auto rounded-xl bg-gold/10 hover:bg-gold/20 text-gold border border-gold/30 px-4 py-2.5 text-xs font-semibold transition-all hover:scale-[1.02]"
+            className="inline-flex items-center gap-2 self-start rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-xs font-semibold text-gold transition-all hover:scale-[1.02] hover:bg-gold/20 md:self-auto"
           >
             <Sparkles className="h-4 w-4" />
             Cargar 3 casos de prueba
@@ -222,7 +203,7 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
 
       {/* Reporte de Auditoría y Detalle */}
       {dictamenes.length > 0 && (
-        <div className="space-y-8 animate-fadeIn">
+        <div className="animate-fadeIn space-y-8">
           {/* Card Resumen Consolidado */}
           <section>
             <ResumenAuditoriaCard
@@ -235,7 +216,7 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
           {/* Lista Interactiva de Dictámenes */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-playfair text-xl md:text-2xl font-bold text-ink">
+              <h2 className="font-playfair text-xl font-bold text-ink md:text-2xl">
                 Resultados de la Auditoría
               </h2>
             </div>
@@ -249,7 +230,7 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
       )}
 
       {/* Badges de Garantía */}
-      <div className="flex flex-wrap items-center justify-center gap-6 pt-4 text-xs text-muted border-t border-white/5">
+      <div className="flex flex-wrap items-center justify-center gap-6 border-t border-white/5 pt-4 text-xs text-muted">
         <div className="flex items-center gap-2">
           <Lock className="h-4 w-4 text-emerald-400" />
           <span>Auditoría Segura en Cliente (Zero Cloud Upload)</span>
@@ -266,7 +247,7 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
 
       {/* Toast Flotante */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-navy border border-gold/50 px-4 py-3 text-xs font-medium text-ink shadow-2xl shadow-gold/20 animate-fadeIn">
+        <div className="animate-fadeIn fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-gold/50 bg-navy px-4 py-3 text-xs font-medium text-ink shadow-2xl shadow-gold/20">
           <Check className="h-4 w-4 text-emerald-400" />
           <span>{toast}</span>
         </div>

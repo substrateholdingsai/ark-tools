@@ -101,7 +101,8 @@ export function AiAssistantWidget() {
         limit: data.limit,
         isPro: data.is_pro,
         quotaExceeded: !data.allowed,
-        paymentUrl: data.payment_url || 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+        paymentUrl:
+          data.payment_url || 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
       });
     } catch {
       // ignorar si no hay conexión
@@ -174,12 +175,10 @@ export function AiAssistantWidget() {
         content: m.content,
       }));
 
-      const res = await apiClient.ai.chat(
-        {
-          messages: apiMessages,
-          tenant_id: tenantId || '',
-        },
-      );
+      const res = await apiClient.ai.chat({
+        messages: apiMessages,
+        tenant_id: tenantId || '',
+      });
 
       if (res.quota) {
         setQuota((prev) => ({
@@ -245,19 +244,22 @@ export function AiAssistantWidget() {
             setIsOpen(true);
             setIsMinimized(false);
           }}
-          className="group relative flex items-center gap-3 px-5 py-3.5 bg-[#002B7F] hover:bg-[#001A4D] text-white rounded-full border-2 border-[#D4AF37] shadow-[0_10px_35px_rgba(0,43,127,0.5)] hover:shadow-[0_12px_40px_rgba(212,175,55,0.45)] transition-all duration-300 hover:scale-[1.03]"
+          className="group relative flex items-center gap-3 rounded-full border-2 border-[#D4AF37] bg-[#002B7F] px-5 py-3.5 text-white shadow-[0_10px_35px_rgba(0,43,127,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#001A4D] hover:shadow-[0_12px_40px_rgba(212,175,55,0.45)]"
           title="Abrir Asistente ARK AI"
         >
-          <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-[#001A4D] border border-[#D4AF37]/50 text-gold group-hover:scale-110 transition-transform">
-            <Sparkles className="w-5 h-5 animate-pulse text-[#D4AF37]" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#002B7F] animate-ping" />
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#002B7F]" />
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#001A4D] text-gold transition-transform group-hover:scale-110">
+            <Sparkles className="h-5 w-5 animate-pulse text-[#D4AF37]" />
+            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 animate-ping rounded-full bg-emerald-400 ring-2 ring-[#002B7F]" />
+            <span className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#002B7F]" />
           </div>
           <div className="text-left">
-            <div className="text-[13px] font-bold tracking-wide text-white flex items-center gap-1.5 font-playfair">
-              ARK AI <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 bg-[#D4AF37]/25 text-[#F5D97A] font-bold rounded border border-[#D4AF37]/40">Edge</span>
+            <div className="flex items-center gap-1.5 font-playfair text-[13px] font-bold tracking-wide text-white">
+              ARK AI{' '}
+              <span className="py-0.2 rounded border border-[#D4AF37]/40 bg-[#D4AF37]/25 px-1.5 font-mono text-[10px] font-bold uppercase text-[#F5D97A]">
+                Edge
+              </span>
             </div>
-            <div className="text-[11px] text-white/85 font-medium">Llama 3.3 • Conectado a D1</div>
+            <div className="text-[11px] font-medium text-white/85">Llama 3.3 • Conectado a D1</div>
           </div>
         </button>
       )}
@@ -265,42 +267,42 @@ export function AiAssistantWidget() {
       {/* Ventana de Chat Expandida */}
       {isOpen && (
         <div
-          className={`flex flex-col bg-surface rounded-2xl border-2 border-[#002B7F]/40 shadow-[0_20px_50px_rgba(0,26,77,0.35)] transition-all duration-300 overflow-hidden ring-1 ring-[#D4AF37]/25 ${
-            isMinimized ? 'h-14 w-80' : 'w-[92vw] sm:w-[440px] h-[600px] max-h-[85vh]'
+          className={`flex flex-col overflow-hidden rounded-2xl border-2 border-[#002B7F]/40 bg-surface shadow-[0_20px_50px_rgba(0,26,77,0.35)] ring-1 ring-[#D4AF37]/25 transition-all duration-300 ${
+            isMinimized ? 'h-14 w-80' : 'h-[600px] max-h-[85vh] w-[92vw] sm:w-[440px]'
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-[#002B7F] text-white border-b-2 border-[#D4AF37]/40 select-none shadow-sm">
+          <div className="flex select-none items-center justify-between border-b-2 border-[#D4AF37]/40 bg-[#002B7F] px-4 py-3 text-white shadow-sm">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-gold/20 flex items-center justify-center border border-gold/40 text-gold">
-                <Sparkles className="w-4 h-4" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold/40 bg-gold/20 text-gold">
+                <Sparkles className="h-4 w-4" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="font-playfair font-black text-[15px] tracking-wide text-white">
+                  <span className="font-playfair text-[15px] font-black tracking-wide text-white">
                     ARK AI
                   </span>
                   {quota.isPro ? (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-gold/20 text-gold border border-gold/40">
-                      <Crown className="w-3 h-3 text-gold" />
+                    <span className="inline-flex items-center gap-1 rounded border border-gold/40 bg-gold/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-gold">
+                      <Crown className="h-3 w-3 text-gold" />
                       PRO
                     </span>
                   ) : (
                     <span
                       className={cn(
-                        'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono font-bold border',
+                        'inline-flex items-center rounded border px-1.5 py-0.5 font-mono text-[10px] font-bold',
                         quota.used >= quota.limit
-                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/30'
-                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                          ? 'border-rose-500/30 bg-rose-500/20 text-rose-300'
+                          : 'border-emerald-500/30 bg-emerald-500/20 text-emerald-300'
                       )}
                       title={`Consultas usadas este mes: ${quota.used} de ${quota.limit}`}
                     >
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 mr-1 animate-pulse" />
+                      <span className="mr-1 h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
                       {quota.used}/{quota.limit} gratis
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-white/70 truncate max-w-[200px]">
+                <div className="max-w-[200px] truncate text-[11px] text-white/70">
                   {tenantName ? `🏢 ${tenantName}` : 'Modo Despacho General'}
                 </div>
               </div>
@@ -309,17 +311,17 @@ export function AiAssistantWidget() {
             <div className="flex items-center gap-1 text-white/70">
               <button
                 onClick={() => setIsMinimized(!isMinimized)}
-                className="p-1.5 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                className="rounded-lg p-1.5 transition-colors hover:bg-white/10 hover:text-white"
                 title={isMinimized ? 'Maximizar' : 'Minimizar'}
               >
-                <Minimize2 className="w-4 h-4" />
+                <Minimize2 className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                className="rounded-lg p-1.5 transition-colors hover:bg-white/10 hover:text-white"
                 title="Cerrar"
               >
-                <X className="w-4 h-4" />
+                <X className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -328,37 +330,37 @@ export function AiAssistantWidget() {
           {!isMinimized && (
             <>
               {/* Mensajes */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-surface-2/40">
+              <div className="flex-1 space-y-4 overflow-y-auto bg-surface-2/40 p-4">
                 {messages.map((msg) => (
                   <div
                     key={msg.id}
                     className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     {msg.role === 'assistant' && (
-                      <div className="w-7 h-7 rounded-full bg-navy/10 border border-navy/20 flex items-center justify-center text-navy shrink-0 mt-0.5">
-                        <Bot className="w-4 h-4" />
+                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-navy/20 bg-navy/10 text-navy">
+                        <Bot className="h-4 w-4" />
                       </div>
                     )}
 
                     <div
                       className={`max-w-[85%] rounded-2xl px-4 py-3 text-[13px] leading-relaxed ${
                         msg.role === 'user'
-                          ? 'bg-navy text-white rounded-br-none shadow-sm'
-                          : 'bg-surface text-ink border border-line rounded-bl-none shadow-sm'
+                          ? 'rounded-br-none bg-navy text-white shadow-sm'
+                          : 'rounded-bl-none border border-line bg-surface text-ink shadow-sm'
                       }`}
                     >
                       {/* Badge si ejecutó herramientas del Worker */}
                       {msg.toolsExecuted && msg.toolsExecuted.length > 0 && (
-                        <div className="mb-2.5 pb-2 border-b border-line/60 flex flex-wrap gap-1.5 items-center">
-                          <span className="text-[10px] font-mono uppercase text-muted font-bold flex items-center gap-1">
-                            <Wrench className="w-3 h-3 text-gold" /> Herramientas Worker:
+                        <div className="mb-2.5 flex flex-wrap items-center gap-1.5 border-b border-line/60 pb-2">
+                          <span className="flex items-center gap-1 font-mono text-[10px] font-bold uppercase text-muted">
+                            <Wrench className="h-3 w-3 text-gold" /> Herramientas Worker:
                           </span>
                           {msg.toolsExecuted.map((tool) => (
                             <span
                               key={tool}
-                              className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 bg-gold/15 text-gold-dark font-bold rounded-md border border-gold/30"
+                              className="inline-flex items-center gap-1 rounded-md border border-gold/30 bg-gold/15 px-2 py-0.5 font-mono text-[10px] font-bold text-gold-dark"
                             >
-                              <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                              <CheckCircle2 className="h-2.5 w-2.5 text-emerald-600" />
                               {tool}
                             </span>
                           ))}
@@ -371,7 +373,7 @@ export function AiAssistantWidget() {
                         {msg.isTyping && (
                           <span
                             className={cn(
-                              'inline-block w-1.5 h-3.5 animate-pulse ml-1 align-middle rounded-xs',
+                              'rounded-xs ml-1 inline-block h-3.5 w-1.5 animate-pulse align-middle',
                               msg.role === 'user' ? 'bg-white' : 'bg-navy'
                             )}
                           />
@@ -380,12 +382,12 @@ export function AiAssistantWidget() {
 
                       {/* Tarjeta interactiva de Paywall con enlace de pago Clip */}
                       {msg.isPaywall && (
-                        <div className="mt-3.5 rounded-xl border border-gold/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-3.5 shadow-sm space-y-2.5">
-                          <div className="flex items-center gap-1.5 text-navy font-bold text-[12px] font-orbitron">
-                            <Crown className="w-4 h-4 text-gold-dark" />
+                        <div className="mt-3.5 space-y-2.5 rounded-xl border border-gold/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-3.5 shadow-sm">
+                          <div className="flex items-center gap-1.5 font-orbitron text-[12px] font-bold text-navy">
+                            <Crown className="h-4 w-4 text-gold-dark" />
                             <span>Desbloquear ARK TOOLS Pro</span>
                           </div>
-                          <p className="text-[11px] text-muted leading-relaxed">
+                          <p className="text-[11px] leading-relaxed text-muted">
                             Obtén consultas ilimitadas con Llama 3.3, integración total con D1,
                             timbrado masivo y soporte directo para todo tu despacho.
                           </p>
@@ -393,17 +395,17 @@ export function AiAssistantWidget() {
                             href={msg.paymentUrl || quota.paymentUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl bg-navy text-white text-[11px] font-bold font-orbitron hover:bg-navy-dark transition shadow-md group"
+                            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-navy px-4 py-2.5 font-orbitron text-[11px] font-bold text-white shadow-md transition hover:bg-navy-dark"
                           >
-                            <Sparkles className="w-3.5 h-3.5 text-gold group-hover:scale-110 transition-transform" />
+                            <Sparkles className="h-3.5 w-3.5 text-gold transition-transform group-hover:scale-110" />
                             <span>ACTIVAR PRO — $399 MXN / MES</span>
-                            <ExternalLink className="w-3.5 h-3.5 text-white/80" />
+                            <ExternalLink className="h-3.5 w-3.5 text-white/80" />
                           </a>
                         </div>
                       )}
 
                       <div
-                        className={`text-[10px] mt-1.5 text-right font-mono ${
+                        className={`mt-1.5 text-right font-mono text-[10px] ${
                           msg.role === 'user' ? 'text-white/60' : 'text-muted'
                         }`}
                       >
@@ -412,8 +414,8 @@ export function AiAssistantWidget() {
                     </div>
 
                     {msg.role === 'user' && (
-                      <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/40 flex items-center justify-center text-navy shrink-0 mt-0.5">
-                        <User className="w-4 h-4" />
+                      <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-gold/40 bg-gold/20 text-navy">
+                        <User className="h-4 w-4" />
                       </div>
                     )}
                   </div>
@@ -421,15 +423,17 @@ export function AiAssistantWidget() {
 
                 {/* Loading State */}
                 {isLoading && (
-                  <div className="flex gap-3 justify-start items-center text-muted text-xs">
-                    <div className="w-7 h-7 rounded-full bg-navy/10 border border-navy/20 flex items-center justify-center text-navy shrink-0">
-                      <Loader2 className="w-4 h-4 animate-spin text-gold" />
+                  <div className="flex items-center justify-start gap-3 text-xs text-muted">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-navy/20 bg-navy/10 text-navy">
+                      <Loader2 className="h-4 w-4 animate-spin text-gold" />
                     </div>
-                    <div className="bg-surface border border-line rounded-2xl rounded-bl-none px-4 py-2.5 flex items-center gap-2 shadow-sm">
-                      <span className="w-1.5 h-1.5 bg-gold rounded-full animate-bounce [animation-delay:-0.3s]" />
-                      <span className="w-1.5 h-1.5 bg-gold rounded-full animate-bounce [animation-delay:-0.15s]" />
-                      <span className="w-1.5 h-1.5 bg-gold rounded-full animate-bounce" />
-                      <span className="text-[12px] text-muted ml-1">Consultando herramientas y recursos...</span>
+                    <div className="flex items-center gap-2 rounded-2xl rounded-bl-none border border-line bg-surface px-4 py-2.5 shadow-sm">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-gold" />
+                      <span className="ml-1 text-[12px] text-muted">
+                        Consultando herramientas y recursos...
+                      </span>
                     </div>
                   </div>
                 )}
@@ -439,16 +443,16 @@ export function AiAssistantWidget() {
 
               {/* Chips / Prompts Rápidos (solo si hay pocos mensajes) */}
               {messages.length <= 3 && !isLoading && !quota.quotaExceeded && (
-                <div className="px-3 py-2 bg-surface border-t border-line/60">
-                  <div className="text-[11px] font-bold text-muted uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                    <HelpCircle className="w-3 h-3 text-gold" /> Sugerencias rápidas:
+                <div className="border-t border-line/60 bg-surface px-3 py-2">
+                  <div className="mb-1.5 flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-muted">
+                    <HelpCircle className="h-3 w-3 text-gold" /> Sugerencias rápidas:
                   </div>
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+                  <div className="no-scrollbar flex gap-1.5 overflow-x-auto pb-1">
                     {QUICK_PROMPTS.map((prompt, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleSend(prompt)}
-                        className="text-[11px] text-left shrink-0 max-w-[260px] truncate px-2.5 py-1.5 rounded-lg bg-surface-2 border border-line hover:border-gold hover:bg-gold/5 text-ink transition-colors"
+                        className="max-w-[260px] shrink-0 truncate rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-left text-[11px] text-ink transition-colors hover:border-gold hover:bg-gold/5"
                       >
                         {prompt}
                       </button>
@@ -458,50 +462,57 @@ export function AiAssistantWidget() {
               )}
 
               {/* Input Footer */}
-              <div className="p-3 bg-surface border-t border-line">
+              <div className="border-t border-line bg-surface p-3">
                 {quota.quotaExceeded ? (
-                  <div className="rounded-xl border border-gold/40 bg-gradient-to-r from-amber-50 to-cream/40 p-3 text-center space-y-2">
+                  <div className="space-y-2 rounded-xl border border-gold/40 bg-gradient-to-r from-amber-50 to-cream/40 p-3 text-center">
                     <div className="flex items-center justify-center gap-1.5 font-orbitron text-[11px] font-bold text-navy">
-                      <Lock className="w-3.5 h-3.5 text-gold-dark" />
-                      <span>LÍMITE MENSUAL ALCANZADO ({quota.limit}/{quota.limit})</span>
+                      <Lock className="h-3.5 w-3.5 text-gold-dark" />
+                      <span>
+                        LÍMITE MENSUAL ALCANZADO ({quota.limit}/{quota.limit})
+                      </span>
                     </div>
                     <p className="text-[10px] text-muted">
-                      Has consumido tus {quota.limit} consultas de cortesía del mes. Activa Pro para seguir consultando.
+                      Has consumido tus {quota.limit} consultas de cortesía del mes. Activa Pro para
+                      seguir consultando.
                     </p>
                     <a
                       href={quota.paymentUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-lg bg-navy text-white text-[10px] font-bold font-orbitron hover:bg-navy-dark transition shadow-xs"
+                      className="shadow-xs inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-navy px-3 py-2 font-orbitron text-[10px] font-bold text-white transition hover:bg-navy-dark"
                     >
-                      <Sparkles className="w-3 h-3 text-gold" />
+                      <Sparkles className="h-3 w-3 text-gold" />
                       <span>SUSCRIBIRSE PRO ($399 MXN)</span>
-                      <ExternalLink className="w-3 h-3" />
+                      <ExternalLink className="h-3 w-3" />
                     </a>
                   </div>
                 ) : (
-                  <div className="flex items-end gap-2 bg-surface-2 border border-line rounded-xl p-2 focus-within:border-navy focus-within:ring-1 focus-within:ring-navy transition-all">
+                  <div className="flex items-end gap-2 rounded-xl border border-line bg-surface-2 p-2 transition-all focus-within:border-navy focus-within:ring-1 focus-within:ring-navy">
                     <textarea
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                       onKeyDown={handleKeyDown}
                       placeholder="Escribe tu consulta o pide un cálculo..."
                       rows={1}
-                      className="flex-1 max-h-24 bg-transparent text-[13px] text-ink placeholder:text-muted resize-none focus:outline-none leading-relaxed py-1"
+                      className="max-h-24 flex-1 resize-none bg-transparent py-1 text-[13px] leading-relaxed text-ink placeholder:text-muted focus:outline-none"
                     />
                     <button
                       onClick={() => handleSend()}
                       disabled={!inputMessage.trim() || isLoading}
-                      className="p-2 rounded-lg bg-[#002B7F] text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#001A4D] transition-colors shrink-0 shadow-sm"
+                      className="shrink-0 rounded-lg bg-[#002B7F] p-2 text-white shadow-sm transition-colors hover:bg-[#001A4D] disabled:cursor-not-allowed disabled:opacity-40"
                       title="Enviar mensaje"
                     >
-                      <Send className="w-4 h-4" />
+                      <Send className="h-4 w-4" />
                     </button>
                   </div>
                 )}
-                <div className="flex justify-between items-center mt-1.5 px-1 text-[10px] text-muted font-mono">
+                <div className="mt-1.5 flex items-center justify-between px-1 font-mono text-[10px] text-muted">
                   <span>Enter para enviar • LFT 2026</span>
-                  <span>{quota.isPro ? 'ARK Pro Ilimitado' : `${quota.used}/${quota.limit} consultas gratis`}</span>
+                  <span>
+                    {quota.isPro
+                      ? 'ARK Pro Ilimitado'
+                      : `${quota.used}/${quota.limit} consultas gratis`}
+                  </span>
                 </div>
               </div>
             </>
@@ -512,11 +523,7 @@ export function AiAssistantWidget() {
   );
 }
 
-function renderInlineFormatted(
-  text: string,
-  keyPrefix: string | number,
-  isUser: boolean = false
-) {
+function renderInlineFormatted(text: string, keyPrefix: string | number, isUser: boolean = false) {
   const boldRegex = /\*\*(.*?)\*\*/g;
   const elements: (string | React.ReactNode)[] = [];
   let lastIndex = 0;
@@ -529,10 +536,7 @@ function renderInlineFormatted(
     elements.push(
       <strong
         key={`${keyPrefix}-${match.index}`}
-        className={cn(
-          'font-semibold',
-          isUser ? 'text-white font-bold' : 'text-ink'
-        )}
+        className={cn('font-semibold', isUser ? 'font-bold text-white' : 'text-ink')}
       >
         {match[1]}
       </strong>
@@ -566,7 +570,7 @@ function renderFormattedContent(content: string, isUser: boolean = false) {
         <h4
           key={lineIdx}
           className={cn(
-            'font-bold text-[13px] mt-2.5 mb-1 font-orbitron',
+            'mb-1 mt-2.5 font-orbitron text-[13px] font-bold',
             isUser ? 'text-white' : 'text-navy'
           )}
         >
@@ -578,20 +582,17 @@ function renderFormattedContent(content: string, isUser: boolean = false) {
     // Listas con viñetas (- o *)
     if (line.startsWith('- ') || line.startsWith('* ')) {
       return (
-        <div key={lineIdx} className="flex items-start gap-2 my-1 pl-1">
+        <div key={lineIdx} className="my-1 flex items-start gap-2 pl-1">
           <span
             className={cn(
-              'font-bold text-xs leading-5 select-none',
+              'select-none text-xs font-bold leading-5',
               isUser ? 'text-amber-300' : 'text-gold-dark'
             )}
           >
             •
           </span>
           <span
-            className={cn(
-              'flex-1 text-[13px] leading-relaxed',
-              isUser ? 'text-white' : 'text-ink'
-            )}
+            className={cn('flex-1 text-[13px] leading-relaxed', isUser ? 'text-white' : 'text-ink')}
           >
             {renderInlineFormatted(line.slice(2), lineIdx, isUser)}
           </span>
@@ -603,20 +604,17 @@ function renderFormattedContent(content: string, isUser: boolean = false) {
     const numMatch = line.match(/^(\d+)\.\s+(.*)$/);
     if (numMatch) {
       return (
-        <div key={lineIdx} className="flex items-start gap-2 my-1 pl-1">
+        <div key={lineIdx} className="my-1 flex items-start gap-2 pl-1">
           <span
             className={cn(
-              'font-bold text-[11px] font-mono leading-5 select-none',
+              'select-none font-mono text-[11px] font-bold leading-5',
               isUser ? 'text-amber-300' : 'text-navy'
             )}
           >
             {numMatch[1]}.
           </span>
           <span
-            className={cn(
-              'flex-1 text-[13px] leading-relaxed',
-              isUser ? 'text-white' : 'text-ink'
-            )}
+            className={cn('flex-1 text-[13px] leading-relaxed', isUser ? 'text-white' : 'text-ink')}
           >
             {renderInlineFormatted(numMatch[2] || '', lineIdx, isUser)}
           </span>
@@ -629,7 +627,7 @@ function renderFormattedContent(content: string, isUser: boolean = false) {
       <p
         key={lineIdx}
         className={cn(
-          'mb-2 leading-relaxed text-[13px] last:mb-0',
+          'mb-2 text-[13px] leading-relaxed last:mb-0',
           isUser ? 'text-white' : 'text-ink'
         )}
       >

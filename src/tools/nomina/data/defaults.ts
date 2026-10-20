@@ -1,7 +1,7 @@
 /**
  * ARK TOOLS — Calculadora Nómina Rápida 2026
  * Valores por defecto y presets
- * 
+ *
  * UMA proveniente del catálogo centralizado de valores vigentes.
  */
 
@@ -9,7 +9,7 @@ import type { ParametrosNomina } from '../types';
 import { CATALOGO_2026 } from '@/data/valores-vigentes/catalogo';
 
 const getValor = (id: string): number => {
-  const item = CATALOGO_2026.find(v => v.id === id);
+  const item = CATALOGO_2026.find((v) => v.id === id);
   if (!item) throw new Error(`Valor no encontrado en catálogo: ${id}`);
   return item.valor as number;
 };

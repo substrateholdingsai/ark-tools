@@ -89,18 +89,15 @@ export function ParametrosFiniquitoCard({
 
   const esLiquidacion = entrada.tipoBaja === 'liquidacion';
 
-  const actualizar = <K extends keyof EntradaFiniquito>(
-    campo: K,
-    valor: EntradaFiniquito[K]
-  ) => {
+  const actualizar = <K extends keyof EntradaFiniquito>(campo: K, valor: EntradaFiniquito[K]) => {
     onChange({ ...entrada, [campo]: valor });
   };
 
   return (
-    <div className="rounded-[20px] border border-line bg-surface p-6 sm:p-8 shadow-[0_20px_40px_rgba(0,43,127,0.06)]">
+    <div className="rounded-[20px] border border-line bg-surface p-6 shadow-[0_20px_40px_rgba(0,43,127,0.06)] sm:p-8">
       {/* === Encabezado === */}
       <div className="mb-6">
-        <h2 className="font-playfair text-2xl sm:text-3xl font-black tracking-[-0.02em] text-ink">
+        <h2 className="font-playfair text-2xl font-black tracking-[-0.02em] text-ink sm:text-3xl">
           Parámetros del Cálculo
         </h2>
         <p className="mt-1 font-inter text-sm text-muted">
@@ -207,9 +204,7 @@ export function ParametrosFiniquitoCard({
                 type="button"
                 onClick={() => {
                   setSdiManual(false);
-                  const sdiSugerido = redondear(
-                    entrada.salarioDiario * FACTOR_INTEGRACION_MINIMO
-                  );
+                  const sdiSugerido = redondear(entrada.salarioDiario * FACTOR_INTEGRACION_MINIMO);
                   actualizar('sdi', sdiSugerido);
                 }}
                 className="mt-2 font-inter text-[11px] font-bold uppercase tracking-[0.12em] text-navy hover:text-navy-dark"
@@ -312,7 +307,10 @@ function CampoFecha({ label, value, onChange, error }: CampoFechaProps) {
   const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block font-inter text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+      <label
+        htmlFor={id}
+        className="mb-2 block font-inter text-[11px] font-bold uppercase tracking-[0.16em] text-muted"
+      >
         {label}
       </label>
       <input
@@ -326,9 +324,7 @@ function CampoFecha({ label, value, onChange, error }: CampoFechaProps) {
           error ? 'border-red-300' : 'border-line'
         )}
       />
-      {error && (
-        <p className="mt-1 font-inter text-[11px] text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 font-inter text-[11px] text-red-600">{error}</p>}
     </div>
   );
 }
@@ -345,7 +341,10 @@ function CampoMoneda({ label, value, onChange, error, hint }: CampoMonedaProps) 
   const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block font-inter text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+      <label
+        htmlFor={id}
+        className="mb-2 block font-inter text-[11px] font-bold uppercase tracking-[0.16em] text-muted"
+      >
         {label}
       </label>
       <div className="relative">
@@ -367,9 +366,7 @@ function CampoMoneda({ label, value, onChange, error, hint }: CampoMonedaProps) 
           )}
         />
       </div>
-      {hint && !error && (
-        <p className="mt-1 font-inter text-[11px] text-muted">{hint}</p>
-      )}
+      {hint && !error && <p className="mt-1 font-inter text-[11px] text-muted">{hint}</p>}
       {error && <p className="mt-1 font-inter text-[11px] text-red-600">{error}</p>}
     </div>
   );
@@ -399,7 +396,10 @@ function CampoNumero({
   const id = label.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   return (
     <div>
-      <label htmlFor={id} className="mb-2 block font-inter text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
+      <label
+        htmlFor={id}
+        className="mb-2 block font-inter text-[11px] font-bold uppercase tracking-[0.16em] text-muted"
+      >
         {label}
       </label>
       <div className="relative">
@@ -452,9 +452,7 @@ function ToggleConcepto({
       aria-checked={checked}
       className={cn(
         'group flex items-start gap-4 rounded-[14px] border p-4 text-left transition-all',
-        checked
-          ? 'border-navy/20 bg-navy/[0.03]'
-          : 'border-line bg-surface-2 hover:border-navy/20'
+        checked ? 'border-navy/20 bg-navy/[0.03]' : 'border-line bg-surface-2 hover:border-navy/20'
       )}
     >
       <span
@@ -485,9 +483,7 @@ function ToggleConcepto({
             {fundamento}
           </span>
         </span>
-        <span className="mt-1 block font-inter text-[12px] text-muted">
-          {descripcion}
-        </span>
+        <span className="mt-1 block font-inter text-[12px] text-muted">{descripcion}</span>
       </span>
     </button>
   );

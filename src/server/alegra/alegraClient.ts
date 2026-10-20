@@ -105,14 +105,16 @@ export class AlegraClient {
 
   constructor(email: string, token: string, baseUrl = 'https://api.alegra.com/api/v1') {
     if (!email || !token) {
-      throw new AlegraError('Email y token de Alegra son requeridos para inicializar el cliente.', 400);
+      throw new AlegraError(
+        'Email y token de Alegra son requeridos para inicializar el cliente.',
+        400
+      );
     }
     this.baseUrl = baseUrl.replace(/\/+$/, '');
     const credentials = `${email.trim()}:${token.trim()}`;
     // Basic Auth RFC 7617
-    const encoded = typeof btoa === 'function'
-      ? btoa(credentials)
-      : Buffer.from(credentials).toString('base64');
+    const encoded =
+      typeof btoa === 'function' ? btoa(credentials) : Buffer.from(credentials).toString('base64');
     this.authHeader = `Basic ${encoded}`;
   }
 
@@ -177,7 +179,9 @@ export class AlegraClient {
       const errorMsg =
         data?.message ||
         data?.error ||
-        (Array.isArray(data?.errors) ? data.errors.map((e: any) => e.message || e).join(', ') : null) ||
+        (Array.isArray(data?.errors)
+          ? data.errors.map((e: any) => e.message || e).join(', ')
+          : null) ||
         `Error ${response.status} devuelto por Alegra.`;
       throw new AlegraError(errorMsg, response.status, data);
     }

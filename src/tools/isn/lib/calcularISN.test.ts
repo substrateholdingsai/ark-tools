@@ -90,9 +90,7 @@ describe('calcularTotalExento', () => {
   });
 
   it('retorna 0 si no hay exentos', () => {
-    const conceptos: ConceptoPercepcion[] = [
-      { id: 1, concepto: 'A', gravado: 1000, exento: 0 },
-    ];
+    const conceptos: ConceptoPercepcion[] = [{ id: 1, concepto: 'A', gravado: 1000, exento: 0 }];
     expect(calcularTotalExento(conceptos)).toBe(0);
   });
 });

@@ -4,12 +4,7 @@
  */
 
 import React from 'react';
-import {
-  TrendingUp,
-  Download,
-  Layers,
-  Award,
-} from 'lucide-react';
+import { TrendingUp, Download, Layers, Award } from 'lucide-react';
 import { LiquidGlassDome, TextMagnified, BadgeGold, GlassButton } from '@/components/ui';
 import { formatearMXN } from '../lib/calcularLeasing';
 import type { ResumenLeasing } from '../types';
@@ -29,9 +24,9 @@ export const ResultadoLeasingCard: React.FC<ResultadoLeasingCardProps> = ({
     <LiquidGlassDome padding="lg" radius="dome" className="w-full">
       <div className="flex flex-col gap-6">
         {/* Cabecera */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+        <div className="flex flex-col justify-between gap-4 border-b border-white/10 pb-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold/20 text-gold border border-gold/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-gold/30 bg-gold/20 text-gold">
               <TrendingUp className="h-5 w-5" />
             </div>
             <div>
@@ -59,7 +54,7 @@ export const ResultadoLeasingCard: React.FC<ResultadoLeasingCardProps> = ({
         </div>
 
         {/* Cifra Clave: MRR al Mes 12 */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-surface/60 rounded-2xl p-6 border border-white/5">
+        <div className="flex flex-col justify-between gap-6 rounded-2xl border border-white/5 bg-surface/60 p-6 md:flex-row md:items-end">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
               MRR Final Proyectado (Mes {plazoMeses})
@@ -67,69 +62,69 @@ export const ResultadoLeasingCard: React.FC<ResultadoLeasingCardProps> = ({
             <TextMagnified size="2xl" className="mt-1">
               {formatearMXN(resumen.mrrFinal)}/mes
             </TextMagnified>
-            <span className="text-xs text-muted block mt-1">
+            <span className="mt-1 block text-xs text-muted">
               Ingresos mensuales recurrentes de facturación garantizada
             </span>
           </div>
 
           <div className="text-left md:text-right">
-            <span className="text-[10px] uppercase font-bold text-muted block">
+            <span className="block text-[10px] font-bold uppercase text-muted">
               ARR Anualizado Equivalente
             </span>
             <span className="font-mono text-xl font-bold text-gold">
               {formatearMXN(resumen.arrProyectado)}/año
             </span>
-            <span className="text-[10px] text-muted block mt-0.5">
+            <span className="mt-0.5 block text-[10px] text-muted">
               Con {resumen.clientesFinales} clientes activos
             </span>
           </div>
         </div>
 
         {/* Matriz de Indicadores Clave SaaS */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-xl bg-surface/40 p-4 border border-white/5">
-            <span className="text-[10px] uppercase tracking-wider text-muted font-bold block">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-white/5 bg-surface/40 p-4">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
               Clientes al Cierre
             </span>
-            <p className="mt-1 text-xl font-semibold text-ink font-mono flex items-center gap-1.5">
+            <p className="mt-1 flex items-center gap-1.5 font-mono text-xl font-semibold text-ink">
               <Layers className="h-4 w-4 text-gold" />
               {resumen.clientesFinales} activos
             </p>
           </div>
 
-          <div className="rounded-xl bg-surface/40 p-4 border border-white/5">
-            <span className="text-[10px] uppercase tracking-wider text-muted font-bold block">
+          <div className="rounded-xl border border-white/5 bg-surface/40 p-4">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
               LTV Estimado / Cliente
             </span>
-            <p className="mt-1 text-xl font-semibold text-emerald-400 font-mono flex items-center gap-1.5">
+            <p className="mt-1 flex items-center gap-1.5 font-mono text-xl font-semibold text-emerald-400">
               <Award className="h-4 w-4 text-emerald-400" />
               {formatearMXN(resumen.ltvEstimado)}
             </p>
-            <span className="text-[9px] text-muted block mt-0.5">
+            <span className="mt-0.5 block text-[9px] text-muted">
               Permanencia ~{resumen.mesesRetencionPromedio} meses
             </span>
           </div>
 
-          <div className="rounded-xl bg-surface/40 p-4 border border-white/5">
-            <span className="text-[10px] uppercase tracking-wider text-muted font-bold block">
+          <div className="rounded-xl border border-white/5 bg-surface/40 p-4">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
               Ingreso Total Período
             </span>
-            <p className="mt-1 text-xl font-semibold text-gold font-mono">
+            <p className="mt-1 font-mono text-xl font-semibold text-gold">
               {formatearMXN(resumen.ingresoBrutoTotal)}
             </p>
-            <span className="text-[9px] text-muted block mt-0.5">
+            <span className="mt-0.5 block text-[9px] text-muted">
               Setup: {formatearMXN(resumen.totalSetupAcumulado)}
             </span>
           </div>
 
-          <div className="rounded-xl bg-surface/40 p-4 border border-white/5">
-            <span className="text-[10px] uppercase tracking-wider text-muted font-bold block">
+          <div className="rounded-xl border border-white/5 bg-surface/40 p-4">
+            <span className="block text-[10px] font-bold uppercase tracking-wider text-muted">
               Utilidad Acumulada
             </span>
-            <p className="mt-1 text-xl font-semibold text-emerald-400 font-mono">
+            <p className="mt-1 font-mono text-xl font-semibold text-emerald-400">
               {formatearMXN(resumen.utilidadTotalAcumulada)}
             </p>
-            <span className="text-[9px] text-muted block mt-0.5">
+            <span className="mt-0.5 block text-[9px] text-muted">
               Margen: {resumen.margenPromedioPorcentaje}%
             </span>
           </div>

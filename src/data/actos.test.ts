@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ACTOS_FISCALES,
-  ACTOS_IMSS,
-  ACTOS_SAT,
-  GUIA_PASOS,
-  PLAZOS_CLAVE,
-} from './actos';
+import { ACTOS_FISCALES, ACTOS_IMSS, ACTOS_SAT, GUIA_PASOS, PLAZOS_CLAVE } from './actos';
 
 describe('actos.ts', () => {
   it('debe tener exactamente 8 pasos', () => {
@@ -13,7 +7,7 @@ describe('actos.ts', () => {
   });
 
   it('debe tener pasos con id consecutivo', () => {
-    expect(GUIA_PASOS.map(p => p.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(GUIA_PASOS.map((p) => p.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
 
   it('todos los pasos deben tener checklist', () => {
@@ -35,7 +29,7 @@ describe('actos.ts', () => {
   });
 
   it('los códigos de actos deben ser únicos', () => {
-    const codigos = ACTOS_FISCALES.map(a => a.codigo);
+    const codigos = ACTOS_FISCALES.map((a) => a.codigo);
     expect(new Set(codigos).size).toBe(codigos.length);
   });
 

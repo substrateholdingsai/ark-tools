@@ -121,7 +121,9 @@ export function calcularResicoPF(entrada: EntradaResicoPF): ResultadoResicoPF {
     },
     {
       concepto: '(-) Retención de ISR por Personas Morales (1.25%)',
-      base: entrada.ingresosFacturadosPM || (retencionISR > 0 ? round2(retencionISR / TASA_RETENCION_PM_RESICO) : 0),
+      base:
+        entrada.ingresosFacturadosPM ||
+        (retencionISR > 0 ? round2(retencionISR / TASA_RETENCION_PM_RESICO) : 0),
       tasaPct: 1.25,
       importe: retencionISR,
       fundamento: 'Art. 113-J LISR',

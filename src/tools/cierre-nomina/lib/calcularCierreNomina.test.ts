@@ -102,8 +102,9 @@ describe('calcularCierreNomina — Sprint 11', () => {
     const resultado = await procesarCierreNomina(trabajadoresPrueba, parametrosQuincenales);
 
     const esperadoISN =
-      Math.round(resultado.resumen.totalPercepcionesBrutas * (parametrosQuincenales.tasaIsn / 100) * 100) /
-      100;
+      Math.round(
+        resultado.resumen.totalPercepcionesBrutas * (parametrosQuincenales.tasaIsn / 100) * 100
+      ) / 100;
 
     expect(resultado.resumen.totalISNEstatal).toBeCloseTo(esperadoISN, 1);
   });

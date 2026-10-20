@@ -5,12 +5,7 @@
 
 export type TipoSeveridad = 'error' | 'advertencia' | 'exito';
 
-export type CategoriaRegla =
-  | 'estructura'
-  | 'timbre'
-  | 'fiscal'
-  | 'aritmetica'
-  | 'vigencia';
+export type CategoriaRegla = 'estructura' | 'timbre' | 'fiscal' | 'aritmetica' | 'vigencia';
 
 export interface ReglaAuditoria {
   codigo: string;

@@ -440,7 +440,9 @@ export async function handleAlegraApiRequest(
 
     if (nextAccount) {
       await db
-        .prepare('UPDATE tenant_alegra_accounts SET is_default = 1 WHERE tenant_id = ? AND alegra_account_id = ?')
+        .prepare(
+          'UPDATE tenant_alegra_accounts SET is_default = 1 WHERE tenant_id = ? AND alegra_account_id = ?'
+        )
         .bind(tenantId, nextAccount.alegra_account_id)
         .run();
     }
@@ -635,7 +637,10 @@ export async function handleAlegraApiRequest(
       query += ` ORDER BY created_at DESC LIMIT ?`;
       params.push(limit);
 
-      const result = await db.prepare(query).bind(...params).all();
+      const result = await db
+        .prepare(query)
+        .bind(...params)
+        .all();
       return jsonResponse({ invoices: result.results || [] }, corsHeaders);
     } catch (err: any) {
       return jsonResponse(

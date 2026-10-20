@@ -75,7 +75,14 @@ const ALIAS_COLUMNAS: Record<keyof TrabajadorFilaInput, string[]> = {
   horasExtras: ['horasextras', 'he', 'tiempoextra', 'montohe'],
   bonos: ['bonos', 'bono', 'premios', 'premio', 'incentivos'],
   otrasPercepciones: ['otraspercepciones', 'otrosingresos', 'adicionales', 'percepciones'],
-  otrasDeducciones: ['otrasdeducciones', 'descuentos', 'prestamos', 'fonacot', 'infonavit', 'deducciones'],
+  otrasDeducciones: [
+    'otrasdeducciones',
+    'descuentos',
+    'prestamos',
+    'fonacot',
+    'infonavit',
+    'deducciones',
+  ],
 };
 
 /**
@@ -139,7 +146,10 @@ export function parsearNumero(valor: unknown): number {
  */
 export function normalizarRFC(rfc: string): string {
   if (!rfc) return '';
-  return rfc.toUpperCase().replace(/[^A-Z0-9&Ñ]/g, '').trim();
+  return rfc
+    .toUpperCase()
+    .replace(/[^A-Z0-9&Ñ]/g, '')
+    .trim();
 }
 
 /**
@@ -190,7 +200,10 @@ export function parsearPlantillaNomina(contenidoTexto: string): ValidacionImport
 
   encabezadosOriginales.forEach((enc, index) => {
     const normal = normalizarEncabezado(enc);
-    for (const [campo, aliasList] of Object.entries(ALIAS_COLUMNAS) as [keyof TrabajadorFilaInput, string[]][]) {
+    for (const [campo, aliasList] of Object.entries(ALIAS_COLUMNAS) as [
+      keyof TrabajadorFilaInput,
+      string[],
+    ][]) {
       if (aliasList.includes(normal)) {
         mapaColumnas[index] = campo;
         break;
@@ -264,7 +277,9 @@ export function parsearPlantillaNomina(contenidoTexto: string): ValidacionImport
     // Validar salario diario
     const sd = dataTrabajador.salarioDiario || 0;
     if (sd <= 0) {
-      advertencias.push(`Fila ${numFila} (${dataTrabajador.nombre}): Salario diario igual o menor a 0. Se asignó $0.`);
+      advertencias.push(
+        `Fila ${numFila} (${dataTrabajador.nombre}): Salario diario igual o menor a 0. Se asignó $0.`
+      );
     }
 
     trabajadoresValidos.push({
@@ -275,7 +290,8 @@ export function parsearPlantillaNomina(contenidoTexto: string): ValidacionImport
       nss: dataTrabajador.nss || '',
       salarioDiario: sd,
       fechaIngreso: dataTrabajador.fechaIngreso || '',
-      diasTrabajados: dataTrabajador.diasTrabajados !== undefined ? dataTrabajador.diasTrabajados : 15,
+      diasTrabajados:
+        dataTrabajador.diasTrabajados !== undefined ? dataTrabajador.diasTrabajados : 15,
       horasExtras: dataTrabajador.horasExtras || 0,
       bonos: dataTrabajador.bonos || 0,
       otrasPercepciones: dataTrabajador.otrasPercepciones || 0,
@@ -288,7 +304,10 @@ export function parsearPlantillaNomina(contenidoTexto: string): ValidacionImport
     totalLeidos: lineas.length - 1,
     trabajadoresValidos,
     advertencias,
-    errores: trabajadoresValidos.length === 0 ? ['No se encontraron filas válidas de trabajadores en el archivo.'] : [],
+    errores:
+      trabajadoresValidos.length === 0
+        ? ['No se encontraron filas válidas de trabajadores en el archivo.']
+        : [],
   };
 }
 

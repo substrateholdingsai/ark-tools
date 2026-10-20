@@ -22,44 +22,44 @@ export function ParametrosResicoCard({
   const meses: MesFiscal[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
   return (
-    <div className="rounded-[24px] border border-line bg-surface p-6 shadow-sm space-y-6">
+    <div className="space-y-6 rounded-[24px] border border-line bg-surface p-6 shadow-sm">
       {/* 1. Selector de Régimen: Persona Física vs Persona Moral */}
       <div>
-        <label className="block text-xs font-bold uppercase tracking-wider text-muted mb-2 font-inter">
+        <label className="mb-2 block font-inter text-xs font-bold uppercase tracking-wider text-muted">
           Modalidad de Contribuyente
         </label>
-        <div className="grid grid-cols-2 gap-2 p-1.5 bg-canvas rounded-[16px] border border-line">
+        <div className="bg-canvas grid grid-cols-2 gap-2 rounded-[16px] border border-line p-1.5">
           <button
             type="button"
             onClick={() => onTipoPersonaChange('fisica')}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-[12px] text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 rounded-[12px] px-3 py-2.5 text-xs font-bold transition-all ${
               tipoPersona === 'fisica'
                 ? 'bg-navy text-white shadow-sm'
-                : 'text-muted hover:text-navy hover:bg-surface'
+                : 'text-muted hover:bg-surface hover:text-navy'
             }`}
           >
-            <User className="w-4 h-4" />
+            <User className="h-4 w-4" />
             <span>Persona Física (113-E)</span>
           </button>
           <button
             type="button"
             onClick={() => onTipoPersonaChange('moral')}
-            className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-[12px] text-xs font-bold transition-all ${
+            className={`flex items-center justify-center gap-2 rounded-[12px] px-3 py-2.5 text-xs font-bold transition-all ${
               tipoPersona === 'moral'
                 ? 'bg-navy text-white shadow-sm'
-                : 'text-muted hover:text-navy hover:bg-surface'
+                : 'text-muted hover:bg-surface hover:text-navy'
             }`}
           >
-            <Building2 className="w-4 h-4" />
+            <Building2 className="h-4 w-4" />
             <span>Persona Moral (206)</span>
           </button>
         </div>
       </div>
 
       {/* 2. Selector de Período y Ejercicio */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-xs font-semibold text-muted mb-1.5 font-inter">
+          <label className="mb-1.5 block font-inter text-xs font-semibold text-muted">
             Mes a Declarar
           </label>
           <div className="relative">
@@ -81,32 +81,32 @@ export function ParametrosResicoCard({
                 </option>
               ))}
             </select>
-            <Calendar className="w-4 h-4 text-muted absolute right-3 top-3 pointer-events-none" />
+            <Calendar className="pointer-events-none absolute right-3 top-3 h-4 w-4 text-muted" />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-muted mb-1.5 font-inter">
+          <label className="mb-1.5 block font-inter text-xs font-semibold text-muted">
             Ejercicio Fiscal
           </label>
           <input
             type="number"
             disabled
             value={tipoPersona === 'fisica' ? entradaPF.ejercicio : entradaPM.ejercicio}
-            className="w-full rounded-[14px] border border-line bg-canvas px-3 py-2.5 text-sm font-medium text-muted cursor-not-allowed"
+            className="bg-canvas w-full cursor-not-allowed rounded-[14px] border border-line px-3 py-2.5 text-sm font-medium text-muted"
           />
         </div>
       </div>
 
       {/* 3. Formulario para Persona Física */}
       {tipoPersona === 'fisica' ? (
-        <div className="space-y-4 pt-2 border-t border-line">
+        <div className="space-y-4 border-t border-line pt-2">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-navy font-inter">
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="font-inter text-xs font-semibold text-navy">
                 Ingresos Cobrados del Mes (sin IVA) *
               </label>
-              <span className="text-[11px] text-muted font-mono">CFDI cobrados</span>
+              <span className="font-mono text-[11px] text-muted">CFDI cobrados</span>
             </div>
             <div className="relative">
               <span className="absolute left-3.5 top-2.5 text-sm font-bold text-muted">$</span>
@@ -122,20 +122,20 @@ export function ParametrosResicoCard({
                   })
                 }
                 placeholder="0.00"
-                className="w-full rounded-[14px] border border-line bg-surface pl-8 pr-3 py-2.5 text-sm font-bold text-navy focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                className="w-full rounded-[14px] border border-line bg-surface py-2.5 pl-8 pr-3 text-sm font-bold text-navy focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
               />
             </div>
-            <p className="text-[11px] text-muted mt-1">
+            <p className="mt-1 text-[11px] text-muted">
               Base gravable directa para la tarifa mensual del 1% al 2.5% (Art. 113-E LISR).
             </p>
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-navy font-inter">
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="font-inter text-xs font-semibold text-navy">
                 Ingresos Acumulados Previos (Ene a Mes-1)
               </label>
-              <span className="text-[11px] text-muted font-mono">Tope $3.5M</span>
+              <span className="font-mono text-[11px] text-muted">Tope $3.5M</span>
             </div>
             <div className="relative">
               <span className="absolute left-3.5 top-2.5 text-sm font-bold text-muted">$</span>
@@ -151,17 +151,17 @@ export function ParametrosResicoCard({
                   })
                 }
                 placeholder="0.00"
-                className="w-full rounded-[14px] border border-line bg-surface pl-8 pr-3 py-2.5 text-sm text-navy focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
+                className="w-full rounded-[14px] border border-line bg-surface py-2.5 pl-8 pr-3 text-sm text-navy focus:border-gold focus:outline-none focus:ring-1 focus:ring-gold"
               />
             </div>
           </div>
 
           {/* Retención 1.25% Persona Moral */}
-          <div className="rounded-[16px] border border-line/80 bg-canvas/60 p-3.5 space-y-3">
+          <div className="bg-canvas/60 space-y-3 rounded-[16px] border border-line/80 p-3.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                <Percent className="w-3.5 h-3.5 text-gold-dark" />
-                <span className="text-xs font-bold text-navy font-inter">
+                <Percent className="h-3.5 w-3.5 text-gold-dark" />
+                <span className="font-inter text-xs font-bold text-navy">
                   Retención ISR Personas Morales (1.25%)
                 </span>
               </div>
@@ -173,7 +173,7 @@ export function ParametrosResicoCard({
                     autoCalcularRetencionPM: !entradaPF.autoCalcularRetencionPM,
                   })
                 }
-                className="text-[11px] text-gold-dark hover:underline font-semibold"
+                className="text-[11px] font-semibold text-gold-dark hover:underline"
               >
                 {entradaPF.autoCalcularRetencionPM ? 'Ingresar manual' : 'Auto-calcular 1.25%'}
               </button>
@@ -181,7 +181,7 @@ export function ParametrosResicoCard({
 
             {entradaPF.autoCalcularRetencionPM ? (
               <div>
-                <label className="text-[11px] text-muted block mb-1">
+                <label className="mb-1 block text-[11px] text-muted">
                   Monto facturado a Personas Morales en el mes:
                 </label>
                 <div className="relative">
@@ -200,16 +200,17 @@ export function ParametrosResicoCard({
                       });
                     }}
                     placeholder="0.00"
-                    className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                    className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                   />
                 </div>
-                <p className="text-[10px] text-muted mt-1">
-                  Retención calculada (1.25%): ${((entradaPF.ingresosFacturadosPM || 0) * 0.0125).toFixed(2)} MXN
+                <p className="mt-1 text-[10px] text-muted">
+                  Retención calculada (1.25%): $
+                  {((entradaPF.ingresosFacturadosPM || 0) * 0.0125).toFixed(2)} MXN
                 </p>
               </div>
             ) : (
               <div>
-                <label className="text-[11px] text-muted block mb-1">
+                <label className="mb-1 block text-[11px] text-muted">
                   Importe de retención según constancia/CFDI:
                 </label>
                 <div className="relative">
@@ -226,7 +227,7 @@ export function ParametrosResicoCard({
                       })
                     }
                     placeholder="0.00"
-                    className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                    className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                   />
                 </div>
               </div>
@@ -234,27 +235,28 @@ export function ParametrosResicoCard({
           </div>
 
           {/* IVA */}
-          <div className="pt-2 border-t border-line space-y-3">
+          <div className="space-y-3 border-t border-line pt-2">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-navy font-inter">
+              <span className="font-inter text-xs font-bold uppercase tracking-wider text-navy">
                 Liquidación de IVA del Mes
               </span>
               <button
                 type="button"
                 onClick={() => {
-                  const cobradoSugerido = Math.round(entradaPF.ingresosCobradosMes * 0.16 * 100) / 100;
+                  const cobradoSugerido =
+                    Math.round(entradaPF.ingresosCobradosMes * 0.16 * 100) / 100;
                   onEntradaPFChange({ ...entradaPF, ivaCobrado: cobradoSugerido });
                 }}
-                className="text-[10px] font-semibold text-gold-dark hover:underline flex items-center gap-1"
+                className="flex items-center gap-1 text-[10px] font-semibold text-gold-dark hover:underline"
                 title="Sugerir 16% sobre ingresos cobrados"
               >
-                <Calculator className="w-3 h-3" /> Sugerir 16%
+                <Calculator className="h-3 w-3" /> Sugerir 16%
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-[11px] text-muted block mb-1">
+                <label className="mb-1 block text-[11px] text-muted">
                   IVA Trasladado Cobrado (16%)
                 </label>
                 <div className="relative">
@@ -271,13 +273,13 @@ export function ParametrosResicoCard({
                       })
                     }
                     placeholder="0.00"
-                    className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                    className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] text-muted block mb-1">
+                <label className="mb-1 block text-[11px] text-muted">
                   IVA Acreditable Pagado (Gastos)
                 </label>
                 <div className="relative">
@@ -294,14 +296,14 @@ export function ParametrosResicoCard({
                       })
                     }
                     placeholder="0.00"
-                    className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                    className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] text-muted block mb-1">
+              <label className="mb-1 block text-[11px] text-muted">
                 Retención de IVA efectuada por PM (opcional)
               </label>
               <div className="relative">
@@ -318,7 +320,7 @@ export function ParametrosResicoCard({
                     })
                   }
                   placeholder="0.00"
-                  className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                  className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                 />
               </div>
             </div>
@@ -326,9 +328,9 @@ export function ParametrosResicoCard({
         </div>
       ) : (
         /* 4. Formulario para Persona Moral (Flujo de Efectivo) */
-        <div className="space-y-4 pt-2 border-t border-line">
+        <div className="space-y-4 border-t border-line pt-2">
           <div>
-            <label className="text-xs font-semibold text-navy block mb-1.5 font-inter">
+            <label className="mb-1.5 block font-inter text-xs font-semibold text-navy">
               Ingresos Acumulados Cobrados en el Ejercicio *
             </label>
             <div className="relative">
@@ -345,16 +347,17 @@ export function ParametrosResicoCard({
                   })
                 }
                 placeholder="0.00"
-                className="w-full rounded-[14px] border border-line bg-surface pl-8 pr-3 py-2.5 text-sm font-bold text-navy focus:border-gold focus:outline-none"
+                className="w-full rounded-[14px] border border-line bg-surface py-2.5 pl-8 pr-3 text-sm font-bold text-navy focus:border-gold focus:outline-none"
               />
             </div>
-            <p className="text-[11px] text-muted mt-1">
-              Ingresos efectivamente percibidos acumulados desde enero hasta el mes de pago (Art. 207 LISR).
+            <p className="mt-1 text-[11px] text-muted">
+              Ingresos efectivamente percibidos acumulados desde enero hasta el mes de pago (Art.
+              207 LISR).
             </p>
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-navy block mb-1.5 font-inter">
+            <label className="mb-1.5 block font-inter text-xs font-semibold text-navy">
               Deducciones Autorizadas Acumuladas Pagadas *
             </label>
             <div className="relative">
@@ -371,17 +374,18 @@ export function ParametrosResicoCard({
                   })
                 }
                 placeholder="0.00"
-                className="w-full rounded-[14px] border border-line bg-surface pl-8 pr-3 py-2.5 text-sm font-bold text-navy focus:border-gold focus:outline-none"
+                className="w-full rounded-[14px] border border-line bg-surface py-2.5 pl-8 pr-3 text-sm font-bold text-navy focus:border-gold focus:outline-none"
               />
             </div>
-            <p className="text-[11px] text-muted mt-1">
-              Gastos e inversiones deducibles pagados en efectivo, cheque o transferencia (Art. 208 LISR).
+            <p className="mt-1 text-[11px] text-muted">
+              Gastos e inversiones deducibles pagados en efectivo, cheque o transferencia (Art. 208
+              LISR).
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-[11px] text-muted block mb-1">
+              <label className="mb-1 block text-[11px] text-muted">
                 PTU Pagada en el Ejercicio
               </label>
               <div className="relative">
@@ -398,13 +402,13 @@ export function ParametrosResicoCard({
                     })
                   }
                   placeholder="0.00"
-                  className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                  className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] text-muted block mb-1">
+              <label className="mb-1 block text-[11px] text-muted">
                 Pérdidas Fiscales Anteriores
               </label>
               <div className="relative">
@@ -421,15 +425,15 @@ export function ParametrosResicoCard({
                     })
                   }
                   placeholder="0.00"
-                  className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                  className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="text-[11px] text-muted block mb-1">
+              <label className="mb-1 block text-[11px] text-muted">
                 Pagos Provisionales Previos de ISR
               </label>
               <div className="relative">
@@ -446,13 +450,13 @@ export function ParametrosResicoCard({
                     })
                   }
                   placeholder="0.00"
-                  className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                  className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-[11px] text-muted block mb-1">
+              <label className="mb-1 block text-[11px] text-muted">
                 Retenciones de ISR Acumuladas
               </label>
               <div className="relative">
@@ -469,20 +473,20 @@ export function ParametrosResicoCard({
                     })
                   }
                   placeholder="0.00"
-                  className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                  className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           {/* IVA PM */}
-          <div className="pt-2 border-t border-line space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-navy font-inter block">
+          <div className="space-y-3 border-t border-line pt-2">
+            <span className="block font-inter text-xs font-bold uppercase tracking-wider text-navy">
               Liquidación de IVA del Mes
             </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
-                <label className="text-[11px] text-muted block mb-1">IVA Cobrado del Mes</label>
+                <label className="mb-1 block text-[11px] text-muted">IVA Cobrado del Mes</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-xs font-bold text-muted">$</span>
                   <input
@@ -497,12 +501,12 @@ export function ParametrosResicoCard({
                       })
                     }
                     placeholder="0.00"
-                    className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                    className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                   />
                 </div>
               </div>
               <div>
-                <label className="text-[11px] text-muted block mb-1">IVA Acreditable del Mes</label>
+                <label className="mb-1 block text-[11px] text-muted">IVA Acreditable del Mes</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2 text-xs font-bold text-muted">$</span>
                   <input
@@ -517,7 +521,7 @@ export function ParametrosResicoCard({
                       })
                     }
                     placeholder="0.00"
-                    className="w-full rounded-[12px] border border-line bg-surface pl-7 pr-3 py-1.5 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                    className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                   />
                 </div>
               </div>

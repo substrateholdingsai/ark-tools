@@ -97,7 +97,8 @@ export async function procesarCierreNomina(
     const factorIntegracion = resultadoSBC.factor;
 
     // 3. Percepciones
-    const diasTrabajados = t.diasTrabajados !== undefined ? t.diasTrabajados : parametros.diasPeriodo;
+    const diasTrabajados =
+      t.diasTrabajados !== undefined ? t.diasTrabajados : parametros.diasPeriodo;
     const sueldoOrdinario = r2(t.salarioDiario * diasTrabajados);
     const percepcionesAdicionales = r2(
       (t.horasExtras || 0) + (t.bonos || 0) + (t.otrasPercepciones || 0)

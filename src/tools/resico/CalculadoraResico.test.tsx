@@ -37,12 +37,8 @@ describe('CalculadoraResico (src/tools/resico/CalculadoraResico.tsx)', () => {
     fireEvent.click(btnMoral);
 
     // Debe mostrar los campos de Persona Moral
-    expect(
-      screen.getByText(/Ingresos Acumulados Cobrados en el Ejercicio/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/Deducciones Autorizadas Acumuladas Pagadas/i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Ingresos Acumulados Cobrados en el Ejercicio/i)).toBeInTheDocument();
+    expect(screen.getByText(/Deducciones Autorizadas Acumuladas Pagadas/i)).toBeInTheDocument();
     expect(screen.getByText(/TASA ISR 30%/i)).toBeInTheDocument();
 
     // Regresar a Persona Física

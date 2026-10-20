@@ -32,7 +32,9 @@ describe('MapaActivos (src/tools/mapa-activos/MapaActivos.tsx)', () => {
     const input = screen.getByPlaceholderText(/Buscar conducta, artículo, sanción.../i);
     fireEvent.change(input, { target: { value: 'hackeo' } });
 
-    expect(screen.getByText(/Obtener, extraer o transferir activos virtuales sin autorización/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Obtener, extraer o transferir activos virtuales sin autorización/i)
+    ).toBeInTheDocument();
     expect(screen.getByText('1 de 12 conductas')).toBeInTheDocument();
   });
 
@@ -48,7 +50,9 @@ describe('MapaActivos (src/tools/mapa-activos/MapaActivos.tsx)', () => {
   it('expande y contrae el detalle completo de una conducta', () => {
     render(<MapaActivos />);
 
-    const tituloConducta = screen.getByText('Operar plataforma de activos virtuales sin autorización de la CNBV');
+    const tituloConducta = screen.getByText(
+      'Operar plataforma de activos virtuales sin autorización de la CNBV'
+    );
     const primerCard = tituloConducta.closest('button')!;
     expect(primerCard).toBeInTheDocument();
 
@@ -58,7 +62,9 @@ describe('MapaActivos (src/tools/mapa-activos/MapaActivos.tsx)', () => {
     // Clic para expandir
     fireEvent.click(primerCard);
     expect(screen.getByText('DETALLE COMPLETO')).toBeInTheDocument();
-    expect(screen.getByText(/Inhabilitación para solicitar autorización futura/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Inhabilitación para solicitar autorización futura/i)
+    ).toBeInTheDocument();
 
     // Clic para contraer
     fireEvent.click(primerCard);

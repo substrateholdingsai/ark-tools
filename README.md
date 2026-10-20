@@ -10,16 +10,16 @@ ARK Tools es una suite de cálculo financiero y fiscal diseñada específicament
 
 ## Herramientas Incluidas
 
-| Herramienta | Descripción |
-|-------------|-------------|
-| **ISN** | Calculadora de Impuesto Sobre Nóminas por estado con tasas actualizadas |
-| **Leasing** | Calculadora de arrendamiento financiero con tabla de proyección mensual |
-| **Mapa de Activos** | Visualización interactiva de activos y pasivos |
-| **Nómina** | Calculadora completa con desglose IMSS/ISR y deducciones |
-| **SBC** | Calculadora de Salario Base de Cotización con rangos UMA |
-| **SPEI** | Generador de enlaces de cobro SPEI con integración Clip |
-| **XML → Excel** | Conversor de facturas CFDI XML a Excel |
-| **Validador XML** | Auditoría de cumplimiento CFDI con score de validación |
+| Herramienta         | Descripción                                                             |
+| ------------------- | ----------------------------------------------------------------------- |
+| **ISN**             | Calculadora de Impuesto Sobre Nóminas por estado con tasas actualizadas |
+| **Leasing**         | Calculadora de arrendamiento financiero con tabla de proyección mensual |
+| **Mapa de Activos** | Visualización interactiva de activos y pasivos                          |
+| **Nómina**          | Calculadora completa con desglose IMSS/ISR y deducciones                |
+| **SBC**             | Calculadora de Salario Base de Cotización con rangos UMA                |
+| **SPEI**            | Generador de enlaces de cobro SPEI con integración Clip                 |
+| **XML → Excel**     | Conversor de facturas CFDI XML a Excel                                  |
+| **Validador XML**   | Auditoría de cumplimiento CFDI con score de validación                  |
 
 ## Stack Tecnológico
 
@@ -150,6 +150,7 @@ pnpm deploy:production
 ```
 
 El `wrangler.toml` está configurado con:
+
 - `main` → producción
 - `staging` environment → staging
 

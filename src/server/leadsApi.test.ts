@@ -106,7 +106,11 @@ describe('handleLeadsApiRequest', () => {
     const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
     expect(res?.status).toBe(200);
 
-    const json = (await res?.json()) as { ok: boolean; total: number; por_ciudad: Array<{ ciudad: string; count: number }> };
+    const json = (await res?.json()) as {
+      ok: boolean;
+      total: number;
+      por_ciudad: Array<{ ciudad: string; count: number }>;
+    };
     expect(json.ok).toBe(true);
     expect(json.total).toBe(1);
     expect(json.por_ciudad).toHaveLength(1);
@@ -115,11 +119,16 @@ describe('handleLeadsApiRequest', () => {
 
   it('lista prospectos con filtros en GET /api/admin/leads', async () => {
     const env = createEnv();
-    const req = new Request('https://tools.arksystems.site/api/admin/leads?ciudad=Merida&status=Nuevo');
+    const req = new Request(
+      'https://tools.arksystems.site/api/admin/leads?ciudad=Merida&status=Nuevo'
+    );
     const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
     expect(res?.status).toBe(200);
 
-    const json = (await res?.json()) as { ok: boolean; leads: Array<{ id: string; email: string }> };
+    const json = (await res?.json()) as {
+      ok: boolean;
+      leads: Array<{ id: string; email: string }>;
+    };
     expect(json.ok).toBe(true);
     expect(json.leads).toHaveLength(1);
     expect(json.leads[0]?.id).toBe('lead-1');
@@ -211,7 +220,11 @@ describe('handleLeadsApiRequest', () => {
       const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
       expect(res?.status).toBe(200);
 
-      const json = (await res?.json()) as { ok: boolean; resend_id: string; lead: { status: string } };
+      const json = (await res?.json()) as {
+        ok: boolean;
+        resend_id: string;
+        lead: { status: string };
+      };
       expect(json.ok).toBe(true);
       expect(json.resend_id).toBe('resend-msg-123');
       expect(json.lead.status).toMatch(/^Mail_enviado_/);
@@ -243,7 +256,11 @@ describe('handleLeadsApiRequest', () => {
       const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
       expect(res?.status).toBe(200);
 
-      const json = (await res?.json()) as { ok: boolean; message: string; lead: { status: string } };
+      const json = (await res?.json()) as {
+        ok: boolean;
+        message: string;
+        lead: { status: string };
+      };
       expect(json.ok).toBe(true);
       expect(json.message).toContain('pavel@arksystems.site');
       // No debe cambiar el status del prospecto cuando es prueba

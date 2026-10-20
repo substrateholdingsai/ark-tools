@@ -8,14 +8,21 @@ interface Props {
   onChange: (ea: string, ean: string) => void;
 }
 
-export function ParametrosBalanceCard({ onFile, ejercicioActual, ejercicioAnterior, onChange }: Props) {
+export function ParametrosBalanceCard({
+  onFile,
+  ejercicioActual,
+  ejercicioAnterior,
+  onChange,
+}: Props) {
   const [drag, setDrag] = useState(false);
 
   return (
     <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h3 className="font-orbitron text-sm font-bold uppercase tracking-wider text-navy">Parámetros</h3>
+          <h3 className="font-orbitron text-sm font-bold uppercase tracking-wider text-navy">
+            Parámetros
+          </h3>
           <p className="mt-1 text-sm text-muted">
             Carga balanza CSV/Excel (XLSX/XLS/CSV) o captura manual posterior.
           </p>

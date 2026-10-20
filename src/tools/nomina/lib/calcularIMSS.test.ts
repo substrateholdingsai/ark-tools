@@ -21,7 +21,7 @@ const cuotaSBC: CuotaIMSS = {
 const cuotaExcedente: CuotaIMSS = {
   ramo: 'Test Excedente',
   fundamento: 'Test',
-  porcentaje: 0.60, // 0.6%
+  porcentaje: 0.6, // 0.6%
   base: 'sbc_excedente',
   monto: 0,
 };

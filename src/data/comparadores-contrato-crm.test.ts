@@ -3,10 +3,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { RIESGOS_COBRANZA } from './conductas-cobranza';
-import {
-  COMPARADORES_CONTRATO_CRM,
-  ESTADOS_COMPARADOR,
-} from './comparadores-contrato-crm';
+import { COMPARADORES_CONTRATO_CRM, ESTADOS_COMPARADOR } from './comparadores-contrato-crm';
 
 describe('comparadores-contrato-crm', () => {
   it('tiene 12 comparadores del eje Contrato vs CRM', () => {
@@ -14,12 +11,12 @@ describe('comparadores-contrato-crm', () => {
   });
 
   it('tiene IDs únicos', () => {
-    const ids = COMPARADORES_CONTRATO_CRM.map(item => item.id);
+    const ids = COMPARADORES_CONTRATO_CRM.map((item) => item.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('tiene códigos únicos', () => {
-    const codigos = COMPARADORES_CONTRATO_CRM.map(item => item.codigo);
+    const codigos = COMPARADORES_CONTRATO_CRM.map((item) => item.codigo);
     expect(new Set(codigos).size).toBe(codigos.length);
   });
 

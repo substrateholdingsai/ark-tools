@@ -1,7 +1,6 @@
 import type { Env } from '../index';
 import { requireTenantMembership, type AuthPrincipal } from './auth';
 
-
 interface Lead {
   id: string;
   web: string | null;
@@ -303,7 +302,8 @@ export async function handleLeadsApiRequest(
         binds.push(especialidad);
       }
       if (q) {
-        query += ' AND (web LIKE ? OR email LIKE ? OR contacto_nombre LIKE ? OR notas LIKE ? OR whatsapp LIKE ?)';
+        query +=
+          ' AND (web LIKE ? OR email LIKE ? OR contacto_nombre LIKE ? OR notas LIKE ? OR whatsapp LIKE ?)';
         const wildcard = `%${q}%`;
         binds.push(wildcard, wildcard, wildcard, wildcard, wildcard);
       }
@@ -367,34 +367,47 @@ export async function handleLeadsApiRequest(
       const contacto_nombre =
         body.contacto_nombre == null ? null : String(body.contacto_nombre).trim() || null;
       const notas = body.notas == null ? null : String(body.notas).trim() || null;
-      const tId =
-        body.tenant_id == null ? tenantId : String(body.tenant_id).trim() || tenantId;
+      const tId = body.tenant_id == null ? tenantId : String(body.tenant_id).trim() || tenantId;
 
       await db
         .prepare(
           `INSERT INTO leads_ark_tools (id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, tenant_id, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
         )
-        .bind(id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, tId)
+        .bind(
+          id,
+          web,
+          whatsapp,
+          email,
+          ciudad,
+          especialidad,
+          status,
+          last_contact,
+          contacto_nombre,
+          notas,
+          tId
+        )
         .run();
 
       const created = await db
         .prepare('SELECT * FROM leads_ark_tools WHERE id = ? AND tenant_id = ? LIMIT 1')
         .bind(id, tId)
         .first<Record<string, unknown>>();
-      const lead = created ? rowToLead(created) : rowToLead({
-        id,
-        web,
-        whatsapp,
-        email,
-        ciudad,
-        especialidad,
-        status,
-        last_contact,
-        contacto_nombre,
-        notas,
-        tenant_id: tId,
-      });
+      const lead = created
+        ? rowToLead(created)
+        : rowToLead({
+            id,
+            web,
+            whatsapp,
+            email,
+            ciudad,
+            especialidad,
+            status,
+            last_contact,
+            contacto_nombre,
+            notas,
+            tenant_id: tId,
+          });
 
       return Response.json(
         { success: true, ok: true, lead, data: lead },
@@ -421,31 +434,60 @@ export async function handleLeadsApiRequest(
         );
       }
 
-      const web = body.web === undefined ? existing.web : (body.web == null ? null : String(body.web).trim() || null);
+      const web =
+        body.web === undefined
+          ? existing.web
+          : body.web == null
+            ? null
+            : String(body.web).trim() || null;
       const whatsapp =
         body.whatsapp === undefined
           ? existing.whatsapp
-          : (body.whatsapp == null ? null : String(body.whatsapp).trim() || null);
+          : body.whatsapp == null
+            ? null
+            : String(body.whatsapp).trim() || null;
       const email =
-        body.email === undefined ? existing.email : (body.email == null ? null : String(body.email).trim() || null);
+        body.email === undefined
+          ? existing.email
+          : body.email == null
+            ? null
+            : String(body.email).trim() || null;
       const ciudad =
-        body.ciudad === undefined ? existing.ciudad : (body.ciudad == null ? null : String(body.ciudad).trim() || null);
+        body.ciudad === undefined
+          ? existing.ciudad
+          : body.ciudad == null
+            ? null
+            : String(body.ciudad).trim() || null;
       const especialidad =
         body.especialidad === undefined
           ? existing.especialidad
-          : (body.especialidad == null ? null : String(body.especialidad).trim() || null);
+          : body.especialidad == null
+            ? null
+            : String(body.especialidad).trim() || null;
       const status =
-        body.status === undefined ? existing.status : (body.status == null ? null : String(body.status).trim() || null);
+        body.status === undefined
+          ? existing.status
+          : body.status == null
+            ? null
+            : String(body.status).trim() || null;
       const last_contact =
         body.last_contact === undefined
           ? existing.last_contact
-          : (body.last_contact == null ? null : String(body.last_contact).trim() || null);
+          : body.last_contact == null
+            ? null
+            : String(body.last_contact).trim() || null;
       const contacto_nombre =
         body.contacto_nombre === undefined
           ? existing.contacto_nombre
-          : (body.contacto_nombre == null ? null : String(body.contacto_nombre).trim() || null);
+          : body.contacto_nombre == null
+            ? null
+            : String(body.contacto_nombre).trim() || null;
       const notas =
-        body.notas === undefined ? existing.notas : (body.notas == null ? null : String(body.notas).trim() || null);
+        body.notas === undefined
+          ? existing.notas
+          : body.notas == null
+            ? null
+            : String(body.notas).trim() || null;
 
       await db
         .prepare(
@@ -454,25 +496,39 @@ export async function handleLeadsApiRequest(
             last_contact = ?, contacto_nombre = ?, notas = ?, updated_at = CURRENT_TIMESTAMP
            WHERE id = ? AND tenant_id = ?`
         )
-        .bind(web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, id, tenantId)
+        .bind(
+          web,
+          whatsapp,
+          email,
+          ciudad,
+          especialidad,
+          status,
+          last_contact,
+          contacto_nombre,
+          notas,
+          id,
+          tenantId
+        )
         .run();
 
       const updated = await db
         .prepare('SELECT * FROM leads_ark_tools WHERE id = ? AND tenant_id = ? LIMIT 1')
         .bind(id, tenantId)
         .first<Record<string, unknown>>();
-      const lead = updated ? rowToLead(updated) : rowToLead({
-        ...existing,
-        web,
-        whatsapp,
-        email,
-        ciudad,
-        especialidad,
-        status,
-        last_contact,
-        contacto_nombre,
-        notas,
-      });
+      const lead = updated
+        ? rowToLead(updated)
+        : rowToLead({
+            ...existing,
+            web,
+            whatsapp,
+            email,
+            ciudad,
+            especialidad,
+            status,
+            last_contact,
+            contacto_nombre,
+            notas,
+          });
 
       return Response.json(
         { success: true, ok: true, lead, data: lead },
@@ -538,7 +594,7 @@ export async function handleLeadsApiRequest(
       const recipientName =
         typeof body.recipient_name === 'string' && body.recipient_name.trim()
           ? body.recipient_name.trim()
-          : (lead.contacto_nombre?.trim() || 'Director(a)');
+          : lead.contacto_nombre?.trim() || 'Director(a)';
 
       const baseUrl = env.APP_URL || 'https://tools.arksystems.site';
       const logoUrl = `${baseUrl.replace(/\/$/, '')}/logo-email.png`;

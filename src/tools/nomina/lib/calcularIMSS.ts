@@ -24,11 +24,7 @@ import { PERIODOS } from '../data/periodos';
  *   - uma: porcentaje × UMA × días
  *   - sbc_excedente: porcentaje × max(0, SBC - 3 UMA) × días
  */
-export function calcularCuota(
-  cuota: CuotaIMSS,
-  sbcDiario: number,
-  dias: number
-): number {
+export function calcularCuota(cuota: CuotaIMSS, sbcDiario: number, dias: number): number {
   const porcentajeDecimal = cuota.porcentaje / 100;
 
   switch (cuota.base) {
@@ -65,10 +61,7 @@ export function calcularCuota(
  * @param sbcDiario — Salario Base de Cotización diario
  * @param periodo — Período de pago (determina los días)
  */
-export function calcularIMSS(
-  sbcDiario: number,
-  periodo: Periodo
-): ResultadoIMSS {
+export function calcularIMSS(sbcDiario: number, periodo: Periodo): ResultadoIMSS {
   const dias = PERIODOS[periodo].dias;
 
   // Caso 0: sin SBC
@@ -88,9 +81,7 @@ export function calcularIMSS(
   }));
 
   // Sumar
-  const total = redondear2(
-    cuotasCalculadas.reduce((sum, c) => sum + c.monto, 0)
-  );
+  const total = redondear2(cuotasCalculadas.reduce((sum, c) => sum + c.monto, 0));
 
   return {
     cuotas: cuotasCalculadas,

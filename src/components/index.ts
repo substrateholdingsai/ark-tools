@@ -26,7 +26,5 @@ export { AdminPanel } from './admin/AdminPanel';
 export { TeamModal, InviteAcceptModal } from './team';
 export { ErrorBoundary } from './ErrorBoundary';
 
-
 // Tipos
 export type { NavItem } from './Header';
-

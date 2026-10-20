@@ -112,7 +112,10 @@ export default function LeadsApp() {
   const [emailRecipientName, setEmailRecipientName] = useState('');
   const [emailTestTarget, setEmailTestTarget] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
-  const [emailFeedback, setEmailFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [emailFeedback, setEmailFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
   const [showHtmlPreview, setShowHtmlPreview] = useState(false);
 
   // Modal de creación de lead
@@ -163,10 +166,13 @@ export default function LeadsApp() {
     const total = leads.length;
     const nuevos = leads.filter((l) => l.status === 'Nuevo').length;
     const contactados = leads.filter(
-      (l) => l.status && l.status !== 'Nuevo' && l.status !== 'Anti_spam' && l.status !== 'Bloqueado'
+      (l) =>
+        l.status && l.status !== 'Nuevo' && l.status !== 'Anti_spam' && l.status !== 'Bloqueado'
     ).length;
     const respondieron = leads.filter((l) => l.status === 'Respondio_2_whats').length;
-    const antispam = leads.filter((l) => l.status === 'Anti_spam' || l.status === 'Bloqueado').length;
+    const antispam = leads.filter(
+      (l) => l.status === 'Anti_spam' || l.status === 'Bloqueado'
+    ).length;
     return { total, nuevos, contactados, respondieron, antispam };
   }, [leads]);
 
@@ -210,17 +216,25 @@ export default function LeadsApp() {
     setEmailFeedback(null);
 
     try {
-      const res = await fetch(`/api/admin/leads/${encodeURIComponent(selectedLeadForEmail.id)}/send-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          recipient_name: emailRecipientName,
-          test_email: emailTestTarget.trim() || undefined,
-        }),
-      });
+      const res = await fetch(
+        `/api/admin/leads/${encodeURIComponent(selectedLeadForEmail.id)}/send-email`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            recipient_name: emailRecipientName,
+            test_email: emailTestTarget.trim() || undefined,
+          }),
+        }
+      );
 
-      const data = (await res.json()) as { ok?: boolean; error?: string; message?: string; lead?: Lead };
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        lead?: Lead;
+      };
       if (!res.ok || !data.ok) {
         throw new Error(data.error || 'Error al enviar el correo');
       }
@@ -361,9 +375,7 @@ export default function LeadsApp() {
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-navy/10 text-navy">
               <Target size={18} />
             </span>
-            <h2 className="font-orbitron text-lg font-bold text-navy">
-              CRM Prospectos Contables
-            </h2>
+            <h2 className="font-orbitron text-lg font-bold text-navy">CRM Prospectos Contables</h2>
           </div>
           <p className="mt-1 text-xs text-muted">
             Embudo pericial de prospección y captación de despachos para ARK Tools Platform.
@@ -529,7 +541,7 @@ export default function LeadsApp() {
               <button
                 onClick={clearFilters}
                 title="Limpiar filtros"
-                className="flex items-center gap-1 rounded-xl border border-line px-3 py-2 text-xs font-medium text-muted hover:text-ink hover:bg-slate-50 transition"
+                className="flex items-center gap-1 rounded-xl border border-line px-3 py-2 text-xs font-medium text-muted transition hover:bg-slate-50 hover:text-ink"
               >
                 <FilterX size={14} />
                 Limpiar
@@ -547,8 +559,8 @@ export default function LeadsApp() {
       )}
 
       {/* Tabla de Prospectos */}
-      <div className="rounded-3xl border border-line bg-white shadow-sm overflow-hidden">
-        <div className="border-b border-line bg-slate-50/80 px-6 py-4 flex items-center justify-between">
+      <div className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-line bg-slate-50/80 px-6 py-4">
           <div className="flex items-center gap-2">
             <Building2 size={16} className="text-navy" />
             <h3 className="font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
@@ -597,7 +609,7 @@ export default function LeadsApp() {
                   const statusConfig = getStatusBadge(l.status);
 
                   return (
-                    <tr key={l.id} className="hover:bg-slate-50/80 transition">
+                    <tr key={l.id} className="transition hover:bg-slate-50/80">
                       {/* Web / Dominio */}
                       <td className="px-5 py-3.5 font-medium">
                         {l.web ? (
@@ -612,7 +624,7 @@ export default function LeadsApp() {
                             <ExternalLink size={11} className="text-muted" />
                           </a>
                         ) : (
-                          <span className="text-muted italic">Sin web registrada</span>
+                          <span className="italic text-muted">Sin web registrada</span>
                         )}
                         {l.notas && (
                           <p className="mt-0.5 max-w-[200px] truncate text-[11px] text-muted">
@@ -712,14 +724,14 @@ export default function LeadsApp() {
                           {l.email ? (
                             <button
                               onClick={() => openEmailModal(l)}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-navy/20 bg-navy/5 px-2.5 py-1.5 font-orbitron text-[11px] font-semibold text-navy transition hover:bg-navy hover:text-white active:scale-95 shadow-sm"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-navy/20 bg-navy/5 px-2.5 py-1.5 font-orbitron text-[11px] font-semibold text-navy shadow-sm transition hover:bg-navy hover:text-white active:scale-95"
                               title={`Enviar propuesta a ${l.email}`}
                             >
                               <Send size={11} />
                               Enviar Propuesta
                             </button>
                           ) : (
-                            <span className="text-[11px] text-muted italic">Sin email</span>
+                            <span className="text-[11px] italic text-muted">Sin email</span>
                           )}
                           <button
                             onClick={() => setLeadToDelete(l)}
@@ -742,8 +754,8 @@ export default function LeadsApp() {
 
       {/* MODAL DE CREACIÓN DE PROSPECTO */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
+        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
             <div className="flex items-center justify-between border-b border-line pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy/10 text-navy">
@@ -761,7 +773,7 @@ export default function LeadsApp() {
               <button
                 onClick={() => setIsCreateModalOpen(false)}
                 disabled={creatingLead}
-                className="rounded-lg p-1.5 text-muted hover:bg-slate-100 hover:text-ink transition"
+                className="rounded-lg p-1.5 text-muted transition hover:bg-slate-100 hover:text-ink"
               >
                 <X size={18} />
               </button>
@@ -770,13 +782,13 @@ export default function LeadsApp() {
             <form onSubmit={handleCreateLead} className="mt-5 space-y-4">
               {createError && (
                 <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800">
-                  <AlertCircle size={15} className="text-rose-600 shrink-0" />
+                  <AlertCircle size={15} className="shrink-0 text-rose-600" />
                   <span>{createError}</span>
                 </div>
               )}
 
               <div>
-                <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                   Nombre del Despacho o Contacto *
                 </label>
                 <input
@@ -792,7 +804,7 @@ export default function LeadsApp() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Correo Electrónico
                   </label>
                   <input
@@ -805,7 +817,7 @@ export default function LeadsApp() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     WhatsApp (E.164 o 10 dígitos)
                   </label>
                   <input
@@ -819,7 +831,7 @@ export default function LeadsApp() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Sitio Web
                   </label>
                   <input
@@ -831,7 +843,7 @@ export default function LeadsApp() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Ciudad
                   </label>
                   <select
@@ -851,7 +863,7 @@ export default function LeadsApp() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Especialidad
                   </label>
                   <select
@@ -870,7 +882,7 @@ export default function LeadsApp() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Estatus Inicial
                   </label>
                   <select
@@ -888,7 +900,7 @@ export default function LeadsApp() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                   Notas / Observaciones
                 </label>
                 <textarea
@@ -905,7 +917,7 @@ export default function LeadsApp() {
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
                   disabled={creatingLead}
-                  className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted hover:bg-slate-50 hover:text-ink transition active:scale-95"
+                  className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink active:scale-95"
                 >
                   Cancelar
                 </button>
@@ -934,20 +946,23 @@ export default function LeadsApp() {
 
       {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
       {leadToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
+        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="relative w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-7">
             <div className="flex items-start gap-3.5">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 border border-rose-200">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600">
                 <AlertTriangle size={22} />
               </div>
               <div className="flex-1">
                 <h3 className="font-orbitron text-base font-bold text-navy">
                   ¿Eliminar Prospecto?
                 </h3>
-                <p className="mt-2 text-xs text-muted leading-relaxed">
+                <p className="mt-2 text-xs leading-relaxed text-muted">
                   ¿Estás seguro de que deseas eliminar a{' '}
                   <strong className="text-ink">
-                    {leadToDelete.contacto_nombre || leadToDelete.web || leadToDelete.email || 'este prospecto'}
+                    {leadToDelete.contacto_nombre ||
+                      leadToDelete.web ||
+                      leadToDelete.email ||
+                      'este prospecto'}
                   </strong>{' '}
                   del CRM? Esta acción eliminará permanentemente su registro de la base de datos D1.
                 </p>
@@ -959,7 +974,7 @@ export default function LeadsApp() {
                 type="button"
                 onClick={() => setLeadToDelete(null)}
                 disabled={deletingLead}
-                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted hover:bg-slate-50 hover:text-ink transition active:scale-95"
+                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink active:scale-95"
               >
                 Cancelar
               </button>
@@ -986,8 +1001,8 @@ export default function LeadsApp() {
         </div>
       )}
       {selectedLeadForEmail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
+        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
             {/* Header del modal */}
             <div className="flex items-center justify-between border-b border-line pb-4">
               <div className="flex items-center gap-2.5">
@@ -1006,7 +1021,7 @@ export default function LeadsApp() {
               <button
                 onClick={closeEmailModal}
                 disabled={sendingEmail}
-                className="rounded-lg p-1.5 text-muted hover:bg-slate-100 hover:text-ink transition"
+                className="rounded-lg p-1.5 text-muted transition hover:bg-slate-100 hover:text-ink"
               >
                 <X size={18} />
               </button>
@@ -1016,16 +1031,16 @@ export default function LeadsApp() {
             <div className="mt-5 space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Destinatario Oficial
                   </label>
-                  <div className="rounded-xl border border-line bg-slate-50 px-3 py-2 text-xs font-mono font-medium text-ink">
+                  <div className="rounded-xl border border-line bg-slate-50 px-3 py-2 font-mono text-xs font-medium text-ink">
                     {selectedLeadForEmail.email}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-orbitron font-semibold uppercase tracking-wider text-muted mb-1">
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Nombre del Socio / Director
                   </label>
                   <input
@@ -1039,24 +1054,29 @@ export default function LeadsApp() {
 
               {/* Opción de prueba */}
               <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-3.5">
-                <label className="block text-[11px] font-orbitron font-bold uppercase tracking-wider text-amber-900 mb-1">
+                <label className="mb-1 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-amber-900">
                   Dirección de Prueba (Opcional)
                 </label>
                 <input
                   value={emailTestTarget}
                   onChange={(e) => setEmailTestTarget(e.target.value)}
                   placeholder="ej. tu-correo@ejemplo.com (dejar vacío para enviar al prospecto real)"
-                  className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-mono font-medium text-ink placeholder:text-muted focus:border-navy focus:outline-none"
+                  className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 font-mono text-xs font-medium text-ink placeholder:text-muted focus:border-navy focus:outline-none"
                 />
                 <p className="mt-1 text-[11px] text-amber-800">
-                  Si escribes un correo aquí, Resend lo enviará solo a esa dirección para que lo revises primero y no cambiará el estatus del prospecto en la base de datos.
+                  Si escribes un correo aquí, Resend lo enviará solo a esa dirección para que lo
+                  revises primero y no cambiará el estatus del prospecto en la base de datos.
                 </p>
               </div>
 
               {/* Botón para alternar Previsualización */}
               <div className="flex items-center justify-between pt-1">
                 <span className="text-xs font-semibold text-muted">
-                  Remitente: <strong className="text-navy">Pavel Cortés &lt;pavel@mail.arksystems.site&gt;</strong> (Reply-To: pavel@arksystems.site)
+                  Remitente:{' '}
+                  <strong className="text-navy">
+                    Pavel Cortés &lt;pavel@mail.arksystems.site&gt;
+                  </strong>{' '}
+                  (Reply-To: pavel@arksystems.site)
                 </span>
                 <button
                   type="button"
@@ -1070,27 +1090,32 @@ export default function LeadsApp() {
 
               {/* Vista previa colapsable */}
               {showHtmlPreview && (
-                <div className="rounded-2xl border border-line bg-slate-50 p-4 max-h-[280px] overflow-y-auto text-xs space-y-3">
+                <div className="max-h-[280px] space-y-3 overflow-y-auto rounded-2xl border border-line bg-slate-50 p-4 text-xs">
                   <div className="flex items-center justify-between border-b border-line pb-2">
-                    <span className="font-orbitron font-bold text-navy">Asunto: Infraestructura Tecnológica para su Firma</span>
+                    <span className="font-orbitron font-bold text-navy">
+                      Asunto: Infraestructura Tecnológica para su Firma
+                    </span>
                     <span className="text-[11px] text-muted">Logo: /logo-email.png</span>
                   </div>
-                  <p className="text-ink font-semibold">
+                  <p className="font-semibold text-ink">
                     Hola <strong>{emailRecipientName || 'Director(a)'}</strong>,
                   </p>
-                  <p className="text-muted leading-relaxed">
-                    Notamos que las grandes firmas contables buscan integrar Inteligencia Artificial y automatización masiva, pero las opciones del mercado los obligan a usar software genérico de terceros donde pierden el control y privacidad de sus datos...
+                  <p className="leading-relaxed text-muted">
+                    Notamos que las grandes firmas contables buscan integrar Inteligencia Artificial
+                    y automatización masiva, pero las opciones del mercado los obligan a usar
+                    software genérico de terceros donde pierden el control y privacidad de sus
+                    datos...
                   </p>
                   <div className="rounded-xl border border-slate-200 bg-white p-3 font-mono text-[11px] text-slate-700">
                     <strong>Plan Corporate Firm (Marca Blanca)</strong>
-                    <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                    <ul className="mt-1 list-disc space-y-0.5 pl-4">
                       <li>Branding Total en su propio subdominio</li>
                       <li>Aislamiento Estricto en D1 dedicado</li>
                       <li>Cédulas PDF con Sello SHA-256 + QR oficial</li>
                       <li>ARK Contable AI Privado</li>
                     </ul>
                   </div>
-                  <p className="text-muted text-[11px]">
+                  <p className="text-[11px] text-muted">
                     Llamada de coordinación vía WhatsApp: <strong>+52 56 5706 2511</strong>
                   </p>
                 </div>
@@ -1106,9 +1131,9 @@ export default function LeadsApp() {
                   }`}
                 >
                   {emailFeedback.type === 'success' ? (
-                    <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
+                    <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
                   ) : (
-                    <AlertCircle size={16} className="text-rose-600 shrink-0" />
+                    <AlertCircle size={16} className="shrink-0 text-rose-600" />
                   )}
                   <span>{emailFeedback.message}</span>
                 </div>
@@ -1121,7 +1146,7 @@ export default function LeadsApp() {
                 type="button"
                 onClick={closeEmailModal}
                 disabled={sendingEmail}
-                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted hover:bg-slate-50 hover:text-ink transition active:scale-95"
+                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink active:scale-95"
               >
                 Cerrar
               </button>
@@ -1139,7 +1164,9 @@ export default function LeadsApp() {
                 ) : (
                   <>
                     <Send size={14} />
-                    {emailTestTarget.trim() ? 'Enviar Correo de Prueba' : 'Confirmar y Enviar al Prospecto'}
+                    {emailTestTarget.trim()
+                      ? 'Enviar Correo de Prueba'
+                      : 'Confirmar y Enviar al Prospecto'}
                   </>
                 )}
               </button>

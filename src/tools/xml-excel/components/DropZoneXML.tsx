@@ -92,11 +92,11 @@ export const DropZoneXML: React.FC<DropZoneXMLProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`relative flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 md:p-12 text-center transition-all cursor-pointer select-none ${
+        className={`relative flex cursor-pointer select-none flex-col items-center justify-center rounded-2xl border-2 border-dashed p-8 text-center transition-all md:p-12 ${
           isDragOver
-            ? 'border-gold bg-gold/10 scale-[1.01] shadow-lg shadow-gold/10'
-            : 'border-white/15 bg-surface-raised/40 hover:border-gold/60 hover:bg-surface-raised/70'
-        } ${isLoading ? 'opacity-60 cursor-not-allowed pointer-events-none' : ''}`}
+            ? 'scale-[1.01] border-gold bg-gold/10 shadow-lg shadow-gold/10'
+            : 'bg-surface-raised/40 hover:bg-surface-raised/70 border-white/15 hover:border-gold/60'
+        } ${isLoading ? 'pointer-events-none cursor-not-allowed opacity-60' : ''}`}
       >
         <input
           ref={fileInputRef}
@@ -108,40 +108,40 @@ export const DropZoneXML: React.FC<DropZoneXMLProps> = ({
           disabled={isLoading}
         />
 
-        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gold/15 text-gold border border-gold/30 shadow-inner">
+        <div className="relative mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-gold/30 bg-gold/15 text-gold shadow-inner">
           <UploadCloud className="h-8 w-8 stroke-[1.75]" />
-          <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-navy border border-gold/40 text-[10px] font-bold text-gold">
+          <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full border border-gold/40 bg-navy text-[10px] font-bold text-gold">
             XML
           </span>
         </div>
 
-        <h3 className="font-playfair text-xl md:text-2xl font-bold text-ink">
+        <h3 className="font-playfair text-xl font-bold text-ink md:text-2xl">
           {isLoading
             ? 'Extrayendo datos de comprobantes CFDI...'
             : 'Arrastra tus archivos XML aquí'}
         </h3>
 
-        <p className="mt-2 text-sm text-muted max-w-md">
+        <p className="mt-2 max-w-md text-sm text-muted">
           O haz clic para explorar en tu equipo. Acepta hasta{' '}
-          <strong className="text-gold font-semibold">200 comprobantes</strong> CFDI 4.0 o 3.3.
+          <strong className="font-semibold text-gold">200 comprobantes</strong> CFDI 4.0 o 3.3.
         </p>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-muted/80">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 border border-white/10">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface px-3 py-1">
             <FileCode className="h-3.5 w-3.5 text-gold" />
             CFDI 4.0 / 3.3
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 border border-white/10">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface px-3 py-1">
             🔒 100% privado en tu navegador
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-1 border border-white/10">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface px-3 py-1">
             ⚡ Conversión instantánea a Excel
           </span>
         </div>
       </div>
 
       {errorLimite && (
-        <div className="flex items-center gap-2 rounded-xl bg-red-950/40 border border-red-500/40 p-3 text-xs text-red-200">
+        <div className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/40 p-3 text-xs text-red-200">
           <AlertCircle className="h-4 w-4 shrink-0 text-red-400" />
           <span>{errorLimite}</span>
         </div>

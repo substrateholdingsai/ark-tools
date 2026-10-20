@@ -94,7 +94,12 @@ describe('TeamModal Component', () => {
     vi.mocked(apiClient.teams.inviteMember).mockResolvedValueOnce({
       success: true,
       message: 'Invitación enviada con éxito.',
-      invitation: { id: 'inv-99', email: 'contador@nuevo.com', role: 'member', expiresAt: 1792700000 },
+      invitation: {
+        id: 'inv-99',
+        email: 'contador@nuevo.com',
+        role: 'member',
+        expiresAt: 1792700000,
+      },
     });
 
     render(<TeamModal isOpen={true} onClose={vi.fn()} />);

@@ -65,7 +65,9 @@ export function generarTXT(dictamen: DictamenCobranza): string {
     lineas.push('');
 
     detalles.forEach((detalle: DetalleDictamen, index) => {
-      lineas.push(`[${index + 1}] ${detalle.tipo.toUpperCase()} — ${detalle.categoria.toUpperCase()}`);
+      lineas.push(
+        `[${index + 1}] ${detalle.tipo.toUpperCase()} — ${detalle.categoria.toUpperCase()}`
+      );
       lineas.push(`    ID:          ${detalle.id}`);
       if (detalle.codigo) lineas.push(`    Código:      ${detalle.codigo}`);
       lineas.push(`    Título:      ${detalle.titulo}`);
@@ -133,51 +135,99 @@ export function generarCSV(dictamen: DictamenCobranza): string {
   const BOM = '\uFEFF';
 
   // Headers
-  filas.push([
-    'TIPO',
-    'CATEGORIA',
-    'ID',
-    'CODIGO',
-    'TITULO',
-    'ESTADO',
-    'RIESGO',
-    'PUNTOS',
-    'FUNDAMENTO',
-    'IMPACTO_CONTABLE',
-    'RECOMENDACION',
-    'NOTA',
-  ].join(','));
+  filas.push(
+    [
+      'TIPO',
+      'CATEGORIA',
+      'ID',
+      'CODIGO',
+      'TITULO',
+      'ESTADO',
+      'RIESGO',
+      'PUNTOS',
+      'FUNDAMENTO',
+      'IMPACTO_CONTABLE',
+      'RECOMENDACION',
+      'NOTA',
+    ].join(',')
+  );
 
   // Detalles
   detalles.forEach((d: DetalleDictamen) => {
-    filas.push([
-      escaparCSV(d.tipo),
-      escaparCSV(d.categoria),
-      escaparCSV(d.id),
-      escaparCSV(d.codigo),
-      escaparCSV(d.titulo),
-      escaparCSV(d.estado),
-      escaparCSV(d.riesgo),
-      escaparCSV(String(d.puntos)),
-      escaparCSV(d.fundamento),
-      escaparCSV(d.impactoContable),
-      escaparCSV(d.recomendacion),
-      escaparCSV(d.nota),
-    ].join(','));
+    filas.push(
+      [
+        escaparCSV(d.tipo),
+        escaparCSV(d.categoria),
+        escaparCSV(d.id),
+        escaparCSV(d.codigo),
+        escaparCSV(d.titulo),
+        escaparCSV(d.estado),
+        escaparCSV(d.riesgo),
+        escaparCSV(String(d.puntos)),
+        escaparCSV(d.fundamento),
+        escaparCSV(d.impactoContable),
+        escaparCSV(d.recomendacion),
+        escaparCSV(d.nota),
+      ].join(',')
+    );
   });
 
   // Fila de resumen
   filas.push('');
   filas.push(['', '', '', '', '', '', '', '', '', '', '', ''].join(','));
   filas.push(['RESUMEN', '', '', '', '', '', '', '', '', '', '', ''].join(','));
-  filas.push(['Nivel', escaparCSV(resumen.nivel), '', '', '', '', '', '', '', '', '', ''].join(','));
-  filas.push(['Score', escaparCSV(String(resumen.score)), '', '', '', '', '', '', '', '', '', ''].join(','));
-  filas.push(['Hallazgos', escaparCSV(String(resumen.hallazgos)), '', '', '', '', '', '', '', '', '', ''].join(','));
-  filas.push(['Observaciones', escaparCSV(String(resumen.observaciones)), '', '', '', '', '', '', '', '', '', ''].join(','));
-  filas.push(['Críticos', escaparCSV(String(resumen.criticos)), '', '', '', '', '', '', '', '', '', ''].join(','));
-  filas.push(['Altos', escaparCSV(String(resumen.altos)), '', '', '', '', '', '', '', '', '', ''].join(','));
-  filas.push(['Medios', escaparCSV(String(resumen.medios)), '', '', '', '', '', '', '', '', '', ''].join(','));
-  filas.push(['Bajos', escaparCSV(String(resumen.bajos)), '', '', '', '', '', '', '', '', '', ''].join(','));
+  filas.push(
+    ['Nivel', escaparCSV(resumen.nivel), '', '', '', '', '', '', '', '', '', ''].join(',')
+  );
+  filas.push(
+    ['Score', escaparCSV(String(resumen.score)), '', '', '', '', '', '', '', '', '', ''].join(',')
+  );
+  filas.push(
+    [
+      'Hallazgos',
+      escaparCSV(String(resumen.hallazgos)),
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+    ].join(',')
+  );
+  filas.push(
+    [
+      'Observaciones',
+      escaparCSV(String(resumen.observaciones)),
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+    ].join(',')
+  );
+  filas.push(
+    ['Críticos', escaparCSV(String(resumen.criticos)), '', '', '', '', '', '', '', '', '', ''].join(
+      ','
+    )
+  );
+  filas.push(
+    ['Altos', escaparCSV(String(resumen.altos)), '', '', '', '', '', '', '', '', '', ''].join(',')
+  );
+  filas.push(
+    ['Medios', escaparCSV(String(resumen.medios)), '', '', '', '', '', '', '', '', '', ''].join(',')
+  );
+  filas.push(
+    ['Bajos', escaparCSV(String(resumen.bajos)), '', '', '', '', '', '', '', '', '', ''].join(',')
+  );
 
   // Recomendaciones
   filas.push('');
@@ -193,11 +243,7 @@ export function generarCSV(dictamen: DictamenCobranza): string {
 // Descarga de archivo
 // =====================================================
 
-export function descargarArchivo(
-  nombre: string,
-  contenido: string,
-  tipoMIME: string,
-): void {
+export function descargarArchivo(nombre: string, contenido: string, tipoMIME: string): void {
   const blob = new Blob([contenido], { type: `${tipoMIME};charset=utf-8` });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');

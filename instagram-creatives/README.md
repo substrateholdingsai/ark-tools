@@ -15,16 +15,19 @@ playwright install chromium
 ## 📖 Uso
 
 ### Generar todos los posts
+
 ```bash
 python generate.py
 ```
 
 ### Generar un post específico
+
 ```bash
 python generate.py --id release-validador-xml
 ```
 
 ### Cambiar escala de renderizado
+
 ```bash
 # 1x = 1080x1080px (estándar)
 python generate.py --scale 1
@@ -53,11 +56,11 @@ creatives/
 
 ## 🎨 Layouts Disponibles
 
-| Layout | Uso | Elementos |
-|--------|-----|-----------|
-| `problem` | Planteamiento del dolor | Badge color, título grande, descripción |
+| Layout           | Uso                        | Elementos                                      |
+| ---------------- | -------------------------- | ---------------------------------------------- |
+| `problem`        | Planteamiento del dolor    | Badge color, título grande, descripción        |
 | `solution_glass` | Solución con glassmorphism | Badge, título dorado, tag técnico, descripción |
-| `cta` | Llamado a la acción | Logo, título, botón dorado, URL |
+| `cta`            | Llamado a la acción        | Logo, título, botón dorado, URL                |
 
 ## 📝 Formato de `posts.json`
 
@@ -81,29 +84,35 @@ creatives/
 ## 🛠️ Personalización
 
 ### Agregar nuevo layout
+
 1. Editar `templates/template.html`
 2. Agregar clase CSS `.layout-nuevo`
 3. Agregar bloque `{% elif slide.layout == 'nuevo' %}` en Jinja2
 4. Definir estructura HTML del slide
 
 ### Modificar colores ARK
+
 Editar variables CSS en `:root`:
+
 ```css
---ark-navy: #0F172A;
---ark-gold: #F59E0B;
+--ark-navy: #0f172a;
+--ark-gold: #f59e0b;
 ```
 
 ## 🔧 Troubleshooting
 
 **Error: "Timeout esperando networkidle"**
+
 - Las fuentes de Google Fonts tardaron en cargar. El script continúa con las disponibles.
 - Solución: Verificar conexión a internet o usar fuentes locales.
 
 **Imágenes pixeladas**
+
 - Asegurar `--scale 2` o superior.
 - Verificar que `device_scale_factor` se esté aplicando.
 
 **Fuentes no cargan**
+
 - Ejecutar `playwright install chromium` nuevamente.
 - Verificar que el HTML incluya el `<link>` de Google Fonts.
 

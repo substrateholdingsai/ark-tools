@@ -174,11 +174,11 @@ export function parsearCFDI(xmlText: string, fileName: string = 'factura.xml'): 
   // 6. Extraer Impuestos Globales del Comprobante (ubicados fuera de <Conceptos>)
   const partesConceptos = xmlText.split(/<\/(?:[a-zA-Z0-9_]+:)?Conceptos>/i);
   const seccionGlobal = (partesConceptos.length > 1 ? partesConceptos[1] : xmlText) ?? '';
-  
+
   const matchImpuestosGlobales = seccionGlobal.match(
     /<(?:[a-zA-Z0-9_]+:)?Impuestos\b([^>]*)>([\s\S]*?)<\/(?:[a-zA-Z0-9_]+:)?Impuestos>/i
   );
-  
+
   const impuestosXml = matchImpuestosGlobales ? matchImpuestosGlobales[0] : '';
   const impuestosAttrs =
     matchImpuestosGlobales && matchImpuestosGlobales[1]

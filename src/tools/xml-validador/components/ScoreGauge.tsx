@@ -11,14 +11,12 @@ interface ScoreGaugeProps {
   showLabel?: boolean;
 }
 
-export const ScoreGauge: React.FC<ScoreGaugeProps> = ({
-  score,
-  size = 'md',
-  showLabel = true,
-}) => {
+export const ScoreGauge: React.FC<ScoreGaugeProps> = ({ score, size = 'md', showLabel = true }) => {
   const getColor = (val: number) => {
-    if (val >= 90) return { text: 'text-emerald-400', border: 'border-emerald-500/40', bg: 'bg-emerald-500/10' };
-    if (val >= 70) return { text: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' };
+    if (val >= 90)
+      return { text: 'text-emerald-400', border: 'border-emerald-500/40', bg: 'bg-emerald-500/10' };
+    if (val >= 70)
+      return { text: 'text-amber-400', border: 'border-amber-500/40', bg: 'bg-amber-500/10' };
     return { text: 'text-red-400', border: 'border-red-500/40', bg: 'bg-red-500/10' };
   };
 
@@ -43,7 +41,11 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({
             Salud Fiscal
           </span>
           <span className={`text-xs font-semibold ${colors.text}`}>
-            {score >= 90 ? 'Íntegro / Válido' : score >= 70 ? 'Con Observaciones' : 'Riesgo / No Deducible'}
+            {score >= 90
+              ? 'Íntegro / Válido'
+              : score >= 70
+                ? 'Con Observaciones'
+                : 'Riesgo / No Deducible'}
           </span>
         </div>
       )}

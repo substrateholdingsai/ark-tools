@@ -27,7 +27,7 @@ export function BadgeGold({ children, size = 'md', className }: BadgeGoldProps) 
   return (
     <span
       className={cn(
-        'badge-gold inline-flex items-center gap-1.5 rounded-full font-black tracking-[0.12em] orbitron font-orbitron',
+        'badge-gold orbitron inline-flex items-center gap-1.5 rounded-full font-orbitron font-black tracking-[0.12em]',
         sizeClasses[size],
         className
       )}

@@ -54,11 +54,7 @@ export interface Env {
 }
 
 export default {
-  async fetch(
-    request: Request,
-    env: Env,
-    ctx: ExecutionContext
-  ): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // ─────────────────────────────────────────────────────────────────
@@ -159,9 +155,8 @@ async function handleApiRequest(
 
   // CORS para desarrollo local
   const corsHeaders = {
-    'Access-Control-Allow-Origin': env.ENVIRONMENT === 'production'
-      ? 'https://tools.arksystems.site'
-      : '*',
+    'Access-Control-Allow-Origin':
+      env.ENVIRONMENT === 'production' ? 'https://tools.arksystems.site' : '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-id',
   };
@@ -179,7 +174,10 @@ async function handleApiRequest(
       origin !== null &&
       /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin);
     if (origin && origin !== configuredOrigin && !isLocalDevelopment) {
-      return Response.json({ error: 'Origen no permitido.' }, { status: 403, headers: corsHeaders });
+      return Response.json(
+        { error: 'Origen no permitido.' },
+        { status: 403, headers: corsHeaders }
+      );
     }
   }
 
@@ -241,12 +239,7 @@ async function handleApiRequest(
   // ─────────────────────────────────────────────────────────────────
   // ALEGRA CFDI 4.0 (Timbrado, Cuentas, Historial)
   // ─────────────────────────────────────────────────────────────────
-  const alegraResponse = await handleAlegraApiRequest(
-    request,
-    env,
-    corsHeaders,
-    authPrincipal
-  );
+  const alegraResponse = await handleAlegraApiRequest(request, env, corsHeaders, authPrincipal);
   if (alegraResponse) {
     return alegraResponse;
   }

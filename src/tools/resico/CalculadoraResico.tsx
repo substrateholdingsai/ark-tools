@@ -20,12 +20,7 @@ import {
 } from './components';
 import { calcularResicoPF } from './lib/calcularResicoPF';
 import { calcularResicoPM } from './lib/calcularResicoPM';
-import type {
-  EntradaResicoPF,
-  EntradaResicoPM,
-  TipoPersonaResico,
-  ResultadoResico,
-} from './types';
+import type { EntradaResicoPF, EntradaResicoPM, TipoPersonaResico, ResultadoResico } from './types';
 
 interface CalculadoraResicoProps {
   onBack?: () => void;
@@ -97,12 +92,13 @@ export function CalculadoraResico({ onBack }: CalculadoraResicoProps) {
   }, [resultado]);
 
   const nombreCliente = activeClient?.nombre || 'Contribuyente General';
-  const rfcCliente = activeClient?.rfc || (tipoPersona === 'fisica' ? 'XAXX010101000' : 'XEXX010101000');
+  const rfcCliente =
+    activeClient?.rfc || (tipoPersona === 'fisica' ? 'XAXX010101000' : 'XEXX010101000');
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 space-y-6 animate-fadeIn">
+    <div className="animate-fadeIn mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       {/* Encabezado y Navegación */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-line pb-6">
+      <div className="flex flex-col gap-4 border-b border-line pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           {onBack && (
             <button
@@ -119,18 +115,18 @@ export function CalculadoraResico({ onBack }: CalculadoraResicoProps) {
               <span className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark">
                 HERRAMIENTA FISCAL · LISR 2026
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
-                <Scale className="w-3 h-3" /> OFICIAL DOF
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
+                <Scale className="h-3 w-3" /> OFICIAL DOF
               </span>
             </div>
-            <h1 className="font-playfair text-2xl sm:text-4xl font-black tracking-[-0.02em] text-navy mt-1">
+            <h1 className="mt-1 font-playfair text-2xl font-black tracking-[-0.02em] text-navy sm:text-4xl">
               Calculadora y Cédula RESICO
             </h1>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-[12px] text-muted font-inter">
-          <Sparkles className="w-4 h-4 text-gold flex-shrink-0" />
+        <div className="flex items-center gap-2 font-inter text-[12px] text-muted">
+          <Sparkles className="h-4 w-4 flex-shrink-0 text-gold" />
           <span>Art. 113-E (PF 1%-2.5%) · Art. 206 (PM 30% Flujo) · Art. 5 LIVA</span>
         </div>
       </div>
@@ -144,9 +140,9 @@ export function CalculadoraResico({ onBack }: CalculadoraResicoProps) {
       />
 
       {/* Grid Principal: Formulario + Resultados */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         {/* Columna Izquierda: Parámetros de Entrada (5 de 12) */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="space-y-6 lg:col-span-5">
           <ParametrosResicoCard
             tipoPersona={tipoPersona}
             onTipoPersonaChange={setTipoPersona}
@@ -158,7 +154,7 @@ export function CalculadoraResico({ onBack }: CalculadoraResicoProps) {
         </div>
 
         {/* Columna Derecha: Resultado, Métricas y Cédula Analítica (7 de 12) */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="space-y-6 lg:col-span-7">
           <ResultadoResicoCard
             resultado={resultado}
             clienteNombre={nombreCliente}

@@ -51,12 +51,18 @@ function estiloGravedad(gravedad: GravedadAV): string {
 
 function etiquetaGravedad(gravedad: GravedadAV): string {
   switch (gravedad) {
-    case 'CRITICA_MAX': return 'CRÍTICA MAX';
-    case 'CRITICA': return 'CRÍTICA';
-    case 'ALTA': return 'ALTA';
-    case 'MEDIA': return 'MEDIA';
-    case 'FUTURA': return 'FUTURA';
-    default: return gravedad;
+    case 'CRITICA_MAX':
+      return 'CRÍTICA MAX';
+    case 'CRITICA':
+      return 'CRÍTICA';
+    case 'ALTA':
+      return 'ALTA';
+    case 'MEDIA':
+      return 'MEDIA';
+    case 'FUTURA':
+      return 'FUTURA';
+    default:
+      return gravedad;
   }
 }
 
@@ -77,7 +83,7 @@ function ConductaCard({
     <button
       type="button"
       onClick={onToggle}
-      className="w-full text-left rounded-card border border-line bg-surface p-5 transition-all hover:shadow-[0_8px_24px_rgba(0,43,127,0.06)] hover:border-navy/20"
+      className="w-full rounded-card border border-line bg-surface p-5 text-left transition-all hover:border-navy/20 hover:shadow-[0_8px_24px_rgba(0,43,127,0.06)]"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
@@ -120,23 +126,18 @@ function ConductaCard({
 
       {/* Sanción corta */}
       <div className="mt-3 rounded-[12px] border border-line bg-surface-2 p-3">
-        <p className="font-inter text-[10px] font-bold tracking-widest text-muted">
-          SANCIÓN
-        </p>
-        <p className="mt-1 font-orbitron text-[13px] font-bold text-ink">
-          {conducta.sancionCorta}
-        </p>
+        <p className="font-inter text-[10px] font-bold tracking-widest text-muted">SANCIÓN</p>
+        <p className="mt-1 font-orbitron text-[13px] font-bold text-ink">{conducta.sancionCorta}</p>
       </div>
 
       {/* Calificación */}
       <p className="mt-3 font-inter text-[12px] leading-[1.4] text-muted">
-        <span className="font-semibold text-ink">Calificación:</span>{' '}
-        {conducta.calificacion}
+        <span className="font-semibold text-ink">Calificación:</span> {conducta.calificacion}
       </p>
 
       {/* Detalle expandible */}
       {expandido && (
-        <div className="mt-4 rounded-[12px] border border-line bg-cream p-4 animate-[fadeUp_0.3s_ease]">
+        <div className="mt-4 animate-[fadeUp_0.3s_ease] rounded-[12px] border border-line bg-cream p-4">
           <p className="font-inter text-[10px] font-bold tracking-widest text-muted">
             DETALLE COMPLETO
           </p>
@@ -178,17 +179,11 @@ function AutoridadCard({ autoridad }: { autoridad: (typeof AUTORIDADES_AV)[numbe
           </span>
         </div>
         <div className="min-w-0">
-          <p className="font-inter text-[13px] font-bold text-ink">
-            {autoridad.sigla}
-          </p>
-          <p className="truncate font-inter text-[11px] text-muted">
-            {autoridad.nombre}
-          </p>
+          <p className="font-inter text-[13px] font-bold text-ink">{autoridad.sigla}</p>
+          <p className="truncate font-inter text-[11px] text-muted">{autoridad.nombre}</p>
         </div>
       </div>
-      <p className="mt-3 font-inter text-[11px] leading-[1.5] text-muted">
-        {autoridad.funcion}
-      </p>
+      <p className="mt-3 font-inter text-[11px] leading-[1.5] text-muted">{autoridad.funcion}</p>
     </div>
   );
 }
@@ -200,9 +195,7 @@ function TimelineHito({ hito }: { hito: (typeof TIMELINE_REGULATORIO_AV)[number]
       <div className="flex flex-col items-center">
         <div
           className={`h-4 w-4 rounded-full border-2 ${
-            hito.esCritico
-              ? 'border-navy bg-navy'
-              : 'border-line bg-cream'
+            hito.esCritico ? 'border-navy bg-navy' : 'border-line bg-cream'
           }`}
         />
         <div className="w-px flex-1 bg-line" />
@@ -220,12 +213,8 @@ function TimelineHito({ hito }: { hito: (typeof TIMELINE_REGULATORIO_AV)[number]
             </span>
           )}
         </div>
-        <h4 className="mt-2 font-inter text-[14px] font-bold text-ink">
-          {hito.titulo}
-        </h4>
-        <p className="mt-1 font-inter text-[12px] leading-[1.5] text-muted">
-          {hito.descripcion}
-        </p>
+        <h4 className="mt-2 font-inter text-[14px] font-bold text-ink">{hito.titulo}</h4>
+        <p className="mt-1 font-inter text-[12px] leading-[1.5] text-muted">{hito.descripcion}</p>
       </div>
     </div>
   );
@@ -236,9 +225,7 @@ function FronteraCard({ regla }: { regla: (typeof FRONTERA_LEGAL_AV)[number] }) 
   return (
     <div
       className={`rounded-[16px] border p-4 ${
-        esLegal
-          ? 'border-navy/20 bg-surface'
-          : 'border-navy bg-navy/5'
+        esLegal ? 'border-navy/20 bg-surface' : 'border-navy bg-navy/5'
       }`}
     >
       <div className="flex items-center gap-2">
@@ -249,13 +236,9 @@ function FronteraCard({ regla }: { regla: (typeof FRONTERA_LEGAL_AV)[number] }) 
         >
           {esLegal ? '✓' : '✕'}
         </span>
-        <p className="font-inter text-[13px] font-bold text-ink">
-          {regla.titulo}
-        </p>
+        <p className="font-inter text-[13px] font-bold text-ink">{regla.titulo}</p>
       </div>
-      <p className="mt-2 font-inter text-[12px] leading-[1.5] text-muted">
-        {regla.descripcion}
-      </p>
+      <p className="mt-2 font-inter text-[12px] leading-[1.5] text-muted">{regla.descripcion}</p>
     </div>
   );
 }
@@ -284,7 +267,7 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
           c.calificacion.toLowerCase().includes(q) ||
           c.sancionCorta.toLowerCase().includes(q) ||
           c.sancionDetalle.toLowerCase().includes(q) ||
-          c.marcoLegal.toLowerCase().includes(q),
+          c.marcoLegal.toLowerCase().includes(q)
       );
     }
 
@@ -333,15 +316,13 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
         </div>
 
         <h1 className="mt-4 font-playfair text-[32px] font-black leading-[0.95] tracking-[-0.03em] text-ink sm:text-[42px] lg:text-[52px]">
-          Mapa de Activos{' '}
-          <span className="text-navy">Virtuales</span>
+          Mapa de Activos <span className="text-navy">Virtuales</span>
         </h1>
 
         <p className="mt-3 max-w-[640px] font-inter text-[14px] leading-[1.6] text-muted">
-          {FILOSOFIA_AV}. Matriz de consulta legal con{' '}
-          {RESUMEN_MAPA_AV.totalConductas} conductas mapeadas en{' '}
-          {MARCOS_LEGALES_AV.length} marcos normativos. Actualizado para el
-          contador que asesora clientes con cripto.
+          {FILOSOFIA_AV}. Matriz de consulta legal con {RESUMEN_MAPA_AV.totalConductas} conductas
+          mapeadas en {MARCOS_LEGALES_AV.length} marcos normativos. Actualizado para el contador que
+          asesora clientes con cripto.
         </p>
 
         {onBack && (
@@ -401,9 +382,7 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
       <section className="mb-6 space-y-4">
         {/* Búsqueda */}
         <div className="relative max-w-[520px]">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">
-            ⌕
-          </span>
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted">⌕</span>
           <input
             type="text"
             value={busqueda}
@@ -423,7 +402,9 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
           >
             <option value="TODOS">Todos los marcos</option>
             {MARCOS_LEGALES_AV.map((m) => (
-              <option key={m} value={m}>{m}</option>
+              <option key={m} value={m}>
+                {m}
+              </option>
             ))}
           </select>
 
@@ -435,7 +416,9 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
           >
             <option value="TODAS">Todas las gravedades</option>
             {GRAVEDADES_AV.map((g) => (
-              <option key={g} value={g}>{etiquetaGravedad(g)}</option>
+              <option key={g} value={g}>
+                {etiquetaGravedad(g)}
+              </option>
             ))}
           </select>
 
@@ -491,11 +474,7 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
                 key={conducta.id}
                 conducta={conducta}
                 expandido={expandidoId === conducta.id}
-                onToggle={() =>
-                  setExpandidoId(
-                    expandidoId === conducta.id ? null : conducta.id,
-                  )
-                }
+                onToggle={() => setExpandidoId(expandidoId === conducta.id ? null : conducta.id)}
               />
             ))}
           </div>
@@ -523,8 +502,8 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
           Autoridades regulatorias
         </h2>
         <p className="mt-2 max-w-[520px] font-inter text-[13px] text-muted">
-          {RESUMEN_MAPA_AV.totalAutoridades} instituciones vigilan el
-          ecosistema de activos virtuales en México.
+          {RESUMEN_MAPA_AV.totalAutoridades} instituciones vigilan el ecosistema de activos
+          virtuales en México.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {AUTORIDADES_AV.map((autoridad) => (
@@ -541,8 +520,8 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
           Timeline regulatorio 2026–2029
         </h2>
         <p className="mt-2 max-w-[520px] font-inter text-[13px] text-muted">
-          Los próximos hitos que todo contador debe tener en el radar para sus
-          clientes con activos virtuales.
+          Los próximos hitos que todo contador debe tener en el radar para sus clientes con activos
+          virtuales.
         </p>
         <div className="mt-6 max-w-[640px]">
           {TIMELINE_REGULATORIO_AV.map((hito) => (
@@ -559,22 +538,17 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
           Umbrales de reporte LFPIORPI
         </h2>
         <p className="mt-2 max-w-[520px] font-inter text-[13px] text-muted">
-          Operaciones con activos virtuales = Actividad Vulnerable. Estos son
-          los umbrales de reporte ante la UIF.
+          Operaciones con activos virtuales = Actividad Vulnerable. Estos son los umbrales de
+          reporte ante la UIF.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-3">
           {UMBRALES_REPORTE_AV.map((umbral) => (
-            <div
-              key={umbral.id}
-              className="rounded-card border border-line bg-surface p-5"
-            >
+            <div key={umbral.id} className="rounded-card border border-line bg-surface p-5">
               <p className="font-inter text-[10px] font-bold tracking-[0.16em] text-muted">
                 {umbral.concepto.toUpperCase()}
               </p>
               <p className="mt-3 font-orbitron text-[28px] font-bold text-navy">
-                {umbral.tipoUmbral === 'UMA'
-                  ? `${umbral.cantidadUMA} UMA`
-                  : 'Sin umbral'}
+                {umbral.tipoUmbral === 'UMA' ? `${umbral.cantidadUMA} UMA` : 'Sin umbral'}
               </p>
               <p className="mt-2 font-inter text-[13px] font-semibold text-ink">
                 {umbral.obligacion}
@@ -597,8 +571,8 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
           Frontera legal vs ilegal
         </h2>
         <p className="mt-2 max-w-[520px] font-inter text-[13px] text-muted">
-          Guía práctica: qué pueden y qué no pueden hacer tus clientes con
-          activos virtuales en México.
+          Guía práctica: qué pueden y qué no pueden hacer tus clientes con activos virtuales en
+          México.
         </p>
         <div className="mt-6 grid gap-6 lg:grid-cols-2">
           {/* Legal */}
@@ -610,11 +584,9 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
               Conductas legales
             </h3>
             <div className="space-y-3">
-              {FRONTERA_LEGAL_AV.filter((r) => r.estatus === 'LEGAL').map(
-                (regla) => (
-                  <FronteraCard key={regla.id} regla={regla} />
-                ),
-              )}
+              {FRONTERA_LEGAL_AV.filter((r) => r.estatus === 'LEGAL').map((regla) => (
+                <FronteraCard key={regla.id} regla={regla} />
+              ))}
             </div>
           </div>
 
@@ -627,11 +599,9 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
               Conductas ilegales / restringidas
             </h3>
             <div className="space-y-3">
-              {FRONTERA_LEGAL_AV.filter((r) => r.estatus === 'ILEGAL').map(
-                (regla) => (
-                  <FronteraCard key={regla.id} regla={regla} />
-                ),
-              )}
+              {FRONTERA_LEGAL_AV.filter((r) => r.estatus === 'ILEGAL').map((regla) => (
+                <FronteraCard key={regla.id} regla={regla} />
+              ))}
             </div>
           </div>
         </div>
@@ -640,20 +610,14 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
       {/* ═══════════════════════════════════════════════════════════ */}
       {/* AVISO LEGAL Y FUENTES                                        */}
       {/* ═══════════════════════════════════════════════════════════ */}
-      <footer className="border-t border-line pt-8 pb-12">
+      <footer className="border-t border-line pb-12 pt-8">
         <div className="rounded-card border border-line bg-cream p-6">
-          <p className="font-inter text-[12px] font-bold tracking-widest text-muted">
-            AVISO LEGAL
-          </p>
-          <p className="mt-2 font-inter text-[12px] leading-[1.6] text-muted">
-            {AVISO_LEGAL_AV}
-          </p>
+          <p className="font-inter text-[12px] font-bold tracking-widest text-muted">AVISO LEGAL</p>
+          <p className="mt-2 font-inter text-[12px] leading-[1.6] text-muted">{AVISO_LEGAL_AV}</p>
         </div>
 
         <div className="mt-6">
-          <p className="font-inter text-[10px] font-bold tracking-widest text-muted">
-            FUENTES
-          </p>
+          <p className="font-inter text-[10px] font-bold tracking-widest text-muted">FUENTES</p>
           <ul className="mt-2 space-y-1">
             {FUENTES_AV.map((fuente, i) => (
               <li key={i} className="font-inter text-[11px] text-muted">

@@ -19,29 +19,28 @@ export function RangoVisual({ resultado }: RangoVisualProps) {
   const { sbcFinal, porcentajeDelTope } = resultado;
 
   // Porcentaje del salario mínimo respecto al tope (0-100)
-  const porcentajeMinimo =
-    (CONSTANTES_IMSS.salarioMinimo / CONSTANTES_IMSS.topePesos) * 100;
+  const porcentajeMinimo = (CONSTANTES_IMSS.salarioMinimo / CONSTANTES_IMSS.topePesos) * 100;
 
   return (
-    <div className="rounded-[20px] bg-surface border border-line p-5 md:p-6">
+    <div className="rounded-[20px] border border-line bg-surface p-5 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
           Posición en el rango IMSS
         </h3>
-        <span className="text-[10px] font-mono text-muted tabular-nums">
+        <span className="font-mono text-[10px] tabular-nums text-muted">
           {porcentajeDelTope.toFixed(1)}% del tope
         </span>
       </div>
 
       {/* Labels arriba: mínimo y tope */}
-      <div className="flex justify-between text-[10px] font-bold tracking-[0.14em] text-muted uppercase mb-2">
+      <div className="mb-2 flex justify-between text-[10px] font-bold uppercase tracking-[0.14em] text-muted">
         <span>Mín {formatearMXN(CONSTANTES_IMSS.salarioMinimo)}</span>
         <span>25 UMA {formatearMXN(CONSTANTES_IMSS.topePesos)}</span>
       </div>
 
       {/* Barra */}
-      <div className="relative h-3.5 rounded-full bg-surface-2 border border-line overflow-hidden p-[3px]">
+      <div className="relative h-3.5 overflow-hidden rounded-full border border-line bg-surface-2 p-[3px]">
         {/* Progreso (del 0 al %) */}
         <div
           className="h-full rounded-full bg-navy transition-all duration-500 ease-out"
@@ -50,7 +49,7 @@ export function RangoVisual({ resultado }: RangoVisualProps) {
 
         {/* Marcador del salario mínimo */}
         <div
-          className="absolute top-0 bottom-0 w-[2px] bg-gold/60"
+          className="absolute bottom-0 top-0 w-[2px] bg-gold/60"
           style={{ left: `${porcentajeMinimo}%` }}
           aria-label="Salario mínimo"
         />
@@ -58,7 +57,7 @@ export function RangoVisual({ resultado }: RangoVisualProps) {
         {/* Marcador del SBC actual */}
         {sbcFinal > 0 && (
           <div
-            className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-gold border-2 border-white shadow-sm transition-all duration-500"
+            className="absolute top-1/2 h-3 w-3 -translate-y-1/2 rounded-full border-2 border-white bg-gold shadow-sm transition-all duration-500"
             style={{
               left: `calc(${Math.min(100, Math.max(0, porcentajeDelTope))}% - 6px)`,
             }}
@@ -75,7 +74,7 @@ export function RangoVisual({ resultado }: RangoVisualProps) {
             : 'Ingresa un salario para ver la posición'}
         </span>
         {sbcFinal > 0 && (
-          <span className="font-semibold text-navy font-orbitron tabular-nums">
+          <span className="font-orbitron font-semibold tabular-nums text-navy">
             {formatearMXN(CONSTANTES_IMSS.topePesos - sbcFinal)} restantes
           </span>
         )}

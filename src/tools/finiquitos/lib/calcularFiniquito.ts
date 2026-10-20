@@ -23,7 +23,7 @@ import type {
 
 /** SMG de referencia para el tope del Art. 486 LFT */
 const getValor = (id: string): number => {
-  const item = CATALOGO_2026.find(v => v.id === id);
+  const item = CATALOGO_2026.find((v) => v.id === id);
   if (!item) throw new Error(`Valor no encontrado en catálogo: ${id}`);
   return item.valor as number;
 };
@@ -86,7 +86,10 @@ export function validarEntradaFiniquito(entrada: EntradaFiniquito): ErrorCalculo
   const errores: ErrorCalculo[] = [];
 
   if (!entrada.fechaIngreso || !/^\d{4}-\d{2}-\d{2}$/.test(entrada.fechaIngreso)) {
-    errores.push({ campo: 'fechaIngreso', mensaje: 'Fecha de ingreso inválida (formato YYYY-MM-DD).' });
+    errores.push({
+      campo: 'fechaIngreso',
+      mensaje: 'Fecha de ingreso inválida (formato YYYY-MM-DD).',
+    });
   }
 
   if (!entrada.fechaBaja || !/^\d{4}-\d{2}-\d{2}$/.test(entrada.fechaBaja)) {
@@ -97,28 +100,47 @@ export function validarEntradaFiniquito(entrada: EntradaFiniquito): ErrorCalculo
     const fIngreso = parsearFechaISO(entrada.fechaIngreso);
     const fBaja = parsearFechaISO(entrada.fechaBaja);
     if (fBaja.getTime() < fIngreso.getTime()) {
-      errores.push({ campo: 'fechaBaja', mensaje: 'La fecha de baja no puede ser anterior a la fecha de ingreso.' });
+      errores.push({
+        campo: 'fechaBaja',
+        mensaje: 'La fecha de baja no puede ser anterior a la fecha de ingreso.',
+      });
     }
   }
 
-  if (typeof entrada.salarioDiario !== 'number' || entrada.salarioDiario <= 0 || isNaN(entrada.salarioDiario)) {
+  if (
+    typeof entrada.salarioDiario !== 'number' ||
+    entrada.salarioDiario <= 0 ||
+    isNaN(entrada.salarioDiario)
+  ) {
     errores.push({ campo: 'salarioDiario', mensaje: 'El salario diario debe ser mayor a 0.' });
   }
 
   if (typeof entrada.sdi !== 'number' || entrada.sdi <= 0 || isNaN(entrada.sdi)) {
-    errores.push({ campo: 'sdi', mensaje: 'El Salario Diario Integrado (SDI) debe ser mayor a 0.' });
+    errores.push({
+      campo: 'sdi',
+      mensaje: 'El Salario Diario Integrado (SDI) debe ser mayor a 0.',
+    });
   }
 
   if (entrada.primaVacacionalPct < 0) {
-    errores.push({ campo: 'primaVacacionalPct', mensaje: 'La prima vacacional no puede ser negativa.' });
+    errores.push({
+      campo: 'primaVacacionalPct',
+      mensaje: 'La prima vacacional no puede ser negativa.',
+    });
   }
 
   if (entrada.vacacionesPendientes < 0) {
-    errores.push({ campo: 'vacacionesPendientes', mensaje: 'Los días de vacaciones pendientes no pueden ser negativos.' });
+    errores.push({
+      campo: 'vacacionesPendientes',
+      mensaje: 'Los días de vacaciones pendientes no pueden ser negativos.',
+    });
   }
 
   if (entrada.aguinaldoPendiente < 0) {
-    errores.push({ campo: 'aguinaldoPendiente', mensaje: 'El aguinaldo pendiente no puede ser negativo.' });
+    errores.push({
+      campo: 'aguinaldoPendiente',
+      mensaje: 'El aguinaldo pendiente no puede ser negativo.',
+    });
   }
 
   return errores;
@@ -143,20 +165,31 @@ export function calcularFiniquito(entrada: EntradaFiniquito): ResultadoCalculo {
 
   // Aniversarios cumplidos
   let aniosCompletos = fBaja.getUTCFullYear() - fIngreso.getUTCFullYear();
-  const fAniversarioEsteAnio = new Date(Date.UTC(fBaja.getUTCFullYear(), fIngreso.getUTCMonth(), fIngreso.getUTCDate()));
+  const fAniversarioEsteAnio = new Date(
+    Date.UTC(fBaja.getUTCFullYear(), fIngreso.getUTCMonth(), fIngreso.getUTCDate())
+  );
   if (fBaja.getTime() < fAniversarioEsteAnio.getTime()) {
     aniosCompletos--;
   }
   aniosCompletos = Math.max(0, aniosCompletos);
 
   // Días trabajados en el año de servicio en curso (desde el último aniversario hasta la baja)
-  const ultimoAniversario = new Date(Date.UTC(fIngreso.getUTCFullYear() + aniosCompletos, fIngreso.getUTCMonth(), fIngreso.getUTCDate()));
-  const diasTrabajadosAnio = Math.floor((fBaja.getTime() - ultimoAniversario.getTime()) / msPorDia) + 1;
+  const ultimoAniversario = new Date(
+    Date.UTC(
+      fIngreso.getUTCFullYear() + aniosCompletos,
+      fIngreso.getUTCMonth(),
+      fIngreso.getUTCDate()
+    )
+  );
+  const diasTrabajadosAnio =
+    Math.floor((fBaja.getTime() - ultimoAniversario.getTime()) / msPorDia) + 1;
 
   // Días trabajados en el año calendario de baja (para aguinaldo proporcional)
   const inicioAnioBaja = new Date(Date.UTC(fBaja.getUTCFullYear(), 0, 1));
-  const inicioCalculoAguinaldo = fIngreso.getTime() > inicioAnioBaja.getTime() ? fIngreso : inicioAnioBaja;
-  const diasTrabajadosAguinaldo = Math.floor((fBaja.getTime() - inicioCalculoAguinaldo.getTime()) / msPorDia) + 1;
+  const inicioCalculoAguinaldo =
+    fIngreso.getTime() > inicioAnioBaja.getTime() ? fIngreso : inicioAnioBaja;
+  const diasTrabajadosAguinaldo =
+    Math.floor((fBaja.getTime() - inicioCalculoAguinaldo.getTime()) / msPorDia) + 1;
 
   // 2. Parámetros salariales
   const salarioDiario = entrada.salarioDiario;
@@ -184,7 +217,9 @@ export function calcularFiniquito(entrada: EntradaFiniquito): ResultadoCalculo {
   // 12 días por cada año de servicios (proporcional por días totales)
   const diasPrimaAntiguedad = aniosExactos * 12;
   const importePrimaAntiguedadCalculado = redondear(diasPrimaAntiguedad * salarioTope);
-  const importePrimaAntiguedad = entrada.incluirPrimaAntiguedad ? importePrimaAntiguedadCalculado : 0;
+  const importePrimaAntiguedad = entrada.incluirPrimaAntiguedad
+    ? importePrimaAntiguedadCalculado
+    : 0;
 
   // 7. Indemnización Constitucional 90 días (Art. 50 Fracc. III LFT)
   const esLiquidacion = entrada.tipoBaja === 'liquidacion';
@@ -192,7 +227,8 @@ export function calcularFiniquito(entrada: EntradaFiniquito): ResultadoCalculo {
 
   // 8. 20 días por año (Art. 50 Fracc. II LFT)
   const dias20PorAnio = aniosExactos * 20;
-  const importe20dias = esLiquidacion && entrada.incluir20DiasAnio ? redondear(dias20PorAnio * sdi) : 0;
+  const importe20dias =
+    esLiquidacion && entrada.incluir20DiasAnio ? redondear(dias20PorAnio * sdi) : 0;
 
   // 9. Totales
   const totalFiniquito = redondear(
@@ -234,9 +270,10 @@ export function calcularFiniquito(entrada: EntradaFiniquito): ResultadoCalculo {
     },
     {
       concepto: 'Indemnización Constitucional (90 días)',
-      formula: esLiquidacion && entrada.incluirIndem90Dias
-        ? `90 días × $${sdi.toFixed(2)} (SDI)`
-        : 'Solo aplica en despido injustificado (Liquidación)',
+      formula:
+        esLiquidacion && entrada.incluirIndem90Dias
+          ? `90 días × $${sdi.toFixed(2)} (SDI)`
+          : 'Solo aplica en despido injustificado (Liquidación)',
       dias: esLiquidacion && entrada.incluirIndem90Dias ? 90 : 0,
       importe: importeIndem90,
       fundamento: 'Art. 50 Fracc. III LFT / Art. 123 Const.',
@@ -245,9 +282,10 @@ export function calcularFiniquito(entrada: EntradaFiniquito): ResultadoCalculo {
     },
     {
       concepto: 'Indemnización de 20 días por año',
-      formula: esLiquidacion && entrada.incluir20DiasAnio
-        ? `${dias20PorAnio.toFixed(2)} días (${aniosExactos.toFixed(2)} años) × $${sdi.toFixed(2)} (SDI)`
-        : 'Aplica en negativa de reinstalación patronal',
+      formula:
+        esLiquidacion && entrada.incluir20DiasAnio
+          ? `${dias20PorAnio.toFixed(2)} días (${aniosExactos.toFixed(2)} años) × $${sdi.toFixed(2)} (SDI)`
+          : 'Aplica en negativa de reinstalación patronal',
       dias: redondear(dias20PorAnio),
       importe: importe20dias,
       fundamento: 'Art. 50 Fracc. II LFT',

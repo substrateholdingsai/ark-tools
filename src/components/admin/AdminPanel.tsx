@@ -18,12 +18,7 @@ import {
   UserCheck,
   Target,
 } from 'lucide-react';
-import {
-  apiClient,
-  type AdminOverview,
-  type AdminUser,
-  type AdminTenant,
-} from '@/lib/apiClient';
+import { apiClient, type AdminOverview, type AdminUser, type AdminTenant } from '@/lib/apiClient';
 import { useAuth } from '@/context/AuthContext';
 import LeadsApp from './LeadsApp';
 
@@ -33,7 +28,9 @@ interface AdminPanelProps {
 
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'users' | 'leads'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'users' | 'leads'>(
+    'overview'
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,7 +60,9 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
       setUsers(usersData);
       setTenants(tenantsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al conectar con la consola de administración.');
+      setError(
+        err instanceof Error ? err.message : 'Error al conectar con la consola de administración.'
+      );
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -110,9 +109,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
     const term = tenantSearch.toLowerCase().trim();
     if (!term) return tenants;
     return tenants.filter(
-      (t) =>
-        t.name.toLowerCase().includes(term) ||
-        t.slug.toLowerCase().includes(term)
+      (t) => t.name.toLowerCase().includes(term) || t.slug.toLowerCase().includes(term)
     );
   }, [tenants, tenantSearch]);
 
@@ -152,7 +149,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
               disabled={refreshing || loading}
               className="flex h-9 items-center gap-1.5 rounded-xl border border-line bg-white px-3 text-[12px] font-medium text-ink transition hover:bg-surface-2 disabled:opacity-50"
             >
-              <RefreshCw size={14} className={refreshing ? 'animate-spin text-navy' : 'text-muted'} />
+              <RefreshCw
+                size={14}
+                className={refreshing ? 'animate-spin text-navy' : 'text-muted'}
+              />
               <span>{refreshing ? 'Actualizando...' : 'Recargar'}</span>
             </button>
           </div>
@@ -314,12 +314,8 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   </span>
                   <Crown size={18} className="text-gold" />
                 </div>
-                <div className="mt-2 font-orbitron text-2xl font-bold text-navy">
-                  100%
-                </div>
-                <p className="mt-1 text-[11px] font-medium text-gold-dark">
-                  Multi-Tenant Nativo
-                </p>
+                <div className="mt-2 font-orbitron text-2xl font-bold text-navy">100%</div>
+                <p className="mt-1 text-[11px] font-medium text-gold-dark">Multi-Tenant Nativo</p>
               </div>
             </div>
 
@@ -334,12 +330,17 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                   <Database size={20} className="text-emerald-600" />
                   <div>
                     <p className="text-[11px] font-bold uppercase text-muted">Cloudflare D1</p>
-                    <p className="text-[13px] font-semibold text-emerald-700">Operativo (Dallas WNAM)</p>
+                    <p className="text-[13px] font-semibold text-emerald-700">
+                      Operativo (Dallas WNAM)
+                    </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5">
-                  <Cpu size={20} className={overview?.systemHealth.aiWorkers ? 'text-emerald-600' : 'text-muted'} />
+                  <Cpu
+                    size={20}
+                    className={overview?.systemHealth.aiWorkers ? 'text-emerald-600' : 'text-muted'}
+                  />
                   <div>
                     <p className="text-[11px] font-bold uppercase text-muted">Workers AI</p>
                     <p className="text-[13px] font-semibold text-ink">
@@ -349,21 +350,37 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                 </div>
 
                 <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5">
-                  <Mail size={20} className={overview?.systemHealth.resendEmail ? 'text-emerald-600' : 'text-rose-500'} />
+                  <Mail
+                    size={20}
+                    className={
+                      overview?.systemHealth.resendEmail ? 'text-emerald-600' : 'text-rose-500'
+                    }
+                  />
                   <div>
-                    <p className="text-[11px] font-bold uppercase text-muted">Email Transaccional</p>
+                    <p className="text-[11px] font-bold uppercase text-muted">
+                      Email Transaccional
+                    </p>
                     <p className="text-[13px] font-semibold text-ink">
-                      {overview?.systemHealth.resendEmail ? 'Resend (mail.arksystems.site)' : 'Sin Secret'}
+                      {overview?.systemHealth.resendEmail
+                        ? 'Resend (mail.arksystems.site)'
+                        : 'Sin Secret'}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3.5">
-                  <CreditCard size={20} className={overview?.systemHealth.clipPayments ? 'text-emerald-600' : 'text-amber-600'} />
+                  <CreditCard
+                    size={20}
+                    className={
+                      overview?.systemHealth.clipPayments ? 'text-emerald-600' : 'text-amber-600'
+                    }
+                  />
                   <div>
                     <p className="text-[11px] font-bold uppercase text-muted">Pasarela Clip</p>
                     <p className="text-[13px] font-semibold text-ink">
-                      {overview?.systemHealth.clipPayments ? 'Producción Conectada' : 'Modo Simulación'}
+                      {overview?.systemHealth.clipPayments
+                        ? 'Producción Conectada'
+                        : 'Modo Simulación'}
                     </p>
                   </div>
                 </div>
@@ -403,7 +420,9 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                     </div>
                   ))}
                   {(!overview || overview.recentUsers.length === 0) && (
-                    <p className="py-4 text-center text-[12px] text-muted">No hay usuarios registrados aún.</p>
+                    <p className="py-4 text-center text-[12px] text-muted">
+                      No hay usuarios registrados aún.
+                    </p>
                   )}
                 </div>
               </div>
@@ -431,7 +450,9 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                     </div>
                   ))}
                   {(!overview || overview.recentTenants.length === 0) && (
-                    <p className="py-4 text-center text-[12px] text-muted">No hay despachos creados aún.</p>
+                    <p className="py-4 text-center text-[12px] text-muted">
+                      No hay despachos creados aún.
+                    </p>
                   )}
                 </div>
               </div>
@@ -444,7 +465,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="relative w-full max-w-sm">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+                <Search
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
+                />
                 <input
                   type="text"
                   placeholder="Buscar despacho por nombre o slug..."
@@ -509,7 +533,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="relative w-full max-w-sm">
-                <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted" />
+                <Search
+                  size={16}
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted"
+                />
                 <input
                   type="text"
                   placeholder="Buscar por correo, nombre o despacho..."
@@ -550,7 +577,7 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                               {u.tenants.map((t) => (
                                 <span
                                   key={t.id}
-                                  className="rounded-lg bg-surface-2 px-2 py-0.5 text-[11px] text-ink border border-line"
+                                  className="rounded-lg border border-line bg-surface-2 px-2 py-0.5 text-[11px] text-ink"
                                 >
                                   {t.name} ({t.role})
                                 </span>
@@ -600,10 +627,10 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
                               title={isSelf ? 'No puedes revocar tu propio rol' : ''}
                               className={`rounded-xl border px-3 py-1.5 text-[11px] font-semibold transition ${
                                 isSelf
-                                  ? 'border-line text-muted cursor-not-allowed opacity-50'
+                                  ? 'cursor-not-allowed border-line text-muted opacity-50'
                                   : u.platform_role === 'super_admin'
-                                  ? 'border-rose-200 text-rose-700 hover:bg-rose-50'
-                                  : 'border-navy/20 text-navy hover:bg-navy/5'
+                                    ? 'border-rose-200 text-rose-700 hover:bg-rose-50'
+                                    : 'border-navy/20 text-navy hover:bg-navy/5'
                               }`}
                             >
                               {u.platform_role === 'super_admin' ? 'Quitar Admin' : 'Hacer Admin'}

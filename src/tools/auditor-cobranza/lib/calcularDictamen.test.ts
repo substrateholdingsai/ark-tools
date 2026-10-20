@@ -101,7 +101,7 @@ describe('calcularDictamenCobranza — Motor de Auditoría de Cobranza', () => {
   it('genera advertencia ante comparadores o conductas desconocidas', () => {
     const dictamen = calcularDictamenCobranza({
       respuestasComparadores: {
-        'ID_INEXISTENTE': 'DIFIERE',
+        ID_INEXISTENTE: 'DIFIERE',
       },
       conductasDetectadas: ['CONDUCTA_FALSA'],
     });

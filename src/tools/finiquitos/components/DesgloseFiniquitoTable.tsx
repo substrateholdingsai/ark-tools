@@ -22,10 +22,10 @@ export function DesgloseConceptosTable({ resultado }: Props) {
   const totalMostrado = esLiquidacion ? totalLiquidacion : totalFiniquito;
 
   return (
-    <div className="rounded-[20px] border border-line bg-surface p-6 sm:p-8 shadow-[0_20px_40px_rgba(0,43,127,0.06)]">
+    <div className="rounded-[20px] border border-line bg-surface p-6 shadow-[0_20px_40px_rgba(0,43,127,0.06)] sm:p-8">
       {/* === Encabezado === */}
       <div className="mb-6">
-        <h2 className="font-playfair text-2xl sm:text-3xl font-black tracking-[-0.02em] text-ink">
+        <h2 className="font-playfair text-2xl font-black tracking-[-0.02em] text-ink sm:text-3xl">
           Desglose de Conceptos
         </h2>
         <p className="mt-1 font-inter text-sm text-muted">
@@ -38,11 +38,21 @@ export function DesgloseConceptosTable({ resultado }: Props) {
         <table className="w-full border-collapse">
           <thead>
             <tr className="border-b border-line">
-              <Th align="left" className="w-[22%]">Concepto</Th>
-              <Th align="left" className="w-[34%]">Fórmula</Th>
-              <Th align="right" className="w-[8%]">Días</Th>
-              <Th align="left" className="w-[18%]">Fundamento</Th>
-              <Th align="right" className="w-[18%]">Importe</Th>
+              <Th align="left" className="w-[22%]">
+                Concepto
+              </Th>
+              <Th align="left" className="w-[34%]">
+                Fórmula
+              </Th>
+              <Th align="right" className="w-[8%]">
+                Días
+              </Th>
+              <Th align="left" className="w-[18%]">
+                Fundamento
+              </Th>
+              <Th align="right" className="w-[18%]">
+                Importe
+              </Th>
             </tr>
           </thead>
           <tbody>
@@ -59,7 +69,8 @@ export function DesgloseConceptosTable({ resultado }: Props) {
               </td>
               <td className="py-4 text-right">
                 <span className="font-orbitron text-lg font-bold tabular-nums text-ink">
-                  ${totalMostrado.toLocaleString('es-MX', {
+                  $
+                  {totalMostrado.toLocaleString('es-MX', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
@@ -81,7 +92,8 @@ export function DesgloseConceptosTable({ resultado }: Props) {
             {esLiquidacion ? 'Total Liquidación' : 'Total Finiquito'}
           </div>
           <div className="font-orbitron text-xl font-bold tabular-nums text-ink">
-            ${totalMostrado.toLocaleString('es-MX', {
+            $
+            {totalMostrado.toLocaleString('es-MX', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -126,8 +138,15 @@ interface FilaConceptoProps {
 }
 
 function FilaConcepto({ concepto }: FilaConceptoProps) {
-  const { concepto: nombre, formula, dias, importe, fundamento, esLiquidacion, deshabilitado } =
-    concepto;
+  const {
+    concepto: nombre,
+    formula,
+    dias,
+    importe,
+    fundamento,
+    esLiquidacion,
+    deshabilitado,
+  } = concepto;
 
   return (
     <tr
@@ -141,10 +160,7 @@ function FilaConcepto({ concepto }: FilaConceptoProps) {
       <td className="py-4 pr-4 align-top">
         <div className="flex items-start gap-3">
           {esLiquidacion && !deshabilitado && (
-            <span
-              className="mt-1.5 h-4 w-1 shrink-0 rounded-full bg-navy"
-              aria-hidden
-            />
+            <span className="mt-1.5 h-4 w-1 shrink-0 rounded-full bg-navy" aria-hidden />
           )}
           <span
             className={cn(
@@ -159,9 +175,7 @@ function FilaConcepto({ concepto }: FilaConceptoProps) {
 
       {/* Fórmula */}
       <td className="py-4 pr-4 align-top">
-        <span className="font-inter text-[12px] leading-snug text-muted">
-          {formula}
-        </span>
+        <span className="font-inter text-[12px] leading-snug text-muted">{formula}</span>
       </td>
 
       {/* Días */}
@@ -180,9 +194,7 @@ function FilaConcepto({ concepto }: FilaConceptoProps) {
         <span
           className={cn(
             'inline-block rounded-[6px] px-2 py-1 font-inter text-[10px] font-bold uppercase tracking-[0.12em]',
-            deshabilitado
-              ? 'bg-surface-2 text-muted'
-              : 'bg-navy/[0.06] text-navy'
+            deshabilitado ? 'bg-surface-2 text-muted' : 'bg-navy/[0.06] text-navy'
           )}
         >
           {fundamento}
@@ -195,7 +207,8 @@ function FilaConcepto({ concepto }: FilaConceptoProps) {
           <span className="font-inter text-[12px] text-muted">—</span>
         ) : (
           <span className="font-orbitron text-sm font-bold tabular-nums text-ink">
-            ${importe.toLocaleString('es-MX', {
+            $
+            {importe.toLocaleString('es-MX', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -211,8 +224,15 @@ function FilaConcepto({ concepto }: FilaConceptoProps) {
    ═══════════════════════════════════════════════════════════════ */
 
 function FilaConceptoMobile({ concepto }: FilaConceptoProps) {
-  const { concepto: nombre, formula, dias, importe, fundamento, esLiquidacion, deshabilitado } =
-    concepto;
+  const {
+    concepto: nombre,
+    formula,
+    dias,
+    importe,
+    fundamento,
+    esLiquidacion,
+    deshabilitado,
+  } = concepto;
 
   return (
     <div
@@ -234,7 +254,8 @@ function FilaConceptoMobile({ concepto }: FilaConceptoProps) {
         </span>
         {!deshabilitado && importe > 0 && (
           <span className="shrink-0 font-orbitron text-sm font-bold tabular-nums text-ink">
-            ${importe.toLocaleString('es-MX', {
+            $
+            {importe.toLocaleString('es-MX', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
@@ -243,9 +264,7 @@ function FilaConceptoMobile({ concepto }: FilaConceptoProps) {
       </div>
 
       {/* Fórmula */}
-      <p className="mb-3 font-inter text-[12px] leading-snug text-muted">
-        {formula}
-      </p>
+      <p className="mb-3 font-inter text-[12px] leading-snug text-muted">{formula}</p>
 
       {/* Metadatos: días + fundamento */}
       <div className="flex flex-wrap items-center gap-2">

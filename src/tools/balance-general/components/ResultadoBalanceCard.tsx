@@ -15,7 +15,8 @@ export function ResultadoBalanceCard({ totales }: { totales: TotalesBalance | nu
           </h3>
           <p className="mt-1 text-lg font-bold text-ink">Activo = Pasivo + Patrimonio</p>
           <p className="text-sm text-muted">
-            A=${totales.totalActivo.toFixed(2)} · P+P=${totales.totalPasivoPatrimonio.toFixed(2)} · Dif=${totales.diferencia.toFixed(2)}
+            A=${totales.totalActivo.toFixed(2)} · P+P=${totales.totalPasivoPatrimonio.toFixed(2)} ·
+            Dif=${totales.diferencia.toFixed(2)}
           </p>
         </div>
         <div className="flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold uppercase">

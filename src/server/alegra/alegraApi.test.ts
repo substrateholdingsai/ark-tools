@@ -119,9 +119,7 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       });
 
       const client = new AlegraClient('bad@alegra.com', 'bad_tok');
-      await expect(client.getCompany()).rejects.toThrow(
-        /Email o token incorrecto/
-      );
+      await expect(client.getCompany()).rejects.toThrow(/Email o token incorrecto/);
     });
 
     it('creates and stamps CFDI 4.0 invoice with PAC Quadrum', async () => {
@@ -420,7 +418,7 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
         prepare: vi.fn((query: string) => ({
           bind: vi.fn().mockReturnThis(),
           all: vi.fn(async () => {
-            if (query.includes('WHERE status = \'active\'')) {
+            if (query.includes("WHERE status = 'active'")) {
               return {
                 results: [
                   {

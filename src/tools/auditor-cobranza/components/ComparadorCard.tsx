@@ -44,11 +44,16 @@ const ESTADO_ACTIVE: Record<string, string> = {
 
 function obtenerColorRiesgo(riesgo: string): string {
   switch (riesgo) {
-    case 'CRITICO': return 'bg-red-50 border-red-200 text-red-700';
-    case 'ALTO': return 'bg-orange-50 border-orange-200 text-orange-700';
-    case 'MEDIO': return 'bg-amber-50 border-amber-200 text-amber-700';
-    case 'BAJO': return 'bg-emerald-50 border-emerald-200 text-emerald-700';
-    default: return 'bg-[var(--cream)] border-[var(--line)] text-[var(--muted)]';
+    case 'CRITICO':
+      return 'bg-red-50 border-red-200 text-red-700';
+    case 'ALTO':
+      return 'bg-orange-50 border-orange-200 text-orange-700';
+    case 'MEDIO':
+      return 'bg-amber-50 border-amber-200 text-amber-700';
+    case 'BAJO':
+      return 'bg-emerald-50 border-emerald-200 text-emerald-700';
+    default:
+      return 'bg-[var(--cream)] border-[var(--line)] text-[var(--muted)]';
   }
 }
 
@@ -69,41 +74,39 @@ export function ComparadorCard({
   return (
     <div
       data-comparador-id={id}
-      className="rounded-[20px] border border-[var(--line)] bg-white p-5 hover:shadow-[0_8px_24px_rgba(0,43,127,0.06)] transition-all"
+      className="rounded-[20px] border border-[var(--line)] bg-white p-5 transition-all hover:shadow-[0_8px_24px_rgba(0,43,127,0.06)]"
     >
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-3">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
           {codigo && (
-            <span className="font-orbitron text-[9px] tracking-widest px-2 py-0.5 rounded-full bg-white border border-[var(--line)] inline-block mb-2">
+            <span className="mb-2 inline-block rounded-full border border-[var(--line)] bg-white px-2 py-0.5 font-orbitron text-[9px] tracking-widest">
               {codigo}
             </span>
           )}
-          <h3 className="font-inter font-bold text-[13px] leading-tight text-[var(--ink)]">
+          <h3 className="font-inter text-[13px] font-bold leading-tight text-[var(--ink)]">
             {campo}
           </h3>
-          <p className="font-inter text-[11px] text-[var(--muted)] leading-[1.4] mt-1">
+          <p className="mt-1 font-inter text-[11px] leading-[1.4] text-[var(--muted)]">
             {pregunta}
           </p>
         </div>
         <span
-          className={`shrink-0 text-[10px] font-inter font-bold px-2 py-1 rounded-full border ${obtenerColorRiesgo(riesgo)}`}
+          className={`shrink-0 rounded-full border px-2 py-1 font-inter text-[10px] font-bold ${obtenerColorRiesgo(riesgo)}`}
         >
           {riesgo}
         </span>
       </div>
 
       {/* Pills de estado */}
-      <div className="flex flex-wrap gap-1.5 mb-4">
+      <div className="mb-4 flex flex-wrap gap-1.5">
         {ESTADOS_DICTAMEN.map((est) => (
           <button
             key={est}
             type="button"
             onClick={() => onEstadoChange(est)}
-            className={`px-3 py-1.5 rounded-full text-[11px] font-inter font-bold tracking-wide transition-all border ${
-              estado === est
-                ? ESTADO_ACTIVE[est]
-                : ESTADO_COLORS[est]
+            className={`rounded-full border px-3 py-1.5 font-inter text-[11px] font-bold tracking-wide transition-all ${
+              estado === est ? ESTADO_ACTIVE[est] : ESTADO_COLORS[est]
             }`}
           >
             {ESTADO_LABELS[est]}
@@ -118,7 +121,7 @@ export function ComparadorCard({
           onChange={(e) => onNotaChange(e.target.value)}
           placeholder="Nota del auditor..."
           rows={2}
-          className="w-full rounded-[12px] border border-[var(--line)] bg-[var(--cream)] px-3 py-2 font-inter text-[12px] text-[var(--ink)] outline-none focus:ring-2 focus:ring-[var(--navy)]/20 focus:border-[var(--navy)] transition resize-none"
+          className="focus:ring-[var(--navy)]/20 w-full resize-none rounded-[12px] border border-[var(--line)] bg-[var(--cream)] px-3 py-2 font-inter text-[12px] text-[var(--ink)] outline-none transition focus:border-[var(--navy)] focus:ring-2"
         />
       </div>
 

@@ -19,7 +19,9 @@ interface PasoGuiaCardProps {
 
 export function PasoGuiaCard({ paso, completedItems, onToggle }: PasoGuiaCardProps) {
   const totalItems = paso.checklist.length;
-  const completedCount = paso.checklist.filter((_: string, i: number) => completedItems.has(i)).length;
+  const completedCount = paso.checklist.filter((_: string, i: number) =>
+    completedItems.has(i)
+  ).length;
   const isComplete = completedCount === totalItems && totalItems > 0;
 
   const handleToggle = useCallback(
@@ -35,18 +37,14 @@ export function PasoGuiaCard({ paso, completedItems, onToggle }: PasoGuiaCardPro
     <div
       className={cn(
         'rounded-[16px] border bg-surface p-6 transition-all',
-        isComplete
-          ? 'border-emerald-300 bg-emerald-50/30'
-          : 'border-line hover:border-gold/50'
+        isComplete ? 'border-emerald-300 bg-emerald-50/30' : 'border-line hover:border-gold/50'
       )}
     >
-      <div className="flex items-start gap-4 mb-4">
+      <div className="mb-4 flex items-start gap-4">
         <div
           className={cn(
-            'shrink-0 w-12 h-12 rounded-full grid place-items-center',
-            isComplete
-              ? 'bg-emerald-500 text-white'
-              : 'bg-gold/10 text-gold-dark'
+            'grid h-12 w-12 shrink-0 place-items-center rounded-full',
+            isComplete ? 'bg-emerald-500 text-white' : 'bg-gold/10 text-gold-dark'
           )}
         >
           {isComplete ? (
@@ -55,37 +53,33 @@ export function PasoGuiaCard({ paso, completedItems, onToggle }: PasoGuiaCardPro
             <Icono size={22} strokeWidth={1.75} />
           )}
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-bold tracking-[0.16em] uppercase text-gold-dark font-orbitron">
+        <div className="min-w-0 flex-1">
+          <div className="mb-1 flex items-center gap-2">
+            <span className="font-orbitron text-[10px] font-bold uppercase tracking-[0.16em] text-gold-dark">
               Paso {paso.id}
             </span>
-            <span className="text-[10px] text-muted font-inter">
-              {paso.corto}
-            </span>
+            <span className="font-inter text-[10px] text-muted">{paso.corto}</span>
           </div>
-          <h3 className="font-playfair font-black text-[22px] leading-[1.2] text-ink">
+          <h3 className="font-playfair text-[22px] font-black leading-[1.2] text-ink">
             {paso.titulo}
           </h3>
         </div>
       </div>
 
-      <p className="text-[14px] leading-[1.6] text-muted mb-4 font-inter">
-        {paso.descripcion}
-      </p>
+      <p className="mb-4 font-inter text-[14px] leading-[1.6] text-muted">{paso.descripcion}</p>
 
-      <div className="flex flex-wrap gap-1.5 mb-4">
+      <div className="mb-4 flex flex-wrap gap-1.5">
         {paso.canales.map((canal: string, i: number) => (
           <span
             key={i}
-            className="px-2 py-0.5 rounded-full bg-surface-2 text-[10px] font-medium text-muted font-inter"
+            className="rounded-full bg-surface-2 px-2 py-0.5 font-inter text-[10px] font-medium text-muted"
           >
             {canal}
           </span>
         ))}
       </div>
 
-      <div className="space-y-2 mb-4">
+      <div className="mb-4 space-y-2">
         {paso.checklist.map((item: string, index: number) => {
           const checked = completedItems.has(index);
           return (
@@ -94,14 +88,12 @@ export function PasoGuiaCard({ paso, completedItems, onToggle }: PasoGuiaCardPro
               type="button"
               onClick={() => handleToggle(index)}
               className={cn(
-                'w-full flex items-start gap-3 text-left',
-                'px-3 py-2 rounded-[10px] transition-colors',
-                checked
-                  ? 'bg-emerald-50'
-                  : 'hover:bg-surface-2'
+                'flex w-full items-start gap-3 text-left',
+                'rounded-[10px] px-3 py-2 transition-colors',
+                checked ? 'bg-emerald-50' : 'hover:bg-surface-2'
               )}
             >
-              <span className="shrink-0 mt-0.5">
+              <span className="mt-0.5 shrink-0">
                 {checked ? (
                   <Check size={18} strokeWidth={2.5} className="text-emerald-500" />
                 ) : (
@@ -110,7 +102,7 @@ export function PasoGuiaCard({ paso, completedItems, onToggle }: PasoGuiaCardPro
               </span>
               <span
                 className={cn(
-                  'text-[13px] leading-[1.5] font-inter',
+                  'font-inter text-[13px] leading-[1.5]',
                   checked ? 'text-emerald-700 line-through' : 'text-ink'
                 )}
               >
@@ -121,28 +113,26 @@ export function PasoGuiaCard({ paso, completedItems, onToggle }: PasoGuiaCardPro
         })}
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
-        <div className="flex-1 h-1.5 bg-surface-2 rounded-full overflow-hidden">
+      <div className="mb-4 flex items-center gap-3">
+        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
           <div
             className="h-full bg-gold transition-all duration-300"
             style={{ width: `${totalItems > 0 ? (completedCount / totalItems) * 100 : 0}%` }}
           />
         </div>
-        <span className="text-[11px] font-bold font-orbitron text-muted">
+        <span className="font-orbitron text-[11px] font-bold text-muted">
           {completedCount}/{totalItems}
         </span>
       </div>
 
-      <div className="mb-3 p-3 rounded-[10px] bg-gold/5 border border-gold/20">
-        <div className="text-[10px] font-bold tracking-[0.12em] uppercase text-gold-dark font-orbitron mb-1">
+      <div className="mb-3 rounded-[10px] border border-gold/20 bg-gold/5 p-3">
+        <div className="mb-1 font-orbitron text-[10px] font-bold uppercase tracking-[0.12em] text-gold-dark">
           Tip
         </div>
-        <p className="text-[12px] leading-[1.5] text-ink font-inter">
-          {paso.tip}
-        </p>
+        <p className="font-inter text-[12px] leading-[1.5] text-ink">{paso.tip}</p>
       </div>
 
-      <div className="text-[11px] text-muted font-inter">
+      <div className="font-inter text-[11px] text-muted">
         <span className="font-bold">Fundamento:</span> {paso.fundamento}
       </div>
     </div>

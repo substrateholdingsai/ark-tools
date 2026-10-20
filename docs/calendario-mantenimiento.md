@@ -8,14 +8,14 @@
 
 ## Cronograma Recomendado
 
-| Mes | Acción | Fuente | Responsable | Detalles |
-|---|---|---|---|---|
-| **Nov** | Revisar tasas ISN estatales | Leyes de Ingresos de las 32 entidades (periódicos oficiales estatales) | Mantenedor | Cada entidad publica su Ley de Ingresos en nov-dic. Verificar reformas. Actualizar `src/tools/isn/data/estados.ts` y `ISN_META.tasas2026` en catálogo. |
-| **Dic (1-15)** | Revisar salarios mínimos | CONASAMI — DOF | Mantenedor | Comisión Nacional de Salarios Mínimos publica resolución en diciembre. Actualizar `SALARIO_MINIMO.general2026` y `frontera2026`. |
-| **Dic (16-31)** | Revisar Tarifa ISR | SAT — Anexo 8 RMF | Mantenedor | SAT publica Anexo 8 de la RMF (Resolución Miscelánea Fiscal) en diciembre. Actualizar `TARIFA_ISR.mensual2026` (11 rangos). |
-| **Ene (1-10)** | Correr auditoría completa | `pnpm verify:catalogo` | CI automático | Pipeline ejecuta script y falla si quedan proyecciones o críticos vencidos. Alerta temprana antes de febrero. |
-| **Feb (1-10)** | Actualizar UMA + tope LSS | INEGI — DOF | Mantenedor | INEGI publica UMA del año en enero (vigente desde febrero). Actualizar `UMA.diaria2026`, `UMA.mensual2026` y recalcular `TOPES_LSS.tope25UMA2026 = UMA * 25`. |
-| **Continuo** | Monitoreo automático | `AlertasVigencia` + `useEstadoCatalogo` | Automático | Banner global en App shell avisa a 60 días (`próximo-a-vencer`) y en rojo navy si `crítico-vencido`. No requiere acción manual. |
+| Mes             | Acción                      | Fuente                                                                 | Responsable   | Detalles                                                                                                                                                      |
+| --------------- | --------------------------- | ---------------------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Nov**         | Revisar tasas ISN estatales | Leyes de Ingresos de las 32 entidades (periódicos oficiales estatales) | Mantenedor    | Cada entidad publica su Ley de Ingresos en nov-dic. Verificar reformas. Actualizar `src/tools/isn/data/estados.ts` y `ISN_META.tasas2026` en catálogo.        |
+| **Dic (1-15)**  | Revisar salarios mínimos    | CONASAMI — DOF                                                         | Mantenedor    | Comisión Nacional de Salarios Mínimos publica resolución en diciembre. Actualizar `SALARIO_MINIMO.general2026` y `frontera2026`.                              |
+| **Dic (16-31)** | Revisar Tarifa ISR          | SAT — Anexo 8 RMF                                                      | Mantenedor    | SAT publica Anexo 8 de la RMF (Resolución Miscelánea Fiscal) en diciembre. Actualizar `TARIFA_ISR.mensual2026` (11 rangos).                                   |
+| **Ene (1-10)**  | Correr auditoría completa   | `pnpm verify:catalogo`                                                 | CI automático | Pipeline ejecuta script y falla si quedan proyecciones o críticos vencidos. Alerta temprana antes de febrero.                                                 |
+| **Feb (1-10)**  | Actualizar UMA + tope LSS   | INEGI — DOF                                                            | Mantenedor    | INEGI publica UMA del año en enero (vigente desde febrero). Actualizar `UMA.diaria2026`, `UMA.mensual2026` y recalcular `TOPES_LSS.tope25UMA2026 = UMA * 25`. |
+| **Continuo**    | Monitoreo automático        | `AlertasVigencia` + `useEstadoCatalogo`                                | Automático    | Banner global en App shell avisa a 60 días (`próximo-a-vencer`) y en rojo navy si `crítico-vencido`. No requiere acción manual.                               |
 
 ---
 
@@ -54,25 +54,25 @@ git commit -m "chore(catalogo): actualizar UMA 2027 — INEGI DOF 2027-01-10
 
 El sistema detecta automáticamente:
 
-| Situación | Dónde se ve | Acción |
-|---|---|---|
-| Valor `esProyeccion: true` | `pnpm verify:catalogo` (CI falla) | Actualizar antes de deploy |
-| Valor `critico` y `vencido` | `pnpm verify:catalogo` (exit 2) + banner navy en UI | **Bloqueante:** actualizar YA |
-| Valor en `proximo-a-vencer` (≤60 días) | Banner gold `PRÓXIMO` en UI | Planear actualización en sprint actual |
-| Test `catalogo.test.ts` falla | CI | Revisar fuente/fechas/criticidad |
+| Situación                              | Dónde se ve                                         | Acción                                 |
+| -------------------------------------- | --------------------------------------------------- | -------------------------------------- |
+| Valor `esProyeccion: true`             | `pnpm verify:catalogo` (CI falla)                   | Actualizar antes de deploy             |
+| Valor `critico` y `vencido`            | `pnpm verify:catalogo` (exit 2) + banner navy en UI | **Bloqueante:** actualizar YA          |
+| Valor en `proximo-a-vencer` (≤60 días) | Banner gold `PRÓXIMO` en UI                         | Planear actualización en sprint actual |
+| Test `catalogo.test.ts` falla          | CI                                                  | Revisar fuente/fechas/criticidad       |
 
 ---
 
 ## Archivos Clave a Tocar
 
-| Archivo | Qué actualiza |
-|---|---|
-| `src/data/valores-vigentes/catalogo.ts` | **Fuente única** — 7 valores fiscales con metadatos |
-| `src/tools/isn/data/estados.ts` | 32 tasas ISN (consumen UMA y tope del catálogo) |
-| `src/tools/sbc/data/uma.ts` | Constantes SBC (consumen UMA, salario mínimo, tope del catálogo) |
-| `src/tools/nomina/data/tablasISR.ts` | Tarifa ISR (consume catálogo) |
-| `src/tools/nomina/data/cuotasIMSS.ts` | Cuotas IMSS (consumen UMA del catálogo) |
-| `src/tools/nomina/data/defaults.ts` | Presets de sueldo (consumen salario mínimo del catálogo) |
+| Archivo                                 | Qué actualiza                                                    |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| `src/data/valores-vigentes/catalogo.ts` | **Fuente única** — 7 valores fiscales con metadatos              |
+| `src/tools/isn/data/estados.ts`         | 32 tasas ISN (consumen UMA y tope del catálogo)                  |
+| `src/tools/sbc/data/uma.ts`             | Constantes SBC (consumen UMA, salario mínimo, tope del catálogo) |
+| `src/tools/nomina/data/tablasISR.ts`    | Tarifa ISR (consume catálogo)                                    |
+| `src/tools/nomina/data/cuotasIMSS.ts`   | Cuotas IMSS (consumen UMA del catálogo)                          |
+| `src/tools/nomina/data/defaults.ts`     | Presets de sueldo (consumen salario mínimo del catálogo)         |
 
 > **Regla de oro:** Nunca hardcodear valores fiscales en herramientas. Siempre importar desde `@/data/valores-vigentes/catalogo`.
 
@@ -80,26 +80,26 @@ El sistema detecta automáticamente:
 
 ## Contactos de Fuentes Oficiales
 
-| Valor | Organismo | URL | Frecuencia |
-|---|---|---|---|
-| UMA | INEGI | https://www.inegi.org.mx/temas/uma/ | Anual (ene) |
-| Salario mínimo | CONASAMI | https://www.gob.mx/conasami | Anual (dic) |
-| Tope LSS | IMSS | https://www.imss.gob.mx/ | Derivado de UMA (feb) |
-| Tarifa ISR | SAT | https://www.sat.gob.mx/consultas/retensiones/conoce-las-tarifas-de-isr | Anual (dic, Anexo 8 RMF) |
-| Tasas ISN | 32 Entidades | https://www.gob.mx/indetec + periódicos oficiales | Anual (nov-dic, Leyes de Ingresos) |
+| Valor          | Organismo    | URL                                                                    | Frecuencia                         |
+| -------------- | ------------ | ---------------------------------------------------------------------- | ---------------------------------- |
+| UMA            | INEGI        | https://www.inegi.org.mx/temas/uma/                                    | Anual (ene)                        |
+| Salario mínimo | CONASAMI     | https://www.gob.mx/conasami                                            | Anual (dic)                        |
+| Tope LSS       | IMSS         | https://www.imss.gob.mx/                                               | Derivado de UMA (feb)              |
+| Tarifa ISR     | SAT          | https://www.sat.gob.mx/consultas/retensiones/conoce-las-tarifas-de-isr | Anual (dic, Anexo 8 RMF)           |
+| Tasas ISN      | 32 Entidades | https://www.gob.mx/indetec + periódicos oficiales                      | Anual (nov-dic, Leyes de Ingresos) |
 
 ---
 
 ## Próximas Fechas Clave (2026-2027)
 
-| Fecha | Evento |
-|---|---|
-| **Nov 2026** | Leyes de Ingresos 2027 publicadas → revisar ISN |
+| Fecha        | Evento                                                   |
+| ------------ | -------------------------------------------------------- |
+| **Nov 2026** | Leyes de Ingresos 2027 publicadas → revisar ISN          |
 | **Dic 2026** | Salarios mínimos 2027 (CONASAMI) + Tarifa ISR 2027 (SAT) |
-| **Ene 2027** | `pnpm verify:catalogo` en CI → validar antes de febrero |
-| **Feb 2027** | UMA 2027 (INEGI) + Tope 25 UMAs LSS 2027 |
-| **Mar 2027** | Verificación completa post-actualización |
+| **Ene 2027** | `pnpm verify:catalogo` en CI → validar antes de febrero  |
+| **Feb 2027** | UMA 2027 (INEGI) + Tope 25 UMAs LSS 2027                 |
+| **Mar 2027** | Verificación completa post-actualización                 |
 
 ---
 
-*Documento vivo — actualizar este calendario cuando cambien las fechas de publicación oficiales.*
+_Documento vivo — actualizar este calendario cuando cambien las fechas de publicación oficiales._

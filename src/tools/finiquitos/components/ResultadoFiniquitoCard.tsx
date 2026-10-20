@@ -9,13 +9,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import {
-  Copy,
-  Check,
-  Download,
-  ShieldCheck,
-  DollarSign,
-} from 'lucide-react';
+import { Copy, Check, Download, ShieldCheck, DollarSign } from 'lucide-react';
 import {
   GlassButton,
   LiquidGlassDome,
@@ -94,12 +88,12 @@ export function ResultadoFiniquitoCard({ entrada, resultado }: Props) {
   return (
     <LiquidGlassDome padding="lg" radius="dome" className="border border-gold/40 shadow-xl">
       {/* Header con Badge de Certeza Jurídica */}
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <span className="text-[10px] font-bold tracking-[0.2em] text-muted uppercase font-orbitron block">
+          <span className="block font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
             CÁLCULO DEFINITIVO · {esLiquidacion ? 'DESPIDO INJUSTIFICADO' : 'RENUNCIA VOLUNTARIA'}
           </span>
-          <h3 className="text-[22px] font-bold text-navy font-playfair mt-0.5">
+          <h3 className="mt-0.5 font-playfair text-[22px] font-bold text-navy">
             {esLiquidacion ? 'Total de Liquidación Legal' : 'Total de Finiquito Ordinario'}
           </h3>
         </div>
@@ -107,37 +101,49 @@ export function ResultadoFiniquitoCard({ entrada, resultado }: Props) {
       </div>
 
       {/* Cifra Magnificada Central */}
-      <div className="my-5 p-5 sm:p-6 rounded-[20px] bg-gradient-to-b from-white/95 to-surface-2/70 border border-gold/40 shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_6px_20px_rgba(212,175,55,0.14)]">
-        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted mb-1 flex items-center justify-between">
+      <div className="my-5 rounded-[20px] border border-gold/40 bg-gradient-to-b from-white/95 to-surface-2/70 p-5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.9),0_6px_20px_rgba(212,175,55,0.14)] sm:p-6">
+        <div className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.18em] text-muted">
           <span className="flex items-center gap-1.5 text-gold-dark">
-            <DollarSign className="w-3.5 h-3.5" />
+            <DollarSign className="h-3.5 w-3.5" />
             Importe bruto a liquidar
           </span>
-          <span className="font-mono text-muted text-[10px]">
+          <span className="font-mono text-[10px] text-muted">
             {diasAntiguedad.toLocaleString('es-MX')} días laborados ({aniosExactos.toFixed(2)} años)
           </span>
         </div>
 
-        <TextMagnified size="lg" className="text-navy my-1">
-          ${granTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        <TextMagnified size="lg" className="my-1 text-navy">
+          $
+          {granTotal.toLocaleString('es-MX', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          })}
         </TextMagnified>
 
         {esLiquidacion ? (
-          <div className="mt-3 pt-3 border-t border-gold/20 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-muted">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-gold/20 pt-3 font-mono text-[11px] text-muted">
             <span>
               Prestaciones devengadas:{' '}
-              <strong className="text-navy font-bold">
-                ${totalFiniquito.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <strong className="font-bold text-navy">
+                $
+                {totalFiniquito.toLocaleString('es-MX', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
               </strong>
             </span>
-            <span className="text-gold-dark font-bold font-orbitron">
-              Indemnización constitucional:{' '}
-              ${(importeIndem90 + importe20dias).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            <span className="font-orbitron font-bold text-gold-dark">
+              Indemnización constitucional: $
+              {(importeIndem90 + importe20dias).toLocaleString('es-MX', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </span>
           </div>
         ) : (
-          <div className="mt-2 text-[11px] font-mono text-muted">
-            Solo prestaciones devengadas proporcionales (no incluye indemnizaciones constitucionales de despido).
+          <div className="mt-2 font-mono text-[11px] text-muted">
+            Solo prestaciones devengadas proporcionales (no incluye indemnizaciones constitucionales
+            de despido).
           </div>
         )}
       </div>
@@ -145,70 +151,78 @@ export function ResultadoFiniquitoCard({ entrada, resultado }: Props) {
       <GoldDivider spacing="sm" className="my-4" />
 
       {/* Desglose en Mini-Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-center my-4">
-        <div className="p-3 rounded-[14px] bg-surface-2/80 border border-line">
-          <span className="text-[9px] font-bold text-muted uppercase tracking-wider block mb-1">
+      <div className="my-4 grid grid-cols-2 gap-2.5 text-center sm:grid-cols-4">
+        <div className="rounded-[14px] border border-line bg-surface-2/80 p-3">
+          <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">
             Aguinaldo
           </span>
-          <span className="font-orbitron font-bold text-[14px] text-navy block">
-            ${importeAguinaldo.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <span className="block font-orbitron text-[14px] font-bold text-navy">
+            $
+            {importeAguinaldo.toLocaleString('es-MX', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </span>
-          <span className="text-[9px] text-muted font-mono">Art. 87 LFT</span>
+          <span className="font-mono text-[9px] text-muted">Art. 87 LFT</span>
         </div>
 
-        <div className="p-3 rounded-[14px] bg-surface-2/80 border border-line">
-          <span className="text-[9px] font-bold text-muted uppercase tracking-wider block mb-1">
+        <div className="rounded-[14px] border border-line bg-surface-2/80 p-3">
+          <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">
             Vacaciones + Prima
           </span>
-          <span className="font-orbitron font-bold text-[14px] text-navy block">
-            ${(importeVacaciones + importePrimaVacacional).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          <span className="block font-orbitron text-[14px] font-bold text-navy">
+            $
+            {(importeVacaciones + importePrimaVacacional).toLocaleString('es-MX', {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </span>
-          <span className="text-[9px] text-muted font-mono">Arts. 76, 80 LFT</span>
+          <span className="font-mono text-[9px] text-muted">Arts. 76, 80 LFT</span>
         </div>
 
-        <div className="p-3 rounded-[14px] bg-surface-2/80 border border-line">
-          <span className="text-[9px] font-bold text-muted uppercase tracking-wider block mb-1">
+        <div className="rounded-[14px] border border-line bg-surface-2/80 p-3">
+          <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">
             Prima Antigüedad
           </span>
-          <span className="font-orbitron font-bold text-[14px] text-navy block">
+          <span className="block font-orbitron text-[14px] font-bold text-navy">
             {entrada.incluirPrimaAntiguedad
               ? `$${importePrimaAntiguedad.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
               : '—'}
           </span>
-          <span className="text-[9px] text-muted font-mono">Art. 162 LFT</span>
+          <span className="font-mono text-[9px] text-muted">Art. 162 LFT</span>
         </div>
 
-        <div className="p-3 rounded-[14px] bg-surface-2/80 border border-line">
-          <span className="text-[9px] font-bold text-muted uppercase tracking-wider block mb-1">
+        <div className="rounded-[14px] border border-line bg-surface-2/80 p-3">
+          <span className="mb-1 block text-[9px] font-bold uppercase tracking-wider text-muted">
             {esLiquidacion ? 'Indemnización 90d' : 'Indemnizaciones'}
           </span>
-          <span className="font-orbitron font-bold text-[14px] text-navy block">
+          <span className="block font-orbitron text-[14px] font-bold text-navy">
             {esLiquidacion && entrada.incluirIndem90Dias
               ? `$${importeIndem90.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
               : 'N/A'}
           </span>
-          <span className="text-[9px] text-muted font-mono">
+          <span className="font-mono text-[9px] text-muted">
             {esLiquidacion ? 'Art. 50 LFT' : 'Finiquito'}
           </span>
         </div>
       </div>
 
       {/* Botones de Acción */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 mt-6 pt-4 border-t border-line">
+      <div className="mt-6 flex flex-col items-center gap-3 border-t border-line pt-4 sm:flex-row">
         <GlassButton
           variant="primary"
           size="md"
           onClick={handleCopiar}
-          className="w-full sm:flex-1 flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 sm:flex-1"
         >
           {copiado ? (
             <>
-              <Check className="w-4 h-4 text-emerald-400" />
+              <Check className="h-4 w-4 text-emerald-400" />
               <span>¡Copiado al Portapapeles!</span>
             </>
           ) : (
             <>
-              <Copy className="w-4 h-4" />
+              <Copy className="h-4 w-4" />
               <span>Copiar Resumen Ejecutivo</span>
             </>
           )}
@@ -218,20 +232,22 @@ export function ResultadoFiniquitoCard({ entrada, resultado }: Props) {
           variant="default"
           size="md"
           onClick={handleDescargarCSV}
-          className="w-full sm:w-auto flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 sm:w-auto"
         >
-          <Download className="w-4 h-4 text-navy" />
+          <Download className="h-4 w-4 text-navy" />
           <span>Descargar Excel (CSV)</span>
         </GlassButton>
       </div>
 
       {/* Sello de Confianza y Certeza Jurídica */}
-      <div className="mt-4 pt-3 border-t border-line/60 flex items-center justify-between text-[10px] text-muted">
+      <div className="mt-4 flex items-center justify-between border-t border-line/60 pt-3 text-[10px] text-muted">
         <div className="flex items-center gap-1.5 text-navy">
-          <ShieldCheck className="w-3.5 h-3.5 text-gold flex-shrink-0" />
+          <ShieldCheck className="h-3.5 w-3.5 flex-shrink-0 text-gold" />
           <span>Cálculo fundamentado en LFT con reforma Vacaciones Dignas y tope de 2×SMG.</span>
         </div>
-        <span className="font-mono text-[9px] hidden sm:inline">ARK SYSTEMS · SOVEREIGN COMPUTE</span>
+        <span className="hidden font-mono text-[9px] sm:inline">
+          ARK SYSTEMS · SOVEREIGN COMPUTE
+        </span>
       </div>
     </LiquidGlassDome>
   );
@@ -298,7 +314,9 @@ function generarContenidoCSV(entrada: EntradaFiniquito, resultado: ResultadoFini
   for (const c of resultado.desglose) {
     const imp = c.deshabilitado ? '0.00' : c.importe.toFixed(2);
     const d = c.dias !== undefined ? c.dias.toString() : '';
-    filas.push(`"${c.concepto}","${c.formula.replace(/"/g, '""')}","${d}","${c.fundamento}","${imp}"`);
+    filas.push(
+      `"${c.concepto}","${c.formula.replace(/"/g, '""')}","${d}","${c.fundamento}","${imp}"`
+    );
   }
 
   filas.push(

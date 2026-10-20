@@ -1,9 +1,5 @@
 export { CalculadoraLeasing } from './CalculadoraLeasing';
-export type {
-  ParametrosLeasing,
-  ProyeccionMes,
-  ResumenLeasing,
-} from './types';
+export type { ParametrosLeasing, ProyeccionMes, ResumenLeasing } from './types';
 export {
   PARAMETROS_DEFAULT,
   PRESETS_MODELO,

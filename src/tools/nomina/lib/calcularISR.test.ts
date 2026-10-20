@@ -22,7 +22,7 @@ interface TarifaISRRango {
 }
 
 // Valores oficiales SAT 2026 (desde catálogo centralizado)
-const tarifaIsr = CATALOGO_2026.find(v => v.id === 'TARIFA_ISR_MENSUAL_2026');
+const tarifaIsr = CATALOGO_2026.find((v) => v.id === 'TARIFA_ISR_MENSUAL_2026');
 if (!tarifaIsr) throw new Error('TARIFA_ISR_MENSUAL_2026 no encontrado en catálogo');
 const TABLA_ISR = tarifaIsr.valor as TarifaISRRango[];
 

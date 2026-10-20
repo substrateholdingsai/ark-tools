@@ -29,11 +29,7 @@ import {
   ChevronDown,
   ArrowLeft,
 } from 'lucide-react';
-import {
-  apiClient,
-  type TenantMember,
-  type TenantPendingInvitation,
-} from '@/lib/apiClient';
+import { apiClient, type TenantMember, type TenantPendingInvitation } from '@/lib/apiClient';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/cn';
 
@@ -80,7 +76,9 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
       setMembers(data.members || []);
       setInvitations(data.invitations || []);
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Error al cargar los miembros del despacho.');
+      setErrorMsg(
+        err instanceof Error ? err.message : 'Error al cargar los miembros del despacho.'
+      );
     } finally {
       setLoading(false);
     }
@@ -201,7 +199,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
   const modalContent = (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+      className="backdrop-blur-xs fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4"
     >
       <div
         onClick={(e) => e.stopPropagation()}
@@ -219,7 +217,11 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                   Equipo y Colaboradores
                 </h2>
                 <span className="rounded-full bg-gold/15 px-2 py-0.5 font-orbitron text-[9px] font-bold uppercase tracking-wider text-navy">
-                  {orgRole === 'owner' ? 'Titular' : orgRole === 'admin' ? 'Administrador' : 'Colaborador'}
+                  {orgRole === 'owner'
+                    ? 'Titular'
+                    : orgRole === 'admin'
+                      ? 'Administrador'
+                      : 'Colaborador'}
                 </span>
               </div>
               <p className="flex items-center gap-1.5 text-[11px] text-muted">
@@ -330,7 +332,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                     No hay miembros registrados en este despacho.
                   </div>
                 ) : (
-                  <div className="divide-y divide-line/60 rounded-xl border border-line bg-white shadow-xs">
+                  <div className="shadow-xs divide-y divide-line/60 rounded-xl border border-line bg-white">
                     {members.map((member) => {
                       const isMe = member.userId === user?.id;
                       const isMemberOwner = member.role === 'owner';
@@ -351,7 +353,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                                   {member.fullName || member.email.split('@')[0]}
                                 </span>
                                 {isMe && (
-                                  <span className="rounded bg-navy/10 px-1.5 py-0.2 font-orbitron text-[9px] font-bold text-navy">
+                                  <span className="py-0.2 rounded bg-navy/10 px-1.5 font-orbitron text-[9px] font-bold text-navy">
                                     TÚ
                                   </span>
                                 )}
@@ -443,7 +445,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                     Invitaciones Pendientes ({invitations.length})
                   </h3>
 
-                  <div className="divide-y divide-line/60 rounded-xl border border-line bg-surface/50 shadow-xs">
+                  <div className="shadow-xs divide-y divide-line/60 rounded-xl border border-line bg-surface/50">
                     {invitations.map((inv) => (
                       <div
                         key={inv.id}
@@ -458,7 +460,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                               <span className="truncate text-[12px] font-bold text-ink">
                                 {inv.email}
                               </span>
-                              <span className="rounded bg-surface-2 px-1.5 py-0.2 font-orbitron text-[9px] font-semibold text-muted">
+                              <span className="py-0.2 rounded bg-surface-2 px-1.5 font-orbitron text-[9px] font-semibold text-muted">
                                 {inv.role === 'admin' ? 'Administrador' : 'Colaborador'}
                               </span>
                             </div>
@@ -500,7 +502,8 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                       Invitar a un nuevo colaborador
                     </h4>
                     <p className="mt-0.5 text-[11px] text-muted">
-                      El invitado recibirá un correo transaccional de ARK TOOLS con un enlace de acceso seguro para unirse inmediatamente al despacho.
+                      El invitado recibirá un correo transaccional de ARK TOOLS con un enlace de
+                      acceso seguro para unirse inmediatamente al despacho.
                     </p>
                   </div>
                 </div>
@@ -539,7 +542,8 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                     <div>
                       <div className="text-[12px] font-bold text-navy">Colaborador</div>
                       <div className="text-[10px] text-muted">
-                        Acceso completo para capturar y consultar expedientes, clientes y cálculos fiscales.
+                        Acceso completo para capturar y consultar expedientes, clientes y cálculos
+                        fiscales.
                       </div>
                     </div>
                   </button>
@@ -620,9 +624,15 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
             </button>
           ) : (
             <div className="text-[11px] font-medium text-muted">
-              <span>{members.length} miembro{members.length !== 1 ? 's' : ''} activo{members.length !== 1 ? 's' : ''}</span>
+              <span>
+                {members.length} miembro{members.length !== 1 ? 's' : ''} activo
+                {members.length !== 1 ? 's' : ''}
+              </span>
               {invitations.length > 0 && (
-                <span className="ml-1.5 text-gold-dark">• {invitations.length} invitación{invitations.length !== 1 ? 'es' : ''} pendiente{invitations.length !== 1 ? 's' : ''}</span>
+                <span className="ml-1.5 text-gold-dark">
+                  • {invitations.length} invitación{invitations.length !== 1 ? 'es' : ''} pendiente
+                  {invitations.length !== 1 ? 's' : ''}
+                </span>
               )}
             </div>
           )}
@@ -631,7 +641,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
             <button
               type="button"
               onClick={onClose}
-              className="rounded-xl border border-line bg-white px-4 py-2 font-orbitron text-[11px] font-bold text-muted shadow-xs transition hover:bg-surface-2 hover:text-ink"
+              className="shadow-xs rounded-xl border border-line bg-white px-4 py-2 font-orbitron text-[11px] font-bold text-muted transition hover:bg-surface-2 hover:text-ink"
             >
               CERRAR
             </button>
@@ -643,7 +653,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                   setActiveTab('invite');
                   setErrorMsg(null);
                 }}
-                className="flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2 font-orbitron text-[11px] font-bold tracking-wider text-white shadow-xs transition hover:bg-navy-dark"
+                className="shadow-xs flex items-center gap-1.5 rounded-xl bg-navy px-4 py-2 font-orbitron text-[11px] font-bold tracking-wider text-white transition hover:bg-navy-dark"
               >
                 <UserPlus size={14} className="text-gold" />
                 <span>+ INVITAR COLABORADOR</span>
@@ -654,7 +664,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
 
         {/* Modal de confirmación para remover miembro */}
         {confirmRemoveMember && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4">
+          <div className="z-60 fixed inset-0 flex items-center justify-center bg-black/40 p-4">
             <div className="animate-in fade-in zoom-in-95 w-full max-w-sm rounded-2xl border border-line bg-white p-5 shadow-xl">
               <div className="mb-3 flex items-center gap-2 text-rose-600">
                 <AlertCircle size={20} />
@@ -662,8 +672,8 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
               </div>
               <p className="text-[12px] leading-relaxed text-ink">
                 ¿Estás seguro de que deseas revocar el acceso de{' '}
-                <strong>{confirmRemoveMember.fullName || confirmRemoveMember.email}</strong> a este despacho?
-                Ya no podrá visualizar los clientes ni expedientes vinculados.
+                <strong>{confirmRemoveMember.fullName || confirmRemoveMember.email}</strong> a este
+                despacho? Ya no podrá visualizar los clientes ni expedientes vinculados.
               </p>
               <div className="mt-4 flex justify-end gap-2">
                 <button
@@ -688,9 +698,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
     </div>
   );
 
-  return typeof document !== 'undefined'
-    ? createPortal(modalContent, document.body)
-    : modalContent;
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }
 
 export default TeamModal;

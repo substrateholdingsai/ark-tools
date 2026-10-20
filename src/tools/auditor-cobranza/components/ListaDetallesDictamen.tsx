@@ -8,19 +8,27 @@ interface ListaDetallesDictamenProps {
 
 function obtenerColorRiesgo(riesgo: string): string {
   switch (riesgo) {
-    case 'CRITICO': return 'bg-red-50 border-red-200 text-red-700';
-    case 'ALTO': return 'bg-orange-50 border-orange-200 text-orange-700';
-    case 'MEDIO': return 'bg-amber-50 border-amber-200 text-amber-700';
-    case 'BAJO': return 'bg-emerald-50 border-emerald-200 text-emerald-700';
-    default: return 'bg-[var(--cream)] border-[var(--line)] text-[var(--muted)]';
+    case 'CRITICO':
+      return 'bg-red-50 border-red-200 text-red-700';
+    case 'ALTO':
+      return 'bg-orange-50 border-orange-200 text-orange-700';
+    case 'MEDIO':
+      return 'bg-amber-50 border-amber-200 text-amber-700';
+    case 'BAJO':
+      return 'bg-emerald-50 border-emerald-200 text-emerald-700';
+    default:
+      return 'bg-[var(--cream)] border-[var(--line)] text-[var(--muted)]';
   }
 }
 
 function obtenerColorCategoria(categoria: string): string {
   switch (categoria) {
-    case 'hallazgo': return 'bg-red-50 text-red-700';
-    case 'observacion': return 'bg-amber-50 text-amber-700';
-    default: return 'bg-[var(--cream)] text-[var(--muted)]';
+    case 'hallazgo':
+      return 'bg-red-50 text-red-700';
+    case 'observacion':
+      return 'bg-amber-50 text-amber-700';
+    default:
+      return 'bg-[var(--cream)] text-[var(--muted)]';
   }
 }
 
@@ -36,12 +44,12 @@ export function ListaDetallesDictamen({ detalles }: ListaDetallesDictamenProps) 
   }
 
   return (
-    <div className="rounded-[20px] border border-[var(--line)] bg-white overflow-hidden">
-      <div className="px-5 py-4 bg-[var(--cream)] border-b border-[var(--line)]">
-        <h3 className="font-playfair font-bold text-[16px] text-[var(--ink)]">
+    <div className="overflow-hidden rounded-[20px] border border-[var(--line)] bg-white">
+      <div className="border-b border-[var(--line)] bg-[var(--cream)] px-5 py-4">
+        <h3 className="font-playfair text-[16px] font-bold text-[var(--ink)]">
           Detalles del Dictamen
         </h3>
-        <p className="font-inter text-[11px] text-[var(--muted)] mt-0.5">
+        <p className="mt-0.5 font-inter text-[11px] text-[var(--muted)]">
           {detalles.length} elementos ordenados por severidad
         </p>
       </div>
@@ -50,25 +58,25 @@ export function ListaDetallesDictamen({ detalles }: ListaDetallesDictamenProps) 
         <table className="w-full">
           <thead>
             <tr className="border-b border-[var(--line)] bg-[var(--cream)]">
-              <th className="text-left px-4 py-2.5 font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
+              <th className="px-4 py-2.5 text-left font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
                 TIPO
               </th>
-              <th className="text-left px-4 py-2.5 font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
+              <th className="px-4 py-2.5 text-left font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
                 ID / CÓDIGO
               </th>
-              <th className="text-left px-4 py-2.5 font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
+              <th className="px-4 py-2.5 text-left font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
                 TÍTULO
               </th>
-              <th className="text-left px-4 py-2.5 font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
+              <th className="px-4 py-2.5 text-left font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
                 ESTADO
               </th>
-              <th className="text-left px-4 py-2.5 font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
+              <th className="px-4 py-2.5 text-left font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
                 RIESGO
               </th>
-              <th className="text-right px-4 py-2.5 font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
+              <th className="px-4 py-2.5 text-right font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
                 PUNTOS
               </th>
-              <th className="text-left px-4 py-2.5 font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
+              <th className="px-4 py-2.5 text-left font-inter text-[10px] font-bold tracking-widest text-[var(--muted)]">
                 FUNDAMENTO
               </th>
             </tr>
@@ -77,11 +85,11 @@ export function ListaDetallesDictamen({ detalles }: ListaDetallesDictamenProps) 
             {detalles.map((detalle) => (
               <tr
                 key={`${detalle.tipo}-${detalle.id}`}
-                className="border-b border-[var(--line)] hover:bg-[var(--cream)]/50 transition-colors"
+                className="hover:bg-[var(--cream)]/50 border-b border-[var(--line)] transition-colors"
               >
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-inter font-bold ${obtenerColorCategoria(detalle.categoria)}`}
+                    className={`inline-block rounded-full px-2 py-0.5 font-inter text-[9px] font-bold ${obtenerColorCategoria(detalle.categoria)}`}
                   >
                     {detalle.tipo.toUpperCase()}
                   </span>
@@ -92,7 +100,7 @@ export function ListaDetallesDictamen({ detalles }: ListaDetallesDictamenProps) 
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <p className="font-inter text-[12px] font-semibold text-[var(--ink)] leading-tight max-w-[200px] truncate">
+                  <p className="max-w-[200px] truncate font-inter text-[12px] font-semibold leading-tight text-[var(--ink)]">
                     {detalle.titulo}
                   </p>
                 </td>
@@ -103,7 +111,7 @@ export function ListaDetallesDictamen({ detalles }: ListaDetallesDictamenProps) 
                 </td>
                 <td className="px-4 py-3">
                   <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-inter font-bold border ${obtenerColorRiesgo(detalle.riesgo)}`}
+                    className={`inline-block rounded-full border px-2 py-0.5 font-inter text-[9px] font-bold ${obtenerColorRiesgo(detalle.riesgo)}`}
                   >
                     {detalle.riesgo}
                   </span>
@@ -114,7 +122,7 @@ export function ListaDetallesDictamen({ detalles }: ListaDetallesDictamenProps) 
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="font-inter text-[10px] text-[var(--muted)] max-w-[150px] truncate inline-block">
+                  <span className="inline-block max-w-[150px] truncate font-inter text-[10px] text-[var(--muted)]">
                     {detalle.fundamento ?? '—'}
                   </span>
                 </td>

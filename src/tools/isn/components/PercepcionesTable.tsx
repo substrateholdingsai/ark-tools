@@ -15,11 +15,7 @@ interface PercepcionesTableProps {
   /** Lista de conceptos */
   conceptos: ConceptoPercepcion[];
   /** Callback al cambiar un monto (id, campo, valor) */
-  onChange: (
-    id: number,
-    campo: 'gravado' | 'exento',
-    valor: number
-  ) => void;
+  onChange: (id: number, campo: 'gravado' | 'exento', valor: number) => void;
   /** Callback al cambiar el nombre del concepto */
   onConceptoChange?: (id: number, concepto: string) => void;
   /** Callback al agregar un nuevo concepto */
@@ -40,24 +36,18 @@ export function PercepcionesTable({
   const totalExento = conceptos.reduce((sum, c) => sum + (c.exento || 0), 0);
 
   return (
-    <div className="rounded-[20px] bg-surface border border-line overflow-hidden">
+    <div className="overflow-hidden rounded-[20px] border border-line bg-surface">
       <div className="p-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
             3. Percepciones del periodo
           </h2>
           {onAdd && (
             <button
               type="button"
               onClick={onAdd}
-              className="
-                inline-flex items-center gap-1.5
-                text-[10px] font-bold tracking-[0.16em] text-navy
-                px-3 py-1.5 rounded-full
-                border border-navy/20 hover:border-gold hover:bg-cream/50
-                transition uppercase font-orbitron
-              "
+              className="inline-flex items-center gap-1.5 rounded-full border border-navy/20 px-3 py-1.5 font-orbitron text-[10px] font-bold uppercase tracking-[0.16em] text-navy transition hover:border-gold hover:bg-cream/50"
             >
               <Plus size={12} strokeWidth={2.5} />
               Añadir
@@ -66,9 +56,9 @@ export function PercepcionesTable({
         </div>
 
         {/* Tabla */}
-        <div className="rounded-[14px] border border-line overflow-hidden">
+        <div className="overflow-hidden rounded-[14px] border border-line">
           {/* Header de tabla */}
-          <div className="grid grid-cols-[1fr_90px_90px_36px] bg-navy text-white text-[9px] tracking-[0.16em] font-bold uppercase">
+          <div className="grid grid-cols-[1fr_90px_90px_36px] bg-navy text-[9px] font-bold uppercase tracking-[0.16em] text-white">
             <div className="px-3 py-2.5">Concepto</div>
             <div className="px-3 py-2.5 text-right">Gravado</div>
             <div className="px-3 py-2.5 text-right">Exento</div>
@@ -84,29 +74,19 @@ export function PercepcionesTable({
             conceptos.map((c, index) => (
               <div
                 key={c.id}
-                className={`
-                  grid grid-cols-[1fr_90px_90px_36px] items-center
-                  border-t border-line
-                  ${index % 2 === 0 ? 'bg-surface' : 'bg-surface-2/60'}
-                `}
+                className={`grid grid-cols-[1fr_90px_90px_36px] items-center border-t border-line ${index % 2 === 0 ? 'bg-surface' : 'bg-surface-2/60'} `}
               >
                 {/* Concepto */}
-                <div className="px-3 py-2 min-w-0">
+                <div className="min-w-0 px-3 py-2">
                   {onConceptoChange ? (
                     <input
                       type="text"
                       value={c.concepto}
                       onChange={(e) => onConceptoChange(c.id, e.target.value)}
-                      className="
-                        w-full bg-transparent border border-transparent
-                        hover:border-line focus:border-gold
-                        rounded-md px-1 py-0.5
-                        text-[12px] font-medium text-ink
-                        outline-none transition
-                      "
+                      className="w-full rounded-md border border-transparent bg-transparent px-1 py-0.5 text-[12px] font-medium text-ink outline-none transition hover:border-line focus:border-gold"
                     />
                   ) : (
-                    <span className="text-[12px] font-medium text-ink truncate block">
+                    <span className="block truncate text-[12px] font-medium text-ink">
                       {c.concepto}
                     </span>
                   )}
@@ -122,14 +102,7 @@ export function PercepcionesTable({
                     onChange(c.id, 'gravado', valor);
                   }}
                   placeholder="0"
-                  className="
-                    text-right text-[12px] font-semibold tabular-nums text-navy
-                    bg-transparent border border-transparent
-                    hover:border-gold/40 focus:border-gold
-                    rounded-md px-2 py-1 mr-2
-                    outline-none transition
-                    font-orbitron
-                  "
+                  className="mr-2 rounded-md border border-transparent bg-transparent px-2 py-1 text-right font-orbitron text-[12px] font-semibold tabular-nums text-navy outline-none transition hover:border-gold/40 focus:border-gold"
                 />
 
                 {/* Exento */}
@@ -142,14 +115,7 @@ export function PercepcionesTable({
                     onChange(c.id, 'exento', valor);
                   }}
                   placeholder="0"
-                  className="
-                    text-right text-[12px] tabular-nums text-muted
-                    bg-transparent border border-transparent
-                    hover:border-navy/20 focus:border-navy/40
-                    rounded-md px-2 py-1 mr-2
-                    outline-none transition
-                    font-orbitron
-                  "
+                  className="mr-2 rounded-md border border-transparent bg-transparent px-2 py-1 text-right font-orbitron text-[12px] tabular-nums text-muted outline-none transition hover:border-navy/20 focus:border-navy/40"
                 />
 
                 {/* Botón eliminar */}
@@ -158,13 +124,7 @@ export function PercepcionesTable({
                     <button
                       type="button"
                       onClick={() => onRemove(c.id)}
-                      className="
-                        w-6 h-6 rounded-full
-                        grid place-items-center
-                        text-muted hover:text-red-500
-                        hover:bg-red-50
-                        transition
-                      "
+                      className="grid h-6 w-6 place-items-center rounded-full text-muted transition hover:bg-red-50 hover:text-red-500"
                       aria-label={`Eliminar ${c.concepto}`}
                     >
                       <Trash2 size={12} />
@@ -176,14 +136,14 @@ export function PercepcionesTable({
           )}
 
           {/* Footer de la tabla: totales */}
-          <div className="grid grid-cols-[1fr_90px_90px_36px] bg-cream border-t-2 border-gold/40 items-center">
-            <div className="px-3 py-2.5 text-[11px] font-bold tracking-[0.16em] text-navy uppercase">
+          <div className="grid grid-cols-[1fr_90px_90px_36px] items-center border-t-2 border-gold/40 bg-cream">
+            <div className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-navy">
               Total
             </div>
-            <div className="px-3 py-2.5 text-right font-orbitron font-black text-[13px] text-navy tabular-nums mr-2">
+            <div className="mr-2 px-3 py-2.5 text-right font-orbitron text-[13px] font-black tabular-nums text-navy">
               {formatearMXN(totalGravado)}
             </div>
-            <div className="px-3 py-2.5 text-right font-orbitron font-bold text-[13px] text-muted tabular-nums mr-2">
+            <div className="mr-2 px-3 py-2.5 text-right font-orbitron text-[13px] font-bold tabular-nums text-muted">
               {formatearMXN(totalExento)}
             </div>
             <div />
@@ -191,10 +151,10 @@ export function PercepcionesTable({
         </div>
 
         {/* Nota informativa */}
-        <div className="mt-3 text-[10px] text-muted leading-[1.5]">
-          El <strong className="text-navy">gravado</strong> alimenta la base
-          del ISN. El <strong className="text-navy">exento</strong> se suma al
-          total de percepciones pero no grava.
+        <div className="mt-3 text-[10px] leading-[1.5] text-muted">
+          El <strong className="text-navy">gravado</strong> alimenta la base del ISN. El{' '}
+          <strong className="text-navy">exento</strong> se suma al total de percepciones pero no
+          grava.
         </div>
       </div>
     </div>

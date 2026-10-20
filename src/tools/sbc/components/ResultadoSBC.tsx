@@ -57,41 +57,39 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
   return (
     <LiquidGlassDome padding="lg" radius="dome">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <div className="text-[10px] font-bold tracking-[0.2em] text-muted uppercase font-orbitron">
+          <div className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
             SBC 2026
           </div>
-          <div className="mt-1 font-playfair font-black text-[18px] text-ink leading-tight">
+          <div className="mt-1 font-playfair text-[18px] font-black leading-tight text-ink">
             Resultado
           </div>
         </div>
-        <BadgeGold size="md">
-          Factor {formatearFactor(resultado.factor)}
-        </BadgeGold>
+        <BadgeGold size="md">Factor {formatearFactor(resultado.factor)}</BadgeGold>
       </div>
 
       <GoldDivider spacing="md" />
 
       {/* SBC bruto */}
-      <div className="space-y-3 text-[13px] font-inter">
-        <div className="flex justify-between items-baseline">
+      <div className="space-y-3 font-inter text-[13px]">
+        <div className="flex items-baseline justify-between">
           <span className="text-muted">SBC bruto</span>
-          <span className="font-orbitron font-semibold text-ink tabular-nums">
+          <span className="font-orbitron font-semibold tabular-nums text-ink">
             {formatearMXN(resultado.sbcBruto)}
           </span>
         </div>
 
-        <div className="flex justify-between items-baseline">
+        <div className="flex items-baseline justify-between">
           <span className="text-muted">Salario diario</span>
-          <span className="font-orbitron font-semibold text-ink tabular-nums">
+          <span className="font-orbitron font-semibold tabular-nums text-ink">
             {formatearMXN(parametros.salarioDiario)}
           </span>
         </div>
 
-        <div className="flex justify-between items-baseline">
+        <div className="flex items-baseline justify-between">
           <span className="text-muted">Factor</span>
-          <span className="font-orbitron font-bold text-navy tabular-nums">
+          <span className="font-orbitron font-bold tabular-nums text-navy">
             × {formatearFactor(resultado.factor)}
           </span>
         </div>
@@ -100,19 +98,19 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
       <GoldDivider spacing="md" />
 
       {/* TOTAL — elemento más importante */}
-      <div className="text-center py-2">
-        <div className="text-[10px] font-bold tracking-[0.2em] text-gold-dark uppercase font-orbitron mb-3">
+      <div className="py-2 text-center">
+        <div className="mb-3 font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark">
           SBC final IMSS
         </div>
         <TextMagnified size="xl" className="text-navy">
           {formatearMXN(resultado.sbcFinal)}
         </TextMagnified>
-        <div className="mt-3 text-[10px] tracking-[0.16em] font-semibold text-muted font-orbitron">
+        <div className="mt-3 font-orbitron text-[10px] font-semibold tracking-[0.16em] text-muted">
           {resultado.tipoTope === null
             ? '✓ Dentro de rango IMSS'
             : resultado.tipoTope === 'max'
-            ? `⚑ Tope 25 UMAs aplicado`
-            : `⚑ Mínimo aplicado`}
+              ? `⚑ Tope 25 UMAs aplicado`
+              : `⚑ Mínimo aplicado`}
         </div>
       </div>
 
@@ -121,41 +119,31 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
         <>
           <GoldDivider spacing="md" />
           <div
-            className={`
-              rounded-[12px] border p-3 flex gap-2.5
-              ${
-                resultado.tipoTope === 'max'
-                  ? 'bg-amber-50 border-amber-200'
-                  : 'bg-blue-50 border-blue-200'
-              }
-            `}
+            className={`flex gap-2.5 rounded-[12px] border p-3 ${
+              resultado.tipoTope === 'max'
+                ? 'border-amber-200 bg-amber-50'
+                : 'border-blue-200 bg-blue-50'
+            } `}
           >
             <AlertTriangle
               size={16}
               strokeWidth={2.5}
-              className={`shrink-0 mt-0.5 ${
+              className={`mt-0.5 shrink-0 ${
                 resultado.tipoTope === 'max' ? 'text-amber-600' : 'text-blue-700'
               }`}
             />
             <div className="text-[11px] leading-[1.5]">
               {resultado.tipoTope === 'max' ? (
                 <>
-                  <strong className="text-amber-700">
-                    Tope de 25 UMAs aplicado:
-                  </strong>{' '}
-                  El SBC bruto ({formatearMXN(resultado.sbcBruto)}) supera el
-                  tope de {formatearMXN(CONSTANTES_IMSS.topePesos)}. El IMSS
-                  cotiza sobre el tope.
+                  <strong className="text-amber-700">Tope de 25 UMAs aplicado:</strong> El SBC bruto
+                  ({formatearMXN(resultado.sbcBruto)}) supera el tope de{' '}
+                  {formatearMXN(CONSTANTES_IMSS.topePesos)}. El IMSS cotiza sobre el tope.
                 </>
               ) : (
                 <>
-                  <strong className="text-blue-700">
-                    Salario mínimo aplicado:
-                  </strong>{' '}
-                  El SBC bruto ({formatearMXN(resultado.sbcBruto)}) está por
-                  debajo del mínimo frontera (
-                  {formatearMXN(CONSTANTES_IMSS.salarioMinimo)}). Se ajusta al
-                  mínimo.
+                  <strong className="text-blue-700">Salario mínimo aplicado:</strong> El SBC bruto (
+                  {formatearMXN(resultado.sbcBruto)}) está por debajo del mínimo frontera (
+                  {formatearMXN(CONSTANTES_IMSS.salarioMinimo)}). Se ajusta al mínimo.
                 </>
               )}
             </div>
@@ -184,7 +172,7 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
           )}
         </GlassButton>
 
-        <div className="mt-3 text-center text-[10px] tracking-[0.12em] text-muted font-orbitron flex items-center justify-center gap-1.5">
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-center font-orbitron text-[10px] tracking-[0.12em] text-muted">
           <CheckCircle2 size={10} strokeWidth={2.5} />
           Cálculo conforme LSS Art. 27
         </div>

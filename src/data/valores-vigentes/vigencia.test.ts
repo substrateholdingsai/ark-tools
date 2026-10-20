@@ -10,11 +10,7 @@ const base: Omit<ValorFiscal, 'id' | 'vigencia' | 'fuente' | 'verificadoPor'> = 
   esProyeccion: false,
 };
 
-function makeValor(
-  id: string,
-  inicio: string,
-  fin: string | null
-): ValorFiscal {
+function makeValor(id: string, inicio: string, fin: string | null): ValorFiscal {
   return {
     ...base,
     id,
@@ -82,14 +78,14 @@ describe('evaluarLote', () => {
 
   it('clasifica correctamente un lote mixto', () => {
     const lote = [
-      makeValor('a', '2026-01-01', '2026-12-31'),   // vigente
-      makeValor('b', '2026-01-01', '2026-07-01'),   // proximo
-      makeValor('c', '2026-01-01', '2026-03-01'),   // vencido
+      makeValor('a', '2026-01-01', '2026-12-31'), // vigente
+      makeValor('b', '2026-01-01', '2026-07-01'), // proximo
+      makeValor('c', '2026-01-01', '2026-03-01'), // vencido
     ];
     const r = evaluarLote(lote, { fechaReferencia: ref });
-    expect(r.vigentes.map(v => v.id)).toEqual(['a']);
-    expect(r.proximosAVencer.map(v => v.id)).toEqual(['b']);
-    expect(r.vencidos.map(v => v.id)).toEqual(['c']);
-    expect(r.criticos.map(v => v.id)).toEqual(['c']);
+    expect(r.vigentes.map((v) => v.id)).toEqual(['a']);
+    expect(r.proximosAVencer.map((v) => v.id)).toEqual(['b']);
+    expect(r.vencidos.map((v) => v.id)).toEqual(['c']);
+    expect(r.criticos.map((v) => v.id)).toEqual(['c']);
   });
 });

@@ -5,11 +5,7 @@
  * @see https://developer.clip.mx/docs/getting-started
  */
 
-import type {
-  ClipCheckoutPayload,
-  ClipCheckoutResult,
-  ComisionClip,
-} from '../types';
+import type { ClipCheckoutPayload, ClipCheckoutResult, ComisionClip } from '../types';
 
 /**
  * Tasas de sobretasa por Meses Sin Intereses (MSI) de Clip en México
@@ -61,7 +57,10 @@ export function validarSolicitudCobro(payload: ClipCheckoutPayload): {
   }
 
   if (payload.amount > 500000) {
-    return { valido: false, error: 'El monto máximo por transacción en Clip es de $500,000.00 MXN.' };
+    return {
+      valido: false,
+      error: 'El monto máximo por transacción en Clip es de $500,000.00 MXN.',
+    };
   }
 
   if (!payload.purchase_description || payload.purchase_description.trim().length === 0) {
@@ -78,9 +77,7 @@ export function validarSolicitudCobro(payload: ClipCheckoutPayload): {
 /**
  * Solicita la creación de un nuevo Checkout en la API de Clip a través del backend intermedio
  */
-export async function crearLinkPagoClip(
-  payload: ClipCheckoutPayload
-): Promise<ClipCheckoutResult> {
+export async function crearLinkPagoClip(payload: ClipCheckoutPayload): Promise<ClipCheckoutResult> {
   const validacion = validarSolicitudCobro(payload);
   if (!validacion.valido) {
     throw new Error(validacion.error);

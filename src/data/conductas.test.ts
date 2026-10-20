@@ -20,7 +20,7 @@ describe('conductas.ts', () => {
   });
 
   it('tiene IDs únicos y consecutivos', () => {
-    const ids = CONDUCTAS_AV.map(conducta => conducta.id);
+    const ids = CONDUCTAS_AV.map((conducta) => conducta.id);
 
     expect(new Set(ids).size).toBe(ids.length);
     expect(ids).toEqual(Array.from({ length: 12 }, (_, index) => index + 1));
@@ -75,7 +75,7 @@ describe('conductas.ts', () => {
   });
 
   it('los hitos regulatorios tienen orden consecutivo', () => {
-    const orden = TIMELINE_REGULATORIO_AV.map(hito => hito.orden);
+    const orden = TIMELINE_REGULATORIO_AV.map((hito) => hito.orden);
 
     expect(orden).toEqual([1, 2, 3, 4, 5, 6]);
   });
@@ -86,11 +86,11 @@ describe('conductas.ts', () => {
 
   it('los umbrales UMA tienen cantidad válida', () => {
     const umbralOperacion = UMBRALES_REPORTE_AV.find(
-      umbral => umbral.id === 'operacion-individual',
+      (umbral) => umbral.id === 'operacion-individual'
     );
 
     const umbralComisiones = UMBRALES_REPORTE_AV.find(
-      umbral => umbral.id === 'comisiones-honorarios',
+      (umbral) => umbral.id === 'comisiones-honorarios'
     );
 
     expect(umbralOperacion?.cantidadUMA).toBe(210);
@@ -102,13 +102,9 @@ describe('conductas.ts', () => {
   });
 
   it('la frontera tiene 3 reglas legales y 3 ilegales', () => {
-    const legales = FRONTERA_LEGAL_AV.filter(
-      regla => regla.estatus === 'LEGAL',
-    ).length;
+    const legales = FRONTERA_LEGAL_AV.filter((regla) => regla.estatus === 'LEGAL').length;
 
-    const ilegales = FRONTERA_LEGAL_AV.filter(
-      regla => regla.estatus === 'ILEGAL',
-    ).length;
+    const ilegales = FRONTERA_LEGAL_AV.filter((regla) => regla.estatus === 'ILEGAL').length;
 
     expect(legales).toBe(3);
     expect(ilegales).toBe(3);

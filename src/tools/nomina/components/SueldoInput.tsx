@@ -56,31 +56,29 @@ export function SueldoInput({ parametros, onChange }: SueldoInputProps) {
   };
 
   return (
-    <div className="rounded-[20px] bg-surface border border-line overflow-hidden">
+    <div className="overflow-hidden rounded-[20px] border border-line bg-surface">
       {/* Barra decorativa superior */}
       <div className="h-1 w-full bg-gradient-to-r from-navy via-navy to-gold" />
 
-      <div className="p-5 md:p-6 space-y-6">
+      <div className="space-y-6 p-5 md:p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="text-[11px] font-bold tracking-[0.16em] text-muted uppercase">
+          <h2 className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
             2. Percepciones del período
           </h2>
-          <span className="text-[10px] font-mono text-muted uppercase">
-            {parametros.periodo}
-          </span>
+          <span className="font-mono text-[10px] uppercase text-muted">{parametros.periodo}</span>
         </div>
 
         {/* Input Sueldo Bruto */}
         <div>
-          <div className="flex items-center justify-between mb-2">
+          <div className="mb-2 flex items-center justify-between">
             <label
               htmlFor="sueldo-bruto"
-              className="text-[11px] font-bold tracking-[0.16em] text-navy uppercase"
+              className="text-[11px] font-bold uppercase tracking-[0.16em] text-navy"
             >
               Sueldo Bruto ({infoPeriodo.label})
             </label>
-            <span className="text-[9px] px-2 py-0.5 rounded-full bg-surface-2 text-muted font-orbitron">
+            <span className="rounded-full bg-surface-2 px-2 py-0.5 font-orbitron text-[9px] text-muted">
               BASE GRAVABLE
             </span>
           </div>
@@ -96,20 +94,14 @@ export function SueldoInput({ parametros, onChange }: SueldoInputProps) {
               step="100"
               value={parametros.sueldoBruto || ''}
               onChange={handleSueldoChange}
-              className="
-                w-full pl-8 pr-4 py-3 rounded-[14px]
-                bg-surface-2 border border-line
-                font-orbitron font-bold text-navy text-[18px]
-                focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20
-                transition-all
-              "
+              className="w-full rounded-[14px] border border-line bg-surface-2 py-3 pl-8 pr-4 font-orbitron text-[18px] font-bold text-navy transition-all focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
               placeholder="0.00"
             />
           </div>
 
           {/* Presets rápidos */}
-          <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-            <span className="text-[10px] font-medium text-muted mr-1">Presets:</span>
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-[10px] font-medium text-muted">Presets:</span>
             {PRESETS_SUELDO.map((preset) => {
               const valorAdaptado = calcularPresetPeriodo(preset.valor);
               const activo = Math.abs(parametros.sueldoBruto - valorAdaptado) < 1;
@@ -118,14 +110,11 @@ export function SueldoInput({ parametros, onChange }: SueldoInputProps) {
                   key={preset.label}
                   type="button"
                   onClick={() => handlePresetClick(preset.valor)}
-                  className={`
-                    px-2.5 py-1 rounded-[8px] text-[10px] font-orbitron font-semibold transition-all
-                    ${
-                      activo
-                        ? 'bg-gold text-navy shadow-sm'
-                        : 'bg-surface-2 border border-line text-muted hover:border-gold hover:text-navy'
-                    }
-                  `}
+                  className={`rounded-[8px] px-2.5 py-1 font-orbitron text-[10px] font-semibold transition-all ${
+                    activo
+                      ? 'bg-gold text-navy shadow-sm'
+                      : 'border border-line bg-surface-2 text-muted hover:border-gold hover:text-navy'
+                  } `}
                 >
                   {preset.label} (${valorAdaptado.toLocaleString('es-MX')})
                 </button>
@@ -135,19 +124,17 @@ export function SueldoInput({ parametros, onChange }: SueldoInputProps) {
         </div>
 
         {/* Días trabajados y SBC estimado en 2 columnas */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-line">
+        <div className="grid grid-cols-1 gap-4 border-t border-line pt-2 sm:grid-cols-2">
           {/* Días trabajados */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="mb-1.5 flex items-center justify-between">
               <label
                 htmlFor="dias-trabajados"
-                className="text-[10px] font-bold tracking-[0.14em] text-muted uppercase"
+                className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted"
               >
                 Días Trabajados
               </label>
-              <span className="text-[10px] font-mono text-muted">
-                de {parametros.diasPeriodo}d
-              </span>
+              <span className="font-mono text-[10px] text-muted">de {parametros.diasPeriodo}d</span>
             </div>
             <input
               id="dias-trabajados"
@@ -161,27 +148,20 @@ export function SueldoInput({ parametros, onChange }: SueldoInputProps) {
                   Math.min(parametros.diasPeriodo, Math.max(0, parseFloat(e.target.value) || 0))
                 )
               }
-              className="
-                w-full px-3 py-2 rounded-[12px]
-                bg-surface-2 border border-line
-                font-orbitron font-bold text-navy text-[14px]
-                focus:border-gold focus:outline-none
-              "
+              className="w-full rounded-[12px] border border-line bg-surface-2 px-3 py-2 font-orbitron text-[14px] font-bold text-navy focus:border-gold focus:outline-none"
             />
           </div>
 
           {/* Salario Base de Cotización (SBC) */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
+            <div className="mb-1.5 flex items-center justify-between">
               <label
                 htmlFor="sbc-diario"
-                className="text-[10px] font-bold tracking-[0.14em] text-muted uppercase"
+                className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted"
               >
                 SBC Diario (IMSS)
               </label>
-              <span className="text-[10px] font-mono text-muted">
-                Factor ~1.05
-              </span>
+              <span className="font-mono text-[10px] text-muted">Factor ~1.05</span>
             </div>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[12px] font-bold text-muted">
@@ -193,15 +173,8 @@ export function SueldoInput({ parametros, onChange }: SueldoInputProps) {
                 min="0"
                 step="10"
                 value={parametros.sbcDiario || ''}
-                onChange={(e) =>
-                  onChange('sbcDiario', parseFloat(e.target.value) || 0)
-                }
-                className="
-                  w-full pl-7 pr-3 py-2 rounded-[12px]
-                  bg-surface-2 border border-line
-                  font-orbitron font-bold text-navy text-[14px]
-                  focus:border-gold focus:outline-none
-                "
+                onChange={(e) => onChange('sbcDiario', parseFloat(e.target.value) || 0)}
+                className="w-full rounded-[12px] border border-line bg-surface-2 py-2 pl-7 pr-3 font-orbitron text-[14px] font-bold text-navy focus:border-gold focus:outline-none"
               />
             </div>
           </div>

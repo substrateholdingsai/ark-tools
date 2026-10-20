@@ -51,12 +51,5 @@ module.exports = {
       },
     },
   ],
-  ignorePatterns: [
-    'dist',
-    'node_modules',
-    '.wrangler',
-    'coverage',
-    '*.config.js',
-    '*.config.ts',
-  ],
+  ignorePatterns: ['dist', 'node_modules', '.wrangler', 'coverage', '*.config.js', '*.config.ts'],
 };

@@ -14,12 +14,7 @@
  *   SBC final = clamp(SBC bruto, salarioMinimo, 25 UMAs)
  */
 
-import type {
-  FactorIntegracion,
-  ParametrosSBC,
-  ResultadoSBC,
-  TipoTope,
-} from '../types';
+import type { FactorIntegracion, ParametrosSBC, ResultadoSBC, TipoTope } from '../types';
 import { CONSTANTES_IMSS } from '../data/uma';
 
 // ─────────────────────────────────────────────────────────────────────
@@ -32,9 +27,7 @@ import { CONSTANTES_IMSS } from '../data/uma';
  * Fórmula IMSS:
  *   Factor = 1 + (diasVacaciones × primaVacacional/100 + diasAguinaldo) / 365
  */
-export function calcularFactorIntegracion(
-  parametros: ParametrosSBC
-): FactorIntegracion {
+export function calcularFactorIntegracion(parametros: ParametrosSBC): FactorIntegracion {
   const { diasVacaciones, primaVacacional, diasAguinaldo } = parametros;
 
   // Días de prima vacacional (proporcional)
@@ -95,9 +88,7 @@ export function calcularSBCFinal(
  * Calcula el resultado completo del SBC.
  * Función principal que agrupa todos los cálculos.
  */
-export function calcularResultadoSBC(
-  parametros: ParametrosSBC
-): ResultadoSBC {
+export function calcularResultadoSBC(parametros: ParametrosSBC): ResultadoSBC {
   const desglose = calcularFactorIntegracion(parametros);
 
   // SBC bruto = salario diario × factor
@@ -107,10 +98,7 @@ export function calcularResultadoSBC(
   const { sbcFinal, tipoTope } = calcularSBCFinal(sbcBruto);
 
   // Porcentaje del tope (0-100)
-  const porcentajeDelTope = Math.min(
-    100,
-    (sbcFinal / CONSTANTES_IMSS.topePesos) * 100
-  );
+  const porcentajeDelTope = Math.min(100, (sbcFinal / CONSTANTES_IMSS.topePesos) * 100);
 
   return {
     factor: desglose.factor,
@@ -159,10 +147,7 @@ export function formatearNumero(valor: number): string {
 /**
  * Genera el texto de resumen para copiar al portapapeles.
  */
-export function generarResumenTexto(
-  parametros: ParametrosSBC,
-  resultado: ResultadoSBC
-): string {
+export function generarResumenTexto(parametros: ParametrosSBC, resultado: ResultadoSBC): string {
   const partes = [
     `SBC 2026: ${formatearMXN(resultado.sbcFinal)}`,
     `Factor: ${formatearFactor(resultado.factor)}`,

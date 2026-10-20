@@ -21,25 +21,28 @@ export function AlertasVigencia({ config }: { config?: Partial<ConfigVigencia> }
   const todas = [...criticos, ...vencidos, ...proximosAVencer];
 
   // Deduplicar por ID (un valor puede estar en criticos y vencidos)
-  const unicas = new Map(todas.map(v => [v.id, v])).values();
+  const unicas = new Map(todas.map((v) => [v.id, v])).values();
 
   return (
     <div className="mx-auto my-3 max-w-[1280px] space-y-2 px-6 md:px-10">
-      {Array.from(unicas).map(v => {
+      {Array.from(unicas).map((v) => {
         const vigencia = evaluarVigencia(v, config);
-        const esCritico = criticos.some(c => c.id === v.id);
+        const esCritico = criticos.some((c) => c.id === v.id);
         return (
-          <div key={v.id} className={`flex items-center gap-3 p-3 rounded-xl border ${
-            esCritico ? 'bg-navy/10 border-navy-dark' : 'bg-surface-2 border-line'
-          }`}>
-            <span className="font-inter text-sm text-ink flex-1">
+          <div
+            key={v.id}
+            className={`flex items-center gap-3 rounded-xl border p-3 ${
+              esCritico ? 'border-navy-dark bg-navy/10' : 'border-line bg-surface-2'
+            }`}
+          >
+            <span className="flex-1 font-inter text-sm text-ink">
               {v.nombre} — {vigencia.mensaje}
             </span>
             <a
               href={v.fuente.urlDOF}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gold underline text-xs hover:no-underline"
+              className="text-xs text-gold underline hover:no-underline"
             >
               Ver DOF
             </a>

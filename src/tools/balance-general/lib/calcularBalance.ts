@@ -43,7 +43,10 @@ export function analizarBalance(
   const procesar = (arr: CuentaBalance[], baseTotal: number) => {
     for (const c of arr) {
       const ma = Number(c.montoActual) || 0;
-      const man = c.montoAnterior === null || c.montoAnterior === undefined ? null : Number(c.montoAnterior) || 0;
+      const man =
+        c.montoAnterior === null || c.montoAnterior === undefined
+          ? null
+          : Number(c.montoAnterior) || 0;
       let vaAbs: number | null = null;
       let vaPct: number | null = null;
       if (man !== null && Math.abs(man) > 1e-9) {

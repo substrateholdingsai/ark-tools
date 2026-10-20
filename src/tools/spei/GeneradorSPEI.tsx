@@ -10,23 +10,14 @@
  */
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import {
-  ArrowLeft,
-  Check,
-  Zap,
-  Lock,
-  Globe,
-} from 'lucide-react';
+import { ArrowLeft, Check, Zap, Lock, Globe } from 'lucide-react';
 import {
   DesgloseComisionCard,
   FormularioCobro,
   LinkGeneradoCard,
   HistorialCobrosTable,
 } from './components';
-import {
-  calcularComisionClip,
-  crearLinkPagoClip,
-} from './lib/clipClient';
+import { calcularComisionClip, crearLinkPagoClip } from './lib/clipClient';
 import type {
   ClipCheckoutPayload,
   ClipCheckoutResult,
@@ -41,9 +32,7 @@ interface GeneradorSPEIProps {
 }
 
 export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
-  const [comision, setComision] = useState<ComisionClip>(() =>
-    calcularComisionClip(1500, 0)
-  );
+  const [comision, setComision] = useState<ComisionClip>(() => calcularComisionClip(1500, 0));
   const [isLoading, setIsLoading] = useState(false);
   const [ultimoResultado, setUltimoResultado] = useState<ClipCheckoutResult | null>(null);
   const [clienteActual, setClienteActual] = useState<string | undefined>();
@@ -134,12 +123,12 @@ export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
   );
 
   return (
-    <div className="mx-auto max-w-[1280px] px-6 md:px-10 py-12 space-y-10">
+    <div className="mx-auto max-w-[1280px] space-y-10 px-6 py-12 md:px-10">
       {/* Botón Volver */}
       {onBack && (
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-muted hover:text-gold transition-colors"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-muted transition-colors hover:text-gold"
         >
           <ArrowLeft className="h-4 w-4" />
           VOLVER AL DASHBOARD
@@ -147,21 +136,21 @@ export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
       )}
 
       {/* Encabezado Principal */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-white/10 pb-8">
+      <div className="flex flex-col justify-between gap-6 border-b border-white/10 pb-8 md:flex-row md:items-end">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-[0.2em] text-gold uppercase orbitron font-orbitron">
+            <span className="orbitron font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
               CLIP DEVELOPERS API
             </span>
             <span className="text-white/20">•</span>
             <span className="text-xs text-muted">Checkout Redireccionado v2</span>
           </div>
-          <h1 className="mt-2 font-playfair font-black text-3xl md:text-5xl text-ink tracking-tight">
+          <h1 className="mt-2 font-playfair text-3xl font-black tracking-tight text-ink md:text-5xl">
             Generador de Links de Pago
           </h1>
-          <p className="mt-2 text-sm text-muted max-w-2xl">
-            Cobra honorarios contables, declaraciones y servicios de asesoría con Clip.
-            Tus clientes pueden pagar con tarjeta de crédito, débito o en efectivo en OXXO®.
+          <p className="mt-2 max-w-2xl text-sm text-muted">
+            Cobra honorarios contables, declaraciones y servicios de asesoría con Clip. Tus clientes
+            pueden pagar con tarjeta de crédito, débito o en efectivo en OXXO®.
           </p>
         </div>
       </div>
@@ -179,12 +168,10 @@ export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
       )}
 
       {/* Grid de Formulario y Desglose */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         {/* Formulario */}
-        <section className="lg:col-span-7 bg-surface-raised/40 p-6 md:p-8 rounded-2xl border border-white/10 shadow-xl">
-          <h2 className="font-playfair text-xl font-bold text-ink mb-6">
-            Configuración del Cobro
-          </h2>
+        <section className="bg-surface-raised/40 rounded-2xl border border-white/10 p-6 shadow-xl md:p-8 lg:col-span-7">
+          <h2 className="mb-6 font-playfair text-xl font-bold text-ink">Configuración del Cobro</h2>
           <FormularioCobro
             onGenerarLink={handleGenerarLink}
             onMontoChange={handleMontoChange}
@@ -193,7 +180,7 @@ export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
         </section>
 
         {/* Desglose de Comisión en tiempo real */}
-        <section className="lg:col-span-5 space-y-6">
+        <section className="space-y-6 lg:col-span-5">
           <DesgloseComisionCard comision={comision} />
         </section>
       </div>
@@ -210,7 +197,7 @@ export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
       )}
 
       {/* Badges de Garantía */}
-      <div className="flex flex-wrap items-center justify-center gap-6 pt-4 text-xs text-muted border-t border-white/5">
+      <div className="flex flex-wrap items-center justify-center gap-6 border-t border-white/5 pt-4 text-xs text-muted">
         <div className="flex items-center gap-2">
           <Lock className="h-4 w-4 text-emerald-400" />
           <span>Cumplimiento PCI DSS Nivel 1 & 3D Secure</span>
@@ -227,7 +214,7 @@ export function GeneradorSPEI({ onBack }: GeneradorSPEIProps) {
 
       {/* Toast */}
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl bg-navy border border-gold/50 px-4 py-3 text-xs font-medium text-ink shadow-2xl shadow-gold/20 animate-fadeIn">
+        <div className="animate-fadeIn fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-gold/50 bg-navy px-4 py-3 text-xs font-medium text-ink shadow-2xl shadow-gold/20">
           <Check className="h-4 w-4 text-emerald-400" />
           <span>{toast}</span>
         </div>

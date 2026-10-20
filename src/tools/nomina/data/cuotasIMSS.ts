@@ -12,7 +12,7 @@
  *  - sbc: Salario Base de Cotización
  *  - uma: UMA diaria (valor del día)
  *  - sbc_excedente: Excedente del SBC sobre 3 UMAs
- * 
+ *
  * Valores fiscales (UMA) provenientes del catálogo centralizado de valores vigentes.
  */
 
@@ -20,7 +20,7 @@ import type { CuotaIMSS } from '../types';
 import { CATALOGO_2026 } from '@/data/valores-vigentes/catalogo';
 
 const getValor = (id: string): number => {
-  const item = CATALOGO_2026.find(v => v.id === id);
+  const item = CATALOGO_2026.find((v) => v.id === id);
   if (!item) throw new Error(`Valor no encontrado en catálogo: ${id}`);
   return item.valor as number;
 };
@@ -40,7 +40,7 @@ export const CUOTAS_OBRERO: CuotaIMSS[] = [
   {
     ramo: 'Enfermedades y Maternidad (excedente)',
     fundamento: 'LSS Art. 25 Frac. II',
-    porcentaje: 0.60,
+    porcentaje: 0.6,
     base: 'sbc_excedente',
     monto: 0,
   },
@@ -61,7 +61,7 @@ export const CUOTAS_OBRERO: CuotaIMSS[] = [
   {
     ramo: 'Guarderías y Prestaciones Sociales',
     fundamento: 'LSS Art. 211',
-    porcentaje: 0.00, // No aplica para obrero en 2026
+    porcentaje: 0.0, // No aplica para obrero en 2026
     base: 'sbc',
     monto: 0,
   },

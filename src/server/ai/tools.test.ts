@@ -47,9 +47,13 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     const res = await executeAiTool('consultar_progreso_guia', {}, mockEnv, 'tenant_abc');
 
     expect(res.success).toBe(true);
-    expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('FROM guia_progress WHERE tenant_id = ?'));
+    expect(mockPrepare).toHaveBeenCalledWith(
+      expect.stringContaining('FROM guia_progress WHERE tenant_id = ?')
+    );
     expect(mockBind).toHaveBeenCalledWith('tenant_abc');
-    expect(res.data).toEqual([{ step_id: 1, draft_text: 'Borrador test', updated_at: '2026-10-15' }]);
+    expect(res.data).toEqual([
+      { step_id: 1, draft_text: 'Borrador test', updated_at: '2026-10-15' },
+    ]);
   });
 
   it('ejecuta consultar_auditoria_ledger con caso_id y límite', async () => {
@@ -70,7 +74,9 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     );
 
     expect(res.success).toBe(true);
-    expect(mockPrepare).toHaveBeenCalledWith(expect.stringContaining('FROM arkangel_ledger WHERE tenant_id = ? AND caso_id = ?'));
+    expect(mockPrepare).toHaveBeenCalledWith(
+      expect.stringContaining('FROM arkangel_ledger WHERE tenant_id = ? AND caso_id = ?')
+    );
     expect(mockBind).toHaveBeenCalledWith('tenant_test', 'CASO-01', 5);
   });
 
@@ -135,10 +141,20 @@ describe('Workers AI — Tools Catalog & Executor', () => {
         }),
         all: vi.fn(async () => {
           if (query.includes('GROUP BY status')) {
-            return { results: [{ status: 'Nuevo', count: 30 }, { status: 'WhatsApp_enviado', count: 15 }] };
+            return {
+              results: [
+                { status: 'Nuevo', count: 30 },
+                { status: 'WhatsApp_enviado', count: 15 },
+              ],
+            };
           }
           if (query.includes('GROUP BY ciudad')) {
-            return { results: [{ ciudad: 'Merida', count: 25 }, { ciudad: 'Metropolitana', count: 20 }] };
+            return {
+              results: [
+                { ciudad: 'Merida', count: 25 },
+                { ciudad: 'Metropolitana', count: 20 },
+              ],
+            };
           }
           if (query.includes('FROM leads_ark_tools')) {
             return {

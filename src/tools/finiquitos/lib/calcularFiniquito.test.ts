@@ -116,7 +116,7 @@ describe('Calculadora de Finiquitos y Liquidaciones (LFT)', () => {
     });
   });
 
-describe('Cálculo con Prima de Antigüedad y Tope Art. 486 LFT', () => {
+  describe('Cálculo con Prima de Antigüedad y Tope Art. 486 LFT', () => {
     it('aplica tope de 2 SMG cuando el salario diario excede el límite', () => {
       // Salario diario $1,000 > Tope (2 × $315.04 = $630.08)
       const entrada: EntradaFiniquito = {

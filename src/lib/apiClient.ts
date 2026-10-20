@@ -511,7 +511,9 @@ export const apiClient = {
       if (tenantId) {
         headers['x-tenant-id'] = tenantId;
       }
-      const url = tenantId ? `/api/ai/quota?tenant_id=${encodeURIComponent(tenantId)}` : '/api/ai/quota';
+      const url = tenantId
+        ? `/api/ai/quota?tenant_id=${encodeURIComponent(tenantId)}`
+        : '/api/ai/quota';
       const res = await apiFetch(url, { headers });
       if (!res.ok) {
         return {
@@ -560,7 +562,8 @@ export const apiClient = {
           return {
             quota_exceeded: true,
             result: error.result || error.message || 'Límite de consultas gratuitas alcanzado.',
-            payment_url: error.payment_url || 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+            payment_url:
+              error.payment_url || 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
             quota: {
               used: error.current_usage || 10,
               limit: error.limit || 10,
@@ -955,7 +958,9 @@ export const apiClient = {
       });
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
-        throw new Error(error.error || error.message || 'Error al marcar cuenta como predeterminada');
+        throw new Error(
+          error.error || error.message || 'Error al marcar cuenta como predeterminada'
+        );
       }
       return (await res.json()) as { ok: boolean };
     },

@@ -4,16 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  DollarSign,
-  FileText,
-  User,
-  Phone,
-  Tag,
-  Calendar,
-  Sparkles,
-  Loader2,
-} from 'lucide-react';
+import { DollarSign, FileText, User, Phone, Tag, Calendar, Sparkles, Loader2 } from 'lucide-react';
 import { GlassButton } from '@/components/ui';
 import type { ClipCheckoutPayload } from '../types';
 
@@ -87,12 +78,12 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
     <form onSubmit={handleSubmit} className="w-full space-y-6">
       {/* Monto */}
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+        <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
           <DollarSign className="h-3.5 w-3.5 text-gold" />
           Monto a cobrar (MXN)
         </label>
         <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted pointer-events-none">
+          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold text-muted">
             $
           </span>
           <input
@@ -103,23 +94,23 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
             required
             value={montoStr}
             onChange={(e) => handleMontoInputChange(e.target.value)}
-            className="w-full pl-9 pr-4 py-3.5 rounded-2xl bg-surface-raised border border-white/10 text-xl font-bold font-mono text-ink placeholder:text-muted/40 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/40 transition-colors"
+            className="bg-surface-raised w-full rounded-2xl border border-white/10 py-3.5 pl-9 pr-4 font-mono text-xl font-bold text-ink transition-colors placeholder:text-muted/40 focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40"
             placeholder="0.00"
           />
         </div>
 
         {/* Botones rápidos de monto */}
         <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="text-[10px] text-muted uppercase font-bold mr-1">Rápidos:</span>
+          <span className="mr-1 text-[10px] font-bold uppercase text-muted">Rápidos:</span>
           {PRESETS_MONTO.map((p) => (
             <button
               type="button"
               key={p}
               onClick={() => handlePresetClick(p)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-mono font-medium transition-colors border ${
+              className={`rounded-lg border px-2.5 py-1 font-mono text-xs font-medium transition-colors ${
                 parseFloat(montoStr) === p
-                  ? 'bg-gold/20 text-gold border-gold/40 font-bold'
-                  : 'bg-surface hover:bg-surface-raised text-muted border-white/5'
+                  ? 'border-gold/40 bg-gold/20 font-bold text-gold'
+                  : 'hover:bg-surface-raised border-white/5 bg-surface text-muted'
               }`}
             >
               ${p.toLocaleString('es-MX')}
@@ -130,7 +121,7 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
 
       {/* Concepto / Descripción */}
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center justify-between">
+        <label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted">
           <span className="flex items-center gap-1.5">
             <FileText className="h-3.5 w-3.5 text-gold" />
             Concepto del Cobro
@@ -144,14 +135,14 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
           value={concepto}
           onChange={(e) => setConcepto(e.target.value)}
           placeholder="Ej. Honorarios Contables Mensuales Marzo 2026"
-          className="w-full px-4 py-3 rounded-xl bg-surface-raised border border-white/10 text-xs text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/40 transition-colors"
+          className="bg-surface-raised w-full rounded-xl border border-white/10 px-4 py-3 text-xs text-ink transition-colors placeholder:text-muted/50 focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40"
         />
       </div>
 
       {/* Cliente y Teléfono WhatsApp */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
             <User className="h-3.5 w-3.5 text-gold" />
             Nombre del Cliente (Opcional)
           </label>
@@ -160,12 +151,12 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
             value={cliente}
             onChange={(e) => setCliente(e.target.value)}
             placeholder="Ej. Juan Pérez / Empresa SA"
-            className="w-full px-4 py-3 rounded-xl bg-surface-raised border border-white/10 text-xs text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/40 transition-colors"
+            className="bg-surface-raised w-full rounded-xl border border-white/10 px-4 py-3 text-xs text-ink transition-colors placeholder:text-muted/50 focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
             <Phone className="h-3.5 w-3.5 text-emerald-400" />
             WhatsApp del Cliente (Opcional)
           </label>
@@ -174,15 +165,15 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
             value={telefono}
             onChange={(e) => setTelefono(e.target.value)}
             placeholder="Ej. 5512345678"
-            className="w-full px-4 py-3 rounded-xl bg-surface-raised border border-white/10 text-xs text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/40 transition-colors"
+            className="bg-surface-raised w-full rounded-xl border border-white/10 px-4 py-3 text-xs text-ink transition-colors placeholder:text-muted/50 focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40"
           />
         </div>
       </div>
 
       {/* Referencia interna y Expiración */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
             <Tag className="h-3.5 w-3.5 text-gold" />
             Folio o Referencia Interna
           </label>
@@ -191,19 +182,19 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
             value={referencia}
             onChange={(e) => setReferencia(e.target.value)}
             placeholder="Ej. FAC-2026-088"
-            className="w-full px-4 py-3 rounded-xl bg-surface-raised border border-white/10 text-xs text-ink placeholder:text-muted/50 focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/40 transition-colors"
+            className="bg-surface-raised w-full rounded-xl border border-white/10 px-4 py-3 text-xs text-ink transition-colors placeholder:text-muted/50 focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
+          <label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
             <Calendar className="h-3.5 w-3.5 text-gold" />
             Vigencia del Enlace
           </label>
           <select
             value={diasExpiracion}
             onChange={(e) => setDiasExpiracion(Number(e.target.value))}
-            className="w-full px-4 py-3 rounded-xl bg-surface-raised border border-white/10 text-xs text-ink focus:outline-none focus:border-gold/60 focus:ring-1 focus:ring-gold/40 transition-colors cursor-pointer"
+            className="bg-surface-raised w-full cursor-pointer rounded-xl border border-white/10 px-4 py-3 text-xs text-ink transition-colors focus:border-gold/60 focus:outline-none focus:ring-1 focus:ring-gold/40"
           >
             <option value={1}>Expira en 24 horas</option>
             <option value={3}>Expira en 3 días</option>
@@ -216,7 +207,7 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
 
       {/* Meses Sin Intereses */}
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-wider text-muted block">
+        <label className="block text-xs font-bold uppercase tracking-wider text-muted">
           Plazo / Meses Sin Intereses (MSI)
         </label>
         <div className="grid grid-cols-5 gap-2">
@@ -231,10 +222,10 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
               type="button"
               key={item.m}
               onClick={() => handleMsiChange(item.m)}
-              className={`py-2 px-1 text-center rounded-xl text-xs font-medium border transition-colors ${
+              className={`rounded-xl border px-1 py-2 text-center text-xs font-medium transition-colors ${
                 msi === item.m
-                  ? 'bg-gold text-navy font-bold border-gold shadow-md'
-                  : 'bg-surface hover:bg-surface-raised text-muted border-white/10'
+                  ? 'border-gold bg-gold font-bold text-navy shadow-md'
+                  : 'hover:bg-surface-raised border-white/10 bg-surface text-muted'
               }`}
             >
               {item.label}
@@ -244,28 +235,28 @@ export const FormularioCobro: React.FC<FormularioCobroProps> = ({
       </div>
 
       {/* Toggle OXXO */}
-      <div className="flex items-center justify-between p-4 rounded-xl bg-surface-raised/40 border border-white/5">
+      <div className="bg-surface-raised/40 flex items-center justify-between rounded-xl border border-white/5 p-4">
         <div>
-          <span className="text-xs font-semibold text-ink block">
+          <span className="block text-xs font-semibold text-ink">
             Aceptar Pagos en Efectivo en OXXO®
           </span>
           <span className="text-[11px] text-muted">
             Permite al cliente generar un código de barras para liquidar en cualquier tienda OXXO.
           </span>
         </div>
-        <label className="relative inline-flex items-center cursor-pointer">
+        <label className="relative inline-flex cursor-pointer items-center">
           <input
             type="checkbox"
             checked={enableOxxo}
             onChange={(e) => setEnableOxxo(e.target.checked)}
-            className="sr-only peer"
+            className="peer sr-only"
           />
-          <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+          <div className="peer h-6 w-11 rounded-full bg-slate-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-gold peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none"></div>
         </label>
       </div>
 
       {errorValidacion && (
-        <div className="p-3 rounded-xl bg-red-950/40 border border-red-500/40 text-xs text-red-200">
+        <div className="rounded-xl border border-red-500/40 bg-red-950/40 p-3 text-xs text-red-200">
           {errorValidacion}
         </div>
       )}

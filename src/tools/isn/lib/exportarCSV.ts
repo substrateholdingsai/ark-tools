@@ -38,11 +38,7 @@ function escaparCSV(valor: string | number): string {
  *   3. Fila de totales
  *   4. Resumen del cálculo ISN
  */
-function generarContenidoCSV({
-  estado,
-  conceptos,
-  resultado,
-}: ExportarCSVParams): string {
+function generarContenidoCSV({ estado, conceptos, resultado }: ExportarCSVParams): string {
   const fecha = new Date().toLocaleDateString('es-MX', {
     year: 'numeric',
     month: 'long',

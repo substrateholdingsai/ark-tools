@@ -41,12 +41,9 @@ export async function handleAdminApiRequest(
   }
 
   if (principal.platformRole !== 'super_admin') {
-    return json(
-      { error: 'Acceso restringido. Requiere rol de super_admin.' },
-      corsHeaders,
-      403,
-      { 'Cache-Control': 'no-store' }
-    );
+    return json({ error: 'Acceso restringido. Requiere rol de super_admin.' }, corsHeaders, 403, {
+      'Cache-Control': 'no-store',
+    });
   }
 
   const db = env.ARK_TOOLS_DB;
@@ -283,10 +280,6 @@ export async function handleAdminApiRequest(
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error('[Admin API] Error inesperado:', message, error);
-    return json(
-      { error: `Error en el servicio de administración: ${message}` },
-      corsHeaders,
-      500
-    );
+    return json({ error: `Error en el servicio de administración: ${message}` }, corsHeaders, 500);
   }
 }

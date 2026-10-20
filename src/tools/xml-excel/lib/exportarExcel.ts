@@ -153,10 +153,7 @@ export function generarCSVFacturas(facturas: FacturaCFDI[]): string {
 /**
  * Dispara la descarga del archivo CSV en el navegador
  */
-export function descargarCSVFacturas(
-  facturas: FacturaCFDI[],
-  nombreArchivo?: string
-): void {
+export function descargarCSVFacturas(facturas: FacturaCFDI[], nombreArchivo?: string): void {
   const contenido = generarCSVFacturas(facturas);
   const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
 

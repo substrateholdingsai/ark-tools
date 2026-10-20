@@ -55,8 +55,16 @@ export function Header({
   className,
   onOpenAuthModal,
 }: HeaderProps) {
-  const { user, tenantName, tenants, organization, switchTenant, createTenant, signOut, platformRole } =
-    useAuth();
+  const {
+    user,
+    tenantName,
+    tenants,
+    organization,
+    switchTenant,
+    createTenant,
+    signOut,
+    platformRole,
+  } = useAuth();
 
   const [orgOpen, setOrgOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -263,7 +271,7 @@ export function Header({
                       })}
                     </div>
 
-                    <div className="mt-2 border-t border-line/60 pt-2 space-y-1">
+                    <div className="mt-2 space-y-1 border-t border-line/60 pt-2">
                       <button
                         type="button"
                         onClick={() => {
@@ -323,7 +331,7 @@ export function Header({
                   type="button"
                   onClick={() => onNavigate?.('admin')}
                   className={cn(
-                    'flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[11px] font-bold tracking-wide transition shadow-sm',
+                    'flex items-center gap-1.5 rounded-xl border px-2.5 py-1 text-[11px] font-bold tracking-wide shadow-sm transition',
                     activeTool === 'admin'
                       ? 'border-gold bg-gold/20 text-navy'
                       : 'border-gold/40 bg-gradient-to-r from-amber-50 to-white text-navy hover:border-gold hover:bg-amber-100/50'
@@ -358,7 +366,7 @@ export function Header({
                           {user?.fullName || 'Contador'}
                         </div>
                         {platformRole === 'super_admin' && (
-                          <span className="rounded bg-gold/20 px-1 py-0.2 text-[9px] font-black text-navy">
+                          <span className="py-0.2 rounded bg-gold/20 px-1 text-[9px] font-black text-navy">
                             ADMIN
                           </span>
                         )}

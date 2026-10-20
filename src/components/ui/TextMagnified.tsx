@@ -36,7 +36,7 @@ export function TextMagnified({
   return (
     <Component
       className={cn(
-        'font-playfair font-black leading-[0.92] tracking-[-0.04em] text-navy text-magnified',
+        'text-magnified font-playfair font-black leading-[0.92] tracking-[-0.04em] text-navy',
         sizeClasses[size],
         className
       )}

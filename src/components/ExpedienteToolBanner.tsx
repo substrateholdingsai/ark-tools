@@ -51,11 +51,13 @@ export function ExpedienteToolBanner({
 
   if (!activeClient) {
     return (
-      <div className="rounded-xl border border-line/80 bg-surface-2/60 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-muted font-inter">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line/80 bg-surface-2/60 px-4 py-2.5 font-inter text-xs text-muted">
         <div className="flex items-center gap-2">
-          <FolderKanban size={15} className="text-gold shrink-0" />
+          <FolderKanban size={15} className="shrink-0 text-gold" />
           <span>
-            <strong className="text-ink font-semibold">Modo libre:</strong> Los cálculos no se guardarán en ningún expediente. Selecciona o crea un cliente en la barra superior para archivar este papel de trabajo con sello SHA-256.
+            <strong className="font-semibold text-ink">Modo libre:</strong> Los cálculos no se
+            guardarán en ningún expediente. Selecciona o crea un cliente en la barra superior para
+            archivar este papel de trabajo con sello SHA-256.
           </span>
         </div>
       </div>
@@ -86,9 +88,9 @@ export function ExpedienteToolBanner({
 
   return (
     <>
-      <div className="rounded-xl border border-navy/20 bg-navy/5 px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs font-inter shadow-2xs">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-8 h-8 rounded-lg bg-navy text-white flex items-center justify-center shrink-0">
+      <div className="shadow-2xs flex flex-wrap items-center justify-between gap-3 rounded-xl border border-navy/20 bg-navy/5 px-4 py-3 font-inter text-xs">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy text-white">
             {activeClient.tipo === 'empresa' ? (
               <Building2 size={16} />
             ) : activeClient.tipo === 'persona_fisica' ? (
@@ -99,30 +101,30 @@ export function ExpedienteToolBanner({
           </div>
 
           <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-ink truncate max-w-[280px]">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="max-w-[280px] truncate font-bold text-ink">
                 {activeClient.nombre}
               </span>
-              <span className="px-2 py-0.2 rounded-full bg-navy/10 text-navy font-orbitron font-bold text-[9px] uppercase">
+              <span className="py-0.2 rounded-full bg-navy/10 px-2 font-orbitron text-[9px] font-bold uppercase text-navy">
                 {activeClient.tipo}
               </span>
               {activeClient.rfc && (
-                <span className="text-[11px] font-mono text-muted">
-                  {activeClient.rfc}
-                </span>
+                <span className="font-mono text-[11px] text-muted">{activeClient.rfc}</span>
               )}
             </div>
-            <p className="text-[11px] text-muted flex items-center gap-1.5 mt-0.5">
-              <ShieldCheck size={13} className="text-gold shrink-0" />
-              <span>Vinculado a este expediente. Los parámetros y resultados se archivan auditables.</span>
+            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-muted">
+              <ShieldCheck size={13} className="shrink-0 text-gold" />
+              <span>
+                Vinculado a este expediente. Los parámetros y resultados se archivan auditables.
+              </span>
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           {lastHash ? (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800 font-semibold text-[11px]">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
                 <Check size={13} />
                 <span>{isDeduplicated ? 'Archivado y vigente' : 'Sellado con éxito'}</span>
               </span>
@@ -130,17 +132,17 @@ export function ExpedienteToolBanner({
                 type="button"
                 onClick={handleCopyHash}
                 title="Copiar sello SHA-256"
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-white border border-line hover:border-navy text-muted hover:text-ink text-[10px] font-mono cursor-pointer"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-line bg-white px-2 py-1 font-mono text-[10px] text-muted hover:border-navy hover:text-ink"
               >
                 <Copy size={11} />
                 <span>{lastHash.slice(0, 8)}...</span>
-                {copied && <span className="text-emerald-600 font-bold">✓</span>}
+                {copied && <span className="font-bold text-emerald-600">✓</span>}
               </button>
               {lastExpediente && (
                 <button
                   type="button"
                   onClick={() => setShowPapel(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-navy text-white text-[11px] font-semibold hover:bg-navy/90 cursor-pointer shadow-2xs"
+                  className="shadow-2xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-navy px-3 py-1 text-[11px] font-semibold text-white hover:bg-navy/90"
                 >
                   <FileText size={13} className="text-gold" />
                   <span>Papel de Trabajo (PDF)</span>
@@ -152,7 +154,7 @@ export function ExpedienteToolBanner({
               type="button"
               disabled={disabled || isSaving}
               onClick={handleSave}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy text-white hover:bg-navy/90 disabled:opacity-50 text-xs font-semibold cursor-pointer shadow-2xs transition-all"
+              className="shadow-2xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy/90 disabled:opacity-50"
             >
               <Sparkles size={13} className="text-gold" />
               <span>{isSaving ? 'Sellando...' : 'Archivar en Expediente'}</span>

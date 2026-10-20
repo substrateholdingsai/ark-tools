@@ -2,12 +2,15 @@ import type { BalanzaFilaCSV, CuentaBalance, JerarquiaBalance, ParserResult } fr
 
 const toNum = (v: unknown): number => {
   if (v === null || v === undefined || v === '') return 0;
-  const s = String(v).replace(/[^0-9.,-]/g, '').replace(',', '.');
+  const s = String(v)
+    .replace(/[^0-9.,-]/g, '')
+    .replace(',', '.');
   const n = Number(s);
   return Number.isFinite(n) ? n : 0;
 };
 
-const genId = (codigo: string, idx: number) => `${codigo || 'cta'}-${idx}-${Date.now().toString(36)}`;
+const genId = (codigo: string, idx: number) =>
+  `${codigo || 'cta'}-${idx}-${Date.now().toString(36)}`;
 
 export function parseBalanzaFilas(filas: BalanzaFilaCSV[]): ParserResult {
   const cuentas: CuentaBalance[] = [];

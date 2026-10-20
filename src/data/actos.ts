@@ -2,11 +2,7 @@
 
 export type Autoridad = 'SAT' | 'IMSS';
 
-export type RiesgoActo =
-  | 'Bajo'
-  | 'Medio'
-  | 'Alto'
-  | 'Crítico';
+export type RiesgoActo = 'Bajo' | 'Medio' | 'Alto' | 'Crítico';
 
 export type IconoGuia =
   | 'mail'
@@ -61,12 +57,7 @@ export const GUIA_PASOS: PasoGuia[] = [
     corto: 'Notificación',
     descripcion:
       'Identifica el canal y registra el momento exacto de recepción. Todo plazo corre desde aquí.',
-    canales: [
-      'Buzón Tributario',
-      'Escrito IMSS',
-      'Notificación personal',
-      'Correo certificado',
-    ],
+    canales: ['Buzón Tributario', 'Escrito IMSS', 'Notificación personal', 'Correo certificado'],
     checklist: [
       'Captura fecha y hora de notificación',
       'Guarda acuse / sello / constancia del Buzón Tributario',
@@ -83,11 +74,7 @@ export const GUIA_PASOS: PasoGuia[] = [
     corto: 'Validez',
     descripcion:
       'Antes de contestar, audita forma y fondo. Un vicio formal puede anular todo el acto.',
-    canales: [
-      'Autoridad emisora',
-      'Firma electrónica',
-      'Competencia territorial',
-    ],
+    canales: ['Autoridad emisora', 'Firma electrónica', 'Competencia territorial'],
     checklist: [
       '¿Autoridad competente y facultada?',
       '¿Fecha de emisión, folio y sello?',
@@ -104,8 +91,7 @@ export const GUIA_PASOS: PasoGuia[] = [
     id: 3,
     titulo: 'Clasifica el acto',
     corto: 'Clasificación',
-    descripcion:
-      'No todo es requerimiento. Clasificar mal te hace contestar de más o de menos.',
+    descripcion: 'No todo es requerimiento. Clasificar mal te hace contestar de más o de menos.',
     canales: ['SAT', 'IMSS', 'Mixto'],
     checklist: [
       'Identifica tipo según catálogo SAT / IMSS',
@@ -175,8 +161,7 @@ export const GUIA_PASOS: PasoGuia[] = [
     id: 7,
     titulo: 'Da seguimiento',
     corto: 'Seguimiento',
-    descripcion:
-      'Contestar no termina el caso. El seguimiento evita que se convierta en crédito.',
+    descripcion: 'Contestar no termina el caso. El seguimiento evita que se convierta en crédito.',
     canales: ['Expediente', 'Citas', 'Oficios'],
     checklist: [
       'Verifica respuesta de autoridad (3-15 días)',
@@ -193,8 +178,7 @@ export const GUIA_PASOS: PasoGuia[] = [
     id: 8,
     titulo: 'Si no estás de acuerdo',
     corto: 'Defensa',
-    descripcion:
-      'Cuando la autoridad insiste, tienes 5 vías de defensa según acto y plazo.',
+    descripcion: 'Cuando la autoridad insiste, tienes 5 vías de defensa según acto y plazo.',
     canales: ['SAT', 'IMSS', 'TFJA'],
     checklist: [
       'Aclaración (Buzón / 6 días)',
@@ -215,8 +199,7 @@ export const ACTOS_SAT: ActoFiscal[] = [
     autoridad: 'SAT',
     codigo: 'SAT-CI-01',
     titulo: 'Carta Invitación',
-    descripcion:
-      'Vigilancia profunda. Detecta inconsistencias CFDI vs Declaraciones.',
+    descripcion: 'Vigilancia profunda. Detecta inconsistencias CFDI vs Declaraciones.',
     riesgo: 'Bajo',
     fundamento: 'CFF Art. 33',
     accion: 'Aclarar sin ampliar facultades',
@@ -226,8 +209,7 @@ export const ACTOS_SAT: ActoFiscal[] = [
     autoridad: 'SAT',
     codigo: 'SAT-RO-02',
     titulo: 'Req. Obligaciones Omitidas',
-    descripcion:
-      'No presentaste declaración. Requiere cumplimiento en 15 días.',
+    descripcion: 'No presentaste declaración. Requiere cumplimiento en 15 días.',
     riesgo: 'Medio',
     fundamento: 'CFF Art. 41',
     accion: 'Presentar + pago + prueba',
@@ -237,8 +219,7 @@ export const ACTOS_SAT: ActoFiscal[] = [
     autoridad: 'SAT',
     codigo: 'SAT-RI-03',
     titulo: 'Req. de Información',
-    descripcion:
-      'Solicita contabilidad, contratos, papeles. Previo a facultades.',
+    descripcion: 'Solicita contabilidad, contratos, papeles. Previo a facultades.',
     riesgo: 'Alto',
     fundamento: 'CFF Art. 42, 53',
     accion: 'Entregar exacto, no de más',
@@ -248,8 +229,7 @@ export const ACTOS_SAT: ActoFiscal[] = [
     autoridad: 'SAT',
     codigo: 'SAT-FC-04',
     titulo: 'Facultades de Comprobación',
-    descripcion:
-      'Revisión, auditoría, visita domiciliaria. Inicio formal.',
+    descripcion: 'Revisión, auditoría, visita domiciliaria. Inicio formal.',
     riesgo: 'Crítico',
     fundamento: 'CFF Art. 42 Frac II, III, V',
     accion: 'Estrategia defensiva + pericial',
@@ -262,8 +242,7 @@ export const ACTOS_IMSS: ActoFiscal[] = [
     autoridad: 'IMSS',
     codigo: 'IMSS-EX-01',
     titulo: 'Exhorto / Invitación',
-    descripcion:
-      'Invita a corregir diferencias SUA, prima de riesgo, bajas.',
+    descripcion: 'Invita a corregir diferencias SUA, prima de riesgo, bajas.',
     riesgo: 'Bajo',
     fundamento: 'LSS Art. 251',
     accion: 'Analizar y autocorregir si aplica',
@@ -273,8 +252,7 @@ export const ACTOS_IMSS: ActoFiscal[] = [
     autoridad: 'IMSS',
     codigo: 'IMSS-RI-02',
     titulo: 'Req. Información Patronal',
-    descripcion:
-      'Solicita nóminas, listas, contratos, determinaciones.',
+    descripcion: 'Solicita nóminas, listas, contratos, determinaciones.',
     riesgo: 'Medio',
     fundamento: 'LSS Art. 15, 251 Frac XVI',
     accion: 'Entregar con cédula de integración',
@@ -284,8 +262,7 @@ export const ACTOS_IMSS: ActoFiscal[] = [
     autoridad: 'IMSS',
     codigo: 'IMSS-CP-03',
     titulo: 'Corrección Patronal',
-    descripcion:
-      'Procedimiento para regularizar diferencias detectadas.',
+    descripcion: 'Procedimiento para regularizar diferencias detectadas.',
     riesgo: 'Alto',
     fundamento: 'LSS Art. 178-180, RACERF',
     accion: 'Corrección + pago + no sanción si espontánea',
@@ -295,8 +272,7 @@ export const ACTOS_IMSS: ActoFiscal[] = [
     autoridad: 'IMSS',
     codigo: 'IMSS-CF-04',
     titulo: 'Crédito Fiscal Autorizado',
-    descripcion:
-      'Liquidación de cuotas, multas, capitales constitutivos.',
+    descripcion: 'Liquidación de cuotas, multas, capitales constitutivos.',
     riesgo: 'Crítico',
     fundamento: 'LSS Art. 287-291, CFF 4',
     accion: 'Inconformidad o nulidad inmediata',
@@ -304,10 +280,7 @@ export const ACTOS_IMSS: ActoFiscal[] = [
   },
 ];
 
-export const ACTOS_FISCALES: ActoFiscal[] = [
-  ...ACTOS_SAT,
-  ...ACTOS_IMSS,
-];
+export const ACTOS_FISCALES: ActoFiscal[] = [...ACTOS_SAT, ...ACTOS_IMSS];
 
 export const PLAZOS_CLAVE: PlazoClave[] = [
   {
@@ -346,7 +319,7 @@ export const NOTAS_PLAZOS: string[] = [
 // Legacy export for backwards compatibility
 export interface Acto {
   id: string;
-  autoridad: "SAT" | "IMSS";
+  autoridad: 'SAT' | 'IMSS';
   descripcion: string;
 }
 

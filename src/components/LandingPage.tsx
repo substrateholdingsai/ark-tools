@@ -366,9 +366,10 @@ export function LandingPage() {
 
           {/* Subtitle */}
           <p className="mx-auto max-w-[760px] font-inter text-[16px] leading-[1.55] text-muted md:text-[19px]">
-            La plataforma para despachos y fiscalistas en México. Realiza cálculos sin costo y genera
-            <strong> Cédulas de Trabajo Formales con Sello Criptográfico SHA-256</strong> que demuestran
-            la trazabilidad de tus cifras ante el SAT y tribunales.
+            La plataforma para despachos y fiscalistas en México. Realiza cálculos sin costo y
+            genera
+            <strong> Cédulas de Trabajo Formales con Sello Criptográfico SHA-256</strong> que
+            demuestran la trazabilidad de tus cifras ante el SAT y tribunales.
           </p>
 
           {/* Caja Freemium: Calculadoras Gratis + Trazabilidad Pro */}
@@ -380,8 +381,10 @@ export function LandingPage() {
                   <span>Modelo Transparente: Gratis para calcular, Pro para blindar</span>
                 </div>
                 <p className="text-[13px] leading-relaxed text-muted">
-                  Usa todas las calculadoras y conversores de forma <strong>100% gratuita e ilimitada</strong>.
-                  Solo pagas si requieres emitir dictámenes, timbrado masivo o sellar tu <strong>Expediente Único con validez pericial</strong>.
+                  Usa todas las calculadoras y conversores de forma{' '}
+                  <strong>100% gratuita e ilimitada</strong>. Solo pagas si requieres emitir
+                  dictámenes, timbrado masivo o sellar tu{' '}
+                  <strong>Expediente Único con validez pericial</strong>.
                 </p>
               </div>
 
@@ -606,7 +609,8 @@ export function LandingPage() {
               ¿Cómo ganamos dinero si las calculadoras son gratis?
             </h2>
             <p className="mx-auto max-w-[620px] text-[15px] text-muted">
-              Creemos en dar valor primero. La suite básica siempre será de acceso libre. Cobramos únicamente por servicios de alto valor operativo.
+              Creemos en dar valor primero. La suite básica siempre será de acceso libre. Cobramos
+              únicamente por servicios de alto valor operativo.
             </p>
           </div>
 
@@ -617,7 +621,8 @@ export function LandingPage() {
               </div>
               <h3 className="text-[16px] font-bold text-ink">1. Calculadoras Gratuitas</h3>
               <p className="text-[13px] leading-relaxed text-muted">
-                Todas las fórmulas DOF, ISR, IMSS, conversor XML y RESICO son de libre uso. Sin trucos, sin límites de cálculos diarios.
+                Todas las fórmulas DOF, ISR, IMSS, conversor XML y RESICO son de libre uso. Sin
+                trucos, sin límites de cálculos diarios.
               </p>
             </div>
 
@@ -625,9 +630,12 @@ export function LandingPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
                 <Fingerprint size={20} className="text-gold-dark" />
               </div>
-              <h3 className="text-[16px] font-bold text-ink">2. Expediente Único (Sello SHA-256)</h3>
+              <h3 className="text-[16px] font-bold text-ink">
+                2. Expediente Único (Sello SHA-256)
+              </h3>
               <p className="text-[13px] leading-relaxed text-muted">
-                Cobramos micro-créditos por estampar la firma de tu despacho en PDFs formales con QR pericial auditables por la autoridad.
+                Cobramos micro-créditos por estampar la firma de tu despacho en PDFs formales con QR
+                pericial auditables por la autoridad.
               </p>
             </div>
 
@@ -635,9 +643,12 @@ export function LandingPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
                 <FileCode size={20} className="text-navy" />
               </div>
-              <h3 className="text-[16px] font-bold text-ink">3. Timbrado & Automatización Masiva</h3>
+              <h3 className="text-[16px] font-bold text-ink">
+                3. Timbrado & Automatización Masiva
+              </h3>
               <p className="text-[13px] leading-relaxed text-muted">
-                Emisión de CFDI 4.0 con PAC certificado y procesamiento masivo de nóminas para despachos que manejan alto volumen.
+                Emisión de CFDI 4.0 con PAC certificado y procesamiento masivo de nóminas para
+                despachos que manejan alto volumen.
               </p>
             </div>
           </div>

@@ -72,12 +72,12 @@ export interface ResultadoFiniquito {
   diasTrabajadosAnio: number;
 
   // === Vacaciones ===
-  tablaVacaciones: number;         // días por año según tabla LFT 2023
+  tablaVacaciones: number; // días por año según tabla LFT 2023
   vacacionesProporcionales: number;
 
   // === Salario ===
-  salarioMensual: number;          // salarioDiario × 30.4
-  salarioTope: number;             // min(salarioDiario, 2×SMG) para Art. 486
+  salarioMensual: number; // salarioDiario × 30.4
+  salarioTope: number; // min(salarioDiario, 2×SMG) para Art. 486
 
   // === Conceptos ===
   aguinaldoProporcionalDias: number;
@@ -94,8 +94,8 @@ export interface ResultadoFiniquito {
   importe20dias: number;
 
   // === Totales ===
-  totalFiniquito: number;          // finiquito sin indemnización
-  totalLiquidacion: number;        // finiquito + indemnización + 20d
+  totalFiniquito: number; // finiquito sin indemnización
+  totalLiquidacion: number; // finiquito + indemnización + 20d
 
   /** Desglose completo listo para render */
   desglose: DesgloseConcepto[];
@@ -108,5 +108,4 @@ export interface ErrorCalculo {
 }
 
 export type ResultadoCalculo =
-  | { ok: true; valor: ResultadoFiniquito }
-  | { ok: false; errores: ErrorCalculo[] };
+  { ok: true; valor: ResultadoFiniquito } | { ok: false; errores: ErrorCalculo[] };

@@ -24,10 +24,7 @@ interface ResultadoNominaProps {
   resultado: ResultadoNominaType;
 }
 
-export function ResultadoNomina({
-  parametros,
-  resultado,
-}: ResultadoNominaProps) {
+export function ResultadoNomina({ parametros, resultado }: ResultadoNominaProps) {
   const [copiado, setCopiado] = useState(false);
   const timerRef = useRef<number | null>(null);
 
@@ -64,12 +61,12 @@ export function ResultadoNomina({
   return (
     <LiquidGlassDome padding="lg" radius="dome">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <span className="text-[10px] font-bold tracking-[0.2em] text-muted uppercase font-orbitron block">
+          <span className="block font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
             RESULTADO FINAL · NÓMINA {resultado.periodo.label.toUpperCase()}
           </span>
-          <h3 className="text-[20px] font-bold text-navy font-playfair mt-0.5">
+          <h3 className="mt-0.5 font-playfair text-[20px] font-bold text-navy">
             Sueldo Neto a Percibir
           </h3>
         </div>
@@ -77,17 +74,17 @@ export function ResultadoNomina({
       </div>
 
       {/* Cifra Magnificada: Sueldo Neto */}
-      <div className="my-5 p-5 rounded-[18px] bg-gradient-to-b from-white/90 to-surface-2/60 border border-gold/30 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_4px_16px_rgba(212,175,55,0.12)]">
-        <div className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted mb-1 flex items-center gap-1.5">
-          <DollarSign className="w-3.5 h-3.5 text-gold" />
+      <div className="my-5 rounded-[18px] border border-gold/30 bg-gradient-to-b from-white/90 to-surface-2/60 p-5 shadow-[inset_0_1px_2px_rgba(255,255,255,0.8),0_4px_16px_rgba(212,175,55,0.12)]">
+        <div className="mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.18em] text-muted">
+          <DollarSign className="h-3.5 w-3.5 text-gold" />
           Depósito neto estimado
         </div>
         <TextMagnified size="lg" className="text-navy">
           {formatearMXN(resultado.neto)}
         </TextMagnified>
-        <div className="mt-2 flex items-center justify-between text-[11px] font-mono text-muted">
+        <div className="mt-2 flex items-center justify-between font-mono text-[11px] text-muted">
           <span>{pctNeto}% percibido del salario bruto</span>
-          <span className="text-gold-dark font-bold font-orbitron">
+          <span className="font-orbitron font-bold text-gold-dark">
             {resultado.periodo.dias} días / período
           </span>
         </div>
@@ -96,45 +93,47 @@ export function ResultadoNomina({
       <GoldDivider spacing="sm" className="my-4" />
 
       {/* Métricas clave en grid */}
-      <div className="grid grid-cols-3 gap-2 text-center my-4">
-        <div className="p-2.5 rounded-[12px] bg-surface-2 border border-line">
+      <div className="my-4 grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-[12px] border border-line bg-surface-2 p-2.5">
           <div className="text-[9px] font-bold uppercase tracking-wider text-muted">
             Sueldo Bruto
           </div>
-          <div className="text-[12px] font-bold font-orbitron text-navy mt-1">
+          <div className="mt-1 font-orbitron text-[12px] font-bold text-navy">
             {formatearMXN(resultado.sueldoBruto)}
           </div>
         </div>
 
-        <div className="p-2.5 rounded-[12px] bg-surface-2 border border-line">
+        <div className="rounded-[12px] border border-line bg-surface-2 p-2.5">
           <div className="text-[9px] font-bold uppercase tracking-wider text-muted">
             Retención ISR
           </div>
-          <div className="text-[12px] font-bold font-orbitron text-navy mt-1">
+          <div className="mt-1 font-orbitron text-[12px] font-bold text-navy">
             -{formatearMXN(resultado.isr.isrFinal)}
           </div>
         </div>
 
-        <div className="p-2.5 rounded-[12px] bg-surface-2 border border-line">
+        <div className="rounded-[12px] border border-line bg-surface-2 p-2.5">
           <div className="text-[9px] font-bold uppercase tracking-wider text-muted">
             IMSS Obrero
           </div>
-          <div className="text-[12px] font-bold font-orbitron text-navy mt-1">
+          <div className="mt-1 font-orbitron text-[12px] font-bold text-navy">
             -{formatearMXN(resultado.imss.total)}
           </div>
         </div>
       </div>
 
       {/* Nota de validez legal */}
-      <div className="rounded-[12px] bg-navy/5 border border-navy/10 p-3 my-4 flex items-start gap-2.5">
-        <ShieldCheck className="w-4 h-4 text-navy mt-0.5 shrink-0" />
-        <p className="text-[11px] text-navy/80 leading-relaxed">
-          Cálculo ajustado a la <span className="font-semibold text-navy">RMF 2026 Anexo 8</span> (tarifa y subsidio al empleo) y cuotas obrero del <span className="font-semibold text-navy">IMSS (LSS 2026)</span>.
+      <div className="my-4 flex items-start gap-2.5 rounded-[12px] border border-navy/10 bg-navy/5 p-3">
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-navy" />
+        <p className="text-[11px] leading-relaxed text-navy/80">
+          Cálculo ajustado a la <span className="font-semibold text-navy">RMF 2026 Anexo 8</span>{' '}
+          (tarifa y subsidio al empleo) y cuotas obrero del{' '}
+          <span className="font-semibold text-navy">IMSS (LSS 2026)</span>.
         </p>
       </div>
 
       {/* Acciones */}
-      <div className="pt-2 flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end gap-2 pt-2">
         <GlassButton
           variant={copiado ? 'primary' : 'default'}
           size="sm"
@@ -143,12 +142,12 @@ export function ResultadoNomina({
         >
           {copiado ? (
             <>
-              <Check className="w-4 h-4 text-gold mr-1.5" />
+              <Check className="mr-1.5 h-4 w-4 text-gold" />
               <span>¡Copiado al portapapeles!</span>
             </>
           ) : (
             <>
-              <Copy className="w-4 h-4 text-muted mr-1.5" />
+              <Copy className="mr-1.5 h-4 w-4 text-muted" />
               <span>Copiar resumen de nómina</span>
             </>
           )}

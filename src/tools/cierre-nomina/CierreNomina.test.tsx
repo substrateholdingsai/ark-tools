@@ -75,6 +75,5 @@ describe('CierreNomina Component — Sprint 11', () => {
       expect(screen.getByText('Cierre Procesado & Sellado con Éxito')).toBeDefined();
       expect(screen.getByText('Ver Cédula Oficial (PDF & Sello)')).toBeDefined();
     });
-  }, // paralela de la suite completa puede rebasar el timeout por defecto de 5 s. // El batch con sellado SHA-256 y QR es intrínsecamente lento en jsdom; bajo carga
-  30_000);
+  }, 30_000); // paralela de la suite completa puede rebasar el timeout por defecto de 5 s. // El batch con sellado SHA-256 y QR es intrínsecamente lento en jsdom; bajo carga
 });
