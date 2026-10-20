@@ -36,7 +36,7 @@
 | **Typecheck (TypeScript)**              | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                       |
 | **Linting (ESLint)**                    | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`)                                                                                                                       |
 | **Build Vite (SPA)**                    | 100% funcional con bundle optimizado (Vite build en 29s; chunk inicial 223.56 kB / 61.24 kB gzip)                                                                                             |
-| **Git & Repositorio**                   | Sincronizado en rama `main` en GitHub (`a673bb9` — CRM: alta/baja de prospectos y propuesta comercial)                                                                                          |
+| **Git & Repositorio**                   | Sincronizado en rama `main` en GitHub (`cc9fd6f` — catálogo canónico de herramientas y sincronización GEO/AI/Open Graph)                                                                  |
 | **Herramientas Integradas**              | 15 de 15 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo) + Admin (con CRM de Prospectos) + Team |
 
 ---
@@ -483,8 +483,11 @@ ark-tools/
 
 #### Estado verificado en Producción (Octubre 2026) — sin pendientes
 
-- **Deploy:** el bundle servido en `tools.arksystems.site` (`/assets/index-FBFAvHrj.js`, `/assets/index-Ct3hPF5d.css`) coincide hash a hash con el build local de `main` @ `a673bb9`. **El código de Sprints 19–21 está en producción.**
-- **`GET /api/ai/tools`** responde `tools_count: 8` incluyendo `consultar_balance_general` y `consultar_leads_crm`.
+- **Deploy vigente:** Version ID `60d3529a-e31e-4181-9e89-02b3fc978bf2` (worker `ark-tools-production`, route `tools.arksystems.site` custom domain, cron `0 */6 * * *`). Construido desde el commit `cc9fd6f`.
+- **`GET /llms.txt`:** responde *"Catálogo de las 15 Herramientas en Producción"* con 5 categorías; incluye **RESICO 2026** y **Balance General Comparativo**; ya no aparece el conteo de 13.
+- **`GET /llms-full.txt`:** anexo con §4 RESICO, §5 Balance General y §6 Estándar SHA-256.
+- **`GET /`:** meta `og:description` con *"Suite de 15 herramientas"*.
+- **`GET /api/ai/tools`:** responde `tools_count: 8` incluyendo `consultar_balance_general` y `consultar_leads_crm`.
 - **Cloudflare D1 remoto (`ark_tools_db`):** las 7 migraciones están aplicadas y registradas en `d1_migrations` (`0007_leads_crm.sql` aplicada el 2026-10-19 07:47:01). `wrangler d1 migrations list --remote` responde *"No migrations to apply!"*.
 - **Tablas remotas presentes:** `clients`, `expedientes`, `auth_sessions`, `auth_tokens`, `auth_rate_limits`, `tenant_memberships`, `tenant_invitations`, `tenant_alegra_accounts`, `alegra_invoices`, `ai_usage`, `leads_ark_tools`.
 
@@ -1501,4 +1504,6 @@ ark-tools/
 | `src/server/llmsTxt.test.ts`             | +1    | Toda herramienta del catálogo está publicada y **no reaparecen conteos desactualizados** ("13 Herramientas") |
 
 **Métricas del Sprint:** 345/345 pruebas en 47 suites (100% éxito). 0 errores de TypeScript. 0 errores de linting (`--max-warnings 0`). Build SPA exitoso. Catálogo GEO: 15 herramientas / 5 categorías / ~1,434 tokens.
+
+**Despliegue:** commit `cc9fd6f` → `main` → `origin/main`. Worker `ark-tools-production`, Version ID `60d3529a-e31e-4181-9e89-02b3fc978bf2`. Verificado en producción: `/llms.txt` con 15 herramientas y RESICO + Balance General publicados, `/llms-full.txt` con los anexos §4 y §5, `og:description` a 15 y `/api/ai/tools` con 8 herramientas.
 
