@@ -28,8 +28,8 @@ Cuando se actualice un valor en `catalogo.ts`:
 3. [ ] Actualizar `vigenteDesde` y `vigenteHasta` según corresponda
 4. [ ] Cambiar `esProyeccion: false`
 5. [ ] Actualizar `notas` con referencia exacta (ej: "DOF 2026-02-01, p. 45")
-6. [ ] Ejecutar `pnpm test catalogo` (7 tests de integridad)
-7. [ ] Ejecutar `pnpm test` (suite completa: 111 tests)
+6. [ ] Ejecutar `pnpm test catalogo` (tests de integridad del catálogo)
+7. [ ] Ejecutar `pnpm test` (suite completa)
 8. [ ] Ejecutar `pnpm verify:catalogo` (debe salir exit code 0)
 9. [ ] Ejecutar `pnpm build` (debe compilar limpio)
 10. [ ] Commit: `chore(catalogo): actualizar [VALOR] 202X — [FUENTE]`

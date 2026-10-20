@@ -31,7 +31,7 @@
 | **GEO & Agentes IA**               | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (15 herramientas)** |
 | **Landing Pública**                     | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                      |
 | **Navegación & Usabilidad**             | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                 |
-| **Pruebas unitarias e integración**     | **345 pasadas en 47 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                          |
+| **Pruebas unitarias e integración**     | **367 pasadas en 49 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                          |
 | **Auditoría DOF Catálogo**              | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                   |
 | **Typecheck (TypeScript)**              | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                       |
 | **Linting (ESLint)**                    | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`)                                                                                                                       |
@@ -149,7 +149,8 @@ ark-tools/
 │   │   ├── ErrorBoundary.test.tsx    ✅ 3 tests de captura y recuperación de errores
 │   │   ├── admin/
 │   │   │   ├── AdminPanel.tsx        ✅ Consola de Super Admin (métricas de plataforma, usuarios, despachos, pestañas)
-│   │   │   └── LeadsApp.tsx          ✅ CRM de prospectos: KPIs de embudo, filtros, alta/baja, envío de propuesta y export CSV
+│   │   │   ├── LeadsApp.tsx          ✅ CRM de prospectos: KPIs de embudo, filtros, alta/baja, envío de propuesta y export CSV
+│   │   │   └── LeadsApp.test.tsx     ✅ 15 tests de UI (KPIs, filtros, PATCH de estatus, alta, baja, propuesta Resend, export CSV)
 │   │   ├── team/
 │   │   │   ├── TeamModal.tsx         ✅ Modal de gestión de equipo, invitaciones por correo y cambio de roles
 │   │   │   ├── TeamModal.test.tsx    ✅ 3 tests de interfaz de gestión de equipo
@@ -322,6 +323,7 @@ ark-tools/
 │           ├── lib/calcularBalance.test.ts ✅ 3 tests unitarios (cuadre, AH/AV, división por cero)
 │           ├── components/           ✅ ParametrosBalanceCard, TablaBalanceAnalitico, GraficosClasificacion, ResultadoBalanceCard
 │           ├── CalculadoraBalance.tsx ✅ Pantalla principal con Expediente Único y export CSV BOM UTF-8
+│           ├── CalculadoraBalance.test.tsx ✅ 7 tests de UI (ingesta CSV, ecuación A=P+C, tabla AH/AV, export CSV)
 │           └── index.ts              ✅ Barrel export
 ```
 
@@ -477,9 +479,10 @@ ark-tools/
 
 #### P1 / P2 — Pendientes
 
-- [ ] **Pruebas de UI del CRM**: `LeadsApp.tsx` (1,152 líneas con alta/baja de prospectos y envío de propuesta vía Resend) no cuenta con suite `.test.tsx` propia (cubierto solo por `leadsApi.test.ts` a nivel backend).
-- [ ] **Tests de UI del Balance General**: `CalculadoraBalance.tsx` no cuenta con suite `.test.tsx` (solo 3 tests del motor de cálculo).
-- [ ] **`docs/calendario-mantenimiento.md`**: el checklist aún referencia *"suite completa: 111 tests"*; debe actualizarse al total vigente.
+- [x] **Pruebas de UI del CRM** (RESUELTO ✅ en Sprint 23): `src/components/admin/LeadsApp.test.tsx` con 15 tests que cubren KPIs de embudo, enlaces directos, filtros (ciudad/especialidad/estatus), búsqueda por texto, limpieza de filtros, actualización inline de estatus con `PATCH`, alta de prospecto, baja con doble confirmación, envío de propuesta vía Resend (incluido el caso de envío de prueba que **no** altera el estatus en D1), error de Resend y export CSV con BOM UTF-8.
+- [x] **Tests de UI del Balance General** (RESUELTO ✅ en Sprint 23): `src/tools/balance-general/CalculadoraBalance.test.tsx` con 7 tests que cubren encabezado y banner de modo libre, navegación de regreso, edición de ejercicios, ingesta de balanza CSV real vía `XLSX`, validación de la ecuación A=P+C en estado CUADRADO y NO CUADRADO, tabla analítica con AH % y AV % por cuenta, y export CSV con BOM UTF-8.
+- [x] **`docs/calendario-mantenimiento.md`**: se eliminó la referencia obsoleta a *"suite completa: 111 tests"*, que inducía a concluir que faltaba cobertura.
+- [ ] **Deuda heredada de formato**: `pnpm format:check` estaba en rojo en `main` antes de estos cambios (`src/App.tsx` acumula ~105 líneas de drift de Prettier y el hook `.husky/pre-commit` no existe, por lo que lint-staged nunca se ejecuta). Queda fuera del alcance de los sprints actuales.
 
 #### Estado verificado en Producción (Octubre 2026) — sin pendientes
 
@@ -1360,7 +1363,7 @@ ark-tools/
 | **GEO Engine (Agentes IA)**   | Generador dinámico `/llms.txt`, `/llms-full.txt` y `/robots.txt` (Worker, vinculado al catálogo DOF 2026, cache 24h)              | ✅ 100% Operativo en Producción                                   |
 
 - **Total de herramientas en plataforma:** **15 de 15 (100% Operativas)** + Super Admin Console (con CRM de Prospectos) + ARK Contable AI
-- **Total de pruebas unitarias y de integración:** **345 pasadas en 47 suites (100% éxito)** — verificado con `pnpm test`
+- **Total de pruebas unitarias y de integración:** **367 pasadas en 49 suites (100% éxito)** — verificado con `pnpm test`
 - **Migraciones D1 aplicadas:** 7 (`0001` → `0007_leads_crm.sql`) en `ark_tools_db`
 - **Herramientas de IA registradas en `AI_TOOLS_CATALOG`:** 8 (`calcular_finiquito_lft`, `calcular_resico`, `consultar_progreso_guia`, `consultar_auditoria_ledger`, `consultar_watchlist_activos`, `obtener_info_despacho`, `consultar_balance_general`, `consultar_leads_crm`), todas con directiva de invocación en el system prompt
 - **Catálogo público de herramientas:** fuente única en `src/data/catalogo-herramientas.ts`; el conteo publicado en `/llms.txt`, el system prompt de IA y las guardas de tests se derivan de él (nunca se escribe a mano)
@@ -1506,4 +1509,38 @@ ark-tools/
 **Métricas del Sprint:** 345/345 pruebas en 47 suites (100% éxito). 0 errores de TypeScript. 0 errores de linting (`--max-warnings 0`). Build SPA exitoso. Catálogo GEO: 15 herramientas / 5 categorías / ~1,434 tokens.
 
 **Despliegue:** commit `cc9fd6f` → `main` → `origin/main`. Worker `ark-tools-production`, Version ID `60d3529a-e31e-4181-9e89-02b3fc978bf2`. Verificado en producción: `/llms.txt` con 15 herramientas y RESICO + Balance General publicados, `/llms-full.txt` con los anexos §4 y §5, `og:description` a 15 y `/api/ai/tools` con 8 herramientas.
+
+---
+
+### Sprint 23 (Octubre 2026) — Cobertura de Pruebas UI del CRM de Prospectos y del Balance General — Completado ✅
+
+**Objetivo:** Cerrar la brecha de cobertura de las dos superficies más nuevas y de mayor riesgo del producto: el CRM de prospectos (`LeadsApp.tsx`, 1,152 líneas con operaciones destructivas y envío de correo por Resend) y el Balance General Comparativo (`CalculadoraBalance.tsx`, antes con solo 3 tests del motor de cálculo y ninguno de interfaz).
+
+#### 1. CRM de Prospectos (`src/components/admin/LeadsApp.test.tsx`) — 15 tests
+
+- **Carga y KPIs:** encabezado institucional, directorio con contador y las 5 tarjetas del embudo (Total, Nuevos, Contactados, Respondieron, Bajas/Spam) calculadas a partir de los estatus reales.
+- **Canales directos:** enlaces `wa.me` y `mailto:` con los href correctos, y ausencia del botón de propuesta cuando el prospecto no tiene correo.
+- **Filtros:** reenvío de la consulta con `ciudad`, `especialidad` y `status`; búsqueda por texto con Enter; limpieza de filtros activos.
+- **Actualización inline de estatus:** `PATCH /api/admin/leads/:id` con `status` y `last_contact`, y actualización optimista de la fila.
+- **Alta de prospecto:** `POST /api/admin/leads` con el payload del formulario y prepending del nuevo registro al directorio.
+- **Baja de prospecto:** `DELETE` **solo** tras la confirmación explícita; cancelar no elimina nada.
+- **Propuesta comercial vía Resend:** apertura del modal, vista previa colapsable, `POST .../send-email`, y feedback de éxito y de error.
+- **Envío de prueba:** se verifica explícitamente que el envío a una dirección de prueba **no** sobrescribe el estatus del prospecto en D1 (regla de negocio crítica del Sprint 21).
+- **Export CSV:** contenido con cabecera y filas entrecomilladas, **BOM UTF-8 verificado sobre los bytes crudos** y nombre de archivo `leads-ark-tools-YYYY-MM-DD.csv`.
+
+#### 2. Balance General Comparativo (`src/tools/balance-general/CalculadoraBalance.test.tsx`) — 7 tests
+
+- **Renderizado:** encabezado, badge de "Herramienta #15 · Blindaje Patrimonial" y banner de Expediente Único en modo libre.
+- **Navegación:** ejecución de `onBack` y edición de los ejercicios actual/anterior.
+- **Ingesta real:** se carga un archivo CSV de balanza mediante el `input[type=file]` y se procesa con `XLSX`, verificando la cadena completa del flujo.
+- **Ecuación contable:** estado **CUADRADO** (A = 100,000 = P+P) y estado **NO CUADRADO** (Dif = 10,000).
+- **Tabla analítica:** valores de AH % y AV % (actual y anterior) por cuenta, con las bases de cálculo correctas (Activo contra 100,000; Pasivo y Patrimonio contra P+P).
+- **Export CSV:** BOM UTF-8 verificado en bytes, encabezados de AH/AV y nombre `balance_general_<actual>_vs_<anterior>.csv`.
+
+#### 3. Endurecimiento de la suite
+
+- **Timeout explícito** (30 s) en el test de batch con sellado SHA-256 y QR de `CierreNomina.test.tsx`: aislada tarda ~840 ms, pero bajo carga paralela de la suite completa rebasaba el default de 5 s y hacía fallar la corrida completa. Era una fragilidad preexistente que la nueva carga expone.
+- **Intercepción del clic del ancla de descarga** en ambos tests: elimina el ruido `Not implemented: navigation` de jsdom y permite verificar además el nombre del archivo generado.
+
+**Métricas del Sprint:** +22 pruebas (367 en 49 suites, 100% éxito). 0 errores de TypeScript. 0 errores de linting. Build SPA sin cambios en el bundle (los tests no afectan los assets de producción).
 
