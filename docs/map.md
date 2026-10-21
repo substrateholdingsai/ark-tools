@@ -1,7 +1,7 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 2.3 — Suite de 18 Herramientas + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
-**Fecha:** Octubre 2026 (verificado contra `main`)  
+**Versión:** 2.4 — Suite de 18 Herramientas + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
+**Fecha:** Octubre 2026 (verificado contra `main` y desplegado en producción)  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
 **Repositorio:** [https://github.com/substrateholdingsai/ark-tools](https://github.com/substrateholdingsai/ark-tools)
@@ -12,7 +12,7 @@
 
 | Métrica                                   | Estado                                                                                                                                                                                                                                                                                                                                                  |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Actualización y Recargos (#18)**        | 100% Implementado (Cálculo determinista CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales sin redondeo, regla de no-deflación, mora al 1.47% mensual LIF Art. 8, desglose mes a mes, LiquidGlassDome y Papel de Trabajo Oficial SHA-256 + QR)                                                                                          |
+| **Actualización y Recargos (#18)**        | 100% Implementado y Desplegado en Producción (Cálculo determinista CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales sin redondeo, regla de no-deflación, mora al 1.47% mensual LIF Art. 8, desglose mes a mes, LiquidGlassDome, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_recargos_fiscales`)                      |
 | **Monitor LFPIORPI (#17)**                | 100% Implementado (Evaluación determinista antilavado Art. 17 LFPIORPI, regla de acumulación móvil de 6 meses, ingesta CSV/Excel, semáforo de riesgo Verde/Amarillo/Rojo, umbrales UMA 2026 y Papel de Trabajo SHA-256 + QR)                                                                                                                            |
 | **Conciliación Anexo 24 (#16)**           | 100% Implementado (Automatización Cero-Captura, cruce CFDI vs Anexo 24, filtro estricto de canceladas con Metadata SAT, auto-asociación a cuentas de ingresos e IVA, exportación CSV BOM UTF-8, layout Contpaqi/COI y Papel de Trabajo SHA-256 + QR)                                                                                                    |
 | **Calculadora y Cédula RESICO 2026**      | 100% Operativo (Doble modalidad Persona Física Art. 113-E 1%-2.5% con tope $3.5M y retención 1.25% PM, Persona Moral Art. 206 30% flujo, Cédula oficial Carta, QR público y Workers AI)                                                                                                                                                                 |
@@ -27,21 +27,21 @@
 | **Autenticación & AuthGate**              | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant)                                                                                                                                                                                                                |
 | **Multi-Tenancy**                         | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                                                                                                                                                                                                                                      |
 | **Base de Datos Cloudflare D1**           | 100% Actualizada (`0001`–`0006` verificadas aplicadas en `ark_tools_db`; `0007_leads_crm.sql` incluida en el repo y requerida por el CRM de prospectos)                                                                                                                                                                                                 |
-| **Cloudflare Workers AI**                 | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM y streaming SSE — 8 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación)                                                                                                                             |
+| **Cloudflare Workers AI**                 | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM y streaming SSE — 9 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación)                                                                                                                             |
 | **Persistencia & API REST**               | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, CRM de Leads, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                                                                                                                    |
 | **Copy & Transparencia Legal**            | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0) y cero cajas negras                                                                                                                                                                                                                                        |
 | **Mesa de Ayuda & Soporte**               | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                                                                                                   |
-| **GEO & Agentes IA**                      | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (15 herramientas)**                                                                                                                                 |
+| **GEO & Agentes IA**                      | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (18 herramientas)**                                                                                                                                 |
 | **Landing Pública**                       | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                                                                                                        |
 | **Navegación & Usabilidad**               | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                                   |
-| **Pruebas unitarias e integración**       | **367 pasadas en 49 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                                  |
-| **Auditoría DOF Catálogo**                | 100% Verificado con `pnpm verify:catalogo` (6/6 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                     |
+| **Pruebas unitarias e integración**       | **417 pasadas en 58 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                                  |
+| **Auditoría DOF Catálogo**                | 100% Verificado con `pnpm verify:catalogo` (7/7 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                     |
 | **Typecheck (TypeScript)**                | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                              |
 | **Linting (ESLint)**                      | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                               |
-| **Formato (Prettier)**                    | 100% uniforme en todo el repositorio — verificado con `pnpm format:check` (165 archivos reformateados en el Sprint 24)                                                                                                                                                                                                                                  |
+| **Formato (Prettier)**                    | 100% uniforme en todo el repositorio — verificado con `pnpm format:check`                                                                                                                                                                                                                                                                               |
 | **Continuous Integration**                | GitHub Actions en `push` a `main` y pull requests: typecheck, lint, format:check, verify:catalogo, test y build (`.github/workflows/ci.yml`)                                                                                                                                                                                                            |
-| **Build Vite (SPA)**                      | 100% funcional con bundle optimizado (Vite build en 29s; chunk inicial 223.56 kB / 61.24 kB gzip)                                                                                                                                                                                                                                                       |
-| **Git & Repositorio**                     | Sincronizado en rama `main` en GitHub (`cc9fd6f` — catálogo canónico de herramientas y sincronización GEO/AI/Open Graph)                                                                                                                                                                                                                                |
+| **Build Vite (SPA)**                      | 100% funcional con bundle optimizado (Vite build completado; 1,786 módulos transformados)                                                                                                                                                                                                                                                               |
+| **Git & Repositorio**                     | Sincronizado en rama `main` en GitHub (`2c22916` — Herramienta #18 Actualización y Recargos CFF, desplegado a producción en Cloudflare con Version ID `9346525b-db87-48ad-bc58-59ca5c99f8de`)                                                                                                                                                           |
 | **Herramientas Integradas**               | 18 de 18 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Conciliación Anexo 24, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo, Monitor LFPIORPI, Actualización y Recargos CFF) + Admin (con CRM de Prospectos) + Team |
 
 ---
@@ -94,7 +94,7 @@ ark-tools/
 ├── src/
 │   ├── index.ts                      ✅ Worker Entry Point (/health, auth, admin, invitaciones, D1, CRM leads, AI, Alegra, cron y SPA fallback)
 │   ├── index.tsx                     ✅ React DOM Root con AuthProvider y ExpedienteProvider
-│   ├── App.tsx                       ✅ Router principal con Gating (Landing pública / Dashboard autenticado) y 15 herramientas lazy
+│   ├── App.tsx                       ✅ Router principal con Gating (Landing pública / Dashboard autenticado) y 18 herramientas lazy
 │   ├── test-setup.ts                 ✅ Setup global de Vitest (jest-dom)
 │   ├── context/
 │   │   ├── AuthContext.tsx           ✅ Sesión verificada en Worker y selección de tenant
@@ -122,13 +122,13 @@ ark-tools/
 │   │   │   └── alegraApi.test.ts     ✅ 11 pruebas de integración y seguridad
 │   │   └── ai/                       ✅ Cloudflare Workers AI & Agentic Tool-Calling
 │   │       ├── types.ts              ✅ Tipos para mensajes, tool definitions y requests
-│   │       ├── tools.ts              ✅ Catálogo de 8 herramientas (LFT, RESICO, D1, Balance, CRM) con aislamiento por tenant
+│   │       ├── tools.ts              ✅ Catálogo de 9 herramientas (LFT, RESICO, D1, Balance, CRM, Recargos CFF) con aislamiento por tenant
 │   │       ├── tools.test.ts         ✅ 8 tests unitarios de ejecución y seguridad multi-tenant
 │   │       ├── agent.ts              ✅ Orquestador Llama 3.3 70B con loop de tool-calling, streaming SSE y `buildSystemPrompt()` exportable
-│   │       ├── agent.test.ts         ✅ 7 tests de consistencia del system prompt (conteo, catálogo y directivas de las 8 tools)
+│   │       ├── agent.test.ts         ✅ 8 tests de consistencia del system prompt (conteo, catálogo y directivas de las 9 tools)
 │   │       ├── aiApi.ts              ✅ Endpoints REST (/api/ai/status, /api/ai/models, /api/ai/tools, /api/ai/chat, /api/ai/quota)
 │   │       └── aiApi.test.ts         ✅ 6 tests de integración de API
-│   │   ├── llmsTxt.ts               ✅ Generador dinámico /llms.txt, /llms-full.txt y /robots.txt (GEO Engine, derivado del catálogo canónico)
+│   │   ├── llmsTxt.ts               ✅ Generador dinámico /llms.txt, /llms-full.txt y /robots.txt (GEO Engine, derivado del catálogo canónico de 18 herramientas)
 │   │   └── llmsTxt.test.ts          ✅ 4 tests unitarios de generación GEO y sync del catálogo
 │   ├── lib/
 │   │   ├── cn.ts                     ✅ Utilidad twMerge + clsx
@@ -178,7 +178,7 @@ ark-tools/
 │   │   │   ├── tipos.ts              ✅ Tipos ValorFiscal (fuente DOF, urlDOF, criticidad), ConfigVigencia
 │   │   │   └── index.ts              ✅ Barrel export completo
 │   │   ├── estados.ts                ✅ Re-export desde ISN (fuente única de verdad)
-│   │   ├── catalogo-herramientas.ts   ✅ Catálogo canónico de las 15 herramientas (fuente única del conteo publicado)
+│   │   ├── catalogo-herramientas.ts   ✅ Catálogo canónico de las 18 herramientas (fuente única del conteo publicado)
 │   │   ├── catalogo-herramientas.test.ts ✅ 4 tests de sincronía con el router `ToolId` de App.tsx
 │   │   ├── conductas.ts              ✅ Catálogo de Activos Virtuales (12 conductas, autoridades, hitos, umbrales)
 │   │   ├── conductas.test.ts         ✅ 15 tests unitarios pasados
@@ -335,18 +335,45 @@ ark-tools/
 │           ├── CalculadoraBalance.test.tsx ✅ 7 tests de UI (ingesta CSV, ecuación A=P+C, tabla AH/AV, export CSV)
 │           └── index.ts              ✅ Barrel export
 │       │
-│       └── monitor-lfpiorpi/         ✅ 100% COMPLETADA Y DESPLEGADA (Herramienta #17)
-│           ├── types.ts              ✅ Tipos OperacionCobranza, ResultadoCliente, ResumenMonitorLFPIORPI, FraccionLFPIORPI
-│           ├── lib/evaluadorActividadesVulnerables.ts ✅ Motor determinista antilavado, UMA 2026, regla de acumulación 6 meses
-│           ├── lib/evaluadorActividadesVulnerables.test.ts ✅ 6 tests unitarios (100% éxito)
-│           ├── lib/parserCobranza.ts  ✅ Parser CSV/TSV tolerante, normalización RFC/fecha/monto y plantilla oficial
-│           ├── lib/parserCobranza.test.ts ✅ 6 tests unitarios (100% éxito)
+│       ├── anexo24/                  ✅ 100% COMPLETADA Y DESPLEGADA (Herramienta #16)
+│       │   ├── types.ts              ✅ Tipos PolizaContable, CuadreConciliacion, CatalogoCuentaAnexo24
+│       │   ├── lib/motorConciliacion.ts ✅ Cruce CFDI vs Catálogo y Balanza Anexo 24, Debe = Haber
+│       │   ├── lib/motorConciliacion.test.ts ✅ 4 tests unitarios de cuadre y generación de pólizas
+│       │   ├── lib/parserAnexo24.ts  ✅ Parser de Catálogo XML y Balanza de Comprobación SAT
+│       │   ├── lib/parserAnexo24.test.ts ✅ 4 tests de parsing
+│       │   ├── lib/parserMetadata.ts ✅ Descarte automático de comprobantes cancelados mediante Metadata SAT
+│       │   ├── lib/parserMetadata.test.ts ✅ 3 tests de filtro de canceladas
+│       │   ├── components/           ✅ DropZoneMulti, ResumenCuadreDome, TablaConciliacion
+│       │   ├── ConciliadorAnexo24.tsx ✅ Interfaz principal con demo, exportación CSV BOM y layouts Contpaqi/COI
+│       │   ├── ConciliadorAnexo24.test.tsx ✅ 4 tests de UI e integración
+│       │   └── index.ts              ✅ Barrel export completo
+│       │
+│       ├── monitor-lfpiorpi/         ✅ 100% COMPLETADA Y DESPLEGADA (Herramienta #17)
+│       │   ├── types.ts              ✅ Tipos OperacionCobranza, ResultadoCliente, ResumenMonitorLFPIORPI, FraccionLFPIORPI
+│       │   ├── lib/evaluadorActividadesVulnerables.ts ✅ Motor determinista antilavado, UMA 2026, regla de acumulación 6 meses
+│       │   ├── lib/evaluadorActividadesVulnerables.test.ts ✅ 6 tests unitarios (100% éxito)
+│       │   ├── lib/parserCobranza.ts  ✅ Parser CSV/TSV tolerante, normalización RFC/fecha/monto y plantilla oficial
+│       │   ├── lib/parserCobranza.test.ts ✅ 6 tests unitarios (100% éxito)
+│       │   ├── components/
+│       │   │   ├── PanelFiltrosVulnerables.tsx ✅ Selector de Fracción Art. 17 y cálculo de topes en MXN
+│       │   │   ├── ResumenAuditoriaDome.tsx   ✅ KPIs ejecutivos (Total, Avisos UIF, Identificación, Normales, Monto)
+│       │   │   └── TablaMonitorLFPIORPI.tsx    ✅ Semáforo por cliente, barras de avance y búsqueda/filtros
+│       │   ├── MonitorLFPIORPI.tsx   ✅ Ensamblador principal con ingesta Drag & Drop y Expediente Único
+│       │   ├── MonitorLFPIORPI.test.tsx ✅ 3 tests de UI e integración (100% éxito)
+│       │   └── index.ts              ✅ Barrel export completo
+│       │
+│       └── recargos/                 ✅ 100% COMPLETADA Y DESPLEGADA (Herramienta #18)
+│           ├── types.ts              ✅ Tipos EntradaRecargos, FactorActualizacionDetalle, DesgloseMesRecargo, ResultadoRecargos
+│           ├── lib/calcularRecargos.ts ✅ Art. 17-A CFF truncado a 4 decimales, no-deflación, mora LIF 1.47% sobre base actualizada
+│           ├── lib/calcularRecargos.test.ts ✅ 15 tests unitarios (truncamiento, no-deflación, fracciones de mes, SAT)
+│           ├── lib/exportarRecargos.ts ✅ Exportador CSV con BOM UTF-8 y formateador de resumen WhatsApp
 │           ├── components/
-│           │   ├── PanelFiltrosVulnerables.tsx ✅ Selector de Fracción Art. 17 y cálculo de topes en MXN
-│           │   ├── ResumenAuditoriaDome.tsx   ✅ KPIs ejecutivos (Total, Avisos UIF, Identificación, Normales, Monto)
-│           │   └── TablaMonitorLFPIORPI.tsx    ✅ Semáforo por cliente, barras de avance y búsqueda/filtros
-│           ├── MonitorLFPIORPI.tsx   ✅ Ensamblador principal con ingesta Drag & Drop y Expediente Único
-│           ├── MonitorLFPIORPI.test.tsx ✅ 3 tests de UI e integración (100% éxito)
+│           │   ├── ParametrosRecargosCard.tsx ✅ Selectores de fecha, validación temporal, presets rápidos (3, 6, 12, 24m) y badge LIF
+│           │   ├── DesgloseActualizacionTable.tsx ✅ Cards visuales de ecuación CFF y tabla analítica mes a mes
+│           │   ├── ResultadoRecargosCard.tsx ✅ LiquidGlassDome con total adeudado, importe en letra y chips métricos
+│           │   └── CedulaRecargosModal.tsx ✅ Papel de Trabajo Oficial Carta (@media print), Sello SHA-256, QR y bloques de firmas
+│           ├── CalculadoraRecargos.tsx ✅ Ensamblador principal conectado a ExpedienteToolBanner y modal
+│           ├── CalculadoraRecargos.test.tsx ✅ 4 tests de UI e integración
 │           └── index.ts              ✅ Barrel export completo
 ```
 
@@ -1628,3 +1655,44 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 **Despliegue:** commits `3b881a0` (hook + colisión de deploy) y `78180b9` (formato + CI) → `main` → `origin/main`. Worker `ark-tools-production`, Version ID `69540930-4d34-447b-8301-f07776c6c07e`.
 
 > **Pendiente de push:** el commit `25ad7ee` con `.github/workflows/ci.yml` (rama local `feature/ci-workflow`) requiere un token de GitHub con scope `workflow` para poder subirse: el token OAuth del entorno solo tiene `gist`, `read:org` y `repo`, y GitHub rechaza crear o actualizar workflows sin ese scope. Para publicarlo: `gh auth refresh --hostname github.com -s workflow` y después `git push origin feature/ci-workflow`.
+
+---
+
+### Sprint 25 (Octubre 2026) — Herramienta #18: Calculadora de Actualización y Recargos Fiscales (CFF Art. 17-A y 21) & Conciliación Anexo 24 (#16) — Completado ✅
+
+**Objetivo:** Eliminar la dependencia de software obsoleto (.exe) y macros de Excel mediante la construcción e integración de la **Herramienta #18**: Calculadora de Actualización y Recargos Fiscales (Art. 17-A y Art. 21 CFF + Art. 8 LIF) y el cierre de catálogo a 18 herramientas con Conciliación Anexo 24 (#16).
+
+#### 1. Motor Matemático y Jurídico (`src/tools/recargos/lib/calcularRecargos.ts`)
+
+- **Truncamiento estricto a 4 decimales (diezmilésimos):** Cumplimiento literal del Art. 17-A del CFF (`Math.floor(factor * 10000) / 10000`), sin redondeos matemáticos comunes.
+- **Regla legal anti-deflación:** Conforme al párrafo sexto del Art. 17-A CFF, si el factor resultante de dividir el INPC reciente entre el antiguo es menor a 1.0000 (deflación), se aplica el factor neutro `1.0000`.
+- **Mora fiscal sobre base actualizada:** Conforme al Art. 21 CFF y Art. 8 LIF, la tasa mensual de recargos por mora (1.47% mensual vigente en 2026) se liquida sobre el **impuesto actualizado**, no sobre el importe histórico original.
+- **Cómputo exacto de fracciones de mes:** Fracciones de mes se computan como meses completos de mora conforme a la legislación fiscal mexicana (`fechaPago.dia > fechaVencimiento.dia => meses + 1`).
+
+#### 2. Catálogo Centralizado de INPC y Vigilancia Desatendida DOF
+
+- **`TABLA_INPC` (2021–2026):** Matriz oficial en `src/data/valores-vigentes/catalogo.ts` con funciones de consulta `obtenerInpc()` y `obtenerUltimoInpc()`.
+- **`TASA_RECARGOS_MORA_2026`:** Integrada en `CATALOGO_2026` como valor auditado DOF (7/7 oficiales vigentes en `pnpm verify:catalogo`).
+- **`scripts/dof_sat_watcher.py`:** Vigilante desatendido con severidad crítica (`CRITICO`) y regex pericial para ingesta y actualización automática de los nuevos INPC publicados en el DOF cada día 10 del mes.
+
+#### 3. Componentes Visuales ARK Design System (`src/tools/recargos/components/`)
+
+- `ParametrosRecargosCard.tsx`: Formulario reactivo con validación de fechas (Pago $\ge$ Vencimiento), badges oficiales LIF 1.47% y accesos directos a escenarios predefinidos (3, 6, 12 y 24 meses).
+- `DesgloseActualizacionTable.tsx`: Desglose didáctico de la ecuación Art. 17-A (Numerador / Denominador = Factor Truncado) y cronograma mes a mes de mora.
+- `ResultadoRecargosCard.tsx`: Cúpula `LiquidGlassDome` con deuda total a liquidar magnificada, importe en letras mayúsculas M.N. (`numeroALetras.ts`) y chips métricos.
+- `CedulaRecargosModal.tsx`: Papel de trabajo oficial tamaño carta `@media print` con Sello SHA-256, QR de verificación pública y bloques de firma.
+
+#### 4. Integración GEO y Noah AI
+
+- `src/data/catalogo-herramientas.ts`: Registro canónico de Herramienta #18 (`recargos`), elevando `TOTAL_HERRAMIENTAS` a 18.
+- `src/server/ai/tools.ts` y `agent.ts`: Directiva `calcular_recargos_fiscales` agregada a `AI_TOOLS_CATALOG` (9 tools de IA en total).
+- `src/server/llmsTxt.ts`: Fórmulas CFF Art. 17-A y 21 documentadas para agentes de inteligencia artificial en `/llms.txt` y `/llms-full.txt`.
+
+#### 5. Métricas de Calidad y Despliegue
+
+- **Pruebas unitarias e integración:** 417 pruebas en 58 suites (100% éxito) — `pnpm test`.
+- **Auditoría DOF:** 7/7 valores oficiales vigentes — `pnpm verify:catalogo`.
+- **Typecheck & Linting:** 0 errores TypeScript (`tsc --noEmit`), 0 warnings ESLint (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme — `pnpm format:check`.
+- **Build de producción:** Vite v5.4.21 exitoso (1,786 módulos).
+- **Despliegue a Producción:** Commit `2c22916` → `origin/main`. Worker `ark-tools-production`, Version ID `9346525b-db87-48ad-bc58-59ca5c99f8de` en `https://tools.arksystems.site`. Verificado en vivo `/llms.txt` (18 herramientas) y `/api/ai/tools` (9 herramientas).
