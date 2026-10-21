@@ -253,7 +253,7 @@ export async function handleAiApiRequest(
             current_usage: quotaCheck.used,
             limit: quotaCheck.limit,
             payment_url: PRO_PAYMENT_URL,
-            result: `Has alcanzado el límite de **${quotaCheck.limit} consultas gratuitas de cortesía** de este mes.\n\nPara continuar utilizando **ARK Contable AI** con consultas ilimitadas, respaldo automático en D1 y soporte prioritario, activa tu suscripción a **ARK TOOLS Pro** ($399 MXN/mes).`,
+            result: `Has alcanzado el límite de **${quotaCheck.limit} consultas gratuitas de cortesía** de este mes.\n\nPara continuar utilizando **Noah** con consultas ilimitadas, respaldo automático en D1 y soporte prioritario, activa tu suscripción a **ARK TOOLS Pro** ($399 MXN/mes).`,
             message: 'Límite de consultas gratuitas de cortesía alcanzado.',
           },
           { status: 402, headers: corsHeaders }

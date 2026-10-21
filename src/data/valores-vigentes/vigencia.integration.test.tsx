@@ -21,15 +21,16 @@ describe('AlertasVigencia — integración con fecha simulada', () => {
     // UMA.diaria2026 vence 2027-01-31, así que en marzo 2027 está vencida
     // Debe aparecer en la lista con mensaje de vencido y link DOF
     expect(screen.getByText(/UMA Diaria 2026/)).toBeInTheDocument();
-    expect(screen.getAllByText(/Venció hace/)).toHaveLength(4); // UMA diaria, UMA mensual, Tope SBC, ISR
-    expect(screen.getAllByRole('link', { name: /Ver DOF/i })).toHaveLength(4);
+    expect(screen.getAllByText(/Venció hace/)).toHaveLength(5); // UMA diaria, UMA mensual, Tope SBC, ISR, Recargos LIF
+    expect(screen.getAllByRole('link', { name: /Ver DOF/i })).toHaveLength(5);
   });
 
   it('detecta próxima a vencer al simular 2026-11-15 (60 días antes de fin 2026)', () => {
     renderWithTime(new Date('2026-11-15T12:00:00Z'));
-    // Tarifa ISR vence 2026-12-31, así que en nov 2026 está próxima
+    // Tarifa ISR y Tasa Recargos vencen 2026-12-31, así que en nov 2026 están próximas
     expect(screen.getByText(/Tarifa ISR Mensual 2026/)).toBeInTheDocument();
-    expect(screen.getByText(/Vence en/)).toBeInTheDocument();
+    expect(screen.getByText(/Tasa Mensual de Recargos por Mora/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Vence en/)).toHaveLength(2);
   });
 
   it('no muestra alerta en 2026-06-15 (todo vigente)', () => {

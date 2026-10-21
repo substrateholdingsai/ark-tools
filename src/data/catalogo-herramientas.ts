@@ -2,7 +2,7 @@
  * CATÁLOGO CANÓNICO DE HERRAMIENTAS DE ARK TOOLS
  *
  * ÚNICA fuente de verdad del catálogo de la suite. Tanto el motor GEO
- * (`/llms.txt`) como el system prompt de ARK Contable AI derivan de aquí el
+ * (`/llms.txt`) como el system prompt del asistente de IA (Noah) derivan de aquí el
  * conteo, los identificadores y las descripciones publicadas.
  *
  * REGLAS DE MANTENIMIENTO:
@@ -138,6 +138,27 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     categoria: 'Compliance y Defensa Jurídica',
     descripcion:
       'Matriz normativa conforme a LFPIORPI y Ley Fintech para contadores y asesores, con umbrales antilavado en UMAs (210 UMA para reporte, 4 UMA para comisiones).',
+  },
+  {
+    id: 'anexo24',
+    nombre: 'Motor de Conciliación Anexo 24',
+    categoria: 'SAT y Auditoría CFDI 4.0 (100% Local en Navegador)',
+    descripcion:
+      'Generador automático de pólizas contables mediante cruce de CFDI vs Catálogo y Balanza del Anexo 24. Descarte obligatorio de facturas canceladas con Metadata del SAT, validación de cuadre Debe = Haber, exportación CSV con BOM UTF-8, layout Contpaqi/COI y Papel de Trabajo con Sello SHA-256 + QR.',
+  },
+  {
+    id: 'monitor-lfpiorpi',
+    nombre: 'Monitor de Actividades Vulnerables LFPIORPI',
+    categoria: 'Compliance y Defensa Jurídica',
+    descripcion:
+      'Motor determinista antilavado. Ingesta local de sábanas de cobranza y evaluación continua contra umbrales oficiales en UMA 2026 con regla de acumulación de 6 meses (Art. 17 LFPIORPI). Semáforo de riesgo por cliente (Identificación y Aviso SAT/UIF) y Papel de Trabajo con Sello SHA-256.',
+  },
+  {
+    id: 'recargos',
+    nombre: 'Calculadora de Actualización y Recargos Fiscales (CFF)',
+    categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
+    descripcion:
+      'Determinación de actualización por inflación (Art. 17-A CFF) y recargos por mora (Art. 21 CFF y LIF al 1.47% mensual). Motor cloud-native conectado a la serie de INPC del DOF, factor truncado a 4 decimales, desglose analítico mes a mes y emisión de Papel de Trabajo Oficial con Sello SHA-256 + QR.',
   },
 ];
 

@@ -64,7 +64,7 @@ export function AiAssistantWidget() {
       id: 'welcome',
       role: 'assistant',
       content:
-        'Hola, soy **ARK Contable AI**. Tengo acceso directo a tus bases de datos de D1 y a los motores de cálculo fiscal y laboral del Worker. ¿En qué te puedo ayudar hoy?',
+        'Hola, soy **Noah**. Tengo acceso directo a tus bases de datos de D1 y a los motores de cálculo fiscal y laboral del Worker. ¿En qué te puedo ayudar hoy?',
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     },
   ]);
@@ -236,7 +236,7 @@ export function AiAssistantWidget() {
   };
 
   return (
-    <aside aria-label="Asistente Virtual ARK AI" className="fixed bottom-6 right-6 z-50 font-inter">
+    <aside aria-label="Asistente Virtual Noah" className="fixed bottom-6 right-6 z-50 font-inter">
       {/* Botón Flotante (Cuando está cerrado) */}
       {!isOpen && (
         <button
@@ -245,7 +245,7 @@ export function AiAssistantWidget() {
             setIsMinimized(false);
           }}
           className="group relative flex items-center gap-3 rounded-full border-2 border-[#D4AF37] bg-[#002B7F] px-5 py-3.5 text-white shadow-[0_10px_35px_rgba(0,43,127,0.5)] transition-all duration-300 hover:scale-[1.03] hover:bg-[#001A4D] hover:shadow-[0_12px_40px_rgba(212,175,55,0.45)]"
-          title="Abrir Asistente ARK AI"
+          title="Abrir Asistente Noah"
         >
           <div className="relative flex h-8 w-8 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#001A4D] text-gold transition-transform group-hover:scale-110">
             <Sparkles className="h-5 w-5 animate-pulse text-[#D4AF37]" />
@@ -254,9 +254,9 @@ export function AiAssistantWidget() {
           </div>
           <div className="text-left">
             <div className="flex items-center gap-1.5 font-playfair text-[13px] font-bold tracking-wide text-white">
-              ARK AI{' '}
+              Noah{' '}
               <span className="py-0.2 rounded border border-[#D4AF37]/40 bg-[#D4AF37]/25 px-1.5 font-mono text-[10px] font-bold uppercase text-[#F5D97A]">
-                Edge
+                AI
               </span>
             </div>
             <div className="text-[11px] font-medium text-white/85">Llama 3.3 • Conectado a D1</div>
@@ -280,7 +280,7 @@ export function AiAssistantWidget() {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-playfair text-[15px] font-black tracking-wide text-white">
-                    ARK AI
+                    Noah
                   </span>
                   {quota.isPro ? (
                     <span className="inline-flex items-center gap-1 rounded border border-gold/40 bg-gold/20 px-1.5 py-0.5 font-mono text-[10px] font-bold text-gold">

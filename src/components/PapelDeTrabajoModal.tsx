@@ -198,6 +198,94 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
         importe: Number(totales.totalPasivoPatrimonio) || 0,
       },
     ];
+  } else if (tool_id === 'anexo24') {
+    const resumen = (outputs.resumen as Record<string, number | boolean>) || {};
+    totalMonto = Number(resumen.totalImporteFacturado ?? outputs.totalImporte ?? 0);
+    const partidas =
+      (outputs.partidasConciliadas as Array<{
+        concepto: string;
+        codigoAgrupador: string;
+        nombreCuenta: string;
+        debe: number;
+        haber: number;
+      }>) || [];
+    filasConceptos = partidas.slice(0, 15).map((p) => ({
+      concepto: `${p.codigoAgrupador} · ${p.nombreCuenta}`,
+      formula:
+        p.debe > 0 ? `Cargo (Debe) $${p.debe.toFixed(2)}` : `Abono (Haber) $${p.haber.toFixed(2)}`,
+      fundamento: 'CFF Art. 28 / Anexo 24 RMF',
+      importe: p.debe > 0 ? p.debe : p.haber,
+    }));
+  } else if (tool_id === 'monitor-lfpiorpi') {
+    const resumen = (outputs.resumen as Record<string, unknown>) || {};
+    totalMonto = Number(resumen.montoTotalEvaluado) || 0;
+    const clientes =
+      (outputs.clientes as Array<{
+        idCliente: string;
+        totalAcumulado6Meses: number;
+        operacionesCount: number;
+        nivelRiesgo: string;
+        requiereAviso: boolean;
+        requiereExpediente: boolean;
+      }>) || [];
+    filasConceptos = [
+      {
+        concepto: `Actividad: ${String(resumen.actividadVulnerable || 'LFPIORPI')}`,
+        dias: `${String(resumen.totalClientes || 0)} clientes`,
+        formula: `Umbral Identificación: ${Number(resumen.umbralIdentificacionUMA || 1605).toLocaleString('es-MX')} UMA | Aviso: ${Number(resumen.umbralAvisoUMA || 3210).toLocaleString('es-MX')} UMA`,
+        fundamento: 'LFPIORPI Art. 17',
+        importe: totalMonto,
+      },
+      ...clientes.slice(0, 14).map((c) => ({
+        concepto: `Cliente ${c.idCliente} [${c.nivelRiesgo}]`,
+        dias: `${c.operacionesCount} ops`,
+        formula: c.requiereAviso
+          ? 'Supera umbral de Aviso (Reporte SPPLD obligatorio)'
+          : c.requiereExpediente
+            ? 'Supera umbral de Identificación (Expediente requerido)'
+            : 'Operación ordinaria bajo los umbrales',
+        fundamento: 'LFPIORPI Art. 17 penúltimo párrafo',
+        importe: c.totalAcumulado6Meses,
+      })),
+    ];
+  } else if (tool_id === 'recargos') {
+    totalMonto = Number(outputs.totalPagar) || 0;
+    const factorDetalle = outputs.factorDetalle as
+      | {
+          periodoInpcReciente?: string;
+          periodoInpcAntiguo?: string;
+        }
+      | undefined;
+    const factorActualizacion = Number(outputs.factorActualizacion) || 1.0;
+    const mesesMora = Number(outputs.mesesMora) || 0;
+    const tasaTotal = Number(outputs.tasaRecargosTotal) || 0;
+
+    filasConceptos = [
+      {
+        concepto: 'Impuesto Omitido (Adeudo Histórico)',
+        formula: `Fecha exigibilidad: ${String(inputs.fechaVencimiento || 'N/A')}`,
+        fundamento: 'Ley Específica de la Contribución',
+        importe: Number(outputs.importeHistorico) || 0,
+      },
+      {
+        concepto: `Actualización por Inflación (Factor ${factorActualizacion.toFixed(4)})`,
+        formula: `INPC ${factorDetalle?.periodoInpcReciente || ''} / INPC ${factorDetalle?.periodoInpcAntiguo || ''}`,
+        fundamento: 'CFF Art. 17-A',
+        importe: Number(outputs.montoActualizacion) || 0,
+      },
+      {
+        concepto: '(=) Impuesto Actualizado (Base de Recargos)',
+        formula: `Impuesto Histórico × Factor ${factorActualizacion.toFixed(4)}`,
+        fundamento: 'CFF Art. 17-A',
+        importe: Number(outputs.impuestoActualizado) || 0,
+      },
+      {
+        concepto: `Recargos por Mora (${mesesMora} meses al 1.47% mensual)`,
+        formula: `Tasa acumulada ${tasaTotal}% sobre Base Actualizada`,
+        fundamento: 'CFF Art. 21 y LIF Art. 8',
+        importe: Number(outputs.montoRecargos) || 0,
+      },
+    ];
   } else {
     totalMonto = 0;
   }

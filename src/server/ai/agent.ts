@@ -24,6 +24,8 @@ export const FAST_MODEL = '@cf/meta/llama-3.1-8b-instruct';
  * instrucción de cuándo usarla. `agent.test.ts` falla si falta alguna.
  */
 export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
+  calcular_recargos_fiscales:
+    'Si te piden calcular actualización por inflación, INPC, recargos fiscales o adeudos tributarios en mora (CFF Arts. 17-A y 21), invoca "calcular_recargos_fiscales".',
   calcular_finiquito_lft:
     'Si te piden un cálculo laboral (finiquito, liquidación, aguinaldo, vacaciones, prima de antigüedad, indemnización), invoca "calcular_finiquito_lft" para calcular con la LFT vigente (Arts. 48, 50, 76, 80, 87, 162 y 486).',
   calcular_resico:
@@ -63,14 +65,14 @@ export interface RunAgentOptions {
 }
 
 /**
- * Construye el system prompt de ARK Contable AI.
+ * Construye el system prompt de Noah (asistente de IA de ARK TOOLS).
  *
  * Se exporta para poder verificar en tests que el numero de herramientas declaradas,
  * el catalogo de la suite y las directivas de invocacion no se desincronicen
  * del catalogo canonico ni del router de la SPA.
  */
 export function buildSystemPrompt(tenantId: string): string {
-  return `Eres ARK Contable AI, el asistente inteligente y especializado de la suite ARK TOOLS para despachos y contadores en México.
+  return `Eres Noah, el asistente inteligente y especializado de la suite ARK TOOLS para despachos y contadores en México.
 Tienes acceso a herramientas para consultar el progreso de la Guía SAT/IMSS, el Ledger de auditoría, notas de Activos Virtuales, Balance General y el CRM de prospectos comerciales (leads_ark_tools) de este despacho (Tenant: ${tenantId}), así como calcular finiquitos según la LFT y cálculo RESICO.
 
 Directrices obligatorias:
@@ -136,6 +138,18 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK TOOLS:
      - Qué es: Analizador comparativo de Balance General (Ejercicio Actual vs. Anterior) con Análisis Horizontal y Vertical para evaluar la salud financiera de un cliente.
      - Funcionamiento: Ingesta de la balanza en CSV/Excel, clasificación de rubros en Activo/Pasivo/Patrimonio, validación del cuadre patrimonial A=P+C con tolerancia de $0.02 MXN, y cálculo de variación absoluta, AH% y AV%. Evita la división por cero cuando el monto anterior es 0. Conectada a la herramienta 'consultar_balance_general'.
      - Salida: Tabla analítica, gráficas de composición patrimonial, exportación CSV con BOM UTF-8 y Papel de Trabajo Oficial con Sello SHA-256 y QR verificable.
+16. Motor de Conciliación Anexo 24 ('anexo24'):
+     - Qué es: Automatizador de contabilidad electrónica y generador automático de pólizas de ingresos que cruza CFDIs emitidos vs Catálogo y Balanza Anexo 24 del SAT.
+     - Funcionamiento: Ingesta cliente-side de tres archivos: XMLs de facturas CFDI emitidas, TXT de Metadata del SAT (descarte obligatorio de facturas canceladas) y XML de Catálogo/Balanza Anexo 24. Asocia automáticamente subtotal a cuentas de ingresos por tasa (16%, 8%, 0%, Exento) e impuestos a IVA trasladado cobrado (PUE) o no cobrado (PPD), validando la cuadratura contable estricta Debe = Haber.
+     - Salida: Tabla interactiva de cuadre, exportación en CSV con BOM UTF-8 para Excel, layout de pólizas para Contpaqi/COI y Papel de Trabajo Oficial con Sello SHA-256 y QR verificable.
+17. Monitor de Actividades Vulnerables LFPIORPI ('monitor-lfpiorpi'):
+     - Qué es: Motor determinista de prevención de lavado de dinero y monitoreo de actividades vulnerables (Art. 17 LFPIORPI).
+     - Funcionamiento: Ingesta de sábanas de cobranza en CSV/Excel, evaluación determinista contra umbrales en UMA 2026 y aplicación de la regla de acumulación móvil de 6 meses por cliente para detectar cruces de umbrales legales.
+     - Salida: Semáforo de riesgo por cliente (Verde / Identificación 1,605 UMA / Aviso SAT-UIF 3,210 UMA), tarjetas de resumen ejecutivo, exportación y emisión de Papel de Trabajo Oficial con Sello SHA-256 y QR de verificación.
+18. Calculadora de Actualización y Recargos Fiscales ('recargos'):
+     - Qué es: Determinador cloud-native de actualización por inflación (Art. 17-A CFF) y recargos por mora fiscal (Art. 21 CFF y LIF al 1.47% mensual).
+     - Funcionamiento: Recibe el importe histórico del impuesto omitido, la fecha en que debió pagarse y la fecha de pago real. Determina el factor de actualización dividiendo el INPC del mes anterior al más reciente del periodo entre el INPC del mes anterior al más antiguo, truncando a 4 decimales sin redondeo y protegiendo contra deflación (factor mínimo 1.0000). Calcula los meses o fracción de mes de mora conforme al Art. 21 CFF sobre la base actualizada al 1.47% mensual.
+     - Salida: Cédula analítica, importe actualizado, monto de recargos, total a pagar con importe en letra (Art. 28 CFF), exportación CSV con BOM UTF-8 y Papel de Trabajo Oficial con Sello SHA-256 y QR de verificación pública.
 
 2. RIGOR CONCEPTUAL Y CORRECCIÓN DE PREMISAS FALSAS:
    - RESICO (Régimen Simplificado de Confianza): En Personas Físicas grava los ingresos cobrados sin deducción de gastos para ISR (tasas de 1% a 2.5%), pero conservan el derecho a acreditar el IVA pagado de sus gastos. En Personas Morales tributan a flujo de efectivo al 30% sobre utilidad.

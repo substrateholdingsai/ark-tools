@@ -3,8 +3,12 @@ import { buildSystemPrompt, buildToolDirectives, DIRECTIVAS_HERRAMIENTAS } from 
 import { AI_TOOLS_CATALOG } from './tools';
 import { CATALOGO_HERRAMIENTAS, TOTAL_HERRAMIENTAS } from '../../data/catalogo-herramientas';
 
-describe('ARK Contable AI — System Prompt', () => {
+describe('Noah — System Prompt', () => {
   const prompt = buildSystemPrompt('tenant-demo');
+
+  it('declara la identidad del asistente como Noah', () => {
+    expect(prompt).toContain('Eres Noah, el asistente inteligente');
+  });
 
   it('declara el número real de herramientas de la suite', () => {
     expect(prompt).toContain(`sus ${TOTAL_HERRAMIENTAS} herramientas especializadas`);
@@ -22,6 +26,7 @@ describe('ARK Contable AI — System Prompt', () => {
   it('documenta las herramientas insignia de los últimos sprints', () => {
     expect(prompt).toContain("('resico')");
     expect(prompt).toContain("('balance-general')");
+    expect(prompt).toContain("('anexo24')");
     expect(prompt).toContain('A=P+C');
   });
 

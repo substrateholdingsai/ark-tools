@@ -10,8 +10,32 @@ import type { Env } from '../../index';
 import type { AiToolFunction } from './types';
 import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
+import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
 
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
+  {
+    name: 'calcular_recargos_fiscales',
+    description:
+      'Calcula la actualización inflacionaria (INPC Art. 17-A CFF) y recargos por mora (Art. 21 CFF y LIF al 1.47% mensual) de contribuciones federales omitidas.',
+    parameters: {
+      type: 'object',
+      properties: {
+        importeHistorico: {
+          type: 'number',
+          description: 'Monto del impuesto omitido en MXN.',
+        },
+        fechaVencimiento: {
+          type: 'string',
+          description: 'Fecha en que debió pagarse la contribución (ISO YYYY-MM-DD).',
+        },
+        fechaPago: {
+          type: 'string',
+          description: 'Fecha de pago real o proyectada (ISO YYYY-MM-DD).',
+        },
+      },
+      required: ['importeHistorico', 'fechaVencimiento', 'fechaPago'],
+    },
+  },
   {
     name: 'calcular_finiquito_lft',
     description:
@@ -234,6 +258,15 @@ export async function executeAiTool(
 
   try {
     // 1. Herramientas de cálculo puro (no requieren base de datos)
+    if (toolName === 'calcular_recargos_fiscales') {
+      const resultado = calcularRecargosYActualizacion({
+        importeHistorico: Number(args.importeHistorico || 0),
+        fechaVencimiento: String(args.fechaVencimiento || ''),
+        fechaPago: String(args.fechaPago || ''),
+      });
+      return { success: true, data: resultado };
+    }
+
     if (toolName === 'calcular_finiquito_lft') {
       const resultado = calcularFiniquito({
         tipoBaja: (args.tipoBaja as 'finiquito' | 'liquidacion') || 'finiquito',

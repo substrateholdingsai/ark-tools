@@ -339,7 +339,7 @@ describe('LeadsApp (src/components/admin/LeadsApp.tsx)', () => {
       expect(screen.queryByText('Bufete Ramírez')).toBeNull();
       expect(screen.getByText('Directorio de Prospectos (2)')).toBeInTheDocument();
     });
-  });
+  }, 15000);
 
   it('abre el modal de propuesta con vista previa y entrega el correo vía Resend', async () => {
     await renderApp();

@@ -72,7 +72,7 @@ export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): st
                                             <li style="margin-bottom: 8px;"><strong>Branding Total:</strong> Despliegue en su propio subdominio (ej. <em>tools.sudespacho.com</em>) con su logotipo.</li>
                                             <li style="margin-bottom: 8px;"><strong>Aislamiento Estricto:</strong> Base de datos dedicada. Sus cuentas corporativas no comparten entorno con terceros.</li>
                                             <li style="margin-bottom: 8px;"><strong>Papeles de Trabajo Oficiales:</strong> Cédulas PDF con Sello SHA-256 y QR a nombre de su firma.</li>
-                                            <li style="margin-bottom: 8px;"><strong>ARK Contable AI Privado:</strong> Inteligencia Artificial operando dentro de su entorno con cero filtraciones.</li>
+                                            <li style="margin-bottom: 8px;"><strong>Noah (AI Privado):</strong> Inteligencia Artificial operando dentro de su entorno con cero filtraciones.</li>
                                         </ul>
                                     </td>
                                 </tr>
@@ -142,7 +142,7 @@ Plan Corporate Firm (Marca Blanca) - Arrendamiento de Infraestructura Fiscal + I
 - Branding Total: Despliegue en su propio subdominio con su logotipo.
 - Aislamiento Estricto: Base de datos dedicada. Sus cuentas corporativas no comparten entorno con terceros.
 - Papeles de Trabajo Oficiales: Cédulas PDF con Sello SHA-256 y QR a nombre de su firma.
-- ARK Contable AI Privado: Inteligencia Artificial operando dentro de su entorno con cero filtraciones.
+- Noah (AI Privado): Inteligencia Artificial operando dentro de su entorno con cero filtraciones.
 
 ¿Tienen 15 minutos la próxima semana para mostrarles cómo se vería su propia plataforma operando en vivo?
 Coordinar una llamada vía WhatsApp: https://wa.me/525657062511

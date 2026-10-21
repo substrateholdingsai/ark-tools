@@ -20,9 +20,9 @@ function leerToolIdsDelRouter(): string[] {
 }
 
 describe('Catálogo Canónico de Herramientas', () => {
-  it('expone 15 herramientas con identificadores únicos', () => {
-    expect(TOTAL_HERRAMIENTAS).toBe(15);
-    expect(CATALOGO_HERRAMIENTAS).toHaveLength(15);
+  it('expone 18 herramientas con identificadores únicos', () => {
+    expect(TOTAL_HERRAMIENTAS).toBe(18);
+    expect(CATALOGO_HERRAMIENTAS).toHaveLength(18);
 
     const ids = CATALOGO_HERRAMIENTAS.map((h) => h.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -30,7 +30,7 @@ describe('Catálogo Canónico de Herramientas', () => {
 
   it('mantiene cada herramienta con nombre, categoría y descripción pública', () => {
     for (const herramienta of CATALOGO_HERRAMIENTAS) {
-      expect(herramienta.id).toMatch(/^[a-z-]+$/);
+      expect(herramienta.id).toMatch(/^[a-z0-9-]+$/);
       expect(herramienta.nombre.length).toBeGreaterThan(3);
       expect(herramienta.categoria.length).toBeGreaterThan(3);
       expect(herramienta.descripcion.length).toBeGreaterThan(40);
@@ -52,5 +52,8 @@ describe('Catálogo Canónico de Herramientas', () => {
     const ids = CATALOGO_HERRAMIENTAS.map((h) => h.id);
     expect(ids).toContain('resico');
     expect(ids).toContain('balance-general');
+    expect(ids).toContain('anexo24');
+    expect(ids).toContain('monitor-lfpiorpi');
+    expect(ids).toContain('recargos');
   });
 });

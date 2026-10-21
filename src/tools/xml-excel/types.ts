@@ -70,6 +70,12 @@ export interface FacturaCFDI {
   isrRetenido: number;
   ieps: number;
 
+  // Desglose de bases / subtotales por tasa si aplican (Anexo 24 / Fiscal)
+  subtotal16?: number;
+  subtotal8?: number;
+  subtotal0?: number;
+  subtotalExento?: number;
+
   // Conceptos
   conceptosCount: number;
   descripcionResumen: string;

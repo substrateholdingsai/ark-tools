@@ -181,7 +181,27 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 
 ---
 
-## 6. Estándar de Integridad SHA-256 y Verificación Pública
+## 6. Actualización y Recargos Fiscales (Arts. 17-A y 21 CFF & LIF Art. 8)
+
+### Procedimiento Determinista Legal
+1. **Factor de Actualización (Art. 17-A CFF):**
+   \`\`\`
+   Factor = INPC(Mes anterior al más reciente del pago) / INPC(Mes anterior al más antiguo del vencimiento)
+   \`\`\`
+   - Truncado estrictamente al diezmilésimo (4 decimales) sin redondeo.
+   - Regla de no-deflación: Si el factor resultante es menor a 1, se aplica 1.0000 (Art. 17-A párrafo 6 CFF).
+   - Impuesto Actualizado = \`Impuesto Histórico * Factor\`.
+   - Efecto Inflacionario = \`Impuesto Actualizado - Impuesto Histórico\`.
+2. **Recargos por Mora (Art. 21 CFF):**
+   - Causación por cada mes o fracción de mes que transcurra desde la fecha de vencimiento hasta la fecha de pago.
+   - Tasa oficial: 1.47% mensual según la Ley de Ingresos de la Federación (0.98% prórroga + 50% incremento por mora).
+   - Tasa acumulada = \`Meses Mora * 1.47%\`.
+   - Monto de Recargos = \`Impuesto Actualizado * (Tasa Acumulada / 100)\`.
+3. **Total Deuda a Liquidar:** \`Impuesto Actualizado + Recargos por Mora\`.
+
+---
+
+## 7. Estándar de Integridad SHA-256 y Verificación Pública
 
 Cada cálculo procesado en ARK TOOLS genera un hash SHA-256 canónico determinista:
 \`\`\`

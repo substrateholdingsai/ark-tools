@@ -48,6 +48,7 @@ DOF_RSS_URL = "https://dof.gob.mx/sumario.xml"
 KEYWORDS_FISCALES = [
     "UMA", "Unidad de Medida y Actualización",
     "Salario Mínimo", "CONASAMI",
+    "INPC", "Índice Nacional de Precios al Consumidor",
     "Anexo 8", "Tabla de ISR", "Impuesto Sobre la Renta",
     "Subsidio para el Empleo", "Decreto", "Ley del ISR"
 ]
@@ -57,7 +58,8 @@ BASELINE_CATALOG = {
     "UMA_DIARIA_2026": {"valor": 117.31, "fecha_vigencia": "2026-02-01", "fuente": "INEGI/DOF"},
     "SALARIO_MINIMO_GENERAL_2026": {"valor": 315.04, "fecha_vigencia": "2026-01-01", "fuente": "CONASAMI/DOF"},
     "TARIFA_ISR_MENSUAL_2026": {"valor": "11 rangos", "fecha_vigencia": "2026-01-01", "fuente": "SAT/DOF"},
-    "SUBSIDIO_EMPLEO_2026": {"valor": "Vigente", "fecha_vigencia": "2026-01-01", "fuente": "DOF"}
+    "SUBSIDIO_EMPLEO_2026": {"valor": "Vigente", "fecha_vigencia": "2026-01-01", "fuente": "DOF"},
+    "TASA_RECARGOS_MORA_2026": {"valor": 1.47, "fecha_vigencia": "2026-01-01", "fuente": "LIF/DOF"}
 }
 
 @dataclass
@@ -102,7 +104,7 @@ def analyze_entry(entry: dict) -> Optional[FiscalAlert]:
         if keyword.upper() in text_to_search:
             # Determinar severidad
             severity = "INFO"
-            if any(k in text_to_search for k in ["UMA", "SALARIO MÍNIMO", "CONASAMI"]):
+            if any(k in text_to_search for k in ["UMA", "SALARIO MÍNIMO", "CONASAMI", "INPC"]):
                 severity = "CRITICO"
             elif any(k in text_to_search for k in ["ANEXO 8", "ISR", "SUBSIDIO"]):
                 severity = "PREVENTIVO"
@@ -127,14 +129,52 @@ def extract_proposed_values(alert: FiscalAlert) -> Dict:
     (Nota: Para precisión del 100%, se requiere descarga del PDF/HTML completo, 
     pero esto da un primer indicador para el diff).
     """
+    if "INPC" in alert.keyword.upper() or "CONSUMIDOR" in alert.keyword.upper():
+        # INPC típicamente tiene formato de 3 dígitos enteros y 3 a 4 decimales (ej. 148.529)
+        inpc_pattern = r'\b(\d{3}\.\d{3,4})\b'
+        matches = re.findall(inpc_pattern, f"{alert.title} {alert.summary_snippet}")
+        return {
+            "detected_numbers": list(set(matches)),
+            "is_inpc": True,
+            "action_required": "Validar publicación oficial de INEGI y anexar a TABLA_INPC en catalogo.ts"
+        }
+
     # Regex para buscar patrones de moneda mexicana (ej: $117.31, 315.04)
     money_pattern = r'\$?\s*(\d{1,3}(?:,\d{3})*(?:\.\d{2})?)'
     matches = re.findall(money_pattern, alert.summary_snippet)
     
     return {
         "detected_numbers": list(set(matches)),
+        "is_inpc": False,
         "action_required": "Verificar decreto en el enlace y actualizar catalogo.ts"
     }
+
+def update_inpc_catalog(year: int, month: int, inpc_value: float, pub_date: str) -> bool:
+    """
+    Actualiza de forma desatendida src/data/valores-vigentes/catalogo.ts anexando el nuevo INPC
+    si no existe previamente en TABLA_INPC.
+    """
+    catalogo_path = os.path.join(os.path.dirname(__file__), "..", "src", "data", "valores-vigentes", "catalogo.ts")
+    if not os.path.exists(catalogo_path):
+        return False
+
+    with open(catalogo_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    needle = f"anio: {year}, mes: {month}"
+    if needle in content:
+        console.print(f"[yellow]ℹ️ INPC para {year}-{month:02d} ya existe en catalogo.ts.[/yellow]")
+        return False
+
+    new_entry = f"  {{ anio: {year}, mes: {month}, inpc: {inpc_value}, fechaPublicacionDOF: '{pub_date}' }},\n];"
+    updated_content = content.replace("];\n\n/** Índice O(1) de INPC por clave YYYY-MM */", new_entry + "\n\n/** Índice O(1) de INPC por clave YYYY-MM */")
+    
+    if updated_content != content:
+        with open(catalogo_path, "w", encoding="utf-8") as f:
+            f.write(updated_content)
+        console.print(f"[bold green]✨ TABLA_INPC actualizada con éxito: {year}-{month:02d} = {inpc_value}[/bold green]")
+        return True
+    return False
 
 # ==============================================================================
 # 3. GENERACIÓN DE DIFFS Y ALERTAS

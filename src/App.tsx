@@ -21,6 +21,8 @@ import {
   Fingerprint,
   CheckCircle2,
   BarChart3,
+  Layers,
+  TrendingUp,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -83,6 +85,15 @@ const AdminPanel = lazy(() =>
 const CalculadoraBalance = lazy(() =>
   import('./tools/balance-general').then((m) => ({ default: m.CalculadoraBalance }))
 );
+const ConciliadorAnexo24 = lazy(() =>
+  import('./tools/anexo24').then((m) => ({ default: m.ConciliadorAnexo24 }))
+);
+const MonitorLFPIORPI = lazy(() =>
+  import('./tools/monitor-lfpiorpi').then((m) => ({ default: m.MonitorLFPIORPI }))
+);
+const CalculadoraRecargos = lazy(() =>
+  import('./tools/recargos').then((m) => ({ default: m.CalculadoraRecargos }))
+);
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -97,6 +108,7 @@ export type ToolId =
   | 'resico'
   | 'xml-excel'
   | 'validador'
+  | 'anexo24'
   | 'spei'
   | 'timbrado'
   | 'leasing'
@@ -104,6 +116,8 @@ export type ToolId =
   | 'auditor-cobranza'
   | 'mapa-activos'
   | 'balance-general'
+  | 'monitor-lfpiorpi'
+  | 'recargos'
   | 'admin';
 
 export type ToolRoute = ToolId;
@@ -181,6 +195,9 @@ export function App() {
     'auditor-cobranza': 'Auditoría Legal de Cobranza',
     'mapa-activos': 'Mapa de Activos Virtuales',
     'balance-general': 'Balance General Comparativo',
+    anexo24: 'Motor de Conciliación Anexo 24',
+    'monitor-lfpiorpi': 'Monitor LFPIORPI',
+    recargos: 'Actualización y Recargos CFF',
     admin: 'Super Admin Console',
   };
 
@@ -217,6 +234,9 @@ export function App() {
       case 'validador':
         return <ValidadorXML onBack={goToDashboard} />;
 
+      case 'anexo24':
+        return <ConciliadorAnexo24 onBack={goToDashboard} />;
+
       case 'spei':
         return <GeneradorSPEI onBack={goToDashboard} />;
 
@@ -242,6 +262,12 @@ export function App() {
 
       case 'balance-general':
         return <CalculadoraBalance onBack={goToDashboard} />;
+
+      case 'monitor-lfpiorpi':
+        return <MonitorLFPIORPI onBack={goToDashboard} />;
+
+      case 'recargos':
+        return <CalculadoraRecargos onBack={goToDashboard} />;
 
       case 'dashboard':
       default:
@@ -491,6 +517,14 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
             badgeVariant="gold"
             onSelect={() => onSelectTool('balance-general')}
           />
+          <ToolCard
+            icon={TrendingUp}
+            title="Actualización y Recargos Fiscales"
+            description="Cálculo CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales y tasa LIF 1.47%."
+            badge="NUEVO"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('recargos')}
+          />
         </CategorySection>
       )}
 
@@ -499,8 +533,8 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
         <CategorySection
           id="sat"
           title="SAT & CFDI"
-          description="Procesamiento local de comprobantes fiscales y auditoría preventiva de listas negras."
-          columns={2}
+          description="Procesamiento local de comprobantes fiscales, auditoría y conciliación contable Anexo 24."
+          columns={3}
         >
           <ToolCard
             icon={FileSpreadsheet}
@@ -517,6 +551,14 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
             badge="GRATIS"
             badgeVariant="neutral"
             onSelect={() => onSelectTool('validador')}
+          />
+          <ToolCard
+            icon={Layers}
+            title="Conciliación Anexo 24"
+            description="Generador automático de pólizas contables, cruce CFDI vs Anexo 24 y filtro Metadata SAT."
+            badge="PRO"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('anexo24')}
           />
         </CategorySection>
       )}
@@ -587,6 +629,14 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
             badge="PRO"
             badgeVariant="gold"
             onSelect={() => onSelectTool('mapa-activos')}
+          />
+          <ToolCard
+            icon={ShieldCheck}
+            title="Monitor LFPIORPI"
+            description="Auditoría antilavado con regla de acumulación de 6 meses y umbrales UMA 2026."
+            badge="PRO"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('monitor-lfpiorpi')}
           />
         </CategorySection>
       )}

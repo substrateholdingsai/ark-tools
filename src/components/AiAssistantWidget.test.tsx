@@ -37,26 +37,26 @@ describe('AiAssistantWidget', () => {
 
   it('renderiza inicialmente el botón flotante minimizado', () => {
     render(<AiAssistantWidget />);
-    expect(screen.getByTitle('Abrir Asistente ARK AI')).toBeInTheDocument();
-    expect(screen.getByText('ARK AI')).toBeInTheDocument();
+    expect(screen.getByTitle('Abrir Asistente Noah')).toBeInTheDocument();
+    expect(screen.getByText('Noah')).toBeInTheDocument();
     expect(screen.getByText(/Llama 3.3/)).toBeInTheDocument();
   });
 
   it('abre la ventana de chat al hacer clic en el botón flotante', async () => {
     render(<AiAssistantWidget />);
-    const openBtn = screen.getByTitle('Abrir Asistente ARK AI');
+    const openBtn = screen.getByTitle('Abrir Asistente Noah');
     fireEvent.click(openBtn);
 
     await waitFor(() => {
       expect(screen.getByText('Despacho Contable Águila', { exact: false })).toBeInTheDocument();
-      expect(screen.getByText('ARK Contable AI')).toBeInTheDocument();
+      expect(screen.getAllByText('Noah').length).toBeGreaterThanOrEqual(1);
       expect(screen.getByPlaceholderText(/Escribe tu consulta/i)).toBeInTheDocument();
     });
   });
 
   it('permite minimizar y cerrar la ventana de chat', async () => {
     render(<AiAssistantWidget />);
-    fireEvent.click(screen.getByTitle('Abrir Asistente ARK AI'));
+    fireEvent.click(screen.getByTitle('Abrir Asistente Noah'));
 
     await waitFor(() => {
       expect(screen.getByTitle('Minimizar')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('AiAssistantWidget', () => {
     fireEvent.click(closeBtn);
     // Vuelve a estar cerrado
     await waitFor(() => {
-      expect(screen.getByTitle('Abrir Asistente ARK AI')).toBeInTheDocument();
+      expect(screen.getByTitle('Abrir Asistente Noah')).toBeInTheDocument();
     });
   });
 
@@ -84,7 +84,7 @@ describe('AiAssistantWidget', () => {
     });
 
     render(<AiAssistantWidget />);
-    fireEvent.click(screen.getByTitle('Abrir Asistente ARK AI'));
+    fireEvent.click(screen.getByTitle('Abrir Asistente Noah'));
 
     const input = screen.getByPlaceholderText(/Escribe tu consulta/i);
     fireEvent.change(input, { target: { value: '¿Cómo va la guía?' } });
@@ -123,7 +123,7 @@ describe('AiAssistantWidget', () => {
     });
 
     render(<AiAssistantWidget />);
-    fireEvent.click(screen.getByTitle('Abrir Asistente ARK AI'));
+    fireEvent.click(screen.getByTitle('Abrir Asistente Noah'));
 
     const input = screen.getByPlaceholderText(/Escribe tu consulta/i);
     fireEvent.change(input, { target: { value: 'Pregunta número 11' } });

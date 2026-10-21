@@ -194,6 +194,10 @@ export function parsearCFDI(xmlText: string, fileName: string = 'factura.xml'): 
   let ieps = 0;
   let ivaRetenido = 0;
   let isrRetenido = 0;
+  let subtotal16 = 0;
+  let subtotal8 = 0;
+  let subtotal0 = 0;
+  let subtotalExento = 0;
 
   const fuenteImpuestos = impuestosXml || (partesConceptos.length === 1 ? xmlText : '');
   const traslados = buscarTags(fuenteImpuestos, 'Traslado');
@@ -201,15 +205,35 @@ export function parsearCFDI(xmlText: string, fileName: string = 'factura.xml'): 
     const impuesto = t['impuesto']; // 002 = IVA, 003 = IEPS
     const tasaOCuota = parseFloat(t['tasaocuota'] || '0');
     const importe = parseFloat(t['importe'] || '0') || 0;
+    const base = parseFloat(t['base'] || '0') || 0;
+    const tipoFactor = (t['tipofactor'] || '').toLowerCase();
 
     if (impuesto === '002') {
-      if (Math.abs(tasaOCuota - 0.16) < 0.001) {
+      if (tipoFactor === 'exento') {
+        subtotalExento += base;
+      } else if (Math.abs(tasaOCuota - 0.16) < 0.001) {
         iva16 += importe;
+        subtotal16 += base;
       } else if (Math.abs(tasaOCuota - 0.08) < 0.001) {
         iva8 += importe;
+        subtotal8 += base;
+      } else if (Math.abs(tasaOCuota) < 0.0001) {
+        subtotal0 += base;
       }
     } else if (impuesto === '003') {
       ieps += importe;
+    }
+  }
+
+  // Si no se extrajeron bases en los traslados pero hay IVA, inferir base neta
+  const subtotalNeto = Math.max(0, subtotal - descuento);
+  if (subtotal16 === 0 && subtotal8 === 0 && subtotal0 === 0 && subtotalExento === 0) {
+    if (iva16 > 0 && iva8 === 0) {
+      subtotal16 = subtotalNeto;
+    } else if (iva8 > 0 && iva16 === 0) {
+      subtotal8 = subtotalNeto;
+    } else {
+      subtotal16 = subtotalNeto;
     }
   }
 
@@ -296,6 +320,10 @@ export function parsearCFDI(xmlText: string, fileName: string = 'factura.xml'): 
     ivaRetenido,
     isrRetenido,
     ieps,
+    subtotal16: Math.round(subtotal16 * 100) / 100,
+    subtotal8: Math.round(subtotal8 * 100) / 100,
+    subtotal0: Math.round(subtotal0 * 100) / 100,
+    subtotalExento: Math.round(subtotalExento * 100) / 100,
     conceptosCount,
     descripcionResumen,
     estado,

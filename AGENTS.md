@@ -1,6 +1,6 @@
 # ARK TOOLS — Guía de trabajo para agentes y mantenedores
 
-Suite de 15 herramientas fiscales, laborales y de compliance para contadores en México.
+Suite de 18 herramientas fiscales, laborales y de compliance para contadores en México.
 SPA React + Cloudflare Workers + D1, conGEO Engine (`/llms.txt`) para descubrimiento por agentes IA.
 
 ## Comandos
@@ -14,7 +14,7 @@ pnpm typecheck        # tsc --noEmit
 pnpm lint             # ESLint, falla con cualquier warning
 pnpm format           # Prettier --write sobre todo el repo
 pnpm format:check     # Prettier --check sobre todo el repo
-pnpm verify:catalogo  # auditoría DOF de las vigencias fiscales (6/6 oficiales)
+pnpm verify:catalogo  # auditoría DOF de las vigencias fiscales (7/7 oficiales)
 ```
 
 ### Despliegue
@@ -33,7 +33,7 @@ pnpm run deploy:preview      # build + wrangler deploy (preview local)
 
 1. **El catálogo de herramientas tiene una sola fuente de verdad.**
    `src/data/catalogo-herramientas.ts` alimenta el conteo publicado en `/llms.txt`, el
-   system prompt de ARK Contable AI y las guardas de tests. `TOTAL_HERRAMIENTAS` se
+   system prompt de Noah y las guardas de tests. `TOTAL_HERRAMIENTAS` se
    **deriva** del arreglo: nunca se escribe un número a mano. Al agregar o quitar una
    herramienta hay que actualizar también el union type `ToolId` de `src/App.tsx` —
    `src/data/catalogo-herramientas.test.ts` falla si no coinciden.

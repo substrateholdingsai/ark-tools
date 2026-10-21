@@ -1112,7 +1112,7 @@ export default function LeadsApp() {
                       <li>Branding Total en su propio subdominio</li>
                       <li>Aislamiento Estricto en D1 dedicado</li>
                       <li>Cédulas PDF con Sello SHA-256 + QR oficial</li>
-                      <li>ARK Contable AI Privado</li>
+                      <li>Noah (AI Privado)</li>
                     </ul>
                   </div>
                   <p className="text-[11px] text-muted">
