@@ -1,0 +1,36 @@
+{
+  "system": "ARK",
+  "client": "ARK Systems · Tools",
+  "meta": {
+    "og": "1200x630",
+    "safe_zone": "100px",
+    "ratio": "1.91:1"
+  },
+  "assets": [
+    {
+      "file": "og-image.svg",
+      "kb": 8.35,
+      "dims": "1200x630"
+    },
+    {
+      "file": "twitter-image.svg",
+      "kb": 8.35,
+      "dims": "1200x630"
+    },
+    {
+      "file": "favicon.svg",
+      "kb": 6.48,
+      "dims": "auto"
+    },
+    {
+      "file": "logo-cube.svg",
+      "kb": 6.58,
+      "dims": "auto"
+    },
+    {
+      "file": "logo-lockup.svg",
+      "kb": 6.66,
+      "dims": "auto"
+    }
+  ]
+}
