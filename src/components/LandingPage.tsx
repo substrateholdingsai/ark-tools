@@ -2,8 +2,8 @@
  * ARK TOOLS — Landing Pública
  *
  * Página de aterrizaje para usuarios no autenticados.
- * Explica las 10 herramientas gratuitas y el beneficio de registrarse
- * para asegurar acceso prioritario a futuras herramientas exclusivas.
+ * Explica las 19 herramientas de la suite y el beneficio de registrarse
+ * para acceder a la funcionalidad completa.
  */
 
 import { useEffect, useState } from 'react';
@@ -168,6 +168,40 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     description:
       'Matriz legal de consulta para contadores sobre 12 conductas con criptoactivos: Ley Fintech, LFPIORPI (prevención de lavado) y Código Fiscal.',
     tag: 'Fintech',
+  },
+  // Compliance (nuevas #16, #17)
+  {
+    icon: FileSpreadsheet,
+    category: 'Compliance',
+    title: 'Conciliación Anexo 24',
+    description:
+      'Cruce automatizado CFDI vs Catálogo y Balanza Anexo 24, filtro de canceladas con Metadata SAT, exportación CSV BOM UTF-8 y layouts Contpaqi/COI.',
+    tag: 'CFF Art. 28',
+  },
+  {
+    icon: ShieldAlert,
+    category: 'Compliance',
+    title: 'Monitor LFPIORPI',
+    description:
+      'Evaluación determinista antilavado Art. 17 LFPIORPI, regla de acumulación móvil 6 meses, umbrales UMA 2026 y semáforo Verde/Amarillo/Rojo por cliente.',
+    tag: 'Art. 17 LFPIORPI',
+  },
+  // Fiscal (nuevas #15, #18)
+  {
+    icon: Calculator,
+    category: 'Fiscal',
+    title: 'Balance General Comparativo',
+    description:
+      'Análisis Horizontal y Vertical, validación A=P+C con tolerancia $0.02, parser CSV/Excel, export CSV BOM UTF-8 y Papel de Trabajo PDF con SHA-256+QR.',
+    tag: 'Herramienta #15',
+  },
+  {
+    icon: Wallet,
+    category: 'Fiscal',
+    title: 'Actualización y Recargos CFF',
+    description:
+      'Cálculo determinista Art. 17-A CFF (factor INPC truncado a 4 decimales, no-deflación) y mora LIF 1.47% mensual. Desglose mes a mes y Cédula QR.',
+    tag: 'Art. 17-A CFF',
   },
 ];
 
