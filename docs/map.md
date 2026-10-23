@@ -546,13 +546,14 @@ ark-tools/
 
 #### Estado verificado en Producción (Octubre 2026) — sin pendientes
 
-- **Deploy vigente:** Version ID `69540930-4d34-447b-8301-f07776c6c07e` (worker `ark-tools-production`, route `tools.arksystems.site` custom domain, cron `0 */6 * * *`). Construido desde el commit `78180b9`.
-- **`GET /llms.txt`:** responde _"Catálogo de las 15 Herramientas en Producción"_ con 5 categorías; incluye **RESICO 2026** y **Balance General Comparativo**; ya no aparece el conteo de 13.
-- **`GET /llms-full.txt`:** anexo con §4 RESICO, §5 Balance General y §6 Estándar SHA-256.
-- **`GET /`:** meta `og:description` con _"Suite de 15 herramientas"_.
-- **`GET /api/ai/tools`:** responde `tools_count: 8` incluyendo `consultar_balance_general` y `consultar_leads_crm`.
-- **Cloudflare D1 remoto (`ark_tools_db`):** las 7 migraciones están aplicadas y registradas en `d1_migrations` (`0007_leads_crm.sql` aplicada el 2026-10-19 07:47:01). `wrangler d1 migrations list --remote` responde _"No migrations to apply!"_.
+- **Deploy vigente:** Version ID `b1faf657-a5af-49b7-bdf9-0df2cb05ff19` (worker `ark-tools-production`, route `tools.arksystems.site` custom domain, cron `0 */6 * * *`). Construido desde el commit más reciente de `main` (incluye CI workflow en `.github/workflows/ci.yml`).
+- **`GET /llms.txt`:** responde _"Catálogo de las 19 Herramientas en Producción"_ con 5 categorías; incluye **RESICO 2026**, **Balance General Comparativo**, **Anexo 24**, **Monitor LFPIORPI**, **Actualización y Recargos CFF** y **Modalidad 40**; ya no aparece el conteo de 13/15.
+- **`GET /llms-full.txt`:** anexo con §4 RESICO, §5 Balance General, §6 Estándar SHA-256 y las fórmulas de las herramientas #16-#19.
+- **`GET /`:** meta `og:description` con _"Suite de 19 herramientas"_.
+- **`GET /api/ai/tools`:** responde `tools_count: 13` incluyendo `consultar_balance_general` y `consultar_leads_crm`.
+- **Cloudflare D1 remoto (`ark_tools_db`):** las 7 migraciones están aplicadas y registradas en `d1_migrations` (`0007_leads_crm.sql`). `wrangler d1 migrations list --remote` responde _"No migrations to apply!"_.
 - **Tablas remotas presentes:** `clients`, `expedientes`, `auth_sessions`, `auth_tokens`, `auth_rate_limits`, `tenant_memberships`, `tenant_invitations`, `tenant_alegra_accounts`, `alegra_invoices`, `ai_usage`, `leads_ark_tools`.
+- **CI/CD:** `.github/workflows/ci.yml` activo en `main` (typecheck, lint, format:check, verify:catalogo, test, build).
 
 ---
 
@@ -1439,10 +1440,10 @@ ark-tools/
 | **Creative Studio**           | Generador de creativos Instagram 1080×1080 con Playwright + Jinja2 (`instagram-creatives/`)                                           | ✅ Operativo (asset de marketing, fuera de la SPA)            |
 | **GEO Engine (Agentes IA)**   | Generador dinámico `/llms.txt`, `/llms-full.txt` y `/robots.txt` (Worker, vinculado al catálogo DOF 2026, cache 24h)                  | ✅ 100% Operativo en Producción                               |
 
-- **Total de herramientas en plataforma:** **15 de 15 (100% Operativas)** + Super Admin Console (con CRM de Prospectos) + Noah (Asistente AI)
+- **Total de herramientas en plataforma:** **19 de 19 (100% Operativas)** + Super Admin Console (con CRM de Prospectos) + Noah (Asistente AI)
 - **Total de pruebas unitarias y de integración:** **368 pasadas en 49 suites (100% éxito)** — verificado con `pnpm test`
 - **Migraciones D1 aplicadas:** 7 (`0001` → `0007_leads_crm.sql`) en `ark_tools_db`
-- **Herramientas de IA registradas en `AI_TOOLS_CATALOG`:** 8 (`calcular_finiquito_lft`, `calcular_resico`, `consultar_progreso_guia`, `consultar_auditoria_ledger`, `consultar_watchlist_activos`, `obtener_info_despacho`, `consultar_balance_general`, `consultar_leads_crm`), todas con directiva de invocación en el system prompt
+- **Herramientas de IA registradas en `AI_TOOLS_CATALOG`:** 13 (`calcular_modalidad_40`, `calcular_recargos_fiscales`, `calcular_isn`, `calcular_sbc`, `calcular_nomina_rapida`, `calcular_finiquito_lft`, `calcular_resico`, `consultar_progreso_guia`, `consultar_auditoria_ledger`, `consultar_watchlist_activos`, `obtener_info_despacho`, `consultar_balance_general`, `consultar_leads_crm`), todas con directiva de invocación en el system prompt
 - **Catálogo público de herramientas:** fuente única en `src/data/catalogo-herramientas.ts`; el conteo publicado en `/llms.txt`, el system prompt de Noah y las guardas de tests se derivan de él (nunca se escribe a mano)
 - **Typecheck:** 0 errores en modo estricto de TypeScript (`pnpm typecheck` → `tsc --noEmit`)
 - **Linting:** 0 errores, 0 advertencias (`eslint . --ext .ts,.tsx --max-warnings 0`)

@@ -12,6 +12,12 @@ import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
 import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
 import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
+import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
+import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
+import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
+import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
+import type { ParametrosSBC } from '../../tools/sbc/types';
+import type { ParametrosNomina } from '../../tools/nomina/types';
 
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
@@ -48,6 +54,66 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
       },
       required: ['ultimoSbc', 'semanasPrevias'],
+    },
+  },
+  {
+    name: 'calcular_isn',
+    description:
+      'Calcula el Impuesto Sobre Nómina (ISN) estatal: suma de percepciones gravadas por la tasa del estado. Devuelve base gravable, total exento, total percepciones, tasa y monto de ISN.',
+    parameters: {
+      type: 'object',
+      properties: {
+        baseGravable: {
+          type: 'number',
+          description: 'Suma de percepciones gravadas (base del ISN) en MXN.',
+        },
+        tasa: {
+          type: 'number',
+          description: 'Tasa del ISN del estado en porcentaje (ej. 3 para 3%).',
+        },
+      },
+      required: ['baseGravable', 'tasa'],
+    },
+  },
+  {
+    name: 'calcular_sbc',
+    description:
+      'Calcula el Salario Base de Cotización (SBC) IMSS: factor de integración por prestaciones (vacaciones, prima vacacional, aguinaldo), SBC bruto y SBC final aplicando topes (mínimo salario mínimo, máximo 25 UMAs).',
+    parameters: {
+      type: 'object',
+      properties: {
+        salarioDiario: { type: 'number', description: 'Salario diario ordinario en MXN.' },
+        diasVacaciones: { type: 'number', description: 'Días de vacaciones por antigüedad.' },
+        primaVacacional: {
+          type: 'number',
+          description: 'Porcentaje de prima vacacional (default 25).',
+        },
+        diasAguinaldo: { type: 'number', description: 'Días de aguinaldo (default 15).' },
+      },
+      required: ['salarioDiario'],
+    },
+  },
+  {
+    name: 'calcular_nomina_rapida',
+    description:
+      'Calcula nómina rápida: ISR con subsidio al empleo, IMSS obrero por ramo y neto a pagar para un período (diario/semanal/quincenal/mensual).',
+    parameters: {
+      type: 'object',
+      properties: {
+        periodo: {
+          type: 'string',
+          enum: ['diario', 'semanal', 'quincenal', 'mensual'],
+          description: 'Período de pago.',
+        },
+        sueldoBruto: { type: 'number', description: 'Sueldo bruto del período en MXN.' },
+        diasTrabajados: { type: 'number', description: 'Días trabajados (para prorrateo).' },
+        diasPeriodo: {
+          type: 'number',
+          description: 'Días del período completo (ej. 30 para mensual).',
+        },
+        sbcDiario: { type: 'number', description: 'SBC diario para IMSS obrero.' },
+      },
+      required: ['periodo', 'sueldoBruto'],
     },
   },
   {
@@ -320,6 +386,52 @@ export async function executeAiTool(
         fechaVencimiento: String(args.fechaVencimiento || ''),
         fechaPago: String(args.fechaPago || ''),
       });
+      return { success: true, data: resultado };
+    }
+
+    if (toolName === 'calcular_isn') {
+      const baseGravable = Number(args.baseGravable || 0);
+      const tasa = Number(args.tasa || 0);
+      const conceptos: ConceptoPercepcion[] = [
+        { id: 1, concepto: 'Base gravable', gravado: baseGravable, exento: 0 },
+      ];
+      const estado: Estado = {
+        id: 'ai',
+        nombre: 'AI',
+        corto: 'AI',
+        tasa,
+        vigencia: '2026',
+        articulo: 'N/A',
+      };
+      const resultado = calcularResultadoISN(conceptos, estado);
+      return { success: true, data: resultado };
+    }
+
+    if (toolName === 'calcular_sbc') {
+      const parametros: ParametrosSBC = {
+        salarioDiario: Number(args.salarioDiario || 0),
+        diasVacaciones: Number(args.diasVacaciones ?? 12),
+        primaVacacional: Number(args.primaVacacional ?? 25),
+        diasAguinaldo: Number(args.diasAguinaldo ?? 15),
+      } as ParametrosSBC;
+      const resultado = calcularResultadoSBC(parametros);
+      return { success: true, data: resultado };
+    }
+
+    if (toolName === 'calcular_nomina_rapida') {
+      const periodo = (args.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual') || 'mensual';
+      const sueldoBruto = Number(args.sueldoBruto || 0);
+      const diasTrabajados = Number(args.diasTrabajados ?? 30);
+      const diasPeriodo = Number(args.diasPeriodo ?? 30);
+      const sbcDiario = Number(args.sbcDiario ?? sueldoBruto / 30);
+      const parametros: ParametrosNomina = {
+        periodo,
+        sueldoBruto,
+        diasTrabajados,
+        diasPeriodo,
+        sbcDiario,
+      };
+      const resultado = calcularNomina(parametros);
       return { success: true, data: resultado };
     }
 

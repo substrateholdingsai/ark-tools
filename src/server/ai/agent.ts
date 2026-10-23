@@ -28,6 +28,12 @@ export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
     'Si te piden proyectar pensión Ley 73, calcular cuotas de Modalidad 40, evaluar el tope del Acuerdo DOF 21/10/2026 (último salario + 1 UMA) o retorno de inversión (ROI), invoca "calcular_modalidad_40".',
   calcular_recargos_fiscales:
     'Si te piden calcular actualización por inflación, INPC, recargos fiscales o adeudos tributarios en mora (CFF Arts. 17-A y 21), invoca "calcular_recargos_fiscales".',
+  calcular_isn:
+    'Si te piden calcular el Impuesto Sobre Nómina (ISN) estatal, invoca "calcular_isn" con la base gravable y la tasa del estado.',
+  calcular_sbc:
+    'Si te piden calcular el Salario Base de Cotización (SBC) IMSS, invoca "calcular_sbc" con el salario diario y las prestaciones.',
+  calcular_nomina_rapida:
+    'Si te piden calcular nómina rápida (ISR, IMSS obrero, neto a pagar) por período, invoca "calcular_nomina_rapida".',
   calcular_finiquito_lft:
     'Si te piden un cálculo laboral (finiquito, liquidación, aguinaldo, vacaciones, prima de antigüedad, indemnización), invoca "calcular_finiquito_lft" para calcular con la LFT vigente (Arts. 48, 50, 76, 80, 87, 162 y 486).',
   calcular_resico:
