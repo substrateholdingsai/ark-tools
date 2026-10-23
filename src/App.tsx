@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
+import { useExpediente } from '@/context/ExpedienteContext';
 
 import {
   Header,
@@ -39,6 +40,7 @@ import {
   VerificacionPublicaModal,
   InviteAcceptModal,
   ErrorBoundary,
+  OnboardingQuickstartModal,
 } from './components';
 import type { NavItem } from './components';
 
@@ -94,6 +96,9 @@ const MonitorLFPIORPI = lazy(() =>
 const CalculadoraRecargos = lazy(() =>
   import('./tools/recargos').then((m) => ({ default: m.CalculadoraRecargos }))
 );
+const Modalidad40 = lazy(() =>
+  import('./tools/modalidad40').then((m) => ({ default: m.Modalidad40 }))
+);
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -118,6 +123,7 @@ export type ToolId =
   | 'balance-general'
   | 'monitor-lfpiorpi'
   | 'recargos'
+  | 'modalidad40'
   | 'admin';
 
 export type ToolRoute = ToolId;
@@ -136,8 +142,13 @@ const navItems: NavItem[] = [
 // ═════════════════════════════════════════════════════════════════
 export function App() {
   const { isLoaded, platformRole } = useAuth();
+  const { loadDemoData } = useExpediente();
   const [activeTool, setActiveTool] = useState<ToolId>('dashboard');
   const [activeNavFilter, setActiveNavFilter] = useState<NavFilter>('dashboard');
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem('ark_onboarding_completed') !== 'true';
+  });
   const [verifyHash, setVerifyHash] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
     const params = new URLSearchParams(window.location.search);
@@ -198,6 +209,7 @@ export function App() {
     anexo24: 'Motor de Conciliación Anexo 24',
     'monitor-lfpiorpi': 'Monitor LFPIORPI',
     recargos: 'Actualización y Recargos CFF',
+    modalidad40: 'Simulador Modalidad 40 (DOF 2026)',
     admin: 'Super Admin Console',
   };
 
@@ -207,7 +219,11 @@ export function App() {
         return platformRole === 'super_admin' ? (
           <AdminPanel onBack={goToDashboard} />
         ) : (
-          <Dashboard onSelectTool={navigateTo} navFilter={activeNavFilter} />
+          <Dashboard
+            onSelectTool={navigateTo}
+            navFilter={activeNavFilter}
+            onOpenOnboarding={() => setShowOnboarding(true)}
+          />
         );
 
       case 'isn':
@@ -269,6 +285,9 @@ export function App() {
       case 'recargos':
         return <CalculadoraRecargos onBack={goToDashboard} />;
 
+      case 'modalidad40':
+        return <Modalidad40 onBack={goToDashboard} />;
+
       case 'dashboard':
       default:
         return <Dashboard onSelectTool={navigateTo} navFilter={activeNavFilter} />;
@@ -313,7 +332,11 @@ export function App() {
 
           <main>
             {activeTool === 'dashboard' ? (
-              <Dashboard onSelectTool={navigateTo} navFilter={activeNavFilter} />
+              <Dashboard
+                onSelectTool={navigateTo}
+                navFilter={activeNavFilter}
+                onOpenOnboarding={() => setShowOnboarding(true)}
+              />
             ) : (
               <ErrorBoundary
                 key={activeTool}
@@ -329,6 +352,19 @@ export function App() {
 
           {/* Widget Flotante del Asistente Workers AI */}
           <AiAssistantWidget />
+
+          {/* Modal de Onboarding y Quickstart (Aha! Moment en 60s) */}
+          <OnboardingQuickstartModal
+            isOpen={showOnboarding}
+            onClose={() => setShowOnboarding(false)}
+            onStartDemo={() => {
+              loadDemoData();
+              navigateTo('nomina');
+            }}
+            onSelectTool={(toolId) => {
+              navigateTo(toolId);
+            }}
+          />
         </div>
       </SignedIn>
 
@@ -384,9 +420,10 @@ export function App() {
 interface DashboardProps {
   onSelectTool: (tool: ToolId) => void;
   navFilter: NavFilter;
+  onOpenOnboarding?: () => void;
 }
 
-function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
+function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps) {
   return (
     <div className="mx-auto max-w-[1280px] space-y-16 px-6 py-16 md:px-10">
       {/* Hero */}
@@ -431,6 +468,19 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
               </p>
             </div>
           </div>
+
+          {onOpenOnboarding && (
+            <div className="flex shrink-0 items-center">
+              <button
+                type="button"
+                onClick={onOpenOnboarding}
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-gold/50 bg-gold/15 px-4 py-2.5 font-orbitron text-xs font-bold uppercase tracking-wider text-navy shadow-sm transition-all hover:border-gold hover:bg-gold/25"
+              >
+                <Sparkles size={14} className="text-gold" />
+                <span>Tour Demo (60s)</span>
+              </button>
+            </div>
+          )}
         </div>
       </section>
 
@@ -524,6 +574,14 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
             badge="NUEVO"
             badgeVariant="gold"
             onSelect={() => onSelectTool('recargos')}
+          />
+          <ToolCard
+            icon={ShieldAlert}
+            title="Simulador de Modalidad 40"
+            description="Proyección Ley 73 con restricción DOF 21/10/2026 (Último SBC + 1 UMA), cuota 14.438% y ROI."
+            badge="GRATIS"
+            badgeVariant="neutral"
+            onSelect={() => onSelectTool('modalidad40')}
           />
         </CategorySection>
       )}

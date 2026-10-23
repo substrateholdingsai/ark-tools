@@ -24,6 +24,8 @@ export const FAST_MODEL = '@cf/meta/llama-3.1-8b-instruct';
  * instrucción de cuándo usarla. `agent.test.ts` falla si falta alguna.
  */
 export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
+  calcular_modalidad_40:
+    'Si te piden proyectar pensión Ley 73, calcular cuotas de Modalidad 40, evaluar el tope del Acuerdo DOF 21/10/2026 (último salario + 1 UMA) o retorno de inversión (ROI), invoca "calcular_modalidad_40".',
   calcular_recargos_fiscales:
     'Si te piden calcular actualización por inflación, INPC, recargos fiscales o adeudos tributarios en mora (CFF Arts. 17-A y 21), invoca "calcular_recargos_fiscales".',
   calcular_finiquito_lft:
@@ -150,6 +152,10 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK TOOLS:
      - Qué es: Determinador cloud-native de actualización por inflación (Art. 17-A CFF) y recargos por mora fiscal (Art. 21 CFF y LIF al 1.47% mensual).
      - Funcionamiento: Recibe el importe histórico del impuesto omitido, la fecha en que debió pagarse y la fecha de pago real. Determina el factor de actualización dividiendo el INPC del mes anterior al más reciente del periodo entre el INPC del mes anterior al más antiguo, truncando a 4 decimales sin redondeo y protegiendo contra deflación (factor mínimo 1.0000). Calcula los meses o fracción de mes de mora conforme al Art. 21 CFF sobre la base actualizada al 1.47% mensual.
      - Salida: Cédula analítica, importe actualizado, monto de recargos, total a pagar con importe en letra (Art. 28 CFF), exportación CSV con BOM UTF-8 y Papel de Trabajo Oficial con Sello SHA-256 y QR de verificación pública.
+19. Simulador de Modalidad 40 ('modalidad40'):
+     - Qué es: Simulador actuarial de pensión bajo el Régimen 1973 de la LSS y auditor de la restricción del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026).
+     - Funcionamiento: Recibe el último SBC registrado previo a la baja, el salario deseado, las semanas previas, la edad de retiro (60 a 65 años) y los meses a cotizar. Aplica el límite máximo legal de último salario más 1 UMA diaria (máx 25 UMAs). Proyecta la cuantía básica e incrementos anuales del Art. 167 LSS, asignación familiar (15%), Decreto Fox (11%), cuota mensual 2026 (14.438%) y retorno de inversión (ROI).
+     - Salida: Pensión mensual neta estimada, aguinaldo, desglose de aportaciones, semanas totales, tiempo de retorno de inversión y Papel de Trabajo Oficial con Sello SHA-256 y QR de verificación pública.
 
 2. RIGOR CONCEPTUAL Y CORRECCIÓN DE PREMISAS FALSAS:
    - RESICO (Régimen Simplificado de Confianza): En Personas Físicas grava los ingresos cobrados sin deducción de gastos para ISR (tasas de 1% a 2.5%), pero conservan el derecho a acreditar el IVA pagado de sus gastos. En Personas Morales tributan a flujo de efectivo al 30% sobre utilidad.

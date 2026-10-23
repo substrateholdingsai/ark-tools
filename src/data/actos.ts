@@ -99,7 +99,7 @@ export const GUIA_PASOS: PasoGuia[] = [
       'Revisa si implica inicio de facultades',
       'Valida si hay crédito fiscal ya determinado',
     ],
-    tip: 'Una carta invitación no se contesta como requerimiento. Exhorto IMSS = invita a corregir, no sanciona aún.',
+    tip: 'Una carta invitación no se contesta como requerimiento. Exhorto IMSS = invita a corregir, no sanciona aún. Atención: El IMSS fiscaliza agresivamente altas atípicas orientadas a inflar pensiones (Acuerdo DOF 21/10/2026).',
     fundamento: 'CFF 33, 41, 42 | LSS 178-180',
     icono: 'layers',
   },
@@ -314,6 +314,7 @@ export const PLAZOS_CLAVE: PlazoClave[] = [
 export const NOTAS_PLAZOS: string[] = [
   'Buzón Tributario: 3 días para darse por notificado + plazo del acto.',
   'IMSS: días hábiles, no cuentan sáb/dom/festivos.',
+  'Modalidad 40 (DOF 21/10/2026): El rechazo a registros con salarios superiores a último SBC + 1 UMA o pagos retroactivos deriva del Acuerdo ACDO.AS2.HCT.101026/302.P.DG.',
 ];
 
 // Legacy export for backwards compatibility

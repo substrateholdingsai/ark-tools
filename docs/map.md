@@ -1,6 +1,6 @@
 # ARK TOOLS — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 2.4 — Suite de 18 Herramientas + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
+**Versión:** 2.5 — Suite de 19 Herramientas + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
 **Fecha:** Octubre 2026 (verificado contra `main` y desplegado en producción)  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
@@ -10,39 +10,40 @@
 
 ## 1. Resumen Ejecutivo de Avance
 
-| Métrica                                   | Estado                                                                                                                                                                                                                                                                                                                                                  |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Actualización y Recargos (#18)**        | 100% Implementado y Desplegado en Producción (Cálculo determinista CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales sin redondeo, regla de no-deflación, mora al 1.47% mensual LIF Art. 8, desglose mes a mes, LiquidGlassDome, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_recargos_fiscales`)                      |
-| **Monitor LFPIORPI (#17)**                | 100% Implementado (Evaluación determinista antilavado Art. 17 LFPIORPI, regla de acumulación móvil de 6 meses, ingesta CSV/Excel, semáforo de riesgo Verde/Amarillo/Rojo, umbrales UMA 2026 y Papel de Trabajo SHA-256 + QR)                                                                                                                            |
-| **Conciliación Anexo 24 (#16)**           | 100% Implementado (Automatización Cero-Captura, cruce CFDI vs Anexo 24, filtro estricto de canceladas con Metadata SAT, auto-asociación a cuentas de ingresos e IVA, exportación CSV BOM UTF-8, layout Contpaqi/COI y Papel de Trabajo SHA-256 + QR)                                                                                                    |
-| **Calculadora y Cédula RESICO 2026**      | 100% Operativo (Doble modalidad Persona Física Art. 113-E 1%-2.5% con tope $3.5M y retención 1.25% PM, Persona Moral Art. 206 30% flujo, Cédula oficial Carta, QR público y Workers AI)                                                                                                                                                                 |
-| **Balance General Comparativo (#15)**     | 100% Implementado e integrado (Análisis Horizontal y Vertical, validación A=P+C con tolerancia $0.02, parser CSV/Excel, export CSV BOM UTF-8, Papel de Trabajo PDF con SHA-256+QR y tool `consultar_balance_general`)                                                                                                                                   |
-| **Timbrado CFDI 4.0 (Alegra / PAC)**      | 100% Operativo en Producción (Emisión SAT delegada vía PAC Quadrum, multi-cuenta por despacho, encriptación AES-GCM 256-bit, verificación en vivo de CSD, descarga de XML/PDF y Cron de health check cada 6h con alertas Resend)                                                                                                                        |
-| **Colaboración en Equipo e Invitaciones** | 100% Operativo en Producción (Gestión de miembros, roles owner/admin/member, invitaciones seguras por correo vía Resend, aceptación pública o autenticada y aislamiento multi-tenant)                                                                                                                                                                   |
-| **Cierre de Nómina Masivo (Batch DOF)**   | 100% Operativo (Ingesta CSV/Excel, cálculo simultáneo de retenciones SAT, IMSS Obrero, ISN, Cédula Concentradora y Dispersión Bancaria)                                                                                                                                                                                                                 |
-| **Papel de Trabajo Oficial (PDF/QR)**     | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública)                                                                                                                                                                                                        |
-| **Verificación Pública de Expedientes**   | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores)                                                                                                                                                                                                     |
-| **CRM de Prospectos (Super Admin)**       | 100% Implementado e integrado (Pestaña `leads` en la consola de Super Admin, tabla `leads_ark_tools` en D1, KPIs de embudo, filtros por ciudad/especialidad/estatus, alta y baja de prospectos, envío de propuesta comercial vía Resend y tool de IA `consultar_leads_crm`)                                                                             |
-| **Expediente Único & Catálogo**           | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF)                                                                                                                                                                                                                                          |
-| **Autenticación & AuthGate**              | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant)                                                                                                                                                                                                                |
-| **Multi-Tenancy**                         | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                                                                                                                                                                                                                                      |
-| **Base de Datos Cloudflare D1**           | 100% Actualizada (`0001`–`0006` verificadas aplicadas en `ark_tools_db`; `0007_leads_crm.sql` incluida en el repo y requerida por el CRM de prospectos)                                                                                                                                                                                                 |
-| **Cloudflare Workers AI**                 | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM y streaming SSE — 9 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación)                                                                                                                             |
-| **Persistencia & API REST**               | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, CRM de Leads, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                                                                                                                    |
-| **Copy & Transparencia Legal**            | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0) y cero cajas negras                                                                                                                                                                                                                                        |
-| **Mesa de Ayuda & Soporte**               | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                                                                                                   |
-| **GEO & Agentes IA**                      | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (18 herramientas)**                                                                                                                                 |
-| **Landing Pública**                       | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                                                                                                        |
-| **Navegación & Usabilidad**               | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                                   |
-| **Pruebas unitarias e integración**       | **417 pasadas en 58 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                                  |
-| **Auditoría DOF Catálogo**                | 100% Verificado con `pnpm verify:catalogo` (7/7 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                     |
-| **Typecheck (TypeScript)**                | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                              |
-| **Linting (ESLint)**                      | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                               |
-| **Formato (Prettier)**                    | 100% uniforme en todo el repositorio — verificado con `pnpm format:check`                                                                                                                                                                                                                                                                               |
-| **Continuous Integration**                | GitHub Actions en `push` a `main` y pull requests: typecheck, lint, format:check, verify:catalogo, test y build (`.github/workflows/ci.yml`)                                                                                                                                                                                                            |
-| **Build Vite (SPA)**                      | 100% funcional con bundle optimizado (Vite build completado; 1,786 módulos transformados)                                                                                                                                                                                                                                                               |
-| **Git & Repositorio**                     | Sincronizado en rama `main` en GitHub (`2c22916` — Herramienta #18 Actualización y Recargos CFF, desplegado a producción en Cloudflare con Version ID `9346525b-db87-48ad-bc58-59ca5c99f8de`)                                                                                                                                                           |
-| **Herramientas Integradas**               | 18 de 18 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Conciliación Anexo 24, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo, Monitor LFPIORPI, Actualización y Recargos CFF) + Admin (con CRM de Prospectos) + Team |
+| Métrica                                   | Estado                                                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Simulador Modalidad 40 (#19)**          | 100% Implementado (Cálculo actuarial LSS 1973 Art. 167 y 171 con restricción Acuerdo DOF 21/10/2026 ACDO.AS2.HCT.101026/302.P.DG, tope en salario previo + 1 UMA diaria, cuota 2026 al 14.438%, ROI financiero, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_modalidad_40`)                                                        |
+| **Actualización y Recargos (#18)**        | 100% Implementado y Desplegado en Producción (Cálculo determinista CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales sin redondeo, regla de no-deflación, mora al 1.47% mensual LIF Art. 8, desglose mes a mes, LiquidGlassDome, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_recargos_fiscales`)                 |
+| **Monitor LFPIORPI (#17)**                | 100% Implementado (Evaluación determinista antilavado Art. 17 LFPIORPI, regla de acumulación móvil de 6 meses, ingesta CSV/Excel, semáforo de riesgo Verde/Amarillo/Rojo, umbrales UMA 2026 y Papel de Trabajo SHA-256 + QR)                                                                                                                       |
+| **Conciliación Anexo 24 (#16)**           | 100% Implementado (Automatización Cero-Captura, cruce CFDI vs Anexo 24, filtro estricto de canceladas con Metadata SAT, auto-asociación a cuentas de ingresos e IVA, exportación CSV BOM UTF-8, layout Contpaqi/COI y Papel de Trabajo SHA-256 + QR)                                                                                               |
+| **Calculadora y Cédula RESICO 2026**      | 100% Operativo (Doble modalidad Persona Física Art. 113-E 1%-2.5% con tope $3.5M y retención 1.25% PM, Persona Moral Art. 206 30% flujo, Cédula oficial Carta, QR público y Workers AI)                                                                                                                                                            |
+| **Balance General Comparativo (#15)**     | 100% Implementado e integrado (Análisis Horizontal y Vertical, validación A=P+C con tolerancia $0.02, parser CSV/Excel, export CSV BOM UTF-8, Papel de Trabajo PDF con SHA-256+QR y tool `consultar_balance_general`)                                                                                                                              |
+| **Timbrado CFDI 4.0 (Alegra / PAC)**      | 100% Operativo en Producción (Emisión SAT delegada vía PAC Quadrum, multi-cuenta por despacho, encriptación AES-GCM 256-bit, verificación en vivo de CSD, descarga de XML/PDF y Cron de health check cada 6h con alertas Resend)                                                                                                                   |
+| **Colaboración en Equipo e Invitaciones** | 100% Operativo en Producción (Gestión de miembros, roles owner/admin/member, invitaciones seguras por correo vía Resend, aceptación pública o autenticada y aislamiento multi-tenant)                                                                                                                                                              |
+| **Cierre de Nómina Masivo (Batch DOF)**   | 100% Operativo (Ingesta CSV/Excel, cálculo simultáneo de retenciones SAT, IMSS Obrero, ISN, Cédula Concentradora y Dispersión Bancaria)                                                                                                                                                                                                            |
+| **Papel de Trabajo Oficial (PDF/QR)**     | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública)                                                                                                                                                                                                   |
+| **Verificación Pública de Expedientes**   | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores)                                                                                                                                                                                                |
+| **CRM de Prospectos (Super Admin)**       | 100% Implementado e integrado (Pestaña `leads` en la consola de Super Admin, tabla `leads_ark_tools` en D1, KPIs de embudo, filtros por ciudad/especialidad/estatus, alta y baja de prospectos, envío de propuesta comercial vía Resend y tool de IA `consultar_leads_crm`)                                                                        |
+| **Expediente Único & Catálogo**           | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF)                                                                                                                                                                                                                                     |
+| **Autenticación & AuthGate**              | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant)                                                                                                                                                                                                           |
+| **Multi-Tenancy**                         | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                                                                                                                                                                                                                                 |
+| **Base de Datos Cloudflare D1**           | 100% Actualizada (`0001`–`0006` verificadas aplicadas en `ark_tools_db`; `0007_leads_crm.sql` incluida en el repo y requerida por el CRM de prospectos)                                                                                                                                                                                            |
+| **Cloudflare Workers AI**                 | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM y streaming SSE — 10 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación)                                                                                                                       |
+| **Persistencia & API REST**               | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, CRM de Leads, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                                                                                                               |
+| **Copy & Transparencia Legal**            | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0, Acuerdo DOF 21/10/2026) y cero cajas negras                                                                                                                                                                                                           |
+| **Mesa de Ayuda & Soporte**               | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                                                                                              |
+| **GEO & Agentes IA**                      | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (19 herramientas)**                                                                                                                            |
+| **Landing Pública**                       | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                                                                                                   |
+| **Navegación & Usabilidad**               | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                              |
+| **Pruebas unitarias e integración**       | **441 pasadas en 62 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
+| **Auditoría DOF Catálogo**                | 100% Verificado con `pnpm verify:catalogo` (8/8 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                |
+| **Typecheck (TypeScript)**                | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                         |
+| **Linting (ESLint)**                      | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                          |
+| **Formato (Prettier)**                    | 100% uniforme en todo el repositorio — verificado con `pnpm format:check`                                                                                                                                                                                                                                                                          |
+| **Continuous Integration**                | GitHub Actions en `push` a `main` y pull requests: typecheck, lint, format:check, verify:catalogo, test y build (`.github/workflows/ci.yml`)                                                                                                                                                                                                       |
+| **Build Vite (SPA)**                      | 100% funcional con bundle optimizado (Vite build completado; 1,795 módulos transformados)                                                                                                                                                                                                                                                          |
+| **Git & Repositorio**                     | Rama `main` en desarrollo del Sprint 27 (Onboarding Guiado & Sandbox Demo)                                                                                                                                                                                                                                                                         |
+| **Herramientas Integradas**               | 19 de 19 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Conciliación Anexo 24, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo, Monitor LFPIORPI, Actualización y Recargos CFF, Modalidad 40 IMSS) + Admin + Team |
 
 ---
 
@@ -1696,3 +1697,102 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **Formato:** 100% Prettier uniforme — `pnpm format:check`.
 - **Build de producción:** Vite v5.4.21 exitoso (1,786 módulos).
 - **Despliegue a Producción:** Commit `2c22916` → `origin/main`. Worker `ark-tools-production`, Version ID `9346525b-db87-48ad-bc58-59ca5c99f8de` en `https://tools.arksystems.site`. Verificado en vivo `/llms.txt` (18 herramientas) y `/api/ai/tools` (9 herramientas).
+
+---
+
+### Sprint 26 (Octubre 2026) — Herramienta #19: Simulador de Modalidad 40 (Criterio DOF 21/10/2026) — Completado ✅
+
+**Objetivo:** Proteger a contadores, asesores de seguridad social y pensionados frente al histórico Acuerdo del Consejo Técnico del IMSS **`ACDO.AS2.HCT.101026/302.P.DG`**, publicado en el Diario Oficial de la Federación el 21 de octubre de 2026, el cual restringe la Continuación Voluntaria en el Régimen Obligatorio (Modalidad 40) eliminando los saltos artificiales directos al tope de 25 UMAs y prohibiendo pagos retroactivos masivos.
+
+#### 1. Marco Jurídico y Criterio Restrictivo DOF 2026
+
+- **Regla del Tope Restringido:** El salario diario para cotizar en Modalidad 40 queda topado al menor entre 25 UMAs y el **último salario registrado con patrón más 1 UMA diaria vigente**.
+- **Prohibición de Pagos Retroactivos:** Inadmisibilidad de convenios extemporáneos de liquidación retroactiva masiva de hasta 5 años sin acreditación estricta de derechos.
+- **Cuota Vigente 2026:** Cuota oficial del **14.438%** mensual conforme al calendario transitorio del Decreto LSS (DOF 16/12/2020), auditada en catálogo.
+- **Cálculo Actuarial Ley 73:**
+  - Salario Promedio de las últimas 250 semanas de cotización.
+  - Tabla del Artículo 167 de la Ley del Seguro Social de 1973 (Cuantía Básica e Incrementos Anuales por grupo de salario en veces el SMG).
+  - Factor por Edad (Artículo 171 LSS 1973: 75% a los 60 años hasta 100% a los 65 años o vejez).
+  - Asignación Familiar garantizada (15% por ayuda asistencial o cónyuge).
+  - Factor Fox (Decreto Presidencial de 2004: +11% global a pensiones Ley 73).
+  - Métricas de inversión: Costo total de cuotas, incremento mensual de pensión contra statu quo y período de retorno de inversión (ROI en meses).
+  - Sello pericial criptográfico inmutable SHA-256.
+
+#### 2. Motor Actuarial y Valores Oficiales
+
+- **`src/data/valores-vigentes/catalogo.ts`:**
+  - Registrada la constante `CUOTA_MODALIDAD_40_2026 = 0.14438` en `CATALOGO_2026` con metadatos oficiales del DOF.
+  - Exportado `CUOTA_MODALIDAD_40_PCT_2026 = 14.438`.
+  - Auditoría DOF elevada a **8/8 valores oficiales vigentes** (`pnpm verify:catalogo`).
+- **`src/tools/modalidad40/types.ts`:**
+  - Definición rigurosa de interfaces: `Modalidad40Input`, `Modalidad40Result`, `ComparativaLimites`, `Tabla167Grupo`.
+- **`src/tools/modalidad40/lib/calcularModalidad40.ts`:**
+  - Implementación completa de la fórmula actuarial con soporte para simulación con y sin restricción DOF 2026, cálculo de semanas excedentes, asignaciones familiares y sellado pericial SHA-256.
+- **`src/tools/modalidad40/lib/calcularModalidad40.test.ts`:**
+  - 11 pruebas unitarias cubriendo topes, cuantía básica, incrementos anuales, edades de retiro (60 a 65), ROI y concordancia matemática.
+
+#### 3. Componentes Visuales ARK Design System (`src/tools/modalidad40/components/`)
+
+- `ParametrosModalidad40Card.tsx`: Formulario de parámetros laborales y de inversión con conmutador interactivo del Criterio DOF 21/10/2026 y presets rápidos.
+- `ComparativaLimitesCard.tsx`: Auditoría visual de impacto que contrasta el límite histórico anterior (25 UMAs) vs el nuevo límite regulatorio (Último SBC + 1 UMA), alertando sobre intentos de cotización no permitidos.
+- `ResultadoPensionCard.tsx`: Cúpula `LiquidGlassDome` con la pensión mensual estimada, desglose de inversión total, meses para recuperar inversión (ROI) y botón de compartir en WhatsApp con formato profesional.
+- `CedulaModalidad40Modal.tsx`: Papel de trabajo oficial tamaño carta `@media print` con Sello Digital SHA-256 inmutable, QR institucional y fundamentos legales completos de la LSS 1973 y el Acuerdo DOF 2026.
+- `Modalidad40.tsx` y `Modalidad40.test.tsx`: Componente principal enlazado a la suite con selector de expediente, banner de modo libre y 4 pruebas UI automatizadas.
+
+#### 4. Integración Canónica, GEO Engine y Noah AI
+
+- **`src/data/catalogo-herramientas.ts`:** Registrada como Herramienta #19 con categoría `'fiscal-nomina'` y badge `'GRATIS'`. `TOTAL_HERRAMIENTAS = 19`.
+- **`src/App.tsx` & `src/components/LandingPage.tsx`:** Actualizado `ToolId` union type, importación lazy en el enrutador y tarjeta de acceso público.
+- **`src/data/actos.ts`:** Actualizado el catálogo de plazos y fiscalización SAT/IMSS con notas sobre el acuerdo y la estricta vigilancia sobre altas simuladas con familiares.
+- **`src/server/llmsTxt.ts`:** Documentación agregada en `/llms.txt` y `/llms-full.txt` con fundamentos para agentes de IA externos.
+- **`src/server/ai/tools.ts` & `src/server/ai/agent.ts`:** Registrada la función de IA `calcular_modalidad_40` en `AI_TOOLS_CATALOG` (10 tools en total) y directiva en el orquestador Noah AI.
+
+#### 5. Métricas de Calidad
+
+- **Pruebas unitarias e integración:** **432 pruebas en 60 suites (100% éxito)** — `pnpm test`.
+- **Auditoría DOF:** **8/8 valores oficiales vigentes** — `pnpm verify:catalogo`.
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+- **Build de producción:** Vite v5.4.21 exitoso (1,795 módulos transformados).
+
+---
+
+### Sprint 27 (Octubre 2026) - Onboarding Guiado, Caso Demo Sandbox & "Aha! Moment en 60s" - Completado ✅
+
+#### 1. Diagnóstico y Propósito del Vector de Onboarding
+
+- Resuelve la fricción inicial donde un contador recién registrado aterrizaba en un dashboard con 19 herramientas en _"Modo cálculo libre"_ y sin clientes (`clients = []`).
+- Permite experimentar el valor diferencial de ARK TOOLS (**Expediente Único + Cálculo Automatizado + Papel de Trabajo con Sello Criptográfico SHA-256**) en menos de 60 segundos sin requerir la captura de datos confidenciales reales.
+
+#### 2. Entidades Canónicas de Demostración (`src/data/demo-onboarding.ts`)
+
+- `DEMO_EMPRESA`: _Innovación y Servicios Contables S.A. de C.V._ (RFC: `ISC200101AB1`, Régimen General 601, CDMX).
+- `DEMO_TRABAJADOR`: _Carlos Mendoza Morales_ (RFC: `MEMC880512XYZ`, NSS: `12948576023`, Salario Diario 1.6x SMG 2026, SDI calculado con factor de integración a 3 años de antigüedad conforme a reformas LFT de Vacaciones Dignas).
+- `DEMO_EXPEDIENTE_EJEMPLO`: Historial de cálculo inicial demostrativo.
+- Cero hardcoding: valores derivados directamente del catálogo oficial (`VALORES_POR_ID`).
+
+#### 3. Motor Sandbox en Contexto (`src/context/ExpedienteContext.tsx`)
+
+- Implementados `isDemoActive`, `loadDemoData()` y `clearDemoData()`.
+- Soporte para sellado criptográfico client-side en modo demo vía `crypto.subtle.digest('SHA-256')`, permitiendo generar papeles de trabajo con hash y QR válidos al instante sin requerir viajes de red ni persistencia espuria en D1.
+
+#### 4. Experiencia de Usuario & Componentes UI
+
+- `OnboardingQuickstartModal.tsx`: Modal institucional con bienvenida, propuesta de valor, selección rápida ("Probar Caso Demo en 1 Clic" vs "Resolver Caso Real Urgente") y persistencia del flag `ark_onboarding_completed` en `localStorage`.
+- `OnboardingCelebrationModal.tsx`: Cierre del loop de onboarding al sellar el primer cálculo demo con hash SHA-256 inmutable, con opción de transición inmediata a "Registrar mi Primer Cliente Real" y vista de cédula QR oficial.
+- `LandingPage.tsx`:
+  - Botón de reenvío de correo transaccional con cuenta regresiva en vivo (_cooldown_ de 60 segundos).
+  - Asistente generador de frases de acceso seguras (`generatePassphrase`) con verificación de longitud mínima (12 caracteres).
+- `src/server/auth.ts`: Plantilla HTML corporativa homologada para correos de verificación y restablecimiento de contraseña en Resend, con diseño responsivo, acento dorado, botón CTA y cabeceras estándar para máxima entregabilidad (antispam).
+- `ExpedienteSelector.tsx`: Badge `Sandbox Demo` en la barra superior persistente con botón `Salir de Demo` y acceso rápido a `Cargar Caso Demo` en modo libre.
+- `ExpedienteToolBanner.tsx`: Acceso de 1 clic para cargar el caso demo desde cualquier calculadora y disparador automático del modal de celebración al sellar en modo demo.
+- `App.tsx`: Botón `Tour Demo (60s)` visible en el banner de Papel de Trabajo del Dashboard para relanzar la experiencia en cualquier momento.
+
+#### 5. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **441 pruebas en 62 suites (100% éxito)** — `pnpm test`.
+- **Nuevas pruebas:** `src/components/onboarding/OnboardingQuickstartModal.test.tsx` (5 pruebas) y `src/components/onboarding/OnboardingCelebrationModal.test.tsx` (4 pruebas).
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).

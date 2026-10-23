@@ -122,6 +122,22 @@ export const CATALOGO_2026: ValorFiscal[] = [
     criticidad: 'ALTA',
   },
   {
+    id: 'CUOTA_MODALIDAD_40_2026',
+    nombre: 'Cuota de Continuación Voluntaria / Modalidad 40 (LSS 2026)',
+    valor: 14.438,
+    unidad: 'PORCENTAJE',
+    vigencia: { inicio: '2026-01-01', fin: '2026-12-31' },
+    fuente: {
+      organismo: 'IMSS',
+      publicacion: 'DOF 16/12/2020 (Reforma a la Ley del Seguro Social)',
+      urlDOF: 'https://dof.gob.mx/nota_detalle.php?codigo=5607729&fecha=16/12/2020',
+      referencia: 'Artículos 168 y 218 LSS; Transitorio Segundo Decreto LSS',
+    },
+    esProyeccion: false,
+    verificadoPor: 'Pavel M. — 2026-10-21',
+    criticidad: 'ALTA',
+  },
+  {
     id: 'TASA_RECARGOS_MORA_2026',
     nombre: 'Tasa Mensual de Recargos por Mora (LIF 2026)',
     valor: 1.47,
@@ -138,6 +154,9 @@ export const CATALOGO_2026: ValorFiscal[] = [
     criticidad: 'ALTA',
   },
 ];
+
+// ─── CUOTA CONTINUACIÓN VOLUNTARIA VIGENTE 2026 (LSS Art. 168 y 218) ─
+export const CUOTA_MODALIDAD_40_PCT_2026 = 14.438;
 
 // ─── TASA DE RECARGOS VIGENTE (LIF Art. 8 / CFF Art. 21) ───────────
 export const TASA_RECARGOS_MORA_MENSUAL = 1.47;

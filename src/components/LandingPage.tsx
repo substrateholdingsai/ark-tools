@@ -92,6 +92,14 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     tag: 'BATCH DOF',
     isPremium: true,
   },
+  {
+    icon: ShieldAlert,
+    category: 'Fiscal',
+    title: 'Simulador Modalidad 40',
+    description:
+      'Proyección de pensión Ley 73 con la restricción del Acuerdo DOF 21/10/2026 (Último SBC + 1 UMA), cuota 14.438%, ROI y Cédula QR.',
+    tag: 'DOF 21/10/2026',
+  },
   // SAT
   {
     icon: FileSpreadsheet,
@@ -178,6 +186,61 @@ export function LandingPage() {
   const [successMsg, setSuccessMsg] = useState('');
   const [authToken, setAuthToken] = useState('');
   const [previewCategory, setPreviewCategory] = useState<PreviewCategory>('all');
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const interval = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [resendCooldown]);
+
+  const generatePassphrase = () => {
+    const palabras = [
+      'auditoria',
+      'nomina',
+      'fiscal',
+      'defensa',
+      'blindaje',
+      'expediente',
+      'declaracion',
+      'segura',
+      'balance',
+      'sat',
+      'anexo24',
+    ];
+    const p1 = palabras[Math.floor(Math.random() * palabras.length)];
+    const p2 = palabras[Math.floor(Math.random() * palabras.length)];
+    const p3 = palabras[Math.floor(Math.random() * palabras.length)];
+    const num = Math.floor(100 + Math.random() * 900);
+    setPassword(`${p1}-${p2}-${p3}-${num}`);
+  };
+
+  const handleResendEmail = async () => {
+    if (!email.trim() || resendCooldown > 0 || loading) return;
+    setLoading(true);
+    setErrorMsg('');
+    try {
+      if (authMode === 'register') {
+        const message = await register({
+          email: email.trim(),
+          fullName: fullName.trim() || undefined,
+          tenantName: tenantName.trim() || undefined,
+        });
+        setSuccessMsg(message);
+        setResendCooldown(60);
+      } else if (authMode === 'forgot') {
+        const message = await requestPasswordReset(email.trim());
+        setSuccessMsg(message);
+        setResendCooldown(60);
+      }
+    } catch (err: unknown) {
+      setErrorMsg(err instanceof Error ? err.message : 'No se pudo reenviar el correo.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const url = new URL(window.location.href);
@@ -232,12 +295,14 @@ export function LandingPage() {
           tenantName: tenantName.trim() || undefined,
         });
         setSuccessMsg(message);
+        setResendCooldown(60);
         setPassword('');
       } else if (authMode === 'login') {
         await signIn(email.trim(), password);
         setModalOpen(false);
       } else if (authMode === 'forgot') {
         setSuccessMsg(await requestPasswordReset(email.trim()));
+        setResendCooldown(60);
       } else {
         setSuccessMsg(await resetPassword(authToken, password));
         setPassword('');
@@ -766,8 +831,24 @@ export function LandingPage() {
               </div>
             )}
             {successMsg && (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[12px] text-emerald-800">
-                {successMsg}
+              <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-[12px] text-emerald-800">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-600" />
+                  <p className="leading-relaxed">{successMsg}</p>
+                </div>
+                {['register', 'forgot'].includes(authMode) && email.trim() && (
+                  <div className="flex items-center justify-between border-t border-emerald-200/60 pt-2 text-[11px]">
+                    <span className="text-emerald-700">¿No lo encuentras en tu bandeja?</span>
+                    <button
+                      type="button"
+                      disabled={resendCooldown > 0 || loading}
+                      onClick={handleResendEmail}
+                      className="cursor-pointer font-semibold text-emerald-950 underline hover:text-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {resendCooldown > 0 ? `Reenviar en ${resendCooldown}s` : 'Reenviar correo'}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             {authMode === 'verify' && (
@@ -829,25 +910,50 @@ export function LandingPage() {
 
               {['login', 'reset', 'verify'].includes(authMode) && (
                 <div>
-                  <label className="mb-1 block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
-                    {authMode === 'login'
-                      ? 'Contraseña *'
-                      : authMode === 'reset'
-                        ? 'Nueva Contraseña *'
-                        : 'Crea una Contraseña *'}
-                  </label>
+                  <div className="mb-1 flex items-center justify-between">
+                    <label className="block font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
+                      {authMode === 'login'
+                        ? 'Contraseña *'
+                        : authMode === 'reset'
+                          ? 'Nueva Contraseña *'
+                          : 'Crea una Contraseña *'}
+                    </label>
+                    {authMode !== 'login' && (
+                      <button
+                        type="button"
+                        onClick={generatePassphrase}
+                        className="cursor-pointer text-[10px] font-semibold text-navy hover:underline"
+                      >
+                        Sugerir frase segura
+                      </button>
+                    )}
+                  </div>
                   <input
-                    type="password"
+                    type={authMode === 'login' ? 'password' : 'text'}
                     required
-                    minLength={authMode === 'login' ? undefined : 15}
+                    minLength={authMode === 'login' ? undefined : 12}
                     maxLength={128}
                     autoComplete={authMode === 'login' ? 'current-password' : 'new-password'}
+                    placeholder={
+                      authMode === 'login' ? '••••••••' : 'ej: auditoria-fiscal-segura-2026'
+                    }
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[13px] text-ink outline-none transition focus:border-navy focus:bg-white"
+                    className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 font-mono text-[13px] text-ink outline-none transition focus:border-navy focus:bg-white"
                   />
                   {authMode !== 'login' && (
-                    <p className="mt-1 text-[10px] text-muted">Usa entre 15 y 128 caracteres.</p>
+                    <div className="mt-1 flex items-center justify-between text-[10px]">
+                      <span
+                        className={
+                          password.length >= 12 ? 'font-medium text-emerald-700' : 'text-muted'
+                        }
+                      >
+                        {password.length >= 12
+                          ? '✓ Longitud segura'
+                          : `Mínimo 12 caracteres (${password.length}/12)`}
+                      </span>
+                      <span className="text-muted">Recomendamos una frase de 3 palabras.</span>
+                    </div>
                   )}
                 </div>
               )}

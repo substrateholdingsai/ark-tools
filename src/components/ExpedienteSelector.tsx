@@ -24,6 +24,7 @@ import {
   Calendar,
   Copy,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import { useExpediente, type CreateClientInput } from '@/context/ExpedienteContext';
 import { useOptionalAuth } from '@/context/AuthContext';
@@ -40,6 +41,8 @@ export function ExpedienteSelector() {
     isLoadingExpedientes,
     setActiveClient,
     createClient,
+    loadDemoData,
+    clearDemoData,
   } = useExpediente();
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -113,6 +116,13 @@ export function ExpedienteSelector() {
                   </span>
                 )}
 
+                {Boolean(activeClient.metadata?.is_demo) && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 font-orbitron text-[9px] font-bold uppercase tracking-wider text-amber-800">
+                    <Sparkles size={9} className="text-amber-600" />
+                    <span>Demo</span>
+                  </span>
+                )}
+
                 <button
                   type="button"
                   onClick={() => setIsSearchOpen(true)}
@@ -120,6 +130,17 @@ export function ExpedienteSelector() {
                 >
                   Cambiar
                 </button>
+
+                {Boolean(activeClient.metadata?.is_demo) && (
+                  <button
+                    type="button"
+                    onClick={clearDemoData}
+                    title="Salir de la demostración y limpiar datos de prueba"
+                    className="cursor-pointer rounded border border-line bg-surface px-1.5 py-0.5 text-[10px] font-medium text-muted hover:border-red-300 hover:text-red-600"
+                  >
+                    Salir de Demo
+                  </button>
+                )}
 
                 <button
                   type="button"
@@ -131,7 +152,7 @@ export function ExpedienteSelector() {
                 </button>
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-[12px] text-muted">
+              <div className="flex flex-wrap items-center gap-2 text-[12px] text-muted">
                 <span className="hidden sm:inline">Modo cálculo libre.</span>
                 <button
                   type="button"
@@ -141,6 +162,14 @@ export function ExpedienteSelector() {
                   <Search size={12} className="text-gold" />
                   <span>Seleccionar Cliente / Trabajador</span>
                   <ChevronDown size={12} className="text-muted" />
+                </button>
+                <button
+                  type="button"
+                  onClick={loadDemoData}
+                  className="shadow-2xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-navy transition-colors hover:bg-gold/20"
+                >
+                  <Sparkles size={11} className="text-gold" />
+                  <span>Cargar Caso Demo</span>
                 </button>
               </div>
             )}

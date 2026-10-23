@@ -166,7 +166,14 @@ async function handleApiRequest(
     return new Response(null, { headers: corsHeaders });
   }
 
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
+  const isPublicAuthEndpoint =
+    (url.pathname === '/api/auth/register' && request.method === 'POST') ||
+    (url.pathname === '/api/auth/login' && request.method === 'POST') ||
+    (url.pathname === '/api/auth/verify-email' && request.method === 'POST') ||
+    (url.pathname === '/api/auth/request-password-reset' && request.method === 'POST') ||
+    (url.pathname === '/api/auth/reset-password' && request.method === 'POST');
+
+  if (request.method !== 'GET' && request.method !== 'HEAD' && !isPublicAuthEndpoint) {
     const origin = request.headers.get('Origin');
     const configuredOrigin = new URL(env.APP_URL).origin;
     const isLocalDevelopment =

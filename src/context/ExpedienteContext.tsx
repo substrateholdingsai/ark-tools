@@ -26,6 +26,13 @@ import {
   type TipoCliente,
   type EstadoCliente,
 } from '../lib/apiClient';
+import {
+  DEMO_EMPRESA,
+  DEMO_TRABAJADOR,
+  DEMO_EXPEDIENTE_EJEMPLO,
+  DEMO_CLIENT_EMPRESA_ID,
+  DEMO_CLIENT_TRABAJADOR_ID,
+} from '@/data/demo-onboarding';
 
 export interface CreateClientInput {
   nombre: string;
@@ -51,6 +58,11 @@ export interface ExpedienteContextType {
   isLoadingExpedientes: boolean;
   error: string | null;
   tenantId: string;
+
+  // Demostración y Onboarding
+  isDemoActive: boolean;
+  loadDemoData: () => void;
+  clearDemoData: () => void;
 
   // Acciones de Cliente
   setActiveClient: (client: ClientRecord | null) => void;
@@ -190,13 +202,26 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
     setError(null);
     try {
       const list = await apiClient.clients.list({ tenant_id: tenantId });
-      setClients(list);
+      setClients((prev) => {
+        const demoClients = prev.filter(
+          (c) =>
+            c.metadata?.is_demo ||
+            c.id === DEMO_CLIENT_EMPRESA_ID ||
+            c.id === DEMO_CLIENT_TRABAJADOR_ID
+        );
+        return [...demoClients, ...list.filter((c) => !demoClients.some((d) => d.id === c.id))];
+      });
       if (typeof window !== 'undefined') {
         window.localStorage.setItem(`${STORAGE_CLIENTS_CACHE}_${tenantId}`, JSON.stringify(list));
       }
 
-      // Si el cliente activo ya no existe en la lista o se actualizó, sincronizarlo
-      if (activeClient) {
+      // Si el cliente activo es demo, conservarlo; si es de API y ya no existe, limpiarlo
+      if (
+        activeClient &&
+        !activeClient.metadata?.is_demo &&
+        activeClient.id !== DEMO_CLIENT_EMPRESA_ID &&
+        activeClient.id !== DEMO_CLIENT_TRABAJADOR_ID
+      ) {
         const found = list.find((c) => c.id === activeClient.id);
         if (found) {
           setActiveClientState(found);
@@ -342,6 +367,45 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
     ): Promise<{ expediente: ExpedienteRecord; deduplicated?: boolean } | null> => {
       if (!activeClient) return null;
 
+      // Si es un cliente demo en modo sandbox, generar SHA-256 localmente de forma criptográfica y transparente
+      if (
+        activeClient.metadata?.is_demo ||
+        activeClient.id === DEMO_CLIENT_TRABAJADOR_ID ||
+        activeClient.id === DEMO_CLIENT_EMPRESA_ID
+      ) {
+        const canonicalPayload = JSON.stringify({
+          tenant_id: tenantId,
+          client_id: activeClient.id,
+          tool_id: toolId,
+          titulo,
+          inputs,
+          outputs,
+          timestamp: Date.now(),
+        });
+        const encoder = new TextEncoder();
+        const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(canonicalPayload));
+        const hashSha256 = Array.from(new Uint8Array(hashBuffer))
+          .map((b) => b.toString(16).padStart(2, '0'))
+          .join('');
+
+        const demoRecord: ExpedienteRecord = {
+          id: `exp-demo-${Date.now()}`,
+          tenant_id: tenantId,
+          client_id: activeClient.id,
+          tool_id: toolId,
+          titulo,
+          input_hash: hashSha256,
+          inputs,
+          outputs,
+          catalog_version: 'DOF-2026-OFICIAL',
+          created_by: auth?.user?.id || 'demo-user',
+          created_at: new Date().toISOString(),
+        };
+
+        setExpedientes((prev) => [demoRecord, ...prev]);
+        return { expediente: demoRecord, deduplicated: false };
+      }
+
       try {
         const res = await apiClient.expedientes.save({
           tenant_id: tenantId,
@@ -369,7 +433,73 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
         throw err;
       }
     },
-    [tenantId, activeClient, handleAuthorizationError]
+    [tenantId, activeClient, auth?.user?.id, handleAuthorizationError]
+  );
+
+  const loadDemoData = useCallback(() => {
+    const demoEmpresa = { ...DEMO_EMPRESA, tenant_id: tenantId };
+    const demoTrabajador = { ...DEMO_TRABAJADOR, tenant_id: tenantId };
+    const demoExpediente = { ...DEMO_EXPEDIENTE_EJEMPLO, tenant_id: tenantId };
+
+    setClients((prev) => {
+      const withoutDemo = prev.filter(
+        (c) =>
+          !c.metadata?.is_demo &&
+          c.id !== DEMO_CLIENT_EMPRESA_ID &&
+          c.id !== DEMO_CLIENT_TRABAJADOR_ID
+      );
+      return [demoEmpresa, demoTrabajador, ...withoutDemo];
+    });
+    setActiveClientState(demoTrabajador);
+    setExpedientes((prev) => [demoExpediente, ...prev.filter((e) => e.id !== demoExpediente.id)]);
+
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(
+        `${STORAGE_ACTIVE_CLIENT}_${tenantId}`,
+        JSON.stringify(demoTrabajador)
+      );
+    }
+  }, [tenantId]);
+
+  const clearDemoData = useCallback(() => {
+    setClients((prev) =>
+      prev.filter(
+        (c) =>
+          !c.metadata?.is_demo &&
+          c.id !== DEMO_CLIENT_EMPRESA_ID &&
+          c.id !== DEMO_CLIENT_TRABAJADOR_ID
+      )
+    );
+    setActiveClientState((prev) => {
+      if (
+        prev?.metadata?.is_demo ||
+        prev?.id === DEMO_CLIENT_TRABAJADOR_ID ||
+        prev?.id === DEMO_CLIENT_EMPRESA_ID
+      ) {
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem(`${STORAGE_ACTIVE_CLIENT}_${tenantId}`);
+        }
+        return null;
+      }
+      return prev;
+    });
+    setExpedientes((prev) => prev.filter((e) => e.id !== DEMO_EXPEDIENTE_EJEMPLO.id));
+  }, [tenantId]);
+
+  const isDemoActive = useMemo(
+    () =>
+      Boolean(
+        activeClient?.metadata?.is_demo ||
+        activeClient?.id === DEMO_CLIENT_TRABAJADOR_ID ||
+        activeClient?.id === DEMO_CLIENT_EMPRESA_ID ||
+        clients.some(
+          (c) =>
+            c.metadata?.is_demo ||
+            c.id === DEMO_CLIENT_TRABAJADOR_ID ||
+            c.id === DEMO_CLIENT_EMPRESA_ID
+        )
+      ),
+    [activeClient, clients]
   );
 
   // Mapear campos del cliente activo para pre-llenar las calculadoras
@@ -433,6 +563,9 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
       isLoadingExpedientes,
       error,
       tenantId,
+      isDemoActive,
+      loadDemoData,
+      clearDemoData,
       setActiveClient,
       createClient,
       updateClient,
@@ -450,6 +583,9 @@ export function ExpedienteProvider({ children }: { children: React.ReactNode }) 
       isLoadingExpedientes,
       error,
       tenantId,
+      isDemoActive,
+      loadDemoData,
+      clearDemoData,
       setActiveClient,
       createClient,
       updateClient,
@@ -472,6 +608,9 @@ const defaultExpedienteContext: ExpedienteContextType = {
   isLoadingExpedientes: false,
   error: null,
   tenantId: 'default-tenant',
+  isDemoActive: false,
+  loadDemoData: () => {},
+  clearDemoData: () => {},
   setActiveClient: () => {},
   createClient: async () => ({
     id: 'fallback-client',

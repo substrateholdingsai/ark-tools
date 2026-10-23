@@ -25,6 +25,8 @@ export { VerificacionPublicaModal } from './VerificacionPublicaModal';
 export { AdminPanel } from './admin/AdminPanel';
 export { TeamModal, InviteAcceptModal } from './team';
 export { ErrorBoundary } from './ErrorBoundary';
+export { OnboardingQuickstartModal } from './onboarding/OnboardingQuickstartModal';
+export { OnboardingCelebrationModal } from './onboarding/OnboardingCelebrationModal';
 
 // Tipos
 export type { NavItem } from './Header';

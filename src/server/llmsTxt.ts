@@ -201,7 +201,21 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 
 ---
 
-## 7. Estándar de Integridad SHA-256 y Verificación Pública
+## 8. Continuación Voluntaria / Modalidad 40 (Acuerdo DOF 21/10/2026)
+
+### Fundamento Legal
+- Artículos 167, 171 y 218 de la Ley del Seguro Social (LSS 1973).
+- Acuerdo ACDO.AS2.HCT.101026/302.P.DG del Consejo Técnico del IMSS (DOF 21/10/2026).
+- Artículos 168 y Segundo Transitorio LSS (Reforma Pensiones).
+
+### Reglas Deterministas de Cálculo
+1. **Tope de Registro Restringido:** \`min(Último SBC registrado + 1 UMA diaria, 25 UMAs)\`.
+2. **Cuota Mensual 2026:** Tasa del 14.438% aplicada sobre el SBC pactado y base mensual de 30.4 días.
+3. **Pensión Ley 73:** Cuantía Básica + Incrementos Anuales (semanas > 500) ajustado por edad (Art. 171 LSS), asignación familiar (15%) y actualización Decreto Fox (11%).
+
+---
+
+## 9. Estándar de Integridad SHA-256 y Verificación Pública
 
 Cada cálculo procesado en ARK TOOLS genera un hash SHA-256 canónico determinista:
 \`\`\`

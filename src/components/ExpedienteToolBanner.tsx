@@ -23,6 +23,7 @@ import { useExpediente } from '@/context/ExpedienteContext';
 import { useOptionalAuth } from '@/context/AuthContext';
 import type { ExpedienteRecord } from '@/lib/apiClient';
 import { PapelDeTrabajoModal } from './PapelDeTrabajoModal';
+import { OnboardingCelebrationModal } from './onboarding/OnboardingCelebrationModal';
 
 interface ExpedienteToolBannerProps {
   toolId: string;
@@ -39,7 +40,7 @@ export function ExpedienteToolBanner({
   outputs,
   disabled = false,
 }: ExpedienteToolBannerProps) {
-  const { activeClient, saveCalculoExpediente } = useExpediente();
+  const { activeClient, saveCalculoExpediente, loadDemoData, clearDemoData } = useExpediente();
   const auth = useOptionalAuth();
   const tenantName = auth?.tenantName || 'Despacho Contable Especializado';
   const [isSaving, setIsSaving] = useState(false);
@@ -48,6 +49,7 @@ export function ExpedienteToolBanner({
   const [isDeduplicated, setIsDeduplicated] = useState(false);
   const [copied, setCopied] = useState(false);
   const [showPapel, setShowPapel] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   if (!activeClient) {
     return (
@@ -60,6 +62,14 @@ export function ExpedienteToolBanner({
             archivar este papel de trabajo con sello SHA-256.
           </span>
         </div>
+        <button
+          type="button"
+          onClick={loadDemoData}
+          className="shadow-2xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-gold/40 bg-gold/10 px-2.5 py-1 text-[11px] font-semibold text-navy transition-colors hover:bg-gold/20"
+        >
+          <Sparkles size={11} className="text-gold" />
+          <span>Probar con caso demo</span>
+        </button>
       </div>
     );
   }
@@ -73,6 +83,9 @@ export function ExpedienteToolBanner({
         setLastHash(res.expediente.input_hash);
         setLastExpediente(res.expediente);
         setIsDeduplicated(Boolean(res.deduplicated));
+        if (activeClient?.metadata?.is_demo) {
+          setShowCelebration(true);
+        }
       }
     } finally {
       setIsSaving(false);
@@ -108,6 +121,12 @@ export function ExpedienteToolBanner({
               <span className="py-0.2 rounded-full bg-navy/10 px-2 font-orbitron text-[9px] font-bold uppercase text-navy">
                 {activeClient.tipo}
               </span>
+              {Boolean(activeClient.metadata?.is_demo) && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 font-orbitron text-[9px] font-bold uppercase text-amber-800">
+                  <Sparkles size={9} className="text-amber-600" />
+                  <span>Sandbox Demo</span>
+                </span>
+              )}
               {activeClient.rfc && (
                 <span className="font-mono text-[11px] text-muted">{activeClient.rfc}</span>
               )}
@@ -170,6 +189,18 @@ export function ExpedienteToolBanner({
           despachoName={tenantName || 'Despacho Contable Especializado'}
           client={activeClient}
           expediente={lastExpediente}
+        />
+      )}
+
+      {showCelebration && (
+        <OnboardingCelebrationModal
+          isOpen={showCelebration}
+          onClose={() => setShowCelebration(false)}
+          onOpenPapel={() => setShowPapel(true)}
+          onStartRealClient={() => {
+            clearDemoData();
+          }}
+          hash={lastHash}
         />
       )}
     </>

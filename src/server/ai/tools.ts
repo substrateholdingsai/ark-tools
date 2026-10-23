@@ -11,8 +11,45 @@ import type { AiToolFunction } from './types';
 import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
 import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
+import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
 
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
+  {
+    name: 'calcular_modalidad_40',
+    description:
+      'Calcula la proyección actuarial de pensión Ley 73 y cuota mensual de Modalidad 40 conforme al Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026). Restringe el nuevo salario al último SBC + 1 UMA diaria (máx. 25 UMAs).',
+    parameters: {
+      type: 'object',
+      properties: {
+        ultimoSbc: {
+          type: 'number',
+          description:
+            'Último Salario Base de Cotización registrado al causar baja patronal en MXN.',
+        },
+        sbcDeseado: {
+          type: 'number',
+          description: 'Salario diario deseado para cotizar en Modalidad 40 en MXN.',
+        },
+        semanasPrevias: {
+          type: 'number',
+          description: 'Semanas cotizadas acumuladas ante el IMSS.',
+        },
+        mesesAportacion: {
+          type: 'number',
+          description: 'Meses a cotizar en Continuación Voluntaria (12 a 60 meses).',
+        },
+        edadJubilacion: {
+          type: 'number',
+          description: 'Edad proyectada de retiro (60 a 65 años).',
+        },
+        asignacionFamiliar: {
+          type: 'boolean',
+          description: 'Si cuenta con cónyuge o solicita ayuda asistencial por soledad (+15%).',
+        },
+      },
+      required: ['ultimoSbc', 'semanasPrevias'],
+    },
+  },
   {
     name: 'calcular_recargos_fiscales',
     description:
@@ -258,6 +295,25 @@ export async function executeAiTool(
 
   try {
     // 1. Herramientas de cálculo puro (no requieren base de datos)
+    if (toolName === 'calcular_modalidad_40') {
+      const ultimoSbc = Number(args.ultimoSbc) || 315.04;
+      const sbcDeseado = Number(args.sbcDeseado) || 2932.75;
+      const semanasPrevias = Number(args.semanasPrevias) || 500;
+      const mesesAportacion = Number(args.mesesAportacion) || 36;
+      const edadJubilacion = Number(args.edadJubilacion) || 65;
+      const asignacionFamiliar = args.asignacionFamiliar !== false;
+
+      const resultado = await simularModalidad40({
+        ultimoSbc,
+        sbcDeseado,
+        semanasPrevias,
+        mesesAportacion,
+        edadJubilacion,
+        asignacionFamiliar,
+      });
+      return { success: true, data: resultado };
+    }
+
     if (toolName === 'calcular_recargos_fiscales') {
       const resultado = calcularRecargosYActualizacion({
         importeHistorico: Number(args.importeHistorico || 0),

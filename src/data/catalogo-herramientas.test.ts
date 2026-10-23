@@ -20,9 +20,9 @@ function leerToolIdsDelRouter(): string[] {
 }
 
 describe('Catálogo Canónico de Herramientas', () => {
-  it('expone 18 herramientas con identificadores únicos', () => {
-    expect(TOTAL_HERRAMIENTAS).toBe(18);
-    expect(CATALOGO_HERRAMIENTAS).toHaveLength(18);
+  it('expone 19 herramientas con identificadores únicos', () => {
+    expect(TOTAL_HERRAMIENTAS).toBe(19);
+    expect(CATALOGO_HERRAMIENTAS).toHaveLength(19);
 
     const ids = CATALOGO_HERRAMIENTAS.map((h) => h.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -55,5 +55,6 @@ describe('Catálogo Canónico de Herramientas', () => {
     expect(ids).toContain('anexo24');
     expect(ids).toContain('monitor-lfpiorpi');
     expect(ids).toContain('recargos');
+    expect(ids).toContain('modalidad40');
   });
 });

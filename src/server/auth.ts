@@ -132,7 +132,7 @@ function slugify(value: string): string {
 }
 
 export function passwordIsValid(password: string): boolean {
-  return password.length >= 15 && password.length <= 128;
+  return password.length >= 12 && password.length <= 128;
 }
 
 export async function rateLimit(
@@ -189,7 +189,58 @@ async function sendAuthEmail(
   url.searchParams.set('auth', action);
   url.searchParams.set('token', token);
   const actionUrl = url.toString();
-  const actionLabel = action === 'verify' ? 'Verificar correo' : 'Restablecer contraseña';
+  const isVerify = action === 'verify';
+  const actionLabel = isVerify ? 'Confirmar Cuenta y Activar' : 'Restablecer Contraseña';
+  const headline = isVerify ? 'Bienvenido a ARK TOOLS' : 'Recuperación de Contraseña';
+  const explanation = isVerify
+    ? 'Para completar tu registro y acceder a la suite de 19 herramientas fiscales, nómina y blindaje criptográfico, haz clic en el siguiente botón:'
+    : 'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en ARK TOOLS. Para definir una nueva clave de acceso, haz clic en el siguiente botón:';
+
+  const html = `
+<div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff;">
+  <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #D4AF37; padding-bottom: 16px;">
+    <h1 style="color: #0A192F; font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -0.025em;">ARK TOOLS</h1>
+    <p style="color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">El Sistema Operativo de la Defensa Fiscal</p>
+  </div>
+  <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 28px; margin-bottom: 24px;">
+    <h2 style="font-size: 18px; color: #0A192F; font-weight: 700; margin-top: 0; margin-bottom: 12px;">${headline}</h2>
+    <p style="font-size: 15px; line-height: 24px; color: #334155;">
+      ${explanation}
+    </p>
+    <div style="text-align: center; margin: 32px 0;">
+      <a href="${actionUrl}" style="background-color: #0A192F; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 14px; display: inline-block; box-shadow: 0 2px 4px rgba(10, 25, 47, 0.15); letter-spacing: 0.05em;">
+        ${actionLabel}
+      </a>
+    </div>
+    <div style="background-color: #ffffff; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 12px; margin-top: 24px;">
+      <p style="font-size: 12px; color: #64748b; margin: 0; line-height: 18px;">
+        <strong>¿El botón no responde?</strong> Copia y pega este enlace directo en tu navegador:<br />
+        <a href="${actionUrl}" style="color: #0A192F; word-break: break-all; font-family: monospace; font-size: 11px;">${actionUrl}</a>
+      </p>
+    </div>
+    <p style="font-size: 12px; color: #94a3b8; line-height: 18px; margin-top: 20px; margin-bottom: 0;">
+      Este enlace es válido por 24 horas y de un solo uso. Si no solicitaste esta acción, puedes ignorar este mensaje de forma segura.
+    </p>
+  </div>
+  <div style="text-align: center; font-size: 12px; color: #94a3b8;">
+    <p>ARK TOOLS © ${new Date().getFullYear()} — Plataforma de Cumplimiento y Defensa Fiscal<br />
+    <a href="https://tools.arksystems.site" style="color: #64748b; text-decoration: underline;">tools.arksystems.site</a></p>
+  </div>
+</div>
+`;
+
+  const text = `ARK TOOLS — ${headline}
+
+${explanation}
+
+${actionLabel}:
+${actionUrl}
+
+Este enlace es válido durante 24 horas. Si no solicitaste esta acción, ignora este mensaje.
+
+ARK TOOLS — Plataforma de Cumplimiento y Defensa Fiscal
+https://tools.arksystems.site`;
+
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
@@ -200,8 +251,8 @@ async function sendAuthEmail(
       from: env.AUTH_EMAIL_FROM,
       to: [to],
       subject,
-      text: `${actionLabel}: ${actionUrl}\n\nSi no solicitaste esta acción, ignora este mensaje.`,
-      html: `<p>${actionLabel} para tu cuenta de ARK TOOLS.</p><p><a href="${actionUrl}">${actionLabel}</a></p><p>Si no solicitaste esta acción, ignora este mensaje.</p>`,
+      text,
+      html,
     }),
   });
   if (!response.ok) {
@@ -546,7 +597,7 @@ async function handleResetPassword(request: Request, env: Env, cors: Record<stri
     return json({ error: 'El enlace de recuperación no es válido o expiró.' }, cors, 400);
   }
   if (!passwordIsValid(password)) {
-    return json({ error: 'La contraseña debe tener entre 15 y 128 caracteres.' }, cors, 400);
+    return json({ error: 'La contraseña debe tener entre 12 y 128 caracteres.' }, cors, 400);
   }
   const db = env.ARK_TOOLS_DB!;
   const tokenHash = await sha256(token);

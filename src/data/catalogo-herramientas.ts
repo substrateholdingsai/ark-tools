@@ -160,6 +160,13 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     descripcion:
       'Determinación de actualización por inflación (Art. 17-A CFF) y recargos por mora (Art. 21 CFF y LIF al 1.47% mensual). Motor cloud-native conectado a la serie de INPC del DOF, factor truncado a 4 decimales, desglose analítico mes a mes y emisión de Papel de Trabajo Oficial con Sello SHA-256 + QR.',
   },
+  {
+    id: 'modalidad40',
+    nombre: 'Simulador de Modalidad 40 (Criterio DOF 2026)',
+    categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
+    descripcion:
+      'Proyección actuarial de pensión bajo el Régimen 1973 de la LSS conforme a los Arts. 167 y 218. Aplica la restricción del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026) que topa el nuevo registro al salario previo más 1 UMA diaria. Calcula cuota mensual (14.438% en 2026), retorno de inversión (ROI) y emite Papel de Trabajo Oficial con Sello SHA-256 + QR.',
+  },
 ];
 
 /** Total de herramientas de la suite. Se deriva del catálogo: nunca se escribe a mano. */
