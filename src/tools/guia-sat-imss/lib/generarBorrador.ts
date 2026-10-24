@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Generador de Borrador de Respuesta SAT / IMSS
+ * ARK LEDGER — Generador de Borrador de Respuesta SAT / IMSS
  *
  * Construye el escrito de respuesta legal preliminar con base en el acto fiscal,
  * el paso activo y los items completados de la guía operativa.

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Validador de XMLs CFDI
+ * ARK LEDGER — Validador de XMLs CFDI
  * Componente: Lista Interactiva de Dictámenes de Auditoría
  */
 

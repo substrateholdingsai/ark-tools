@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Herramienta #16: Motor de Conciliación Anexo 24
+ * ARK LEDGER — Herramienta #16: Motor de Conciliación Anexo 24
  * Componente Principal
  *
  * Automatización Cero-Captura:

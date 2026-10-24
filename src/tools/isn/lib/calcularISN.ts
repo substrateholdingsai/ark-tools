@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora ISN 2026
+ * ARK LEDGER — Calculadora ISN 2026
  * Lógica de cálculo del Impuesto Sobre Nómina
  *
  * El ISN se calcula sobre la base gravable (suma de percepciones gravadas)

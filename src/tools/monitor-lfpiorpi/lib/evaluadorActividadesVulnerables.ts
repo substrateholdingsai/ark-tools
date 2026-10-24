@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Motor Determinista de Evaluación LFPIORPI (Sprint 12)
+ * ARK LEDGER — Motor Determinista de Evaluación LFPIORPI (Sprint 12)
  *
  * Fundamento legal:
  * - Ley Federal para la Prevención e Identificación de Operaciones con Recursos

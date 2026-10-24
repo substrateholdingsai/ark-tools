@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Test de Integración y UI de Calculadora de Finiquitos y Liquidaciones
+ * ARK LEDGER — Test de Integración y UI de Calculadora de Finiquitos y Liquidaciones
  */
 
 import { describe, it, expect, vi } from 'vitest';

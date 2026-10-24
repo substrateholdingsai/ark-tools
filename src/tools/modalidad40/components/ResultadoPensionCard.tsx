@@ -20,7 +20,7 @@ export function ResultadoPensionCard({
   const { pension, inversion, roi, limites } = resultado;
 
   const handleCopyWhatsApp = () => {
-    const texto = `🏛️ *ARK TOOLS — Dictamen de Pensión Ley 73 & Modalidad 40 (DOF 2026)*
+    const texto = `🏛️ *ARK LEDGER — Dictamen de Pensión Ley 73 & Modalidad 40 (DOF 2026)*
 👤 *Asegurado:* ${nombreAsegurado}
 📋 *NSS:* ${nssAsegurado}
 ━━━━━━━━━━━━━━━━━━━━
@@ -34,7 +34,7 @@ export function ResultadoPensionCard({
 ⏱️ *Retorno de Inversión (ROI):* Recuperas el 100% de lo invertido en ${roi.tiempoRecuperacionFormateado}.
 ━━━━━━━━━━━━━━━━━━━━
 🔒 *Sello Criptográfico:* ${resultado.selloSha256.slice(0, 16)}...
-🌐 *Generado con ARK TOOLS:* https://tools.arksystems.site`;
+🌐 *Generado con ARK LEDGER:* https://ledger.arksystems.site`;
 
     void navigator.clipboard.writeText(texto).then(() => {
       setCopied(true);

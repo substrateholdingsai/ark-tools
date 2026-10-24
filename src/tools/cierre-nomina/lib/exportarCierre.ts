@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Generador de Exportaciones para Cierre de Nómina Masiva (Sprint 11)
+ * ARK LEDGER — Generador de Exportaciones para Cierre de Nómina Masiva (Sprint 11)
  *
  * Genera:
  * 1. Cédula Concentradora en CSV/Excel con BOM UTF-8 y fórmulas de totales.
@@ -29,7 +29,7 @@ export function exportarConcentradoCSV(cierre: CierreNominaCompleto): string {
   const lineas: string[] = [];
 
   // 1. Metadatos Institucionales
-  lineas.push('ARK TOOLS — CÉDULA CONCENTRADORA DE NÓMINA OFICIAL');
+  lineas.push('ARK LEDGER — CÉDULA CONCENTRADORA DE NÓMINA OFICIAL');
   lineas.push(`Empresa / Razón Social,${escaparCSV(parametros.empresaNombre)}`);
   if (parametros.empresaRfc) {
     lineas.push(`RFC Empresa,${escaparCSV(parametros.empresaRfc)}`);

@@ -11,7 +11,7 @@ export function generarTXT(dictamen: DictamenCobranza): string {
   const { resumen, alcance, detalles, recomendaciones, advertencias } = dictamen;
 
   lineas.push('══════════════════════════════════════════════════════');
-  lineas.push('  DICTAMEN DE AUDITORÍA DE COBRANZA — ARK TOOLS');
+  lineas.push('  DICTAMEN DE AUDITORÍA DE COBRANZA — ARK LEDGER');
   lineas.push('══════════════════════════════════════════════════════');
   lineas.push('');
 
@@ -107,7 +107,7 @@ export function generarTXT(dictamen: DictamenCobranza): string {
   }
 
   lineas.push('══════════════════════════════════════════════════════');
-  lineas.push('  Generado por ARK TOOLS — Auditoría de Cobranza');
+  lineas.push('  Generado por ARK LEDGER — Auditoría de Cobranza');
   lineas.push('  Substrate Holdings LLC — Ley como Código');
   lineas.push('══════════════════════════════════════════════════════');
 

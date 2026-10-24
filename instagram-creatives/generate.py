@@ -1,5 +1,5 @@
 """
-ARK TOOLS — Instagram Creatives Generator
+ARK LEDGER — Instagram Creatives Generator
 Propósito: Renderizar creativos de Instagram (1080x1080 @ 2x Retina) a partir
 de JSON estructurado usando Playwright (Chromium headless) + Jinja2.
 Soporta 100% CSS moderno: Glassmorphism, backdrop-filter, Google Fonts, Grid.
@@ -153,7 +153,7 @@ def render_creatives(html_content: str, posts: List[Dict[str, Any]], scale: int)
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="ARK TOOLS — Instagram Creatives Generator",
+        description="ARK LEDGER — Instagram Creatives Generator",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Ejemplos:
@@ -182,7 +182,7 @@ def main():
     args = parse_args()
     
     print("=" * 60)
-    print("🎨 ARK TOOLS — Instagram Creatives Generator")
+    print("🎨 ARK LEDGER — Instagram Creatives Generator")
     print("=" * 60)
     print(f"📐 Resolución base: {BASE_RESOLUTION}x{BASE_RESOLUTION}px")
     print(f"🔍 Escala: {args.scale}x → {BASE_RESOLUTION * args.scale}x{BASE_RESOLUTION * args.scale}px")

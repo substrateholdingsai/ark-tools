@@ -1,8 +1,8 @@
 /**
- * ARK TOOLS — Modal de Aceptación de Invitaciones
+ * ARK LEDGER — Modal de Aceptación de Invitaciones
  *
  * Flujo de onboarding cuando un colaborador o nuevo usuario abre el enlace:
- * https://tools.arksystems.site/?auth=invite&token=...
+ * https://ledger.arksystems.site/?auth=invite&token=...
  *
  * Casos contemplados:
  * 1. Usuario con sesión iniciada con el mismo correo -> Aceptación en 1 clic.
@@ -140,7 +140,7 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
               <Logo size={32} />
               <div>
                 <h3 className="font-orbitron text-[13px] font-bold tracking-wider text-navy">
-                  ARK TOOLS
+                  ARK LEDGER
                 </h3>
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
                   Colaboración en Equipo
@@ -300,8 +300,8 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
                   ) : (
                     <div>
                       <p className="mb-3 text-[12px] text-ink">
-                        Te damos la bienvenida a ARK TOOLS para <strong>{invitation.email}</strong>.
-                        Crea tu contraseña para unirte al despacho:
+                        Te damos la bienvenida a ARK LEDGER para <strong>{invitation.email}</strong>
+                        . Crea tu contraseña para unirte al despacho:
                       </p>
                       <div className="space-y-3">
                         <div>

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Test de Integración y UI del Motor de Conciliación Anexo 24
+ * ARK LEDGER — Test de Integración y UI del Motor de Conciliación Anexo 24
  * Herramienta #16
  */
 

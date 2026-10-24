@@ -4,7 +4,7 @@ import type { Env } from '../index';
 import type { AuthPrincipal } from './auth';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://tools.arksystems.site',
+  'Access-Control-Allow-Origin': 'https://ledger.arksystems.site',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-id',
 };
@@ -71,14 +71,14 @@ function createEnv(db?: D1Database): Env {
     RESEND_API_KEY: 're_test',
     RESEND_FROM_EMAIL: 'soporte@arksystems.site',
     ENVIRONMENT: 'development',
-    ALLOWED_ORIGIN: 'https://tools.arksystems.site',
+    ALLOWED_ORIGIN: 'https://ledger.arksystems.site',
   } as unknown as Env;
 }
 
 describe('handleLeadsApiRequest', () => {
   it('retorna null para rutas que no coinciden con /api/admin/leads', async () => {
     const env = createEnv();
-    const req = new Request('https://tools.arksystems.site/api/other');
+    const req = new Request('https://ledger.arksystems.site/api/other');
     const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
     expect(res).toBeNull();
   });
@@ -88,21 +88,21 @@ describe('handleLeadsApiRequest', () => {
       JWT_SECRET: 'test-secret',
       ENVIRONMENT: 'development',
     } as unknown as Env;
-    const req = new Request('https://tools.arksystems.site/api/admin/leads');
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads');
     const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
     expect(res?.status).toBe(503);
   });
 
   it('retorna 401 si no hay usuario autenticado', async () => {
     const env = createEnv();
-    const req = new Request('https://tools.arksystems.site/api/admin/leads');
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads');
     const res = await handleLeadsApiRequest(req, env, corsHeaders, null);
     expect(res?.status).toBe(401);
   });
 
   it('obtiene estadísticas agrupadas en GET /api/admin/leads/stats', async () => {
     const env = createEnv();
-    const req = new Request('https://tools.arksystems.site/api/admin/leads/stats');
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads/stats');
     const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
     expect(res?.status).toBe(200);
 
@@ -120,7 +120,7 @@ describe('handleLeadsApiRequest', () => {
   it('lista prospectos con filtros en GET /api/admin/leads', async () => {
     const env = createEnv();
     const req = new Request(
-      'https://tools.arksystems.site/api/admin/leads?ciudad=Merida&status=Nuevo'
+      'https://ledger.arksystems.site/api/admin/leads?ciudad=Merida&status=Nuevo'
     );
     const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
     expect(res?.status).toBe(200);
@@ -136,7 +136,7 @@ describe('handleLeadsApiRequest', () => {
 
   it('obtiene un lead por ID en GET /api/admin/leads/:id', async () => {
     const env = createEnv();
-    const req = new Request('https://tools.arksystems.site/api/admin/leads/lead-1');
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads/lead-1');
     const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
     expect(res?.status).toBe(200);
 
@@ -148,7 +148,7 @@ describe('handleLeadsApiRequest', () => {
 
   it('crea un nuevo prospecto en POST /api/admin/leads', async () => {
     const env = createEnv();
-    const req = new Request('https://tools.arksystems.site/api/admin/leads', {
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -170,7 +170,7 @@ describe('handleLeadsApiRequest', () => {
 
   it('actualiza un prospecto en PATCH /api/admin/leads/:id', async () => {
     const env = createEnv();
-    const req = new Request('https://tools.arksystems.site/api/admin/leads/lead-1', {
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads/lead-1', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -186,7 +186,7 @@ describe('handleLeadsApiRequest', () => {
 
   it('elimina un prospecto en DELETE /api/admin/leads/:id', async () => {
     const env = createEnv();
-    const req = new Request('https://tools.arksystems.site/api/admin/leads/lead-1', {
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads/lead-1', {
       method: 'DELETE',
     });
     const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
@@ -212,7 +212,7 @@ describe('handleLeadsApiRequest', () => {
 
     try {
       const env = createEnv();
-      const req = new Request('https://tools.arksystems.site/api/admin/leads/lead-1/send-email', {
+      const req = new Request('https://ledger.arksystems.site/api/admin/leads/lead-1/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ recipient_name: 'Lic. Perez' }),
@@ -248,7 +248,7 @@ describe('handleLeadsApiRequest', () => {
 
     try {
       const env = createEnv();
-      const req = new Request('https://tools.arksystems.site/api/admin/leads/lead-1/send-email', {
+      const req = new Request('https://ledger.arksystems.site/api/admin/leads/lead-1/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ test_email: 'pavel@arksystems.site' }),

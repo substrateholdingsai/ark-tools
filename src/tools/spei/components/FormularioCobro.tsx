@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Generador de Links de Pago (Clip)
+ * ARK LEDGER — Generador de Links de Pago (Clip)
  * Componente: Formulario de Configuración de Cobro
  */
 

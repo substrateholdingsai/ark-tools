@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Pruebas Unitarias del Parser de Plantillas de Nómina Masiva (Sprint 11)
+ * ARK LEDGER — Pruebas Unitarias del Parser de Plantillas de Nómina Masiva (Sprint 11)
  */
 
 import { describe, it, expect } from 'vitest';

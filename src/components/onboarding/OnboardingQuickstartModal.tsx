@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Modal de Onboarding y Quickstart (Aha! Moment en 60s)
+ * ARK LEDGER — Modal de Onboarding y Quickstart (Aha! Moment en 60s)
  *
  * Recibe a los usuarios recién registrados para:
  * 1. Explicar el valor central: Expediente Único + Cálculos Oficiales + Sellado SHA-256.
@@ -97,7 +97,7 @@ export function OnboardingQuickstartModal({
             <div className="flex flex-wrap items-center gap-2">
               <BadgeGold size="sm">
                 <Sparkles size={11} className="mr-1 inline text-navy" />
-                Bienvenido a ARK TOOLS
+                Bienvenido a ARK LEDGER
               </BadgeGold>
               <span className="font-orbitron text-[10px] font-bold uppercase tracking-wider text-muted">
                 DOF 2026 Vigente
@@ -112,7 +112,7 @@ export function OnboardingQuickstartModal({
             </h2>
 
             <p className="font-inter text-xs leading-relaxed text-muted sm:text-sm">
-              ARK TOOLS conecta todas tus herramientas fiscales y de nómina a través del{' '}
+              ARK LEDGER conecta todas tus herramientas fiscales y de nómina a través del{' '}
               <strong className="text-ink">Expediente Único</strong>. Cada cálculo genera un Papel
               de Trabajo oficial sellado con <strong className="text-navy">hash SHA-256</strong> y
               código QR para auditorías del SAT e IMSS.

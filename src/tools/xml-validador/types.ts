@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Validador de XMLs CFDI 4.0 & 3.3
+ * ARK LEDGER — Validador de XMLs CFDI 4.0 & 3.3
  * Tipos de datos para el motor de auditoría y validación fiscal
  */
 

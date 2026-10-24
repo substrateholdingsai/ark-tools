@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora SBC 2026
+ * ARK LEDGER — Calculadora SBC 2026
  * RangoVisual
  *
  * Barra visual que muestra la posición del SBC entre el salario mínimo

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Pruebas del Motor de Cierre de Nómina Masiva (Sprint 11)
+ * ARK LEDGER — Pruebas del Motor de Cierre de Nómina Masiva (Sprint 11)
  */
 
 import { describe, it, expect } from 'vitest';

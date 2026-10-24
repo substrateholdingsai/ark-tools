@@ -1,7 +1,7 @@
 /**
  * Footer
  *
- * Footer institucional optimizado para ARK TOOLS.
+ * Footer institucional optimizado para ARK LEDGER.
  * Incluye propuesta de valor fiscal/financiera, soporte empresarial directo,
  * garantías de privacidad de datos, directorio de herramientas y descargo legal.
  */
@@ -64,7 +64,7 @@ export function Footer({ className, onSelectTool }: FooterProps) {
               <Logo size={42} />
               <div>
                 <div className="orbitron font-orbitron text-[16px] font-black tracking-[0.16em] text-navy">
-                  ARK TOOLS
+                  ARK LEDGER
                 </div>
                 <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.24em] text-muted">
                   Suite Fiscal & Financiera MX
@@ -283,7 +283,7 @@ export function Footer({ className, onSelectTool }: FooterProps) {
         <div className="mx-auto max-w-[1280px] space-y-4 px-6 py-6 md:px-10">
           <p className="text-justify font-inter text-[11px] leading-relaxed text-muted/90 md:text-left">
             <strong className="font-semibold text-ink">Descargo de Responsabilidad Legal:</strong>{' '}
-            Las calculadoras, módulos de auditoría y reportes provistos por ARK TOOLS tienen
+            Las calculadoras, módulos de auditoría y reportes provistos por ARK LEDGER tienen
             propósito de apoyo operativo y técnico fundamentado en la legislación fiscal mexicana
             vigente (CFF, LISR, LSS y LFT). Los resultados no constituyen una opinión fiscal formal
             vinculante ni sustituyen la asesoría o dictamen emitido por un Contador Público
@@ -292,7 +292,7 @@ export function Footer({ className, onSelectTool }: FooterProps) {
 
           <div className="flex flex-col items-center justify-between gap-4 border-t border-line/40 pt-2 text-[11px] text-muted sm:flex-row">
             <div className="flex items-center gap-2">
-              <span className="font-orbitron font-bold text-navy">ARK TOOLS</span>
+              <span className="font-orbitron font-bold text-navy">ARK LEDGER</span>
               <span>· Substrate Holdings LLC © {currentYear}. Todos los derechos reservados.</span>
             </div>
             <div className="flex items-center gap-4 font-medium">

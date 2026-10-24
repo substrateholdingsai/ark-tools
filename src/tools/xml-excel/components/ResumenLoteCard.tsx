@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Conversor XML a Excel
+ * ARK LEDGER — Conversor XML a Excel
  * Componente: Tarjeta de Resumen Consolidado con el Design System ARK
  */
 

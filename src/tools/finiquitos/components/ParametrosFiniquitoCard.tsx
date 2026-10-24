@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Parámetros del Cálculo de Finiquito/Liquidación
+ * ARK LEDGER — Parámetros del Cálculo de Finiquito/Liquidación
  * Sprint 8 — Componente #1
  *
  * Captura de entrada. NO calcula importes monetarios (eso es del motor).

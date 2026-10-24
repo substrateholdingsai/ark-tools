@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora SBC 2026
+ * ARK LEDGER — Calculadora SBC 2026
  * ResultadoSBC
  *
  * Card dorada con el SBC final. Usa LiquidGlassDome + TextMagnified.

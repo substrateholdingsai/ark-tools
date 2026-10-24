@@ -7,7 +7,7 @@ import type { Env } from '../../index';
 import type { AuthPrincipal } from '../auth';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://tools.arksystems.site',
+  'Access-Control-Allow-Origin': 'https://ledger.arksystems.site',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-id',
 };
@@ -22,15 +22,15 @@ const mockUser: AuthPrincipal = {
 function createMockEnv(dbOverrides?: any): Env {
   return {
     ENVIRONMENT: 'test',
-    APP_NAME: 'ARK TOOLS',
+    APP_NAME: 'ARK LEDGER',
     APP_VERSION: '1.0.0',
-    APP_URL: 'https://tools.arksystems.site',
+    APP_URL: 'https://ledger.arksystems.site',
     COMPANY_NAME: 'ARK Systems',
     COMPANY_EMAIL: 'soporte@mail.arksystems.site',
     SUPPORT_URL: 'https://arksystems.site',
     ALEGRA_ENCRYPTION_KEY: 'test-secret-key-32-bytes-long!!',
     RESEND_API_KEY: 're_test_key_123',
-    AUTH_EMAIL_FROM: 'ARK TOOLS <no-reply@mail.arksystems.site>',
+    AUTH_EMAIL_FROM: 'ARK LEDGER <no-reply@mail.arksystems.site>',
     ASSETS: { fetch: vi.fn() } as unknown as Fetcher,
     ARK_TOOLS_DB: dbOverrides as unknown as D1Database,
   };
@@ -215,9 +215,12 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       };
       const env = createMockEnv(mockDb);
 
-      const req = new Request('https://tools.arksystems.site/api/alegra/accounts?tenant_id=t-123', {
-        method: 'GET',
-      });
+      const req = new Request(
+        'https://ledger.arksystems.site/api/alegra/accounts?tenant_id=t-123',
+        {
+          method: 'GET',
+        }
+      );
       const res = await handleAlegraApiRequest(req, env, corsHeaders, mockUser);
       expect(res?.status).toBe(200);
 
@@ -261,7 +264,7 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       };
       const env = createMockEnv(mockDb);
 
-      const req = new Request('https://tools.arksystems.site/api/alegra/accounts', {
+      const req = new Request('https://ledger.arksystems.site/api/alegra/accounts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -334,7 +337,7 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       };
       const env = createMockEnv(mockDb);
 
-      const req = new Request('https://tools.arksystems.site/api/alegra/invoices', {
+      const req = new Request('https://ledger.arksystems.site/api/alegra/invoices', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -387,7 +390,7 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       const env = createMockEnv(mockDb);
 
       const req = new Request(
-        'https://tools.arksystems.site/api/alegra/accounts/acc-delete-1?tenant_id=t-123',
+        'https://ledger.arksystems.site/api/alegra/accounts/acc-delete-1?tenant_id=t-123',
         { method: 'DELETE' }
       );
 

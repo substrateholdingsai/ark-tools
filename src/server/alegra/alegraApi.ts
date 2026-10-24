@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Endpoints del Worker para Integración con Alegra (Timbrado CFDI 4.0)
+ * ARK LEDGER — Endpoints del Worker para Integración con Alegra (Timbrado CFDI 4.0)
  *
  * Soporta:
  * - Conexión de cuentas multi-empresa por despacho

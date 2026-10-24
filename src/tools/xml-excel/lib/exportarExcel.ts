@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Conversor XML a Excel (CFDI 4.0)
+ * ARK LEDGER — Conversor XML a Excel (CFDI 4.0)
  * Exportador de datos a formato CSV compatible al 100% con Microsoft Excel y Google Sheets
  * Incluye BOM UTF-8 (\uFEFF) para visualización perfecta de caracteres en español.
  */

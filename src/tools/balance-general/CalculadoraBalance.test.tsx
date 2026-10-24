@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Test de Integración y UI del Balance General Comparativo
+ * ARK LEDGER — Test de Integración y UI del Balance General Comparativo
  *
  * Cubre el flujo completo de la Herramienta #15: ingesta de balanza CSV,
  * ecuación contable A=P+C, tabla analítica con AH/AV y exportación CSV con BOM.

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Frontend API Client (Multi-Tenant)
+ * ARK LEDGER — Frontend API Client (Multi-Tenant)
  *
  * Cliente tipado para interactuar con los endpoints de D1 en el Cloudflare Worker.
  * Soporta autenticación de sesión nativa y aislamiento por tenant_id.

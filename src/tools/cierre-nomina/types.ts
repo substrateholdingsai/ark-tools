@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Cierre de Nómina Masivo & Cédula Concentradora (Sprint 11)
+ * ARK LEDGER — Cierre de Nómina Masivo & Cédula Concentradora (Sprint 11)
  * Tipos TypeScript
  *
  * Fundamento legal:

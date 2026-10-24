@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Herramienta #16: Motor de Conciliación Anexo 24
+ * ARK LEDGER — Herramienta #16: Motor de Conciliación Anexo 24
  * TablaConciliacion: Muestra el cuadre interactivo
  * Concepto CFDI ➡️ Código Agrupador Anexo 24 ➡️ Importe
  */

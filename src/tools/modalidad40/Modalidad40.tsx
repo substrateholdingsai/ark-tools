@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Simulador de Modalidad 40 (Herramienta #19)
+ * ARK LEDGER — Simulador de Modalidad 40 (Herramienta #19)
  *
  * Módulo para la proyección actuarial de pensión bajo el Régimen 1973 de la LSS
  * y auditoría determinista conforme al Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026).

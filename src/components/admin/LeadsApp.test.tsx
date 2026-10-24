@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Test de Integración y UI del CRM de Prospectos (LeadsApp)
+ * ARK LEDGER — Test de Integración y UI del CRM de Prospectos (LeadsApp)
  *
  * Cubre el flujo comercial completo del Super Admin: KPIs de embudo, filtros,
  * actualización inline de estatus, alta, baja y envío de propuesta vía Resend.

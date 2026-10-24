@@ -1,9 +1,9 @@
 /**
- * ARK TOOLS — Timbrado de Facturas CFDI 4.0 vía Alegra (PAC Quadrum)
+ * ARK LEDGER — Timbrado de Facturas CFDI 4.0 vía Alegra (PAC Quadrum)
  *
  * Herramienta dentro de la sección Cobros que permite a los despachos
  * emitir y timbrar comprobantes fiscales digitales por internet (CFDI 4.0)
- * delegando la certificación a Alegra / PAC Quadrum sin salir de ARK TOOLS.
+ * delegando la certificación a Alegra / PAC Quadrum sin salir de ARK LEDGER.
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -338,7 +338,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-400">
             Emite tus facturas fiscales con certificado de sello digital en tiempo real sin salir de
-            ARK TOOLS. La emisión y el sellado se delegan de forma segura a Alegra y su PAC
+            ARK LEDGER. La emisión y el sellado se delegan de forma segura a Alegra y su PAC
             autorizado Quadrum.
           </p>
         </div>
@@ -447,7 +447,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   Tus Sellos Seguros
                 </div>
                 <p className="text-xs text-slate-300">
-                  Tu CSD (.cer / .key) permanece seguro en Alegra. ARK TOOLS nunca toca tus
+                  Tu CSD (.cer / .key) permanece seguro en Alegra. ARK LEDGER nunca toca tus
                   contraseñas privadas.
                 </p>
               </div>

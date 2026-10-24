@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Leasing
+ * ARK LEDGER — Calculadora de Leasing
  * Componente: Tabla Detallada de Proyección Mes a Mes
  */
 

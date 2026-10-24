@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Leasing
+ * ARK LEDGER — Calculadora de Leasing
  * Componente: Tarjeta de Métricas Ejecutivas de Ingresos Recurrentes (MRR / ARR / LTV)
  */
 

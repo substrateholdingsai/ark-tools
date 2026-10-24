@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────
--- ARK TOOLS — Migración 0006: Control de Cuotas y Paywall para AI
+-- ARK LEDGER — Migración 0006: Control de Cuotas y Paywall para AI
 -- ─────────────────────────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS ai_usage (

@@ -24,7 +24,7 @@ export function CedulaModalidad40Modal({
   const printContainerRef = useRef<HTMLDivElement>(null);
 
   const hash = resultado.selloSha256;
-  const verifyUrl = `https://tools.arksystems.site/?verify=${hash}`;
+  const verifyUrl = `https://ledger.arksystems.site/?verify=${hash}`;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -88,7 +88,7 @@ export function CedulaModalidad40Modal({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-orbitron text-xs font-black tracking-[0.25em] text-gold-dark">
-                  ARK TOOLS FISCAL & NÓMINA
+                  ARK LEDGER FISCAL & NÓMINA
                 </span>
                 <span className="font-mono text-[10px] text-muted">· SISTEMA MULTI-TENANT</span>
               </div>

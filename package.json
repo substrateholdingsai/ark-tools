@@ -1,12 +1,12 @@
 {
   "name": "ark-tools",
   "version": "1.0.0",
-  "description": "ARK TOOLS — Suite de herramientas modernas para contadores. Worker unificado en Cloudflare.",
+  "description": "ARK LEDGER — Suite de herramientas modernas para contadores. Worker unificado en Cloudflare.",
   "private": true,
   "type": "module",
   "author": "Substrate Holdings LLC",
   "license": "UNLICENSED",
-  "homepage": "https://tools.arksystems.site",
+  "homepage": "https://ledger.arksystems.site",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/substrateholdingsai/ark-tools.git"

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora y Papel de Trabajo RESICO 2026
+ * ARK LEDGER — Calculadora y Papel de Trabajo RESICO 2026
  *
  * Módulo especializado en el Régimen Simplificado de Confianza:
  * - Personas Físicas: Arts. 113-E a 113-J LISR (Tasas 1.0% a 2.5%, retención 1.25%, IVA)

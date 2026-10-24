@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────
--- ARK TOOLS — Migración Inicial (D1 / SQLite)
+-- ARK LEDGER — Migración Inicial (D1 / SQLite)
 -- Arquitectura Multi-Tenant: Despachos y Usuarios
 -- ─────────────────────────────────────────────────────────────────────
 

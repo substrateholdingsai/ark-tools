@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Invitaciones a Despachos y Gestión de Miembros
+ * ARK LEDGER — Invitaciones a Despachos y Gestión de Miembros
  *
  * Endpoints para colaboración en equipo:
  * 1. GET    /api/tenants/:id/members — Lista de miembros activos e invitaciones pendientes
@@ -58,12 +58,12 @@ async function sendInvitationEmail(
   url.searchParams.set('token', token);
   const inviteUrl = url.toString();
   const roleLabel = role === 'admin' ? 'Administrador' : 'Colaborador';
-  const subject = `Invitación para unirte a ${tenantName} en ARK TOOLS`;
+  const subject = `Invitación para unirte a ${tenantName} en ARK LEDGER`;
 
   const html = `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1e293b;">
   <div style="text-align: center; margin-bottom: 24px;">
-    <h1 style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.025em;">ARK TOOLS</h1>
+    <h1 style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.025em;">ARK LEDGER</h1>
     <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Plataforma Integral para Contadores y Asesores Fiscales</p>
   </div>
   <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
@@ -86,22 +86,22 @@ async function sendInvitationEmail(
     </p>
   </div>
   <div style="text-align: center; font-size: 12px; color: #94a3b8;">
-    <p>ARK TOOLS © ${new Date().getFullYear()} — <a href="https://tools.arksystems.site" style="color: #64748b;">tools.arksystems.site</a></p>
+    <p>ARK LEDGER © ${new Date().getFullYear()} — <a href="https://ledger.arksystems.site" style="color: #64748b;">ledger.arksystems.site</a></p>
   </div>
 </div>
 `;
 
   const text = `Hola,
 
-${inviterName} te ha invitado a unirte al despacho "${tenantName}" como ${roleLabel} en ARK TOOLS.
+${inviterName} te ha invitado a unirte al despacho "${tenantName}" como ${roleLabel} en ARK LEDGER.
 
 Para aceptar la invitación y acceder a la plataforma, haz clic en el siguiente enlace:
 ${inviteUrl}
 
 Este enlace es válido durante 7 días. Si no esperabas este mensaje, puedes ignorarlo de forma segura.
 
-ARK TOOLS
-https://tools.arksystems.site`;
+ARK LEDGER
+https://ledger.arksystems.site`;
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Selector de Expediente y Catálogo Unificado (Sprint 9)
+ * ARK LEDGER — Selector de Expediente y Catálogo Unificado (Sprint 9)
  *
  * Barra persistente de cliente/trabajador activo:
  * - Selección rápida con búsqueda predictiva.

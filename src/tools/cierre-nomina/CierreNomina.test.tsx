@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Pruebas de Integración y UI de CierreNomina (Sprint 11)
+ * ARK LEDGER — Pruebas de Integración y UI de CierreNomina (Sprint 11)
  */
 
 import { describe, it, expect, vi } from 'vitest';

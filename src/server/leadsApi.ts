@@ -596,7 +596,7 @@ export async function handleLeadsApiRequest(
           ? body.recipient_name.trim()
           : lead.contacto_nombre?.trim() || 'Director(a)';
 
-      const baseUrl = env.APP_URL || 'https://tools.arksystems.site';
+      const baseUrl = env.APP_URL || 'https://ledger.arksystems.site';
       const logoUrl = `${baseUrl.replace(/\/$/, '')}/logo-email.png`;
 
       const html = buildProposalEmailHtml(recipientName, logoUrl);

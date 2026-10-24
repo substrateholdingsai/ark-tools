@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora SBC 2026
+ * ARK LEDGER — Calculadora SBC 2026
  * ExplicacionSBC
  *
  * Card informativa que explica qué es el SBC y por qué importa.

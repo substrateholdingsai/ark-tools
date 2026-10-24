@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Backend D1 Handlers: Expediente Único y Clientes (Sprint 9)
+ * ARK LEDGER — Backend D1 Handlers: Expediente Único y Clientes (Sprint 9)
  *
  * Aislamiento estricto por tenant_id:
  * 1. /api/clients (Catálogo centralizado de empresas, trabajadores y personas físicas)
@@ -494,7 +494,7 @@ export async function handleExpedienteApiRequest(
         return Response.json(
           {
             verified: false,
-            message: 'No se encontró ningún cálculo con este sello criptográfico en ARK TOOLS',
+            message: 'No se encontró ningún cálculo con este sello criptográfico en ARK LEDGER',
           },
           { status: 404, headers: corsHeaders }
         );

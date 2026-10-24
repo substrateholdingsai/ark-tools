@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Finiquitos y Liquidaciones 2026
+ * ARK LEDGER — Calculadora de Finiquitos y Liquidaciones 2026
  * Componente Principal Ensamblador (Sprint 8 — Cierra 11/11)
  *
  * Fundamentado en la Ley Federal del Trabajo (LFT):

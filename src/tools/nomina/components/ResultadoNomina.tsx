@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * ResultadoNomina
  *
  * Card dorada con el Sueldo Neto a Pagar.

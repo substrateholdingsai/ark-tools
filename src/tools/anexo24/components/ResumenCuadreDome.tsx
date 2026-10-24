@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Herramienta #16: Motor de Conciliación Anexo 24
+ * ARK LEDGER — Herramienta #16: Motor de Conciliación Anexo 24
  * ResumenCuadreDome: Visualizador del estado del cuadre (Cuadrado / Diferencias)
  * encapsulado en el LiquidGlassDome institucional con sombra física dorada.
  */

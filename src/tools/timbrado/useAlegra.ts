@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Hook para Integración y Timbrado CFDI 4.0 con Alegra
+ * ARK LEDGER — Hook para Integración y Timbrado CFDI 4.0 con Alegra
  *
  * Administra el estado de conexión de cuentas multi-empresa, comprobación
  * de certificados CSD, historial de facturación y emisión de CFDIs.

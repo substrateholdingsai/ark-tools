@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Finiquitos y Liquidaciones
+ * ARK LEDGER — Calculadora de Finiquitos y Liquidaciones
  * Barrel export de componentes UI
  */
 

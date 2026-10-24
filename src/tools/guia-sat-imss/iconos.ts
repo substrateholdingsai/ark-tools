@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Guía SAT/IMSS
+ * ARK LEDGER — Guía SAT/IMSS
  * Mapeo de nombres de iconos string → componentes Lucide.
  */
 

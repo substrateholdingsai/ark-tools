@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Guía Interactiva SAT / IMSS (Fase D: Compliance)
+ * ARK LEDGER — Guía Interactiva SAT / IMSS (Fase D: Compliance)
  *
  * Guía de 8 pasos para responder requerimientos, exhortos y actos de fiscalización.
  * Incluye motor de checklists, clasificación de actos, plazos clave y generador de borradores.

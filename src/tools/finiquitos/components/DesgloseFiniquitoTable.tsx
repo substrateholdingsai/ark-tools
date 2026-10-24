@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Desglose de Conceptos del Finiquito/Liquidación
+ * ARK LEDGER — Desglose de Conceptos del Finiquito/Liquidación
  * Sprint 8 — Componente #3
  *
  * Tabla tabular con los 6 conceptos del motor.

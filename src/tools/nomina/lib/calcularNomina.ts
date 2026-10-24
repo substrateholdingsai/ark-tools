@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * Orquestador del cálculo completo de nómina
  *
  * Combina ISR + IMSS obrero para obtener el neto a pagar.

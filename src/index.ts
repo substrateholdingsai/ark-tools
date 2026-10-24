@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Worker Entry Point
+ * ARK LEDGER — Worker Entry Point
  *
  * Este worker sirve la SPA de herramientas para contadores.
  * En Fase 1, todo el cálculo ocurre en el cliente (React).
@@ -156,7 +156,7 @@ async function handleApiRequest(
   // CORS para desarrollo local
   const corsHeaders = {
     'Access-Control-Allow-Origin':
-      env.ENVIRONMENT === 'production' ? 'https://tools.arksystems.site' : '*',
+      env.ENVIRONMENT === 'production' ? 'https://ledger.arksystems.site' : '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-id',
   };
@@ -310,7 +310,7 @@ async function handleApiRequest(
 
       const description = (body.purchase_description || 'Servicios Profesionales').slice(0, 250);
       const currency = (body.currency || 'MXN').toUpperCase();
-      const returnUrl = env.APP_URL || 'https://tools.arksystems.site';
+      const returnUrl = env.APP_URL || 'https://ledger.arksystems.site';
 
       const payload = {
         amount,

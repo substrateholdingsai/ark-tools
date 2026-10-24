@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Monitor de Actividades Vulnerables LFPIORPI (Herramienta #17)
+ * ARK LEDGER — Monitor de Actividades Vulnerables LFPIORPI (Herramienta #17)
  * Tipos TypeScript
  *
  * Fundamento legal:

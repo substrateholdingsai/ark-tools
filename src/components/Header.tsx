@@ -131,12 +131,12 @@ export function Header({
           type="button"
           className="flex shrink-0 items-center gap-2 text-left md:gap-4"
           onClick={() => onNavigate?.('dashboard')}
-          aria-label="ARK TOOLS: volver al catálogo"
+          aria-label="ARK LEDGER: volver al catálogo"
         >
           <Logo size={32} />
           <div className="leading-none">
             <div className="orbitron font-orbitron text-[12px] font-black tracking-[0.14em] text-navy sm:text-[14px] sm:tracking-[0.18em]">
-              ARK TOOLS
+              ARK LEDGER
             </div>
             <div className="mt-[2px] hidden text-[8.5px] font-bold uppercase tracking-[0.22em] text-muted sm:block">
               SUITE FISCAL & FINANCIERA MX

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Workers AI Types & Tool Interfaces
+ * ARK LEDGER — Workers AI Types & Tool Interfaces
  */
 
 export type AiMessageRole = 'system' | 'user' | 'assistant' | 'tool';

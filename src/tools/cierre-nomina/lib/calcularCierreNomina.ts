@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Motor de Procesamiento de Cierre de Nómina Masiva (Sprint 11)
+ * ARK LEDGER — Motor de Procesamiento de Cierre de Nómina Masiva (Sprint 11)
  *
  * Ejecuta simultáneamente el cálculo para todos los trabajadores de la empresa:
  * 1. Factor de Integración y SBC (LSS Art. 27 y 28, tope 25 UMAs).

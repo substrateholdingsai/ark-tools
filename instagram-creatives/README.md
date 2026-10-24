@@ -1,6 +1,6 @@
-# 🎨 ARK TOOLS — Instagram Creatives Generator
+# 🎨 ARK LEDGER — Instagram Creatives Generator
 
-Generador de creativos de Instagram (1080×1080 @ 2x Retina) para campañas de ARK TOOLS.
+Generador de creativos de Instagram (1080×1080 @ 2x Retina) para campañas de ARK LEDGER.
 
 ## 🚀 Instalación
 

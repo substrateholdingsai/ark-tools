@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Parser y Validador de Sábanas de Cobranza LFPIORPI (Sprint 12)
+ * ARK LEDGER — Parser y Validador de Sábanas de Cobranza LFPIORPI (Sprint 12)
  *
  * Funciones para:
  * 1. Detección automática de delimitadores CSV/TSV (, ; \t).

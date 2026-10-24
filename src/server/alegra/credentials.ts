@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Encriptación y Desencriptación Segura de Credenciales Alegra
+ * ARK LEDGER — Encriptación y Desencriptación Segura de Credenciales Alegra
  *
  * Utiliza WebCrypto con AES-GCM (256 bits).
  * Las credenciales nunca se guardan en texto plano en D1 ni se exponen al frontend.

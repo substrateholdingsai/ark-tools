@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Leasing y MRR
+ * ARK LEDGER — Calculadora de Leasing y MRR
  * Lógica matemática de proyección financiera, retención y LTV
  */
 

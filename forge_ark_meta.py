@@ -205,7 +205,7 @@ class ArkForge:
             # top row: logo 64 + título + subtítulo + badge
             f'{self.cube(100, 116, 64, ARK_WHITE, ARK_GOLD_BRIGHT, ARK_NODE, ARK_NAVY)}'
             f'<text x="186" y="152" font-family={FONT_DISPLAY} font-size="42" '
-            f'font-weight="700" fill="{ARK_WHITE}">ARK TOOLS</text>'
+            f'font-weight="700" fill="{ARK_WHITE}">ARK LEDGER</text>'
             f'<text x="187" y="182" font-family={FONT_SANS} font-size="19" '
             f'fill="{ARK_SLATE}">El Sistema Operativo de la Defensa Fiscal</text>'
             f'<rect x="906" y="128" width="194" height="36" rx="8" '
@@ -221,7 +221,7 @@ class ArkForge:
             f'<text x="100" y="506" font-family={FONT_SANS} font-size="13" '
             f'letter-spacing="4" fill="{ARK_SLATE}">ARK SYSTEMS · DEFENSA FISCAL</text>'
             f'<text x="1100" y="506" text-anchor="end" font-family={FONT_TECH} '
-            f'font-size="18" letter-spacing="3" fill="{ARK_GOLD_BRIGHT}">tools.arksystems.site</text>'
+            f'font-size="18" letter-spacing="3" fill="{ARK_GOLD_BRIGHT}">ledger.arksystems.site</text>'
             f'</svg>'
         )
 

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Health Check Periódico de Cuentas Alegra (Cron)
+ * ARK LEDGER — Health Check Periódico de Cuentas Alegra (Cron)
  *
  * Se ejecuta automáticamente cada 6 horas para verificar que los tokens sigan vigentes
  * y alertar oportunamente al usuario si la conexión con el PAC / Alegra se interrumpe.
@@ -30,13 +30,13 @@ export async function sendAlegraStatusAlertEmail(
     return;
   }
 
-  const reconnectUrl = `${env.APP_URL || 'https://tools.arksystems.site'}/#cobros`;
-  const subject = `Atención requerida: Conexión de Timbrado Alegra interrumpida (${companyName || 'ARK TOOLS'})`;
+  const reconnectUrl = `${env.APP_URL || 'https://ledger.arksystems.site'}/#cobros`;
+  const subject = `Atención requerida: Conexión de Timbrado Alegra interrumpida (${companyName || 'ARK LEDGER'})`;
 
   const html = `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 560px; margin: 0 auto; padding: 24px; color: #1e293b;">
   <div style="text-align: center; margin-bottom: 24px;">
-    <h1 style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.025em;">ARK TOOLS</h1>
+    <h1 style="color: #0f172a; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: -0.025em;">ARK LEDGER</h1>
     <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Plataforma Integral para Contadores y Asesores Fiscales</p>
   </div>
   <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
@@ -54,12 +54,12 @@ export async function sendAlegraStatusAlertEmail(
     </p>
     <div style="text-align: center; margin: 28px 0 16px;">
       <a href="${reconnectUrl}" style="background-color: #b91c1c; color: #ffffff; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;">
-        Reconectar Cuenta en ARK TOOLS
+        Reconectar Cuenta en ARK LEDGER
       </a>
     </div>
   </div>
   <div style="text-align: center; font-size: 12px; color: #94a3b8;">
-    <p>ARK TOOLS © ${new Date().getFullYear()} — <a href="https://tools.arksystems.site" style="color: #64748b;">tools.arksystems.site</a></p>
+    <p>ARK LEDGER © ${new Date().getFullYear()} — <a href="https://ledger.arksystems.site" style="color: #64748b;">ledger.arksystems.site</a></p>
   </div>
 </div>
 `;

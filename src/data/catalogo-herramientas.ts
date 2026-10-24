@@ -1,5 +1,5 @@
 /**
- * CATÁLOGO CANÓNICO DE HERRAMIENTAS DE ARK TOOLS
+ * CATÁLOGO CANÓNICO DE HERRAMIENTAS DE ARK LEDGER
  *
  * ÚNICA fuente de verdad del catálogo de la suite. Tanto el motor GEO
  * (`/llms.txt`) como el system prompt del asistente de IA (Noah) derivan de aquí el
@@ -102,7 +102,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Timbrado de Facturas CFDI 4.0 vía Alegra / Quadrum PAC',
     categoria: 'Cobros y Facturación Fiscal B2B',
     descripcion:
-      'Emisión y timbrado legal de CFDI 4.0 ante el SAT sin salir de ARK TOOLS. Encriptación AES-GCM en reposo de API keys por despacho, soporte multi-cuenta y descarga de XML y PDF timbrados.',
+      'Emisión y timbrado legal de CFDI 4.0 ante el SAT sin salir de ARK LEDGER. Encriptación AES-GCM en reposo de API keys por despacho, soporte multi-cuenta y descarga de XML y PDF timbrados.',
   },
   {
     id: 'spei',

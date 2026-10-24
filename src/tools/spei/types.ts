@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Generador de Links de Pago (Clip Checkout)
+ * ARK LEDGER — Generador de Links de Pago (Clip Checkout)
  * Tipos de datos para solicitudes de pago, comisiones e historial
  */
 

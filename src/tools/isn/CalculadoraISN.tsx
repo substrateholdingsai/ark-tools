@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora ISN 2026
+ * ARK LEDGER — Calculadora ISN 2026
  * Componente Principal
  *
  * Ensambla los 4 componentes del Día 3:

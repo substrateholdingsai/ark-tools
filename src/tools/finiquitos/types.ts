@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Finiquitos y Liquidaciones
+ * ARK LEDGER — Calculadora de Finiquitos y Liquidaciones
  * Tipos de entrada, parámetros LFT y resultados del cálculo.
  * Fundamento: LFT Arts. 50, 76 (ref. 2023), 79, 80, 87, 162, 486.
  */

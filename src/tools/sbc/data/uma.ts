@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora SBC 2026
+ * ARK LEDGER — Calculadora SBC 2026
  * Constantes oficiales del sistema IMSS 2026
  *
  * Fuentes:

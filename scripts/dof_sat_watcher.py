@@ -1,5 +1,5 @@
 """
-ARK TOOLS — DOF/SAT Watcher
+ARK LEDGER — DOF/SAT Watcher
 Propósito: Monitor desatendido de publicaciones oficiales (DOF) para detectar 
 actualizaciones de valores fiscales (UMA, SMG, ISR, Subsidio) y generar alertas/diffs.
 Mantenedor: Substrate Holdings LLC
@@ -219,7 +219,7 @@ def send_webhook_alert(alerts: List[FiscalAlert]):
                 {"name": "Enlace DOF", "value": f"[Ver Decreto]({alert.link})"},
                 {"name": "Resumen", "value": alert.summary_snippet[:500]}
             ],
-            "footer": {"text": "ARK TOOLS Watcher v1.8 | Substrate Holdings LLC"}
+            "footer": {"text": "ARK LEDGER Watcher v1.8 | Substrate Holdings LLC"}
         }]
         for alert in alerts
     }
@@ -239,7 +239,7 @@ def send_webhook_alert(alerts: List[FiscalAlert]):
 
 def main():
     console.print(Panel.fit(
-        "[bold gold1]ARK TOOLS — DOF/SAT Watcher v1.8[/bold gold1]\n"
+        "[bold gold1]ARK LEDGER — DOF/SAT Watcher v1.8[/bold gold1]\n"
         "Monitorizando cambios fiscales oficiales para mantener el catálogo 100% vigente.",
         border_style="gold1"
     ))

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Modal de Gestión de Equipo y Colaboradores del Despacho
+ * ARK LEDGER — Modal de Gestión de Equipo y Colaboradores del Despacho
  *
  * Permite a los titulares (owner) y administradores (admin) gestionar el equipo:
  * 1. Lista de miembros activos con badges de rol (Titular, Administrador, Colaborador).
@@ -502,7 +502,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                       Invitar a un nuevo colaborador
                     </h4>
                     <p className="mt-0.5 text-[11px] text-muted">
-                      El invitado recibirá un correo transaccional de ARK TOOLS con un enlace de
+                      El invitado recibirá un correo transaccional de ARK LEDGER con un enlace de
                       acceso seguro para unirse inmediatamente al despacho.
                     </p>
                   </div>

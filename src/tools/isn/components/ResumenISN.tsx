@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora ISN 2026
+ * ARK LEDGER — Calculadora ISN 2026
  * ResumenISN
  *
  * Card de resumen con el resultado del cálculo.

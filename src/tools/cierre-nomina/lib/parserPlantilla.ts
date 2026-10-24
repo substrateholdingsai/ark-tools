@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Parser y Validador de Plantillas de Nómina Masiva (Sprint 11)
+ * ARK LEDGER — Parser y Validador de Plantillas de Nómina Masiva (Sprint 11)
  *
  * Funciones para:
  * 1. Detección automática de delimitadores (coma, punto y coma, tabulador).

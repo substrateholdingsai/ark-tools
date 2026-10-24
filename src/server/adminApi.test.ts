@@ -4,7 +4,7 @@ import type { Env } from '../index';
 import type { AuthPrincipal } from './auth';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://tools.arksystems.site',
+  'Access-Control-Allow-Origin': 'https://ledger.arksystems.site',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-id',
 };
@@ -94,7 +94,7 @@ function createMockDb() {
 describe('Admin API Handlers', () => {
   it('returns 401 when principal is missing', async () => {
     const response = await handleAdminApiRequest(
-      new Request('https://tools.arksystems.site/api/admin/overview'),
+      new Request('https://ledger.arksystems.site/api/admin/overview'),
       {} as Env,
       corsHeaders,
       null
@@ -104,7 +104,7 @@ describe('Admin API Handlers', () => {
 
   it('returns 403 when principal is not a super_admin', async () => {
     const response = await handleAdminApiRequest(
-      new Request('https://tools.arksystems.site/api/admin/overview'),
+      new Request('https://ledger.arksystems.site/api/admin/overview'),
       {} as Env,
       corsHeaders,
       regularUser
@@ -127,7 +127,7 @@ describe('Admin API Handlers', () => {
     } as unknown as Env;
 
     const response = await handleAdminApiRequest(
-      new Request('https://tools.arksystems.site/api/admin/overview'),
+      new Request('https://ledger.arksystems.site/api/admin/overview'),
       env,
       corsHeaders,
       superAdminUser
@@ -152,7 +152,7 @@ describe('Admin API Handlers', () => {
     const env = { ARK_TOOLS_DB: db } as unknown as Env;
 
     const response = await handleAdminApiRequest(
-      new Request('https://tools.arksystems.site/api/admin/users'),
+      new Request('https://ledger.arksystems.site/api/admin/users'),
       env,
       corsHeaders,
       superAdminUser
@@ -173,7 +173,7 @@ describe('Admin API Handlers', () => {
     const env = { ARK_TOOLS_DB: db } as unknown as Env;
 
     const response = await handleAdminApiRequest(
-      new Request('https://tools.arksystems.site/api/admin/users/role', {
+      new Request('https://ledger.arksystems.site/api/admin/users/role', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: superAdminUser.id, role: 'user' }),
@@ -193,7 +193,7 @@ describe('Admin API Handlers', () => {
     const env = { ARK_TOOLS_DB: db } as unknown as Env;
 
     const response = await handleAdminApiRequest(
-      new Request('https://tools.arksystems.site/api/admin/users/role', {
+      new Request('https://ledger.arksystems.site/api/admin/users/role', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: 'user-target', role: 'super_admin' }),

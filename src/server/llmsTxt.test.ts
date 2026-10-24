@@ -7,7 +7,7 @@ describe('GEO Engine — llms.txt & llms-full.txt', () => {
   it('genera /llms.txt con el catálogo completo de herramientas y valores DOF', () => {
     const text = generateLlmsTxt();
 
-    expect(text).toContain('# ARK TOOLS — Suite Fiscal, Laboral y de Compliance MX (DOF 2026)');
+    expect(text).toContain('# ARK LEDGER — Suite Fiscal, Laboral y de Compliance MX (DOF 2026)');
     expect(text).toContain(`Catálogo de las ${TOTAL_HERRAMIENTAS} Herramientas en Producción`);
     expect(text).toContain(CURRENT_CATALOG_VERSION);
 
@@ -30,7 +30,7 @@ describe('GEO Engine — llms.txt & llms-full.txt', () => {
 
     // Verificación pública
     expect(text).toContain(
-      'https://tools.arksystems.site/api/expedientes/verify?hash={sha256_hash}'
+      'https://ledger.arksystems.site/api/expedientes/verify?hash={sha256_hash}'
     );
   });
 
@@ -69,7 +69,7 @@ describe('GEO Engine — llms.txt & llms-full.txt', () => {
     expect(robots).toContain('User-agent: ClaudeBot');
     expect(robots).toContain('User-agent: PerplexityBot');
     expect(robots).toContain('User-agent: Google-Extended');
-    expect(robots).toContain('Sitemap: https://tools.arksystems.site/llms.txt');
-    expect(robots).toContain('Sitemap: https://tools.arksystems.site/llms-full.txt');
+    expect(robots).toContain('Sitemap: https://ledger.arksystems.site/llms.txt');
+    expect(robots).toContain('Sitemap: https://ledger.arksystems.site/llms-full.txt');
   });
 });

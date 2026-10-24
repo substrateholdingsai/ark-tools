@@ -131,7 +131,7 @@ describe('AiAssistantWidget', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/ACTIVAR PRO — \$399 MXN \/ MES/i)).toBeInTheDocument();
-      expect(screen.getByText(/Desbloquear ARK TOOLS Pro/i)).toBeInTheDocument();
+      expect(screen.getByText(/Desbloquear ARK LEDGER Pro/i)).toBeInTheDocument();
     });
   });
 });

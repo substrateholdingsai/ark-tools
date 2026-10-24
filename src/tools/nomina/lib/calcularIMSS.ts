@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * Cálculo del IMSS obrero (cuotas del trabajador)
  *
  * Base legal: LSS Art. 25, 106, 107, 147, 168, 211

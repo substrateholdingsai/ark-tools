@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Banner de Sincronización con Expediente Único (Sprint 9)
+ * ARK LEDGER — Banner de Sincronización con Expediente Único (Sprint 9)
  *
  * Se monta en la parte superior de cada calculadora para:
  * 1. Confirmar el cliente/trabajador activo vinculado.

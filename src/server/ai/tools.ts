@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — AI Tools Catalog
+ * ARK LEDGER — AI Tools Catalog
  *
  * Herramientas parametrizadas que el modelo de IA puede invocar.
  * El worker actúa como guardián de seguridad inyectando siempre el `tenant_id`

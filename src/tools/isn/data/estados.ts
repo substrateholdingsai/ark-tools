@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora ISN 2026
+ * ARK LEDGER — Calculadora ISN 2026
  * Datos oficiales de los 32 estados (tasas 2026)
  *
  * Fuente: Códigos Fiscales Estatales 2026

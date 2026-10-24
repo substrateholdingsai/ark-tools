@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Workers AI Floating Assistant Widget
+ * ARK LEDGER — Workers AI Floating Assistant Widget
  *
  * Widget de chat flotante que permite al contador interactuar con el modelo
  * Cloudflare Workers AI (@cf/meta/llama-3.3-70b-instruct).
@@ -385,7 +385,7 @@ export function AiAssistantWidget() {
                         <div className="mt-3.5 space-y-2.5 rounded-xl border border-gold/40 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-transparent p-3.5 shadow-sm">
                           <div className="flex items-center gap-1.5 font-orbitron text-[12px] font-bold text-navy">
                             <Crown className="h-4 w-4 text-gold-dark" />
-                            <span>Desbloquear ARK TOOLS Pro</span>
+                            <span>Desbloquear ARK LEDGER Pro</span>
                           </div>
                           <p className="text-[11px] leading-relaxed text-muted">
                             Obtén consultas ilimitadas con Llama 3.3, integración total con D1,

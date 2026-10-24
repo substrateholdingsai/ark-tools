@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Herramienta #16: Motor de Conciliación Anexo 24
+ * ARK LEDGER — Herramienta #16: Motor de Conciliación Anexo 24
  * Algoritmo Core de Conciliación, Auto-asociación y Generación de Pólizas
  *
  * Mapea CFDIs emitidos a códigos agrupadores del Anexo 24 del SAT:

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Panel de Filtros y Configuración de Actividades Vulnerables LFPIORPI
+ * ARK LEDGER — Panel de Filtros y Configuración de Actividades Vulnerables LFPIORPI
  */
 
 import React from 'react';

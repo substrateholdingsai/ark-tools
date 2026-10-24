@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Motor Matemático de Actualización y Recargos Fiscales
+ * ARK LEDGER — Motor Matemático de Actualización y Recargos Fiscales
  *
  * Implementa la legislación tributaria federal mexicana:
  * 1. Artículo 17-A del Código Fiscal de la Federación:

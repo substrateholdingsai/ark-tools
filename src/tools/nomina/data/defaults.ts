@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * Valores por defecto y presets
  *
  * UMA proveniente del catálogo centralizado de valores vigentes.

@@ -22,7 +22,7 @@ export function exportarResicoCSV(
   const nombreMes = NOMBRES_MESES[resultado.mes];
 
   // 1. Encabezado institucional
-  lineas.push('ARK TOOLS — PAPEL DE TRABAJO Y CÉDULA DE DETERMINACIÓN RESICO');
+  lineas.push('ARK LEDGER — PAPEL DE TRABAJO Y CÉDULA DE DETERMINACIÓN RESICO');
   lineas.push(`Contribuyente,${escaparCSV(clienteNombre)}`);
   lineas.push(`RFC,${escaparCSV(clienteRfc)}`);
   lineas.push(
@@ -83,7 +83,7 @@ export function generarResumenWhatsApp(
   const nombreMes = NOMBRES_MESES[resultado.mes];
   const esPF = resultado.tipoPersona === 'fisica';
 
-  let msg = `🏛️ *ARK TOOLS | Liquidación Fiscal RESICO*\n`;
+  let msg = `🏛️ *ARK LEDGER | Liquidación Fiscal RESICO*\n`;
   msg += `*Cliente:* ${clienteNombre}\n`;
   msg += `*Período:* ${nombreMes} ${resultado.ejercicio}\n`;
   msg += `*Régimen:* ${esPF ? 'RESICO Persona Física' : 'RESICO Persona Moral (Flujo)'}\n\n`;
@@ -111,7 +111,7 @@ export function generarResumenWhatsApp(
     msg += `⚠️ *Monitoreo Tope 3.5M:* ${resultado.porcentajeConsumoTope}% ejercido.\n`;
   }
 
-  msg += `_Cédula oficial emitida con ARK TOOLS con sello digital verificable._`;
+  msg += `_Cédula oficial emitida con ARK LEDGER con sello digital verificable._`;
   return msg;
 }
 

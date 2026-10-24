@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Leasing y MRR para Despachos Contables
+ * ARK LEDGER — Calculadora de Leasing y MRR para Despachos Contables
  * Modelo de negocio: $500 Setup → $2,500 Renta Recurrente Mensual
  */
 

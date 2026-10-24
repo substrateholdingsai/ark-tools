@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Monitor de Actividades Vulnerables LFPIORPI (Herramienta #17)
+ * ARK LEDGER — Monitor de Actividades Vulnerables LFPIORPI (Herramienta #17)
  *
  * Módulo de Compliance y Prevención de Lavado de Dinero:
  * 1. Ingesta local de sábanas de cobranza (Zero-Data-Leak).

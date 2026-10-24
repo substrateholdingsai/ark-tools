@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora ISN 2026
+ * ARK LEDGER — Calculadora ISN 2026
  * Exportación a CSV (compatible con Excel / Google Sheets)
  *
  * Genera un archivo CSV con BOM UTF-8 para que Excel respete los acentos.
@@ -50,7 +50,7 @@ function generarContenidoCSV({ estado, conceptos, resultado }: ExportarCSVParams
   // ─────────────────────────────────────────────────────────────
   // SECCIÓN 1: Encabezado
   // ─────────────────────────────────────────────────────────────
-  lineas.push('CÁLCULO ISN 2026 — ARK TOOLS');
+  lineas.push('CÁLCULO ISN 2026 — ARK LEDGER');
   lineas.push(`Fecha de cálculo,${escaparCSV(fecha)}`);
   lineas.push(`Estado,${escaparCSV(estado.nombre)}`);
   lineas.push(`Tasa ISN,${escaparCSV(formatearPorcentaje(estado.tasa))}`);
@@ -106,7 +106,7 @@ function generarContenidoCSV({ estado, conceptos, resultado }: ExportarCSVParams
     'Cálculo informativo. Verifica retención y fecha de pago en el portal tributario estatal.'
   );
   lineas.push('No sustituye asesoría fiscal.');
-  lineas.push('Generado por ARK TOOLS · Substrate Holdings LLC');
+  lineas.push('Generado por ARK LEDGER · Substrate Holdings LLC');
 
   return lineas.join('\n');
 }

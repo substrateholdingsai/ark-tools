@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────
-# ARK TOOLS — Variables de desarrollo local
+# ARK LEDGER — Variables de desarrollo local
 # Copiar a `.dev.vars` y llenar con valores reales.
 # NO commitear este archivo. Solo `.dev.vars.example`.
 # ─────────────────────────────────────────────────────────────────────

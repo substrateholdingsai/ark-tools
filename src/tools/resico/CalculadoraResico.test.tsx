@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Test de Integración y UI de Calculadora y Cédula RESICO 2026
+ * ARK LEDGER — Test de Integración y UI de Calculadora y Cédula RESICO 2026
  */
 
 import { describe, it, expect, vi } from 'vitest';

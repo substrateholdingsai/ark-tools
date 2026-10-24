@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Pruebas de Exportación de Cierre de Nómina (Sprint 11)
+ * ARK LEDGER — Pruebas de Exportación de Cierre de Nómina (Sprint 11)
  */
 
 import { describe, it, expect } from 'vitest';
@@ -86,7 +86,7 @@ describe('exportarCierre — Sprint 11', () => {
       const csv = exportarConcentradoCSV(dummyCierre);
 
       expect(csv.startsWith('\uFEFF')).toBe(true);
-      expect(csv).toContain('ARK TOOLS — CÉDULA CONCENTRADORA DE NÓMINA OFICIAL');
+      expect(csv).toContain('ARK LEDGER — CÉDULA CONCENTRADORA DE NÓMINA OFICIAL');
       expect(csv).toContain('Tecnología y Soluciones S.A. de C.V.');
       expect(csv).toContain('TSO180512KL9');
       expect(csv).toContain('e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855');

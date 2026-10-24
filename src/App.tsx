@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — App Principal
+ * ARK LEDGER — App Principal
  *
  * Router principal entre Dashboard y herramientas.
  * Fase D: Compliance — Auditoría de Cobranza + Guía SAT/IMSS.

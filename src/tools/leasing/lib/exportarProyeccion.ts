@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Leasing
+ * ARK LEDGER — Calculadora de Leasing
  * Exportador de Proyección Financiera a CSV para Excel
  */
 
@@ -17,7 +17,7 @@ function escaparCSV(valor: string | number | undefined | null): string {
 export function generarCSVProyeccion(proyeccion: ProyeccionMes[], resumen: ResumenLeasing): string {
   const lineas: string[] = [];
 
-  lineas.push('PROYECCIÓN DE LEASING RECURRENTE ($500 SETUP → $2,500 RENTA) — ARK TOOLS');
+  lineas.push('PROYECCIÓN DE LEASING RECURRENTE ($500 SETUP → $2,500 RENTA) — ARK LEDGER');
   lineas.push(`MRR Final,${resumen.mrrFinal}`);
   lineas.push(`ARR Proyectado,${resumen.arrProyectado}`);
   lineas.push(`Clientes Finales,${resumen.clientesFinales}`);

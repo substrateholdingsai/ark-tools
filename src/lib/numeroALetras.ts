@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Conversor de Importe Monetario a Letras (Español México)
+ * ARK LEDGER — Conversor de Importe Monetario a Letras (Español México)
  *
  * Convierte montos numéricos en pesos mexicanos al formato contable oficial:
  * Ejemplo: 15420.50 -> "QUINCE MIL CUATROCIENTOS VEINTE PESOS 50/100 M.N."

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Modal de Celebración de Primer Cálculo Blindado (Cierre de Onboarding)
+ * ARK LEDGER — Modal de Celebración de Primer Cálculo Blindado (Cierre de Onboarding)
  *
  * Se dispara cuando el usuario archiva un cálculo en modo demo / sandbox para:
  * 1. Celebrar el logro: primer cálculo blindado con hash SHA-256 oficial DOF 2026.

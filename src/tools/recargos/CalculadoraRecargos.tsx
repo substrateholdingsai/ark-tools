@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Actualización y Recargos Fiscales (Herramienta #18)
+ * ARK LEDGER — Calculadora de Actualización y Recargos Fiscales (Herramienta #18)
  *
  * Módulo nativo en la nube para el cálculo exacto y determinista de:
  * - Efecto Inflacionario (INPC) conforme al Art. 17-A del Código Fiscal de la Federación (CFF)

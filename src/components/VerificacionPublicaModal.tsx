@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Modal / Vista Pública de Verificación de Autenticidad (Sprint 10)
+ * ARK LEDGER — Modal / Vista Pública de Verificación de Autenticidad (Sprint 10)
  *
  * Pantalla que se abre al escanear el Código QR del Papel de Trabajo
  * o al consultar un hash SHA-256 en la plataforma.

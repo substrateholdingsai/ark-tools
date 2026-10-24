@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Utilidades de Exportación y Compartición para Recargos Fiscales
+ * ARK LEDGER — Utilidades de Exportación y Compartición para Recargos Fiscales
  */
 
 import type { ResultadoRecargos } from '../types';
@@ -80,7 +80,7 @@ export function generarResumenWhatsApp(
   clienteNombre = 'Contribuyente'
 ): string {
   const lineas = [
-    `🏛️ *ARK TOOLS — Cédula de Actualización y Recargos (CFF)*`,
+    `🏛️ *ARK LEDGER — Cédula de Actualización y Recargos (CFF)*`,
     `👤 *Cliente:* ${clienteNombre}`,
     `📅 *Vencimiento:* ${resultado.fechaVencimiento} | *Pago:* ${resultado.fechaPago}`,
     `⏳ *Mora:* ${resultado.mesesMora} meses (${resultado.tasaRecargosTotal}% acumulado)`,

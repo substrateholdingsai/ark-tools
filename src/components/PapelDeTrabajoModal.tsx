@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Generador de Papel de Trabajo Oficial (Sprint 10)
+ * ARK LEDGER — Generador de Papel de Trabajo Oficial (Sprint 10)
  *
  * Emite el dictamen formal en formato de Papel de Trabajo de Auditoría:
  * - Membrete del Despacho y Folio Institucional.
@@ -30,7 +30,7 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
   const [copiedHash, setCopiedHash] = useState(false);
   const printContainerRef = useRef<HTMLDivElement>(null);
 
-  const verifyUrl = `https://tools.arksystems.site/?verify=${expediente.input_hash}`;
+  const verifyUrl = `https://ledger.arksystems.site/?verify=${expediente.input_hash}`;
 
   // Generar código QR de verificación
   useEffect(() => {
@@ -510,7 +510,7 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
             <p className="text-[9px] text-muted">
               Para validar la autenticidad e inalterabilidad legal de este dictamen, escanee el
               código QR o consulte en{' '}
-              <span className="text-navy">https://tools.arksystems.site</span> con el hash digital.
+              <span className="text-navy">https://ledger.arksystems.site</span> con el hash digital.
             </p>
           </div>
 

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora y Papel de Trabajo RESICO 2026
+ * ARK LEDGER — Calculadora y Papel de Trabajo RESICO 2026
  * Tipos de datos para Personas Físicas (Art. 113-E a 113-J LISR) y Morales (Art. 206 a 215 LISR).
  */
 

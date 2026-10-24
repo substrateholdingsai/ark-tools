@@ -1,5 +1,5 @@
 """
-ARK TOOLS — CFDI Stress Generator
+ARK LEDGER — CFDI Stress Generator
 Propósito: Generar lotes masivos (50-500+) de archivos XML CFDI 4.0 sintéticos 
 y estructuralmente válidos (Anexo 20 SAT) para pruebas de estrés, QA y validación 
 de parsers sin exponer datos reales de clientes.
@@ -68,7 +68,7 @@ class MockFIEL:
             key_size=2048,
         )
         self.subject = issuer = Name([
-            NameAttribute(NameOID.COMMON_NAME, "ARK TOOLS Synthetic FIEL"),
+            NameAttribute(NameOID.COMMON_NAME, "ARK LEDGER Synthetic FIEL"),
             NameAttribute(NameOID.ORGANIZATION_NAME, "Substrate Holdings LLC"),
             NameAttribute(NameOID.COUNTRY_NAME, "MX"),
         ])
@@ -156,7 +156,7 @@ def generate_cfdi_ingreso(scenario: str) -> Dict[str, Any]:
             "@LugarExpedicion": "06000",
             "cfdi:Emisor": {
                 "@Rfc": RFC_EMISOR_GENERICO,
-                "@Nombre": "ARK TOOLS SA DE CV",
+                "@Nombre": "ARK LEDGER SA DE CV",
                 "@RegimenFiscal": "601" if not is_resico else "626"
             },
             "cfdi:Receptor": {
@@ -269,7 +269,7 @@ def generate_cfdi_nomina(scenario: str) -> Dict[str, Any]:
             "@LugarExpedicion": "06000",
             "cfdi:Emisor": {
                 "@Rfc": RFC_EMISOR_GENERICO,
-                "@Nombre": "ARK TOOLS SA DE CV",
+                "@Nombre": "ARK LEDGER SA DE CV",
                 "@RegimenFiscal": "601"
             },
             "cfdi:Receptor": {
@@ -406,7 +406,7 @@ def sign_and_save_xml(doc: Dict[str, Any], filename: str):
 
 def main():
     console.print(Panel.fit(
-        "[bold gold1]ARK TOOLS — CFDI Stress Generator v1.0[/bold gold1]\n"
+        "[bold gold1]ARK LEDGER — CFDI Stress Generator v1.0[/bold gold1]\n"
         "Generando lotes sintéticos de CFDI 4.0 con escenarios borde para QA.",
         border_style="gold1"
     ))

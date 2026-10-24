@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Tool Skeleton Loader
+ * ARK LEDGER — Tool Skeleton Loader
  *
  * Esqueleto animado estandarizado para la carga lazy de herramientas.
  */

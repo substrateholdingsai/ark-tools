@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora SBC 2026
+ * ARK LEDGER — Calculadora SBC 2026
  * DesgloseTable
  *
  * Tabla con el desglose del factor de integración.

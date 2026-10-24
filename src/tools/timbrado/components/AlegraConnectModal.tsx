@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Modal de Conexión de Cuenta Alegra
+ * ARK LEDGER — Modal de Conexión de Cuenta Alegra
  *
  * Permite al usuario ingresar sus credenciales de API de forma segura.
  * Incluye validación de token, enlace de ayuda y comprobación de CSD.

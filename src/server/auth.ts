@@ -191,15 +191,15 @@ async function sendAuthEmail(
   const actionUrl = url.toString();
   const isVerify = action === 'verify';
   const actionLabel = isVerify ? 'Confirmar Cuenta y Activar' : 'Restablecer Contraseña';
-  const headline = isVerify ? 'Bienvenido a ARK TOOLS' : 'Recuperación de Contraseña';
+  const headline = isVerify ? 'Bienvenido a ARK LEDGER' : 'Recuperación de Contraseña';
   const explanation = isVerify
     ? 'Para completar tu registro y acceder a la suite de 19 herramientas fiscales, nómina y blindaje criptográfico, haz clic en el siguiente botón:'
-    : 'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en ARK TOOLS. Para definir una nueva clave de acceso, haz clic en el siguiente botón:';
+    : 'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en ARK LEDGER. Para definir una nueva clave de acceso, haz clic en el siguiente botón:';
 
   const html = `
 <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 580px; margin: 0 auto; padding: 24px; color: #1e293b; background-color: #ffffff;">
   <div style="text-align: center; margin-bottom: 24px; border-bottom: 2px solid #D4AF37; padding-bottom: 16px;">
-    <h1 style="color: #0A192F; font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -0.025em;">ARK TOOLS</h1>
+    <h1 style="color: #0A192F; font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -0.025em;">ARK LEDGER</h1>
     <p style="color: #64748b; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px;">El Sistema Operativo de la Defensa Fiscal</p>
   </div>
   <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 28px; margin-bottom: 24px;">
@@ -223,13 +223,13 @@ async function sendAuthEmail(
     </p>
   </div>
   <div style="text-align: center; font-size: 12px; color: #94a3b8;">
-    <p>ARK TOOLS © ${new Date().getFullYear()} — Plataforma de Cumplimiento y Defensa Fiscal<br />
-    <a href="https://tools.arksystems.site" style="color: #64748b; text-decoration: underline;">tools.arksystems.site</a></p>
+    <p>ARK LEDGER © ${new Date().getFullYear()} — Plataforma de Cumplimiento y Defensa Fiscal<br />
+    <a href="https://ledger.arksystems.site" style="color: #64748b; text-decoration: underline;">ledger.arksystems.site</a></p>
   </div>
 </div>
 `;
 
-  const text = `ARK TOOLS — ${headline}
+  const text = `ARK LEDGER — ${headline}
 
 ${explanation}
 
@@ -238,8 +238,8 @@ ${actionUrl}
 
 Este enlace es válido durante 24 horas. Si no solicitaste esta acción, ignora este mensaje.
 
-ARK TOOLS — Plataforma de Cumplimiento y Defensa Fiscal
-https://tools.arksystems.site`;
+ARK LEDGER — Plataforma de Cumplimiento y Defensa Fiscal
+https://ledger.arksystems.site`;
 
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -399,7 +399,7 @@ async function handleRegister(request: Request, env: Env, cors: Record<string, s
 
   const token = await issueActionToken(env, userId, 'verify_email', VERIFY_TTL_SECONDS);
   try {
-    await sendAuthEmail(env, email, 'Verifica tu correo de ARK TOOLS', 'verify', token);
+    await sendAuthEmail(env, email, 'Verifica tu correo de ARK LEDGER', 'verify', token);
   } catch (error) {
     console.error('[Auth register] Verification email failed', error);
     return json(
@@ -573,7 +573,7 @@ async function handleRequestPasswordReset(
   if (user) {
     const token = await issueActionToken(env, user.id, 'reset_password', RESET_TTL_SECONDS);
     try {
-      await sendAuthEmail(env, email, 'Restablece tu contraseña de ARK TOOLS', 'reset', token);
+      await sendAuthEmail(env, email, 'Restablece tu contraseña de ARK LEDGER', 'reset', token);
     } catch (error) {
       console.error('[Auth reset] Reset email failed', error);
       return json({ error: 'No se pudo enviar el correo. Intenta nuevamente.' }, cors, 503);

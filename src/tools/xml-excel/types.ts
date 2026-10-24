@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Conversor XML a Excel (CFDI 4.0)
+ * ARK LEDGER — Conversor XML a Excel (CFDI 4.0)
  * Tipos de datos para el procesamiento y extracción de comprobantes fiscales
  */
 

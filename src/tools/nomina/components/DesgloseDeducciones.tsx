@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * DesgloseDeducciones
  *
  * Desglose detallado de las retenciones: ISR (Art. 96 LISR) e IMSS obrero (LSS).

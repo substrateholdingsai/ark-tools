@@ -1,9 +1,9 @@
-# ARK TOOLS — Mapa del Proyecto y Checklist de Estado
+# ARK LEDGER — Mapa del Proyecto y Checklist de Estado
 
 **Versión:** 2.6 — Suite de 19 Herramientas + Social Meta Tags (Open Graph / Twitter Cards) con generador SVG puro `forge_ark_meta.py` + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
 **Fecha:** Octubre 2026 (verificado contra `main` y desplegado en producción)  
 **Mantenedor:** Substrate Holdings LLC  
-**URL de Producción:** [https://tools.arksystems.site](https://tools.arksystems.site)  
+**URL de Producción:** [https://ledger.arksystems.site](https://ledger.arksystems.site)  
 **Repositorio:** [https://github.com/substrateholdingsai/ark-tools](https://github.com/substrateholdingsai/ark-tools)
 
 ---
@@ -442,7 +442,7 @@ ark-tools/
   - [x] Modal `AlegraConnectModal.tsx` con verificación de plan API y CSD ante el SAT.
   - [x] Componente principal `TimbradoFacturas.tsx` con onboarding no bloqueante, ruta alternativa hacia Validador XML, autollenado de clientes, cálculo en vivo y descarga de XML/PDF.
   - [x] Suite de 14 pruebas automáticas (11 backend en `alegraApi.test.ts` + 3 frontend en `TimbradoFacturas.test.tsx`).
-  - [x] 100% Desplegado y operativo en producción (`https://tools.arksystems.site`).
+  - [x] 100% Desplegado y operativo en producción (`https://ledger.arksystems.site`).
 
 ---
 
@@ -546,7 +546,7 @@ ark-tools/
 
 #### Estado verificado en Producción (Octubre 2026) — sin pendientes
 
-- **Deploy vigente:** Version ID `b1faf657-a5af-49b7-bdf9-0df2cb05ff19` (worker `ark-tools-production`, route `tools.arksystems.site` custom domain, cron `0 */6 * * *`). Construido desde el commit más reciente de `main` (incluye CI workflow en `.github/workflows/ci.yml`).
+- **Deploy vigente:** Version ID `b1faf657-a5af-49b7-bdf9-0df2cb05ff19` (worker `ark-tools-production`, route `ledger.arksystems.site` custom domain, cron `0 */6 * * *`). Construido desde el commit más reciente de `main` (incluye CI workflow en `.github/workflows/ci.yml`).
 - **`GET /llms.txt`:** responde _"Catálogo de las 19 Herramientas en Producción"_ con 5 categorías; incluye **RESICO 2026**, **Balance General Comparativo**, **Anexo 24**, **Monitor LFPIORPI**, **Actualización y Recargos CFF** y **Modalidad 40**; ya no aparece el conteo de 13/15.
 - **`GET /llms-full.txt`:** anexo con §4 RESICO, §5 Balance General, §6 Estándar SHA-256 y las fórmulas de las herramientas #16-#19.
 - **`GET /`:** meta `og:description` con _"Suite de 19 herramientas"_.
@@ -790,7 +790,7 @@ ark-tools/
 
 ### Sprint 5 (Octubre 2026) — Arquitectura Multi-Tenant y Auth local original (histórico)
 
-**Objetivo:** Transformar la suite ARK TOOLS en una plataforma SaaS Multi-Tenant soberana (sin dependencias de terceros ni restricciones geográficas como las que afectan a servicios externos como Clerk en México), con landing pública de captación, gating condicional y base de datos distribuida en Cloudflare D1.
+**Objetivo:** Transformar la suite ARK LEDGER en una plataforma SaaS Multi-Tenant soberana (sin dependencias de terceros ni restricciones geográficas como las que afectan a servicios externos como Clerk en México), con landing pública de captación, gating condicional y base de datos distribuida en Cloudflare D1.
 
 > **Estado histórico:** Este sprint documenta el primer flujo de identidad basado en el navegador. Fue reemplazado por el flujo de email/contraseña descrito en “Autenticación nativa — implementación local y despliegue pendiente”; `/api/auth/sync` ahora responde 410 y la identidad local ya no autoriza llamadas al Worker.
 
@@ -881,7 +881,7 @@ ark-tools/
 - 6 pruebas de integración en `src/server/ai/aiApi.test.ts` (rutas, códigos HTTP 200/400/503, validación de payloads).
 - 4 pruebas de integración y render en `src/components/AiAssistantWidget.test.tsx` (apertura, cierre, minimizado, envío y visualización de tools).
 
-#### 7. Despliegue en Producción Verificado en Edge (`tools.arksystems.site`)
+#### 7. Despliegue en Producción Verificado en Edge (`ledger.arksystems.site`)
 
 - Binding `[ai]` y base de datos `ARK_TOOLS_DB` vinculados exitosamente en Cloudflare Workers.
 - Inferencia probada en vivo con el modelo `@cf/meta/llama-3.3-70b-instruct-fp8-fast`.
@@ -891,7 +891,7 @@ ark-tools/
 
 ### Sprint 7 (Octubre 2026) — Optimización de Copy, Header, Footer Institucional y Fundamentación Jurídica (Transparencia Fiscal) — Completado ✅
 
-**Objetivo:** Transformar el copy institucional de ARK TOOLS para proyectar el máximo nivel de solidez técnica y jurídica ante despachos contables y directores financieros, erradicando conceptos de prueba interna (tokens de UI) y agregando certeza jurídica transparente con citas exactas de ley en cada cálculo.
+**Objetivo:** Transformar el copy institucional de ARK LEDGER para proyectar el máximo nivel de solidez técnica y jurídica ante despachos contables y directores financieros, erradicando conceptos de prueba interna (tokens de UI) y agregando certeza jurídica transparente con citas exactas de ley en cada cálculo.
 
 #### 1. Rediseño y Optimización de Header (`src/components/Header.tsx` y navbar de `LandingPage.tsx`)
 
@@ -940,7 +940,7 @@ ark-tools/
 - **Auditoría de Catálogo Oficial DOF**: `pnpm verify:catalogo` ejecutando auditoría CLI exitosa (6/6 valores oficiales vigentes sin proyecciones ni vencimientos).
 - **Compilación SPA**: `pnpm build` generado en 37s sin errores para producción.
 - **Git Commit & Push**: Cambios confirmados con el commit `5a6099a` (`feat: sprint 7 - workers ai, multi-tenant d1, auditor cobranza, finiquitos y footer institucional`) y sincronizados en la rama `main` en GitHub (`origin/main`).
-- **Deploy**: Desplegado en Cloudflare Workers (`Version ID: 90c90496-fc07-4237-9565-7172041bcc5e`) en [https://tools.arksystems.site](https://tools.arksystems.site).
+- **Deploy**: Desplegado en Cloudflare Workers (`Version ID: 90c90496-fc07-4237-9565-7172041bcc5e`) en [https://ledger.arksystems.site](https://ledger.arksystems.site).
 
 ---
 
@@ -986,7 +986,7 @@ ark-tools/
 
 ---
 
-### Sprint 9 — Expediente Único ARK TOOLS (Completado)
+### Sprint 9 — Expediente Único ARK LEDGER (Completado)
 
 **Objetivo:** Convertir las 11 calculadoras en un sistema operativo de despacho donde un cliente seleccionado alimenta todas las herramientas, archiva historial inmutable con sello SHA-256 y versión oficial DOF, y permite facturar por expediente.
 
@@ -1068,7 +1068,7 @@ ark-tools/
   - Endpoint público `GET /api/expedientes/verify?hash={hash}` sin requerir autenticación previa.
   - Consulta en Cloudflare D1 comparando el hash recibido con el registro archivado y extrayendo metadatos no sensibles de auditoría.
 - **`src/components/VerificacionPublicaModal.tsx`**:
-  - Portal modal de verificación pública que se activa automáticamente al visitar `tools.arksystems.site/?verify={hash}`.
+  - Portal modal de verificación pública que se activa automáticamente al visitar `ledger.arksystems.site/?verify={hash}`.
   - Muestra insignia de autenticidad verificada por Cloudflare D1, fecha de emisión original, despacho emisor, versión de tablas DOF y resumen de conceptos.
 
 #### 4. Integración en Banner de Herramientas e Historial
@@ -1145,7 +1145,7 @@ ark-tools/
 
 ### Sprint 11.5 — Autenticación Nativa por Email y Multi-Tenancy D1 — Completado ✅
 
-- Registro abierto con verificación de correo vía Resend (`AUTH_EMAIL_FROM = "ARK TOOLS <no-reply@arksystems.site>"`).
+- Registro abierto con verificación de correo vía Resend (`AUTH_EMAIL_FROM = "ARK LEDGER <no-reply@arksystems.site>"`).
 - Establecimiento seguro de contraseña tras confirmación de correo.
 - Sesiones blindadas mediante cookies `HttpOnly`, `Secure` y `SameSite=Lax` con tokens hasheados en D1. Contraseñas con PBKDF2-SHA256.
 - Recuperación de contraseña mediante tokens de un solo uso con expiración y revocación automática de sesiones activas.
@@ -1186,7 +1186,7 @@ ark-tools/
 
 ### Sprint 13 — Timbrado de Facturas CFDI 4.0 vía Alegra / Quadrum PAC (Cobros) — Completado ✅
 
-**Objetivo:** Incorporar la tercera herramienta de Cobros en ARK TOOLS, permitiendo emitir y timbrar comprobantes fiscales digitales por internet (CFDI 4.0) ante el SAT sin salir de la plataforma, delegando la responsabilidad de PAC a Alegra (conector Quadrum PAC) y protegiendo las credenciales mediante encriptación AES-GCM en reposo.
+**Objetivo:** Incorporar la tercera herramienta de Cobros en ARK LEDGER, permitiendo emitir y timbrar comprobantes fiscales digitales por internet (CFDI 4.0) ante el SAT sin salir de la plataforma, delegando la responsabilidad de PAC a Alegra (conector Quadrum PAC) y protegiendo las credenciales mediante encriptación AES-GCM en reposo.
 
 #### 1. Migración D1 y Modelo de Datos Multi-Cuenta
 
@@ -1233,7 +1233,7 @@ ark-tools/
 
 #### 1. Delimitación Estricta de Alcance y Grounding de Conocimiento (`src/server/ai/agent.ts`)
 
-- **Regla Estricta de Corte (Anti-Out-of-Scope):** Si el usuario formula preguntas ajenas a la materia fiscal, contable, laboral o al uso de ARK TOOLS (ej. biología, medicina, deportes, entretenimiento o física), el modelo declina cortésmente responder y reitera su función especializada.
+- **Regla Estricta de Corte (Anti-Out-of-Scope):** Si el usuario formula preguntas ajenas a la materia fiscal, contable, laboral o al uso de ARK LEDGER (ej. biología, medicina, deportes, entretenimiento o física), el modelo declina cortésmente responder y reitera su función especializada.
 - **Rigor Conceptual y Corrección de Premisas Falsas:**
   - _SBC (Salario Base de Cotización):_ Corrección explícita de que NO es un impuesto, sino la base salarial (Art. 27 LSS) para cuotas obrero-patronales IMSS e INFONAVIT, topada a 25 UMAs.
   - _Subsidio para el Empleo:_ Aclaración frente a confusiones con el SBC (Decreto DOF 2024).
@@ -1320,7 +1320,7 @@ ark-tools/
 - **`components/CedulaResicoModal.tsx`**: Formato institucional tamaño Carta para impresión y guardado en PDF (`@media print`), con membrete oficial del despacho, folio, sello digital criptográfico SHA-256, código QR vectorial de verificación pública y bloque de firmas autógrafas para Contador y Contribuyente.
 - **`CalculadoraResico.test.tsx`**: 4 pruebas de interfaz e integración aprobadas al 100%.
 
-#### 3. Integración en el Ecosistema ARK TOOLS
+#### 3. Integración en el Ecosistema ARK LEDGER
 
 - **`App.tsx`**: Incorporación de `resico` en `ToolId`, enrutador principal con carga diferida (`React.lazy`), tarjeta destacada en la categoría **Fiscal** (4 columnas) y banner institucional.
 - **`ExpedienteToolBanner.tsx`**: Enlace automático para archivar cálculos en Cloudflare D1 bajo el expediente del cliente activo.
@@ -1388,7 +1388,7 @@ ark-tools/
 
 ### Sprint 18 (Octubre 2026) — GEO Engine: Descubrimiento por Agentes IA (`/llms.txt`, `/llms-full.txt`, `/robots.txt`) — Completado ✅
 
-**Objetivo:** Habilitar el descubrimiento y la comprensión de ARK TOOLS por motores de búsqueda de IA y agentes autónomos (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) mediante documentos Markdown dinámicos vinculados al catálogo oficial de valores fiscales DOF 2026, servidos directamente desde el Worker sin archivos estáticos.
+**Objetivo:** Habilitar el descubrimiento y la comprensión de ARK LEDGER por motores de búsqueda de IA y agentes autónomos (GPTBot, ClaudeBot, PerplexityBot, Google-Extended) mediante documentos Markdown dinámicos vinculados al catálogo oficial de valores fiscales DOF 2026, servidos directamente desde el Worker sin archivos estáticos.
 
 #### 1. Módulo GEO (`src/server/llmsTxt.ts`) — Completado ✅
 
@@ -1570,7 +1570,7 @@ ark-tools/
 - El system prompt se extrajo a una función exportable **`buildSystemPrompt(tenantId)`**, habilitando su verificación en tests.
 - Conteos corregidos a `${TOTAL_HERRAMIENTAS}` (15) en las dos menciones del prompt; se agregó la **herramienta #15 Balance General** al catálogo embebido.
 - Las **directivas de invocación** de la directive 4 ahora se generan desde `DIRECTIVAS_HERRAMIENTAS` + `buildToolDirectives()`: las 8 tools de `AI_TOOLS_CATALOG` tienen instrucción explícita, incluidas `consultar_balance_general` y `consultar_leads_crm`, que antes estaban registradas pero nunca invocadas por el modelo.
-- Se añadió la instrucción _"Nunca inventes datos del cliente: si la información vive en ARK TOOLS, invoca la herramienta correspondiente"_.
+- Se añadió la instrucción _"Nunca inventes datos del cliente: si la información vive en ARK LEDGER, invoca la herramienta correspondiente"_.
 
 #### 4. Meta Open Graph (`index.html`)
 
@@ -1706,7 +1706,7 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **Typecheck & Linting:** 0 errores TypeScript (`tsc --noEmit`), 0 warnings ESLint (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme — `pnpm format:check`.
 - **Build de producción:** Vite v5.4.21 exitoso (1,786 módulos).
-- **Despliegue a Producción:** Commit `2c22916` → `origin/main`. Worker `ark-tools-production`, Version ID `9346525b-db87-48ad-bc58-59ca5c99f8de` en `https://tools.arksystems.site`. Verificado en vivo `/llms.txt` (18 herramientas) y `/api/ai/tools` (9 herramientas).
+- **Despliegue a Producción:** Commit `2c22916` → `origin/main`. Worker `ark-tools-production`, Version ID `9346525b-db87-48ad-bc58-59ca5c99f8de` en `https://ledger.arksystems.site`. Verificado en vivo `/llms.txt` (18 herramientas) y `/api/ai/tools` (9 herramientas).
 
 ---
 
@@ -1773,7 +1773,7 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 #### 1. Diagnóstico y Propósito del Vector de Onboarding
 
 - Resuelve la fricción inicial donde un contador recién registrado aterrizaba en un dashboard con 19 herramientas en _"Modo cálculo libre"_ y sin clientes (`clients = []`).
-- Permite experimentar el valor diferencial de ARK TOOLS (**Expediente Único + Cálculo Automatizado + Papel de Trabajo con Sello Criptográfico SHA-256**) en menos de 60 segundos sin requerir la captura de datos confidenciales reales.
+- Permite experimentar el valor diferencial de ARK LEDGER (**Expediente Único + Cálculo Automatizado + Papel de Trabajo con Sello Criptográfico SHA-256**) en menos de 60 segundos sin requerir la captura de datos confidenciales reales.
 
 #### 2. Entidades Canónicas de Demostración (`src/data/demo-onboarding.ts`)
 

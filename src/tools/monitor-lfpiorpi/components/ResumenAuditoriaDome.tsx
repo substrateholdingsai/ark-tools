@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Resumen Ejecutivo de Auditoría Antilavado LFPIORPI
+ * ARK LEDGER — Resumen Ejecutivo de Auditoría Antilavado LFPIORPI
  */
 
 import React from 'react';

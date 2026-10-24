@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Cliente HTTP REST para Alegra API (v1)
+ * ARK LEDGER — Cliente HTTP REST para Alegra API (v1)
  *
  * Se comunica con Alegra usando Basic Auth (email:token).
  * Maneja la validación de cuentas, consulta de empresa/CSD y emisión de CFDI 4.0.

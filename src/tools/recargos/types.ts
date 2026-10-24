@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Tipos para la Calculadora de Actualización y Recargos Fiscales
+ * ARK LEDGER — Tipos para la Calculadora de Actualización y Recargos Fiscales
  *
  * Fundamentos legales:
  * - Art. 17-A del Código Fiscal de la Federación (Actualización por Inflación)

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Expediente Único Context (Sprint 9)
+ * ARK LEDGER — Expediente Único Context (Sprint 9)
  *
  * Catálogo unificado de clientes y trabajadores con aislamiento multi-tenant:
  * - Selección centralizada de Cliente/Trabajador activo.

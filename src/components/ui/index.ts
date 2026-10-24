@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Componentes UI
+ * ARK LEDGER — Componentes UI
  *
  * Punto de entrada para todos los componentes atómicos del sistema Ark.
  * Uso: import { GlassButton, TextMagnified } from '@/components/ui';

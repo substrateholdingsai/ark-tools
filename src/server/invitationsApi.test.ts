@@ -4,7 +4,7 @@ import type { Env } from '../index';
 import type { AuthPrincipal } from './auth';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://tools.arksystems.site',
+  'Access-Control-Allow-Origin': 'https://ledger.arksystems.site',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-id',
 };
@@ -40,14 +40,14 @@ const superAdmin: AuthPrincipal = {
 function createMockEnv(dbOverrides?: Record<string, unknown>): Env {
   return {
     ENVIRONMENT: 'test',
-    APP_NAME: 'ARK TOOLS',
+    APP_NAME: 'ARK LEDGER',
     APP_VERSION: '1.0.0',
-    APP_URL: 'https://tools.arksystems.site',
+    APP_URL: 'https://ledger.arksystems.site',
     COMPANY_NAME: 'ARK Systems',
     COMPANY_EMAIL: 'soporte@mail.arksystems.site',
     SUPPORT_URL: 'https://arksystems.site',
     RESEND_API_KEY: 're_test_key_123',
-    AUTH_EMAIL_FROM: 'ARK TOOLS <no-reply@mail.arksystems.site>',
+    AUTH_EMAIL_FROM: 'ARK LEDGER <no-reply@mail.arksystems.site>',
     ASSETS: { fetch: vi.fn() } as unknown as Fetcher,
     ARK_TOOLS_DB: dbOverrides as unknown as D1Database,
   };
@@ -62,7 +62,7 @@ describe('Invitations & Team Collaboration API', () => {
     it('returns 400 for invalid token format', async () => {
       const env = createMockEnv();
       const req = new Request(
-        'https://tools.arksystems.site/api/invitations/info?token=invalid-short',
+        'https://ledger.arksystems.site/api/invitations/info?token=invalid-short',
         {
           method: 'GET',
         }
@@ -84,7 +84,7 @@ describe('Invitations & Team Collaboration API', () => {
       const env = createMockEnv(mockDb);
       const validHexToken = 'a'.repeat(64);
       const req = new Request(
-        `https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`,
+        `https://ledger.arksystems.site/api/invitations/info?token=${validHexToken}`,
         {
           method: 'GET',
         }
@@ -119,7 +119,7 @@ describe('Invitations & Team Collaboration API', () => {
       const env = createMockEnv(mockDb);
       const validHexToken = 'b'.repeat(64);
       const req = new Request(
-        `https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`,
+        `https://ledger.arksystems.site/api/invitations/info?token=${validHexToken}`,
         {
           method: 'GET',
         }
@@ -162,7 +162,7 @@ describe('Invitations & Team Collaboration API', () => {
       const env = createMockEnv(mockDb);
       const validHexToken = 'c'.repeat(64);
       const req = new Request(
-        `https://tools.arksystems.site/api/invitations/info?token=${validHexToken}`,
+        `https://ledger.arksystems.site/api/invitations/info?token=${validHexToken}`,
         {
           method: 'GET',
         }
@@ -184,7 +184,7 @@ describe('Invitations & Team Collaboration API', () => {
   describe('GET /api/tenants/:id/members', () => {
     it('returns 401 when not authenticated', async () => {
       const env = createMockEnv();
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/members', {
+      const req = new Request('https://ledger.arksystems.site/api/tenants/t-123/members', {
         method: 'GET',
       });
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, null);
@@ -199,7 +199,7 @@ describe('Invitations & Team Collaboration API', () => {
         })),
       };
       const env = createMockEnv(mockDb);
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/members', {
+      const req = new Request('https://ledger.arksystems.site/api/tenants/t-123/members', {
         method: 'GET',
       });
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, regularMember);
@@ -250,7 +250,7 @@ describe('Invitations & Team Collaboration API', () => {
         })),
       };
       const env = createMockEnv(mockDb);
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/members', {
+      const req = new Request('https://ledger.arksystems.site/api/tenants/t-123/members', {
         method: 'GET',
       });
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, ownerUser);
@@ -277,7 +277,7 @@ describe('Invitations & Team Collaboration API', () => {
         })),
       };
       const env = createMockEnv(mockDb);
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/invitations', {
+      const req = new Request('https://ledger.arksystems.site/api/tenants/t-123/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: 'new@example.com', role: 'member' }),
@@ -294,7 +294,7 @@ describe('Invitations & Team Collaboration API', () => {
         })),
       };
       const env = createMockEnv(mockDb);
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/invitations', {
+      const req = new Request('https://ledger.arksystems.site/api/tenants/t-123/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: 'admin2@example.com', role: 'admin' }),
@@ -336,7 +336,7 @@ describe('Invitations & Team Collaboration API', () => {
       };
 
       const env = createMockEnv(mockDb);
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/invitations', {
+      const req = new Request('https://ledger.arksystems.site/api/tenants/t-123/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: 'nuevo.contador@example.com', role: 'member' }),
@@ -394,7 +394,7 @@ describe('Invitations & Team Collaboration API', () => {
 
       const env = createMockEnv(mockDb);
       const token = 'd'.repeat(64);
-      const req = new Request('https://tools.arksystems.site/api/invitations/accept', {
+      const req = new Request('https://ledger.arksystems.site/api/invitations/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -430,7 +430,7 @@ describe('Invitations & Team Collaboration API', () => {
 
       const env = createMockEnv(mockDb);
       const token = 'e'.repeat(64);
-      const req = new Request('https://tools.arksystems.site/api/invitations/accept', {
+      const req = new Request('https://ledger.arksystems.site/api/invitations/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -484,7 +484,7 @@ describe('Invitations & Team Collaboration API', () => {
 
       const env = createMockEnv(mockDb);
       const token = 'f'.repeat(64);
-      const req = new Request('https://tools.arksystems.site/api/invitations/accept', {
+      const req = new Request('https://ledger.arksystems.site/api/invitations/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -521,9 +521,12 @@ describe('Invitations & Team Collaboration API', () => {
         })),
       };
       const env = createMockEnv(mockDb);
-      const req = new Request('https://tools.arksystems.site/api/tenants/t-123/invitations/inv-1', {
-        method: 'DELETE',
-      });
+      const req = new Request(
+        'https://ledger.arksystems.site/api/tenants/t-123/invitations/inv-1',
+        {
+          method: 'DELETE',
+        }
+      );
       const res = await handleInvitationsApiRequest(req, env, corsHeaders, ownerUser);
       expect(res?.status).toBe(200);
       const data = (await res?.json()) as { success: boolean };
@@ -551,7 +554,7 @@ describe('Invitations & Team Collaboration API', () => {
       };
       const env = createMockEnv(mockDb);
       const req = new Request(
-        'https://tools.arksystems.site/api/tenants/t-123/members/user-owner-1',
+        'https://ledger.arksystems.site/api/tenants/t-123/members/user-owner-1',
         {
           method: 'DELETE',
         }
@@ -584,7 +587,7 @@ describe('Invitations & Team Collaboration API', () => {
       };
       const env = createMockEnv(mockDb);
       const req = new Request(
-        'https://tools.arksystems.site/api/tenants/t-123/members/user-member-1',
+        'https://ledger.arksystems.site/api/tenants/t-123/members/user-member-1',
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },

@@ -1,5 +1,5 @@
 """
-ARK TOOLS — D1 Audit Verifier (Forensic Reconciliation Tool)
+ARK LEDGER — D1 Audit Verifier (Forensic Reconciliation Tool)
 Propósito: Auditoría forense y reconciliación criptográfica de la base de datos 
 Cloudflare D1 (ark_tools_db). Recalcula hashes SHA-256 canónicos de expedientes 
 y valida integridad anti-tamper para respaldos periciales ante el SAT (Art. 28 CFF).
@@ -385,7 +385,7 @@ def generate_audit_report(
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Auditoría Forense - ARK TOOLS</title>
+    <title>Reporte de Auditoría Forense - ARK LEDGER</title>
     <style>
         body {{ font-family: 'Segoe UI', system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 2rem; background: #0F172A; color: #E2E8F0; }}
         h1 {{ color: #F59E0B; border-bottom: 2px solid #F59E0B; padding-bottom: 0.5rem; }}
@@ -410,7 +410,7 @@ def generate_audit_report(
     </style>
 </head>
 <body>
-    <h1>🔐 Reporte de Auditoría Forense ARK TOOLS</h1>
+    <h1>🔐 Reporte de Auditoría Forense ARK LEDGER</h1>
     <p><strong>Tenant ID:</strong> <code>{tenant_id}</code></p>
     <p><strong>Fecha de Auditoría:</strong> {datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")}</p>
     <p><strong>Herramienta:</strong> d1_audit_verifier.py v1.0 | Substrate Holdings LLC</p>
@@ -489,7 +489,7 @@ def generate_audit_report(
 
 def main():
     console.print(Panel.fit(
-        "[bold gold1]ARK TOOLS — D1 Audit Verifier v1.0[/bold gold1]\n"
+        "[bold gold1]ARK LEDGER — D1 Audit Verifier v1.0[/bold gold1]\n"
         "Auditoría forense y reconciliación criptográfica de expedientes D1.",
         border_style="gold1"
     ))

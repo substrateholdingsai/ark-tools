@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Herramienta #16: Motor de Conciliación Anexo 24
+ * ARK LEDGER — Herramienta #16: Motor de Conciliación Anexo 24
  * Parser de Archivo TXT de Metadata del SAT
  *
  * Lee el archivo plano descargado del portal SAT (Descarga Masiva de Metadata)

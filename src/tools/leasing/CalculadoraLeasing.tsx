@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Leasing y MRR para Despachos Contables
+ * ARK LEDGER — Calculadora de Leasing y MRR para Despachos Contables
  * Componente Principal
  *
  * Modelo de negocio:

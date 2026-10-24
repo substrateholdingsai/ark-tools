@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Tabla Semáforo del Monitor LFPIORPI
+ * ARK LEDGER — Tabla Semáforo del Monitor LFPIORPI
  */
 
 import React, { useState, useMemo } from 'react';

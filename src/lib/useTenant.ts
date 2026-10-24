@@ -2,7 +2,7 @@
  * useTenant Hook
  *
  * Provee la identidad del tenant activo (Despacho u Organización contable).
- * Basado en el contexto nativo de ARK TOOLS.
+ * Basado en el contexto nativo de ARK LEDGER.
  */
 
 import { useAuth } from '@/context/AuthContext';

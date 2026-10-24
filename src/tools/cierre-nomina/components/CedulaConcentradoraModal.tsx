@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Modal y Cédula Concentradora de Nómina Oficial (Sprint 11)
+ * ARK LEDGER — Modal y Cédula Concentradora de Nómina Oficial (Sprint 11)
  *
  * Papel de Trabajo General para impresión en PDF (@media print) y descarga:
  * - Resumen institucional con datos del despacho y empresa cliente.
@@ -49,7 +49,7 @@ export function CedulaConcentradoraModal({
   const printContainerRef = useRef<HTMLDivElement>(null);
 
   const { parametros, trabajadores, resumen } = cierre;
-  const verifyUrl = `https://tools.arksystems.site/?verify=${resumen.hashLote}`;
+  const verifyUrl = `https://ledger.arksystems.site/?verify=${resumen.hashLote}`;
 
   useEffect(() => {
     if (!isOpen || !resumen.hashLote) return;

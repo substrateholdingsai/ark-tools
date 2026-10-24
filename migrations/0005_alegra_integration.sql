@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────
--- ARK TOOLS — Migración 0005: Integración Timbrado CFDI vía Alegra
+-- ARK LEDGER — Migración 0005: Integración Timbrado CFDI vía Alegra
 -- Permite a los despachos conectar una o múltiples cuentas de Alegra
 -- para emitir y timbrar facturas CFDI 4.0 (delegado a Alegra / PAC Quadrum).
 -- ─────────────────────────────────────────────────────────────────────

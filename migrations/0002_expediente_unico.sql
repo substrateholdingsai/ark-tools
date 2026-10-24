@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────
--- ARK TOOLS — Migración Sprint 9: Expediente Único (D1 / SQLite)
+-- ARK LEDGER — Migración Sprint 9: Expediente Único (D1 / SQLite)
 -- Centralización de Clientes/Trabajadores e Historial de Expedientes
 -- ─────────────────────────────────────────────────────────────────────
 

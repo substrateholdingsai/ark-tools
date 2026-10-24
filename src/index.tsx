@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — React Entry Point
+ * ARK LEDGER — React Entry Point
  *
  * Monta la aplicación React en el DOM con el AuthProvider nativo.
  */

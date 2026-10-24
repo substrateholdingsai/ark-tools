@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — D1 Multi-Tenant API Handlers
+ * ARK LEDGER — D1 Multi-Tenant API Handlers
  *
  * Endpoints REST para Cloudflare D1 con aislamiento por tenant_id:
  * 1. /api/guia/progress (Progreso de la Guía SAT/IMSS)

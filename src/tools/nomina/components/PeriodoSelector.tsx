@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * PeriodoSelector
  *
  * Selector de período de pago: Diario, Semanal, Quincenal, Mensual.

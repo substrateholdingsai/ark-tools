@@ -32,13 +32,13 @@ html_handling = "auto-trailing-slash"
 command = "pnpm build"
 [vars]
 ENVIRONMENT = "development"
-APP_NAME = "ARK TOOLS"
+APP_NAME = "ARK LEDGER"
 APP_VERSION = "1.0.0"
 APP_URL = "http://localhost:8787"
 COMPANY_NAME = "Substrate Holdings LLC"
 COMPANY_EMAIL = "pavel@arksystems.site"
 SUPPORT_URL = "https://wa.me/525657062511"
-AUTH_EMAIL_FROM = "ARK TOOLS <no-reply@mail.arksystems.site>"
+AUTH_EMAIL_FROM = "ARK LEDGER <no-reply@mail.arksystems.site>"
 
 # ─────────────────────────────────────────────────────────────────────
 # KV NAMESPACE (para historial de cálculos, feature flags)
@@ -84,14 +84,14 @@ binding = "AI"
 # ─────────────────────────────────────────────────────────────────────
 [env.staging]
 name = "ark-tools-staging"
-vars = { ENVIRONMENT = "staging", APP_URL = "https://staging.tools.arksystems.site", AUTH_EMAIL_FROM = "ARK TOOLS <no-reply@mail.arksystems.site>" }
+vars = { ENVIRONMENT = "staging", APP_URL = "https://staging.ledger.arksystems.site", AUTH_EMAIL_FROM = "ARK LEDGER <no-reply@mail.arksystems.site>" }
 
 [env.production]
 name = "ark-tools-production"
 routes = [
-  { pattern = "tools.arksystems.site", custom_domain = true }
+  { pattern = "ledger.arksystems.site", custom_domain = true }
 ]
-vars = { ENVIRONMENT = "production", APP_NAME = "ARK TOOLS", APP_VERSION = "1.0.0", APP_URL = "https://tools.arksystems.site", COMPANY_NAME = "Substrate Holdings LLC", COMPANY_EMAIL = "pavel@arksystems.site", SUPPORT_URL = "https://wa.me/525657062511", AUTH_EMAIL_FROM = "ARK TOOLS <no-reply@mail.arksystems.site>" }
+vars = { ENVIRONMENT = "production", APP_NAME = "ARK LEDGER", APP_VERSION = "1.0.0", APP_URL = "https://ledger.arksystems.site", COMPANY_NAME = "Substrate Holdings LLC", COMPANY_EMAIL = "pavel@arksystems.site", SUPPORT_URL = "https://wa.me/525657062511", AUTH_EMAIL_FROM = "ARK LEDGER <no-reply@mail.arksystems.site>" }
 
 [[env.production.d1_databases]]
 binding = "ARK_TOOLS_DB"

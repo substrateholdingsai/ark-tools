@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Generador de Links de Pago (Clip Checkout)
+ * ARK LEDGER — Generador de Links de Pago (Clip Checkout)
  * Librería de integración con la API de Clip Developers y calculadora de comisiones
  *
  * @see https://developer.clip.mx/docs/getting-started

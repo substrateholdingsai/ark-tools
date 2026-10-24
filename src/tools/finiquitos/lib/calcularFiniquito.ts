@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Motor de Cálculos de Finiquitos y Liquidaciones
+ * ARK LEDGER — Motor de Cálculos de Finiquitos y Liquidaciones
  * Fundamentado en la Ley Federal del Trabajo (LFT).
  *
  * Arts. aplicables:

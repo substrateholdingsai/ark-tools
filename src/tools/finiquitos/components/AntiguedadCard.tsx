@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Antigüedad y Parámetros Derivados
+ * ARK LEDGER — Antigüedad y Parámetros Derivados
  * Sprint 8 — Componente #2
  *
  * Renderiza el resultado de antigüedad calculado por el motor.

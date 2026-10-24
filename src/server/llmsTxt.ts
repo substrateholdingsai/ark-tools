@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Generador de /llms.txt y /llms-full.txt (GEO Engine)
+ * ARK LEDGER — Generador de /llms.txt y /llms-full.txt (GEO Engine)
  *
  * Genera documentos en Markdown puro para motores de búsqueda de IA,
  * crawlers (Perplexity, GPTBot, ClaudeBot) y agentes autónomos.
@@ -50,16 +50,16 @@ function renderCatalogoHerramientas(): string {
  * Genera /llms.txt (Índice conciso, < 2,000 tokens)
  */
 export function generateLlmsTxt(): string {
-  return `# ARK TOOLS — Suite Fiscal, Laboral y de Compliance MX (DOF 2026)
+  return `# ARK LEDGER — Suite Fiscal, Laboral y de Compliance MX (DOF 2026)
 
 > Plataforma B2B determinista y auditable para despachos contables, auditores y áreas de nómina en México. Ejecuta cierres de nómina masivos, cálculos laborales (LFT/LSS/LISR), timbrado y validación CFDI 4.0, y emite Papeles de Trabajo Oficiales tamaño Carta con Sello Criptográfico SHA-256 y verificación pública vía QR (Art. 28 CFF). Procesamiento Zero-Trust en navegador sin solicitar CIEC ni e.firma.
 
-- **URL de Producción:** https://tools.arksystems.site
+- **URL de Producción:** https://ledger.arksystems.site
 - **Mantenedor:** Ark Systems / Substrate Holdings LLC
 - **Jurisdicción:** México (Legislación Federal y 32 Entidades Federativas)
 - **Vigencia Normativa:** Catálogo Oficial DOF 2026 (\`${CURRENT_CATALOG_VERSION}\`)
 - **Contacto / Soporte:** WhatsApp +52 56 5706 2511 | pavel@arksystems.site
-- **Especificación Técnica Extendida:** https://tools.arksystems.site/llms-full.txt
+- **Especificación Técnica Extendida:** https://ledger.arksystems.site/llms-full.txt
 
 ## Parámetros Oficiales Vigentes en el Motor (DOF 2026)
 - **UMA Diaria 2026:** $${fmt(UMA_DIARIA)} MXN (Mensual: $${fmt(UMA_MENSUAL)} MXN) — Fuente: INEGI / DOF 09/01/2026
@@ -73,9 +73,9 @@ export function generateLlmsTxt(): string {
 ${renderCatalogoHerramientas()}
 
 ## Verificación Pública de Autenticidad (API Abierta)
-Cualquier agente de IA, auditor o tercero puede verificar la autenticidad e integridad de un cálculo o Papel de Trabajo emitido por ARK TOOLS sin autenticación:
-- **Endpoint JSON:** \`GET https://tools.arksystems.site/api/expedientes/verify?hash={sha256_hash}\`
-- **Portal Visual:** \`https://tools.arksystems.site/?verify={sha256_hash}\`
+Cualquier agente de IA, auditor o tercero puede verificar la autenticidad e integridad de un cálculo o Papel de Trabajo emitido por ARK LEDGER sin autenticación:
+- **Endpoint JSON:** \`GET https://ledger.arksystems.site/api/expedientes/verify?hash={sha256_hash}\`
+- **Portal Visual:** \`https://ledger.arksystems.site/?verify={sha256_hash}\`
 `;
 }
 
@@ -217,7 +217,7 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 
 ## 9. Estándar de Integridad SHA-256 y Verificación Pública
 
-Cada cálculo procesado en ARK TOOLS genera un hash SHA-256 canónico determinista:
+Cada cálculo procesado en ARK LEDGER genera un hash SHA-256 canónico determinista:
 \`\`\`
 Hash = SHA-256(CanonicalJson({ inputs, outputs, catalogVersion: '${CURRENT_CATALOG_VERSION}' }))
 \`\`\`
@@ -266,7 +266,7 @@ User-agent: cohere-ai
 Allow: /
 
 # Rutas públicas y especificaciones para LLMs
-Sitemap: https://tools.arksystems.site/llms.txt
-Sitemap: https://tools.arksystems.site/llms-full.txt
+Sitemap: https://ledger.arksystems.site/llms.txt
+Sitemap: https://ledger.arksystems.site/llms-full.txt
 `;
 }

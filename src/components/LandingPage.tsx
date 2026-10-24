@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Landing Pública
+ * ARK LEDGER — Landing Pública
  *
  * Página de aterrizaje para usuarios no autenticados.
  * Explica las 19 herramientas de la suite y el beneficio de registrarse
@@ -131,7 +131,7 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     category: 'Cobros',
     title: 'Timbrado de Facturas CFDI 4.0',
     description:
-      'Emite y timbra facturas fiscales en tiempo real con el SAT delegando la certificación a Alegra / PAC Quadrum sin salir de ARK TOOLS.',
+      'Emite y timbra facturas fiscales en tiempo real con el SAT delegando la certificación a Alegra / PAC Quadrum sin salir de ARK LEDGER.',
     tag: 'PAC Quadrum',
     isPremium: true,
   },
@@ -375,7 +375,7 @@ export function LandingPage() {
             <Logo size={34} />
             <div className="leading-none">
               <div className="orbitron font-orbitron text-[12px] font-black tracking-[0.14em] text-navy sm:text-[14px] sm:tracking-[0.18em]">
-                ARK TOOLS
+                ARK LEDGER
               </div>
               <div className="mt-[2px] hidden text-[8.5px] font-bold uppercase tracking-[0.22em] text-muted sm:block">
                 SUITE FISCAL & FINANCIERA MX
@@ -602,7 +602,7 @@ export function LandingPage() {
             </h2>
             <p className="text-[15px] leading-relaxed text-muted">
               En materia tributaria, un número sin origen no sirve para declarar. Cada resultado
-              emitido por ARK TOOLS desglosa su fórmula matemática y cita el artículo de ley
+              emitido por ARK LEDGER desglosa su fórmula matemática y cita el artículo de ley
               aplicable, listo para respaldar tus papeles de trabajo.
             </p>
           </div>
@@ -769,7 +769,7 @@ export function LandingPage() {
           </h2>
           <p className="mx-auto max-w-[520px] text-[15px] leading-relaxed text-white/80">
             Únete a la comunidad de contadores y asesores fiscales que ya optimizan su tiempo con
-            ARK TOOLS.
+            ARK LEDGER.
           </p>
 
           <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
@@ -815,7 +815,7 @@ export function LandingPage() {
               <Logo size={38} />
               <div>
                 <h3 className="font-orbitron text-[14px] font-bold tracking-wider text-navy">
-                  ARK TOOLS
+                  ARK LEDGER
                 </h3>
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
                   {authMode === 'register'

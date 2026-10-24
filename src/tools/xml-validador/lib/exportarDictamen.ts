@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Validador de XMLs CFDI
+ * ARK LEDGER — Validador de XMLs CFDI
  * Exportador de Dictamen de Auditoría Fiscal a CSV compatible con Excel
  */
 

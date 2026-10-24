@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Datos de Demostración para Onboarding y Quickstart (Aha! Moment)
+ * ARK LEDGER — Datos de Demostración para Onboarding y Quickstart (Aha! Moment)
  *
  * Entidades canónicas precargadas para que el usuario experimente el valor
  * del Expediente Único y los Papeles de Trabajo SHA-256 en menos de 60 segundos

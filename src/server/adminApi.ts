@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Super Admin API Handlers
+ * ARK LEDGER — Super Admin API Handlers
  *
  * Endpoints protegidos para la administración global de la plataforma:
  * 1. GET  /api/admin/overview — Métricas de adopción, conteos y salud de infraestructura

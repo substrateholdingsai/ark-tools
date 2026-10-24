@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Conversor XML a Excel
+ * ARK LEDGER — Conversor XML a Excel
  * Componente: Zona Drag & Drop para carga masiva de XMLs (hasta 200 archivos)
  */
 

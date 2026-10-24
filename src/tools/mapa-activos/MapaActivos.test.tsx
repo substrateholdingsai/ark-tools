@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Test de Mapa de Activos Virtuales
+ * ARK LEDGER — Test de Mapa de Activos Virtuales
  */
 
 import { describe, it, expect, vi } from 'vitest';

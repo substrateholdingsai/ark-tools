@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Generador de Links de Pago (Clip Checkout)
+ * ARK LEDGER — Generador de Links de Pago (Clip Checkout)
  * Componente Principal
  *
  * Permite a contadores y despachos generar enlaces de cobro con Clip Checkout,

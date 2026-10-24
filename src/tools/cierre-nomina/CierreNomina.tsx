@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Cierre de Nómina Masivo & Cédula Concentradora (Sprint 11)
+ * ARK LEDGER — Cierre de Nómina Masivo & Cédula Concentradora (Sprint 11)
  *
  * Pantalla principal del procesador de nómina en lote:
  * 1. Parámetros del período (Semanal, Quincenal, Mensual) y Entidad Federativa (ISN).

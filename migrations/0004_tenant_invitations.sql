@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────
--- ARK TOOLS — Migración 0004: Invitaciones a Despachos (Multi-Tenant Collaboration)
+-- ARK LEDGER — Migración 0004: Invitaciones a Despachos (Multi-Tenant Collaboration)
 -- Permite a titulares ('owner') y administradores ('admin') invitar colaboradores
 -- por correo electrónico para trabajar en expedientes y clientes del despacho.
 -- ─────────────────────────────────────────────────────────────────────

@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Resultado de Finiquito y Liquidación
+ * ARK LEDGER — Resultado de Finiquito y Liquidación
  * Sprint 8 — Componente #4
  *
  * Card dorada de alto impacto visual con el monto total a pagar.
@@ -263,7 +263,7 @@ function generarResumenTexto(entrada: EntradaFiniquito, resultado: ResultadoFini
 
   const lineas: string[] = [
     `═══════════════════════════════════════════════════════════`,
-    `ARK TOOLS — DICTAMEN DE ${esLiquidacion ? 'LIQUIDACIÓN LABORAL' : 'FINIQUITO LABORAL'}`,
+    `ARK LEDGER — DICTAMEN DE ${esLiquidacion ? 'LIQUIDACIÓN LABORAL' : 'FINIQUITO LABORAL'}`,
     `═══════════════════════════════════════════════════════════`,
     `Régimen: ${esLiquidacion ? 'Despido Injustificado / Rescisión Patronal' : 'Renuncia Voluntaria / Término de Contrato'}`,
     `Fecha de Ingreso: ${entrada.fechaIngreso}`,
@@ -287,7 +287,7 @@ function generarResumenTexto(entrada: EntradaFiniquito, resultado: ResultadoFini
     `───────────────────────────────────────────────────────────`,
     `TOTAL A PERCIBIR: $${total.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN`,
     `═══════════════════════════════════════════════════════════`,
-    `Calculado en ARK TOOLS (https://tools.arksystems.site) conforme a la Ley Federal del Trabajo.`
+    `Calculado en ARK LEDGER (https://ledger.arksystems.site) conforme a la Ley Federal del Trabajo.`
   );
 
   return lineas.join('\n');
@@ -299,7 +299,7 @@ function generarContenidoCSV(entrada: EntradaFiniquito, resultado: ResultadoFini
   const total = esLiquidacion ? resultado.totalLiquidacion : resultado.totalFiniquito;
 
   const filas: string[] = [
-    `"ARK TOOLS — Calculadora de Finiquitos y Liquidaciones"`,
+    `"ARK LEDGER — Calculadora de Finiquitos y Liquidaciones"`,
     `"Tipo de Cálculo","${esLiquidacion ? 'Liquidación (Despido Injustificado)' : 'Finiquito (Renuncia Voluntaria)'}"`,
     `"Fecha de Ingreso","${entrada.fechaIngreso}"`,
     `"Fecha de Baja","${entrada.fechaBaja}"`,

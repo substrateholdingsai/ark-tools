@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Motor Matemático y Jurídico de Modalidad 40 (Ley 73 + Criterio DOF 2026)
+ * ARK LEDGER — Motor Matemático y Jurídico de Modalidad 40 (Ley 73 + Criterio DOF 2026)
  *
  * Implementa:
  * 1. Acuerdo ACDO.AS2.HCT.101026/302.P.DG del Consejo Técnico del IMSS (DOF 21/10/2026):

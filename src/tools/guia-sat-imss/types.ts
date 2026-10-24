@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Guía SAT/IMSS
+ * ARK LEDGER — Guía SAT/IMSS
  * Tipos re-exportados desde el catálogo de actos.
  */
 

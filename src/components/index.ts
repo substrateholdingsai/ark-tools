@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Componentes Compuestos
+ * ARK LEDGER — Componentes Compuestos
  *
  * Punto de entrada para componentes de layout y composición.
  * Uso: import { Header, ToolCard } from '@/components';

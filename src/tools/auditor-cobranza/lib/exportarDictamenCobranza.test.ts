@@ -21,7 +21,7 @@ describe('exportarDictamenCobranza — Exportador TXT y CSV para Auditoría de C
   it('genera reporte TXT completo con encabezados, notas y detalles', () => {
     const txt = generarTXT(dictamenEjemplo);
 
-    expect(txt).toContain('DICTAMEN DE AUDITORÍA DE COBRANZA — ARK TOOLS');
+    expect(txt).toContain('DICTAMEN DE AUDITORÍA DE COBRANZA — ARK LEDGER');
     expect(txt).toContain('Cliente: Fintech Demo, S.A. de C.V.');
     expect(txt).toContain('Revisor: C.P. Juan Pérez');
     expect(txt).toContain('RESUMEN EJECUTIVO');
@@ -32,7 +32,7 @@ describe('exportarDictamenCobranza — Exportador TXT y CSV para Auditoría de C
     expect(txt).toContain('DETALLES DEL DICTAMEN');
     expect(txt).toContain('El contrato dice $8,500 y el CRM exige $12,000.');
     expect(txt).toContain('RECOMENDACIONES');
-    expect(txt).toContain('Generado por ARK TOOLS');
+    expect(txt).toContain('Generado por ARK LEDGER');
   });
 
   it('genera archivo CSV con BOM UTF-8 y estructura tabular', () => {

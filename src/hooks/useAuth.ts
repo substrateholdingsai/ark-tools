@@ -1,7 +1,7 @@
 /**
  * useAuth Hook
  *
- * Hook unificado de autenticación y multi-tenant para ARK TOOLS.
+ * Hook unificado de autenticación y multi-tenant para ARK LEDGER.
  * Re-exporta el contexto nativo independiente sin dependencias externas.
  */
 

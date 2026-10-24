@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora de Leasing
+ * ARK LEDGER — Calculadora de Leasing
  * Componente: Formulario de Parámetros y Presets del Modelo
  */
 

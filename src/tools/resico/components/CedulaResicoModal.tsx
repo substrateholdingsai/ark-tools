@@ -27,7 +27,7 @@ export function CedulaResicoModal({
   const printContainerRef = useRef<HTMLDivElement>(null);
 
   const hash = hashExpediente || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-  const verifyUrl = `https://tools.arksystems.site/?verify=${hash}`;
+  const verifyUrl = `https://ledger.arksystems.site/?verify=${hash}`;
   const nombreMes = NOMBRES_MESES[resultado.mes];
   const esPF = resultado.tipoPersona === 'fisica';
 
@@ -91,7 +91,7 @@ export function CedulaResicoModal({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-orbitron text-xs font-black tracking-[0.25em] text-gold-dark">
-                  ARK TOOLS CONTABLE
+                  ARK LEDGER CONTABLE
                 </span>
                 <span className="font-mono text-[10px] text-muted">· SISTEMA MULTI-TENANT</span>
               </div>

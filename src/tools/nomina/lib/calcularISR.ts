@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * Cálculo del ISR (Impuesto Sobre la Renta)
  *
  * Estrategia:

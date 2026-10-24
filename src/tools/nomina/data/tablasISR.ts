@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * Tablas ISR 2026 + Subsidio al empleo
  *
  * Fuente: Anexo 8 de la RMF 2026 (tarifa mensual)

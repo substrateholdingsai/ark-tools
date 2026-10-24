@@ -3,7 +3,7 @@ import { handleAuthApiRequest } from './auth';
 import type { Env } from '../index';
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://tools.arksystems.site',
+  'Access-Control-Allow-Origin': 'https://ledger.arksystems.site',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-id',
 };
@@ -59,7 +59,7 @@ function createVerificationDb() {
 describe('Native auth API', () => {
   it('disables the legacy client-controlled identity endpoint', async () => {
     const response = await handleAuthApiRequest(
-      new Request('https://tools.arksystems.site/api/auth/sync', { method: 'POST' }),
+      new Request('https://ledger.arksystems.site/api/auth/sync', { method: 'POST' }),
       {} as Env,
       corsHeaders,
       null
@@ -72,11 +72,11 @@ describe('Native auth API', () => {
     const db = createVerificationDb();
     const env = {
       ARK_TOOLS_DB: db,
-      APP_URL: 'https://tools.arksystems.site',
+      APP_URL: 'https://ledger.arksystems.site',
     } as unknown as Env;
     const token = 'a'.repeat(64);
     const makeRequest = () =>
-      new Request('https://tools.arksystems.site/api/auth/verify-email', {
+      new Request('https://ledger.arksystems.site/api/auth/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, password: 'a-secure-password-123' }),
@@ -121,7 +121,7 @@ describe('Native auth API', () => {
     };
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
     const response = await handleAuthApiRequest(
-      new Request('https://tools.arksystems.site/api/auth/register', {
+      new Request('https://ledger.arksystems.site/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -131,9 +131,9 @@ describe('Native auth API', () => {
       }),
       {
         ARK_TOOLS_DB: db,
-        APP_URL: 'https://tools.arksystems.site',
+        APP_URL: 'https://ledger.arksystems.site',
         RESEND_API_KEY: 'test-key',
-        AUTH_EMAIL_FROM: 'ARK TOOLS <no-reply@example.com>',
+        AUTH_EMAIL_FROM: 'ARK LEDGER <no-reply@example.com>',
       } as unknown as Env,
       corsHeaders,
       null
@@ -146,7 +146,7 @@ describe('Native auth API', () => {
 
   it('returns 400 for malformed authentication JSON', async () => {
     const response = await handleAuthApiRequest(
-      new Request('https://tools.arksystems.site/api/auth/login', {
+      new Request('https://ledger.arksystems.site/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: '{',

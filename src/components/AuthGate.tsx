@@ -36,7 +36,7 @@ export function AuthGate({ children }: AuthGateProps) {
               <Logo size={36} />
               <div>
                 <h2 className="font-orbitron text-[14px] font-bold tracking-wider text-navy">
-                  ARK TOOLS
+                  ARK LEDGER
                 </h2>
                 <p className="text-[10px] font-semibold uppercase tracking-widest text-muted">
                   Acceso Multi-Tenant

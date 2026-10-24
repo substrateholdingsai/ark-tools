@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Mapa de Activos Virtuales
+ * ARK LEDGER — Mapa de Activos Virtuales
  *
  * Datos base para la herramienta de consulta legal sobre activos virtuales.
  *

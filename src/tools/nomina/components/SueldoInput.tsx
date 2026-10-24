@@ -1,5 +1,5 @@
 /**
- * ARK TOOLS — Calculadora Nómina Rápida 2026
+ * ARK LEDGER — Calculadora Nómina Rápida 2026
  * SueldoInput
  *
  * Entrada de sueldo bruto del período, días trabajados y SBC estimado.
