@@ -301,6 +301,14 @@ export function Footer({ className, onSelectTool }: FooterProps) {
               </span>
               <span>·</span>
               <span className="cursor-pointer transition hover:text-navy">Seguridad de Datos</span>
+              <span>·</span>
+              <a
+                href={currentBrand.id === 'canaco_merida' ? '?brand=ark' : '?brand=canaco'}
+                className="font-mono text-[10px] text-muted hover:text-navy hover:underline"
+                title="Conmutar vista de marca para demostración"
+              >
+                {currentBrand.id === 'canaco_merida' ? 'Vista: ARK LEDGER' : 'Vista: CANACO MÉRIDA'}
+              </a>
             </div>
           </div>
         </div>

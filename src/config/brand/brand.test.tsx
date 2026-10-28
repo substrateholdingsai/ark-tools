@@ -73,4 +73,25 @@ describe('Brand Configuration Engine & White-Label Support', () => {
       'CANACO SERVYTUR MÉRIDA — Isotipo'
     );
   });
+
+  it('conmuta a CANACO mediante query param ?brand=canaco y persiste en sessionStorage', () => {
+    const originalLocation = window.location;
+    try {
+      delete (window as any).location;
+      (window as any).location = new URL('https://ledger.arksystems.site/?brand=canaco');
+
+      const brandId = getActiveBrandId();
+      expect(brandId).toBe('canaco_merida');
+      expect(sessionStorage.getItem('ark_active_brand')).toBe('canaco_merida');
+
+      // Conmuta de vuelta a ark con ?brand=ark
+      (window as any).location = new URL('https://ledger.arksystems.site/?brand=ark');
+      const resetBrandId = getActiveBrandId();
+      expect(resetBrandId).toBe('ark');
+      expect(sessionStorage.getItem('ark_active_brand')).toBeNull();
+    } finally {
+      (window as any).location = originalLocation;
+      sessionStorage.clear();
+    }
+  });
 });

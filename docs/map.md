@@ -39,7 +39,7 @@
 | **Navegación & Usabilidad**                 | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                              |
 | **Consola Administrativa Cameral (SIEM)**   | 100% Implementado y Verificado (`CanacoAdminPadron.tsx` para `horus.i2d@gmail.com`, bypass de seguridad en `leadsApi.ts`, KPIs de padrón, filtros por giro/estatus, Cédula oficial imprimible, exportación CSV BOM UTF-8, botones de contacto WhatsApp y sincronización con Call Center Arkangel)                                                  |
 | **Integración Call Center (Arkangel)**      | 100% Implementado y Verificado (`canacoArkangelSync.ts`, Worker-to-Worker Service Binding / REST fallback, normalización E.164 +52, ingesta de cartera matutina en Arkangel, endpoints `/api/canaco/sync-arkangel`, `/api/canaco/arkangel-status` y webhook de retorno `/api/canaco/webhook-pago-arkangel`)                                        |
-| **Pruebas unitarias e integración**         | **480 pasadas en 69 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
+| **Pruebas unitarias e integración**         | **481 pasadas en 69 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
 | **Auditoría DOF Catálogo**                  | 100% Verificado con `pnpm verify:catalogo` (8/8 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                |
 | **Typecheck (TypeScript)**                  | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                         |
 | **Linting (ESLint)**                        | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                          |
@@ -1847,9 +1847,9 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 
 #### 4. Métricas de Calidad y Puerta Completa
 
-- **Pruebas unitarias e integración:** **480 pruebas en 69 suites (100% éxito)** — `pnpm test`.
+- **Pruebas unitarias e integración:** **481 pruebas en 69 suites (100% éxito)** — `pnpm test`.
 - **Nuevas suites:**
-  - `src/config/brand/brand.test.tsx` (4 pruebas).
+  - `src/config/brand/brand.test.tsx` (5 pruebas, incluye validación de switch por URL `?brand=canaco` y `sessionStorage`).
   - `src/components/canaco/calculoCuota.test.ts` (4 pruebas).
   - `src/components/canaco/CanacoPortalBanner.test.tsx` (3 pruebas).
   - `src/server/afiliacionesApi.test.ts` (7 pruebas).
