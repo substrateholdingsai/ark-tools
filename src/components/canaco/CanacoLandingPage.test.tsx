@@ -151,4 +151,17 @@ describe('CANACO SERVYTUR Mérida — Landing Page Institucional (HENEQUÉN)', (
     expect(screen.getByPlaceholderText(/ej\. horus\.i2d@gmail\.com/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Ingresar al Padrón SIEM/i })).toBeInTheDocument();
   });
+
+  it('renderiza la distinción de Portal de Servicios al Socio y el pie de página de Ark Systems', () => {
+    renderLanding();
+
+    expect(screen.getByText(/Portal Oficial de Servicios al Socio/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Ventanilla Digital y Suite de Servicios al Afiliado/i)
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByText(/Desarrollado con tecnología de Ark Systems/i).length
+    ).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText(/pavel@arksystems\.site/i)).toBeInTheDocument();
+  });
 });

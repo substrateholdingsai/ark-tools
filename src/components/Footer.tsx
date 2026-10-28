@@ -286,6 +286,27 @@ export function Footer({ className, onSelectTool }: FooterProps) {
             {currentBrand.footer.disclaimer}
           </p>
 
+          {/* Banner B2B / Product-Led Growth para CANACO */}
+          {currentBrand.id === 'canaco_merida' && (
+            <div className="flex flex-col items-center justify-between gap-3 rounded-xl border border-henequen-arena bg-white p-3.5 text-center text-xs sm:flex-row sm:text-left">
+              <div>
+                <span className="font-bold text-henequen-anil">
+                  Desarrollado con tecnología de Ark Systems
+                </span>
+                <span className="mx-2 hidden text-muted sm:inline">·</span>
+                <span className="text-muted">
+                  ¿Quieres tener un portal similar para los socios o afiliados de tu organización?
+                </span>
+              </div>
+              <a
+                href="mailto:pavel@arksystems.site?subject=Portal%20para%20Socios%20u%20Organizaci%C3%B3n%20-%20Informes"
+                className="shrink-0 font-semibold text-henequen-terra hover:underline"
+              >
+                Escríbenos a pavel@arksystems.site →
+              </a>
+            </div>
+          )}
+
           <div className="flex flex-col items-center justify-between gap-4 border-t border-line/40 pt-2 text-[11px] text-muted sm:flex-row">
             <div className="flex items-center gap-2">
               <span className="font-orbitron font-bold text-navy">{currentBrand.brandName}</span>

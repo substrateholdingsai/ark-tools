@@ -30,6 +30,7 @@ import {
   Users,
   X,
   AlertCircle,
+  Mail,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
@@ -219,8 +220,13 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
           <div className="flex items-center gap-3">
             <CanacoLogo variant="symbol" className="h-10 w-10 text-henequen-anil" />
             <div className="hidden sm:block">
-              <div className="font-serif text-sm font-bold tracking-tight text-henequen-anil">
-                CANACO SERVYTUR MÉRIDA
+              <div className="flex items-center gap-2">
+                <div className="font-serif text-sm font-bold tracking-tight text-henequen-anil">
+                  CANACO SERVYTUR MÉRIDA
+                </div>
+                <span className="rounded-full border border-henequen-terra/40 bg-henequen-terra/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase text-henequen-terra-dark">
+                  Portal del Socio
+                </span>
               </div>
               <div className="text-[10px] font-medium uppercase tracking-wider text-henequen-piedra">
                 120 Años Tejiendo el Comercio de Yucatán
@@ -267,21 +273,32 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
         <div className="pointer-events-none absolute -left-20 bottom-0 h-80 w-80 rounded-full bg-henequen-terra/5 blur-3xl" />
 
         <div className="relative mx-auto max-w-4xl text-center">
-          <div className="shadow-xs inline-flex items-center gap-2 rounded-full border border-henequen-arena bg-white px-3.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-henequen-anil">
-            <Sparkles size={12} className="text-henequen-terra" />
-            <span>Fundada en 1906 · 120 Años de Trayectoria Empresarial</span>
+          <div className="shadow-xs inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-henequen-anil/25 bg-white px-4 py-1.5 text-[11px] font-semibold tracking-wider text-henequen-anil">
+            <span className="flex items-center gap-1.5 font-bold uppercase text-henequen-anil">
+              <Sparkles size={13} className="text-henequen-terra" />
+              Portal Oficial de Servicios al Socio
+            </span>
+            <span className="text-henequen-arena">•</span>
+            <span className="text-[11px] font-medium text-henequen-piedra">
+              Fundada en 1906 · 120 Años de Trayectoria Empresarial
+            </span>
           </div>
 
           <h1 className="mt-5 font-serif text-3xl font-bold tracking-tight text-henequen-anil sm:text-5xl sm:leading-tight">
             Cámara Nacional de Comercio, Servicios y Turismo de Mérida
+            <span className="mt-2 block font-sans text-xl font-semibold text-henequen-terra sm:text-2xl">
+              Ventanilla Digital y Suite de Servicios al Afiliado
+            </span>
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-base text-henequen-piedra sm:text-lg sm:leading-relaxed">
-            120 años defendiendo al comercio, los servicios y turismo de Yucatán. Súmate a los{' '}
+            Plataforma institucional de servicios para los{' '}
             <strong className="font-semibold text-henequen-grafito">
               +1,200 afiliados formales
             </strong>{' '}
-            que representamos ante autoridades e instituciones.
+            que representamos ante autoridades e instituciones. Gestiona tu Registro SIEM 2026,
+            descarga tu Cédula Oficial y accede a la suite contable, fiscal y de defensa para tu
+            empresa.
           </p>
 
           {/* Botones de acción del Hero */}
@@ -569,7 +586,9 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                 <div className="font-serif text-xs font-bold text-henequen-anil">
                   CANACO SERVYTUR MÉRIDA
                 </div>
-                <div className="text-[10px]">Cámara Nacional de Comercio, Servicios y Turismo</div>
+                <div className="text-[10px]">
+                  Portal de Servicios al Socio y Comercio de Yucatán
+                </div>
               </div>
             </div>
 
@@ -592,9 +611,36 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
             </div>
           </div>
 
-          <div className="mt-8 border-t border-henequen-arena/60 pt-4 text-center text-[10px] text-henequen-piedra/80">
+          {/* Banner B2B / Product-Led Growth: Ark Systems */}
+          <div className="shadow-xs mt-8 rounded-2xl border border-henequen-arena bg-henequen-cal/90 p-5 sm:p-6">
+            <div className="flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center justify-center gap-2 md:justify-start">
+                  <span className="font-mono text-xs font-bold text-henequen-anil">
+                    Desarrollado con tecnología de Ark Systems
+                  </span>
+                  <span className="rounded-full border border-henequen-anil/20 bg-henequen-anil/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase text-henequen-anil">
+                    White-Label
+                  </span>
+                </div>
+                <p className="max-w-2xl text-xs text-henequen-piedra">
+                  ¿Quieres tener un portal similar para los socios o afiliados de tu cámara, colegio
+                  u organización empresarial?
+                </p>
+              </div>
+              <a
+                href="mailto:pavel@arksystems.site?subject=Solicitud%20de%20Portal%20para%20Socios%20u%20Organizaci%C3%B3n"
+                className="shadow-xs inline-flex shrink-0 items-center gap-2 rounded-xl bg-henequen-anil px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-henequen-anil-deep"
+              >
+                <Mail size={13} />
+                <span>Escríbenos a pavel@arksystems.site</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="mt-6 border-t border-henequen-arena/60 pt-4 text-center text-[10px] text-henequen-piedra/80">
             © {new Date().getFullYear()} CANACO SERVYTUR Mérida. Todos los derechos reservados.
-            Infraestructura digital y certificación de Cédula SIEM por Substrate Holdings LLC.
+            Desarrollado con tecnología de Ark Systems (Substrate Holdings LLC).
           </div>
         </div>
       </footer>

@@ -1,6 +1,6 @@
 # ARK LEDGER — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 2.7 — Suite de 19 Herramientas + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags con generador SVG puro `forge_ark_meta.py` + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
+**Versión:** 2.8 — Suite de 19 Herramientas + Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2 (#12) + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags con generador SVG puro `forge_ark_meta.py` + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
 **Fecha:** Octubre 2026 (verificado contra `main` y desplegado en producción)  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://ledger.arksystems.site](https://ledger.arksystems.site)  
@@ -10,44 +10,44 @@
 
 ## 1. Resumen Ejecutivo de Avance
 
-| Métrica                                     | Estado                                                                                                                                                                                                                                                                                                                                             |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Motor de Marca Blanca (White-Label)**     | 100% Implementado y Verificado (Brand Config Engine con resolución por variable de entorno o hostname, perfiles desacoplados `ark` y `canaco_merida`, logotipo SVG vectorial oficial CANACO SERVYTUR MÉRIDA con variantes `symbol` y `full`, catálogo curado de 12 herramientas para comercio y soporte para ventanilla de afiliaciones)           |
-| **Simulador Modalidad 40 (#19)**            | 100% Implementado (Cálculo actuarial LSS 1973 Art. 167 y 171 con restricción Acuerdo DOF 21/10/2026 ACDO.AS2.HCT.101026/302.P.DG, tope en salario previo + 1 UMA diaria, cuota 2026 al 14.438%, ROI financiero, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_modalidad_40`)                                                        |
-| **Actualización y Recargos (#18)**          | 100% Implementado y Desplegado en Producción (Cálculo determinista CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales sin redondeo, regla de no-deflación, mora al 1.47% mensual LIF Art. 8, desglose mes a mes, LiquidGlassDome, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_recargos_fiscales`)                 |
-| **Monitor LFPIORPI (#17)**                  | 100% Implementado (Evaluación determinista antilavado Art. 17 LFPIORPI, regla de acumulación móvil de 6 meses, ingesta CSV/Excel, semáforo de riesgo Verde/Amarillo/Rojo, umbrales UMA 2026 y Papel de Trabajo SHA-256 + QR)                                                                                                                       |
-| **Conciliación Anexo 24 (#16)**             | 100% Implementado (Automatización Cero-Captura, cruce CFDI vs Anexo 24, filtro estricto de canceladas con Metadata SAT, auto-asociación a cuentas de ingresos e IVA, exportación CSV BOM UTF-8, layout Contpaqi/COI y Papel de Trabajo SHA-256 + QR)                                                                                               |
-| **Calculadora y Cédula RESICO 2026**        | 100% Operativo (Doble modalidad Persona Física Art. 113-E 1%-2.5% con tope $3.5M y retención 1.25% PM, Persona Moral Art. 206 30% flujo, Cédula oficial Carta, QR público y Workers AI)                                                                                                                                                            |
-| **Balance General Comparativo (#15)**       | 100% Implementado e integrado (Análisis Horizontal y Vertical, validación A=P+C con tolerancia $0.02, parser CSV/Excel, export CSV BOM UTF-8, Papel de Trabajo PDF con SHA-256+QR y tool `consultar_balance_general`)                                                                                                                              |
-| **Timbrado CFDI 4.0 (Alegra / PAC)**        | 100% Operativo en Producción (Emisión SAT delegada vía PAC Quadrum, multi-cuenta por despacho, encriptación AES-GCM 256-bit, verificación en vivo de CSD, descarga de XML/PDF y Cron de health check cada 6h con alertas Resend)                                                                                                                   |
-| **Colaboración en Equipo e Invitaciones**   | 100% Operativo en Producción (Gestión de miembros, roles owner/admin/member, invitaciones seguras por correo vía Resend, aceptación pública o autenticada y aislamiento multi-tenant)                                                                                                                                                              |
-| **Cierre de Nómina Masivo (Batch DOF)**     | 100% Operativo (Ingesta CSV/Excel, cálculo simultáneo de retenciones SAT, IMSS Obrero, ISN, Cédula Concentradora y Dispersión Bancaria)                                                                                                                                                                                                            |
-| **Papel de Trabajo Oficial (PDF/QR)**       | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública)                                                                                                                                                                                                   |
-| **Verificación Pública de Expedientes**     | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores)                                                                                                                                                                                                |
-| **CRM de Prospectos (Super Admin)**         | 100% Implementado e integrado (Pestaña `leads` en la consola de Super Admin, tabla `leads_ark_tools` en D1, KPIs de embudo, filtros por ciudad/especialidad/estatus, alta y baja de prospectos, envío de propuesta comercial vía Resend y tool de IA `consultar_leads_crm`)                                                                        |
-| **Expediente Único & Catálogo**             | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF)                                                                                                                                                                                                                                     |
-| **Autenticación & AuthGate**                | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant)                                                                                                                                                                                                           |
-| **Multi-Tenancy**                           | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                                                                                                                                                                                                                                 |
-| **Base de Datos Cloudflare D1**             | 100% Actualizada (`0001`–`0006` verificadas aplicadas en `ark_tools_db`; `0007_leads_crm.sql` incluida en el repo y requerida por el CRM de prospectos)                                                                                                                                                                                            |
-| **Cloudflare Workers AI**                   | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM y streaming SSE — 10 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación)                                                                                                                       |
-| **Persistencia & API REST**                 | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, CRM de Leads, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                                                                                                               |
-| **Copy & Transparencia Legal**              | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0, Acuerdo DOF 21/10/2026) y cero cajas negras                                                                                                                                                                                                           |
-| **Mesa de Ayuda & Soporte**                 | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                                                                                              |
-| **GEO & Agentes IA**                        | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (19 herramientas)**                                                                                                                            |
-| **Social Meta Tags (Open Graph / Twitter)** | 100% Implementado (14 tags: 7 OG + 7 Twitter Cards) con assets SVG generados por `forge_ark_meta.py` (1200×630 safe zone 100px, cubo isométrico ARK, tokens Navy/Gold exactos) — verificado en build producción                                                                                                                                    |
-| **Landing Pública**                         | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login (conmutador automático a `CanacoLandingPage.tsx` bajo marca CANACO con verificación de socio por RFC y 6 servicios oficiales)                                                                     |
-| **Navegación & Usabilidad**                 | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                              |
-| **Consola Administrativa Cameral (SIEM)**   | 100% Implementado y Verificado (`CanacoAdminPadron.tsx` para `horus.i2d@gmail.com`, bypass de seguridad en `leadsApi.ts`, KPIs de padrón, filtros por giro/estatus, Cédula oficial imprimible, exportación CSV BOM UTF-8, botones de contacto WhatsApp y sincronización con Call Center Arkangel)                                                  |
-| **Integración Call Center (Arkangel)**      | 100% Implementado y Verificado (`canacoArkangelSync.ts`, Worker-to-Worker Service Binding / REST fallback, normalización E.164 +52, ingesta de cartera matutina en Arkangel, endpoints `/api/canaco/sync-arkangel`, `/api/canaco/arkangel-status` y webhook de retorno `/api/canaco/webhook-pago-arkangel`)                                        |
-| **Pruebas unitarias e integración**         | **481 pasadas en 69 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
-| **Auditoría DOF Catálogo**                  | 100% Verificado con `pnpm verify:catalogo` (8/8 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                |
-| **Typecheck (TypeScript)**                  | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                         |
-| **Linting (ESLint)**                        | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                          |
-| **Formato (Prettier)**                      | 100% uniforme en todo el repositorio — verificado con `pnpm format:check`                                                                                                                                                                                                                                                                          |
-| **Continuous Integration**                  | GitHub Actions en `push` a `main` y pull requests: typecheck, lint, format:check, verify:catalogo, test y build (`.github/workflows/ci.yml`)                                                                                                                                                                                                       |
-| **Build Vite (SPA)**                        | 100% funcional con bundle optimizado (Vite build completado; 1,795 módulos transformados)                                                                                                                                                                                                                                                          |
-| **Git & Repositorio**                       | Rama `main` en desarrollo del Sprint 27 (Onboarding Guiado & Sandbox Demo)                                                                                                                                                                                                                                                                         |
-| **Herramientas Integradas**                 | 19 de 19 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Conciliación Anexo 24, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo, Monitor LFPIORPI, Actualización y Recargos CFF, Modalidad 40 IMSS) + Admin + Team |
+| Métrica                                                  | Estado                                                                                                                                                                                                                                                                                                                                             |
+| -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Motor de Marca Blanca (White-Label)**                  | 100% Implementado y Verificado (Brand Config Engine con resolución por variable de entorno o hostname, perfiles desacoplados `ark` y `canaco_merida`, logotipo SVG vectorial oficial CANACO SERVYTUR MÉRIDA con variantes `symbol` y `full`, catálogo curado de 12 herramientas para comercio y soporte para ventanilla de afiliaciones)           |
+| **Simulador Modalidad 40 (#19)**                         | 100% Implementado (Cálculo actuarial LSS 1973 Art. 167 y 171 con restricción Acuerdo DOF 21/10/2026 ACDO.AS2.HCT.101026/302.P.DG, tope en salario previo + 1 UMA diaria, cuota 2026 al 14.438%, ROI financiero, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_modalidad_40`)                                                        |
+| **Actualización y Recargos (#18)**                       | 100% Implementado y Desplegado en Producción (Cálculo determinista CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales sin redondeo, regla de no-deflación, mora al 1.47% mensual LIF Art. 8, desglose mes a mes, LiquidGlassDome, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_recargos_fiscales`)                 |
+| **Monitor LFPIORPI (#17)**                               | 100% Implementado (Evaluación determinista antilavado Art. 17 LFPIORPI, regla de acumulación móvil de 6 meses, ingesta CSV/Excel, semáforo de riesgo Verde/Amarillo/Rojo, umbrales UMA 2026 y Papel de Trabajo SHA-256 + QR)                                                                                                                       |
+| **Conciliación Anexo 24 (#16)**                          | 100% Implementado (Automatización Cero-Captura, cruce CFDI vs Anexo 24, filtro estricto de canceladas con Metadata SAT, auto-asociación a cuentas de ingresos e IVA, exportación CSV BOM UTF-8, layout Contpaqi/COI y Papel de Trabajo SHA-256 + QR)                                                                                               |
+| **Calculadora y Cédula RESICO 2026**                     | 100% Operativo (Doble modalidad Persona Física Art. 113-E 1%-2.5% con tope $3.5M y retención 1.25% PM, Persona Moral Art. 206 30% flujo, Cédula oficial Carta, QR público y Workers AI)                                                                                                                                                            |
+| **Balance General Comparativo (#15)**                    | 100% Implementado e integrado (Análisis Horizontal y Vertical, validación A=P+C con tolerancia $0.02, parser CSV/Excel, export CSV BOM UTF-8, Papel de Trabajo PDF con SHA-256+QR y tool `consultar_balance_general`)                                                                                                                              |
+| **Timbrado CFDI 4.0 (Alegra / PAC)**                     | 100% Operativo en Producción (Emisión SAT delegada vía PAC Quadrum, multi-cuenta por despacho, encriptación AES-GCM 256-bit, verificación en vivo de CSD, descarga de XML/PDF y Cron de health check cada 6h con alertas Resend)                                                                                                                   |
+| **Colaboración en Equipo e Invitaciones**                | 100% Operativo en Producción (Gestión de miembros, roles owner/admin/member, invitaciones seguras por correo vía Resend, aceptación pública o autenticada y aislamiento multi-tenant)                                                                                                                                                              |
+| **Cierre de Nómina Masivo & Cruce Laboral-Fiscal (#12)** | 100% Operativo (Ingesta CSV/Excel, cálculo de retenciones SAT/IMSS/ISN, y módulo de Cruce Laboral-Fiscal CFDI Nómina 1.2 vs Asistencia/Checador LFT Art. 132 Fracc. VIII Bis, score de consistencia, alertas de riesgo cruzado SAT-IMSS-STPS, Cédula Oficial SHA-256 + QR)                                                                         |
+| **Papel de Trabajo Oficial (PDF/QR)**                    | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública)                                                                                                                                                                                                   |
+| **Verificación Pública de Expedientes**                  | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores)                                                                                                                                                                                                |
+| **CRM de Prospectos (Super Admin)**                      | 100% Implementado e integrado (Pestaña `leads` en la consola de Super Admin, tabla `leads_ark_tools` en D1, KPIs de embudo, filtros por ciudad/especialidad/estatus, alta y baja de prospectos, envío de propuesta comercial vía Resend y tool de IA `consultar_leads_crm`)                                                                        |
+| **Expediente Único & Catálogo**                          | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF)                                                                                                                                                                                                                                     |
+| **Autenticación & AuthGate**                             | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant)                                                                                                                                                                                                           |
+| **Multi-Tenancy**                                        | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                                                                                                                                                                                                                                 |
+| **Base de Datos Cloudflare D1**                          | 100% Actualizada (`0001`–`0006` verificadas aplicadas en `ark_tools_db`; `0007_leads_crm.sql` incluida en el repo y requerida por el CRM de prospectos)                                                                                                                                                                                            |
+| **Cloudflare Workers AI**                                | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM y streaming SSE — 10 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación)                                                                                                                       |
+| **Persistencia & API REST**                              | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, CRM de Leads, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                                                                                                               |
+| **Copy & Transparencia Legal**                           | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0, Acuerdo DOF 21/10/2026) y cero cajas negras                                                                                                                                                                                                           |
+| **Mesa de Ayuda & Soporte**                              | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                                                                                              |
+| **GEO & Agentes IA**                                     | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (19 herramientas)**                                                                                                                            |
+| **Social Meta Tags (Open Graph / Twitter)**              | 100% Implementado (14 tags: 7 OG + 7 Twitter Cards) con assets SVG generados por `forge_ark_meta.py` (1200×630 safe zone 100px, cubo isométrico ARK, tokens Navy/Gold exactos) — verificado en build producción                                                                                                                                    |
+| **Landing Pública**                                      | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login (conmutador automático a `CanacoLandingPage.tsx` bajo marca CANACO con verificación de socio por RFC y 6 servicios oficiales)                                                                     |
+| **Navegación & Usabilidad**                              | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                              |
+| **Consola Administrativa Cameral (SIEM)**                | 100% Implementado y Verificado (`CanacoAdminPadron.tsx` para `horus.i2d@gmail.com`, bypass de seguridad en `leadsApi.ts`, KPIs de padrón, filtros por giro/estatus, Cédula oficial imprimible, exportación CSV BOM UTF-8, botones de contacto WhatsApp y sincronización con Call Center Arkangel)                                                  |
+| **Integración Call Center (Arkangel)**                   | 100% Implementado y Verificado (`canacoArkangelSync.ts`, Worker-to-Worker Service Binding / REST fallback, normalización E.164 +52, ingesta de cartera matutina en Arkangel, endpoints `/api/canaco/sync-arkangel`, `/api/canaco/arkangel-status` y webhook de retorno `/api/canaco/webhook-pago-arkangel`)                                        |
+| **Pruebas unitarias e integración**                      | **498 pasadas en 70 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
+| **Auditoría DOF Catálogo**                               | 100% Verificado con `pnpm verify:catalogo` (8/8 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                |
+| **Typecheck (TypeScript)**                               | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                         |
+| **Linting (ESLint)**                                     | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                          |
+| **Formato (Prettier)**                                   | 100% uniforme en todo el repositorio — verificado con `pnpm format:check`                                                                                                                                                                                                                                                                          |
+| **Continuous Integration**                               | GitHub Actions en `push` a `main` y pull requests: typecheck, lint, format:check, verify:catalogo, test y build (`.github/workflows/ci.yml`)                                                                                                                                                                                                       |
+| **Build Vite (SPA)**                                     | 100% funcional con bundle optimizado (Vite build completado; 1,815 módulos transformados)                                                                                                                                                                                                                                                          |
+| **Git & Repositorio**                                    | Rama `main` en Sprint 29 (Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2)                                                                                                                                                                                                                                                              |
+| **Herramientas Integradas**                              | 19 de 19 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Conciliación Anexo 24, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo, Monitor LFPIORPI, Actualización y Recargos CFF, Modalidad 40 IMSS) + Admin + Team |
 
 ---
 
@@ -1767,6 +1767,83 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 29 (Octubre 2026) — Módulo de Cruce Laboral-Fiscal de Jornada (CFDI Nómina 1.2 vs Reloj Checador / Asistencia LFT Art. 132 Fracc. VIII Bis) — Completado ✅
+
+#### 1. Fundamentación Jurídica y Análisis de Auditoría Cruzada (SAT vs IMSS vs STPS)
+
+- **Marco Regulatorio Integrado:**
+  - **STPS:** Obligación patronal estricta de registro fidedigno de jornada laboral y reloj checador (Art. 132 Fracc. VIII Bis LFT y Arts. 66/68 LFT sobre topes y pago de horas extraordinarias).
+  - **SAT:** Requisito de materialidad y deducibilidad de la nómina (Art. 27 Fracc. V LISR y Art. 28 CFF). Si se pagan horas extras o sueldos sin respaldo en el reloj checador, o si existen discrepancias con el CFDI Nómina 1.2, el SAT presume simulación y rechaza la deducción.
+  - **IMSS:** El pago de horas extraordinarias excedentes de los límites legales (más de 3 horas diarias o más de 3 veces por semana) integra al Salario Base de Cotización (Art. 27 Fracc. IX LSS).
+- **Tipificación Determinista de Discrepancias:**
+  1. `HORAS_EXTRAS_NO_PAGADAS`: Horas registradas en checador > CFDI (Riesgo ALTO ante STPS).
+  2. `HORAS_EXTRAS_SIN_REGISTRO`: Horas extras pagadas en CFDI sin registro en checador (Riesgo MEDIO de no deducibilidad SAT).
+  3. `SIN_REGISTRO_CHECADOR`: Empleado con CFDI timbrado pero sin ningún registro en reloj checador (Riesgo CRÍTICO, posible colaborador fantasma).
+  4. `EMPLEADO_SIN_CFDI`: Registro en reloj checador sin timbrado de nómina (Riesgo CRÍTICO, contingencia de omisión patronal / informalidad).
+  5. `EXCESO_JORNADA_LEGAL_TRIPLE`: Más de 9 horas extra semanales sin retribución al 200% (Art. 68 LFT, Riesgo ALTO laboral).
+- **Cálculo de Score de Consistencia (0–100%) y Semáforo de Riesgo:**
+  - Score ponderado según volumen de incidencias y severidad.
+  - Clasificación en niveles: `BAJO` (≥90%), `MEDIO` (70–89%), `ALTO` (50–69%) y `CRITICO` (<50%).
+
+#### 2. Motor Reconciliador y Parsers (`src/tools/cierre-nomina/lib/cruceNominaChecador.ts`)
+
+- Ingesta de CFDI Nómina 1.2 XML: Extracción de nodo `cfdi:Comprobante`, `cfdi:Emisor`, `cfdi:Receptor` (RFC, Nombre), `nomina12:Nomina` (días pagados) y `nomina12:HorasExtra` (claves SAT `019` horas extras dobles y `020` horas extras triples).
+- Ingesta y normalización flexible de CSV de Reloj Checador: Soporte para formato de eventos (entrada/salida con timestamps) y formato consolidado (total horas trabajadas y extras).
+- Generador de dataset demostrativo de 1-clic (`generarLoteMuestraCruce`) con 5 casos reales para pruebas inmediatas.
+- Sellado criptográfico SHA-256 client-side inmutable del dictamen.
+- Exportador de cédula de inconsistencias a CSV con codificación UTF-8 BOM.
+
+#### 3. Experiencia de Usuario & Papel de Trabajo Oficial (`CedulaCruceJornadaModal.tsx` & `CierreNomina.tsx`)
+
+- Pestaña dual integrada en Herramienta #12: "Cierre de Nómina Masivo" y "Cruce Laboral-Fiscal (Checador vs CFDI)".
+- Interfaz reactiva con Drag & Drop dual para múltiples XMLs CFDI y archivo CSV de asistencia.
+- Visualización de KPIs clave: Empleados Analizados, Horas Extra CFDI vs Checador, Total de Discrepancias, Score de Consistencia y Nivel de Riesgo Global.
+- `CedulaCruceJornadaModal.tsx`: Papel de trabajo oficial tamaño Carta (`@media print`) con Sello Digital SHA-256 inmutable, Código QR dinámico de verificación, tabla de auditoría, alertas legales y 3 bloques de firma (Responsable de Nómina, Auditor Fiscal y Dirección General).
+- Integración nativa con `saveCalculoExpediente` para persistencia en el Expediente Único del cliente.
+
+#### 4. GEO Engine & Agente Noah AI
+
+- `/llms.txt`: Actualizado con la Sección 7 dedicada a la Consistencia Laboral-Fiscal entre Reloj Checador (LFT Art. 132 Fracc. VIII Bis) y CFDI Nómina (LISR Art. 27 Fracc. V / CFF Art. 28).
+- `src/server/ai/agent.ts`: Directiva institucional para el agente Noah AI que previene confusión de facultades entre la STPS (asistencia y jornada) y el SAT/IMSS (fiscalización de deducciones e integración al SBC).
+- `src/data/catalogo-herramientas.ts`: Descripción actualizada de la herramienta #12.
+
+#### 5. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **498 pruebas en 70 suites (100% éxito)** — `pnpm test`.
+- **Nuevas pruebas:**
+  - `src/tools/cierre-nomina/lib/cruceNominaChecador.test.ts` (15 pruebas unitarias del motor de cruce y parsers).
+  - `src/tools/cierre-nomina/CierreNomina.test.tsx` (6 pruebas de integración y render UI, +2 añadidas).
+- **Auditoría DOF:** **8/8 valores oficiales vigentes** — `pnpm verify:catalogo`.
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+- **Build de producción:** Vite compila `dist/` exitosamente en 29s (1,815 módulos).
+
+---
+
+### Sprint 16: Portal de Servicios al Socio CANACO & Ecosistema B2B Ark Systems (Completado ✅)
+
+#### 1. Distinción Clara de Portal al Socio
+
+- **Navegación y Cabecera Institucional:** Badge distintivo patrimonial `Portal del Socio` integrado en `CanacoLandingPage.tsx` junto a la heráldica oficial de CANACO Mérida.
+- **Hero Institucional:** Incorporación de badge oficial `🏛️ Portal Oficial de Servicios al Socio • Fundada en 1906 · 120 Años de Trayectoria Empresarial` y subtítulo destacado `Ventanilla Digital y Suite de Servicios al Afiliado` para diferenciar la plataforma de un portal de noticias gremiales.
+- **Suite Completa sin Restricciones:** Mantenimiento de la suite de 19 herramientas visible y operativa para demostración ante el Consejo Directivo y Directores de la Cámara.
+
+#### 2. Atribución Tecnológica y Captura de Leads B2B (Product-Led Growth)
+
+- **Footer Institucional CANACO:** Sello oficial `Desarrollado con tecnología de Ark Systems (Substrate Holdings LLC)` con badge `White-Label`.
+- **Card de Captura Gremial:** Banner interactivo para líderes de cámaras y colegios: _"¿Quieres tener un portal similar para los socios o afiliados de tu cámara, colegio u organización empresarial? Escríbenos a pavel@arksystems.site"_ con enlace `mailto:` directo.
+- **Footer Global Multi-Marca:** Integración del banner B2B en `Footer.tsx` bajo la marca CANACO MÉRIDA.
+
+#### 3. Métricas de Calidad
+
+- **Pruebas:** 24 pruebas pasando en la suite cameral y de marca.
+- **Auditoría DOF:** 8/8 oficiales vigentes.
+- **Puerta completa:** `typecheck`, `lint` y `format` 100% verdes.
+
 - **Build de producción:** Vite v5.4.21 exitoso (1,795 módulos transformados).
 
 ---
@@ -1861,3 +1938,79 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 29 (Octubre 2026) — Módulo de Cruce Laboral-Fiscal de Jornada (CFDI Nómina 1.2 vs Reloj Checador / Asistencia LFT Art. 132 Fracc. VIII Bis) — Completado ✅
+
+#### 1. Fundamentación Jurídica y Análisis de Auditoría Cruzada (SAT vs IMSS vs STPS)
+
+- **Marco Regulatorio Integrado:**
+  - **STPS:** Obligación patronal estricta de registro fidedigno de jornada laboral y reloj checador (Art. 132 Fracc. VIII Bis LFT y Arts. 66/68 LFT sobre topes y pago de horas extraordinarias).
+  - **SAT:** Requisito de materialidad y deducibilidad de la nómina (Art. 27 Fracc. V LISR y Art. 28 CFF). Si se pagan horas extras o sueldos sin respaldo en el reloj checador, o si existen discrepancias con el CFDI Nómina 1.2, el SAT presume simulación y rechaza la deducción.
+  - **IMSS:** El pago de horas extraordinarias excedentes de los límites legales (más de 3 horas diarias o más de 3 veces por semana) integra al Salario Base de Cotización (Art. 27 Fracc. IX LSS).
+- **Tipificación Determinista de Discrepancias:**
+  1. `HORAS_EXTRAS_NO_PAGADAS`: Horas registradas en checador > CFDI (Riesgo ALTO ante STPS).
+  2. `HORAS_EXTRAS_SIN_REGISTRO`: Horas extras pagadas en CFDI sin registro en checador (Riesgo MEDIO de no deducibilidad SAT).
+  3. `SIN_REGISTRO_CHECADOR`: Empleado con CFDI timbrado pero sin ningún registro en reloj checador (Riesgo CRÍTICO, posible colaborador fantasma).
+  4. `EMPLEADO_SIN_CFDI`: Registro en reloj checador sin timbrado de nómina (Riesgo CRÍTICO, contingencia de omisión patronal / informalidad).
+  5. `EXCESO_JORNADA_LEGAL_TRIPLE`: Más de 9 horas extra semanales sin retribución al 200% (Art. 68 LFT, Riesgo ALTO laboral).
+- **Cálculo de Score de Consistencia (0–100%) y Semáforo de Riesgo:**
+  - Score ponderado según volumen de incidencias y severidad.
+  - Clasificación en niveles: `BAJO` (≥90%), `MEDIO` (70–89%), `ALTO` (50–69%) y `CRITICO` (<50%).
+
+#### 2. Motor Reconciliador y Parsers (`src/tools/cierre-nomina/lib/cruceNominaChecador.ts`)
+
+- Ingesta de CFDI Nómina 1.2 XML: Extracción de nodo `cfdi:Comprobante`, `cfdi:Emisor`, `cfdi:Receptor` (RFC, Nombre), `nomina12:Nomina` (días pagados) y `nomina12:HorasExtra` (claves SAT `019` horas extras dobles y `020` horas extras triples).
+- Ingesta y normalización flexible de CSV de Reloj Checador: Soporte para formato de eventos (entrada/salida con timestamps) y formato consolidado (total horas trabajadas y extras).
+- Generador de dataset demostrativo de 1-clic (`generarLoteMuestraCruce`) con 5 casos reales para pruebas inmediatas.
+- Sellado criptográfico SHA-256 client-side inmutable del dictamen.
+- Exportador de cédula de inconsistencias a CSV con codificación UTF-8 BOM.
+
+#### 3. Experiencia de Usuario & Papel de Trabajo Oficial (`CedulaCruceJornadaModal.tsx` & `CierreNomina.tsx`)
+
+- Pestaña dual integrada en Herramienta #12: "Cierre de Nómina Masivo" y "Cruce Laboral-Fiscal (Checador vs CFDI)".
+- Interfaz reactiva con Drag & Drop dual para múltiples XMLs CFDI y archivo CSV de asistencia.
+- Visualización de KPIs clave: Empleados Analizados, Horas Extra CFDI vs Checador, Total de Discrepancias, Score de Consistencia y Nivel de Riesgo Global.
+- `CedulaCruceJornadaModal.tsx`: Papel de trabajo oficial tamaño Carta (`@media print`) con Sello Digital SHA-256 inmutable, Código QR dinámico de verificación, tabla de auditoría, alertas legales y 3 bloques de firma (Responsable de Nómina, Auditor Fiscal y Dirección General).
+- Integración nativa con `saveCalculoExpediente` para persistencia en el Expediente Único del cliente.
+
+#### 4. GEO Engine & Agente Noah AI
+
+- `/llms.txt`: Actualizado con la Sección 7 dedicada a la Consistencia Laboral-Fiscal entre Reloj Checador (LFT Art. 132 Fracc. VIII Bis) y CFDI Nómina (LISR Art. 27 Fracc. V / CFF Art. 28).
+- `src/server/ai/agent.ts`: Directiva institucional para el agente Noah AI que previene confusión de facultades entre la STPS (asistencia y jornada) y el SAT/IMSS (fiscalización de deducciones e integración al SBC).
+- `src/data/catalogo-herramientas.ts`: Descripción actualizada de la herramienta #12.
+
+#### 5. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **498 pruebas en 70 suites (100% éxito)** — `pnpm test`.
+- **Nuevas pruebas:**
+  - `src/tools/cierre-nomina/lib/cruceNominaChecador.test.ts` (15 pruebas unitarias del motor de cruce y parsers).
+  - `src/tools/cierre-nomina/CierreNomina.test.tsx` (6 pruebas de integración y render UI, +2 añadidas).
+- **Auditoría DOF:** **8/8 valores oficiales vigentes** — `pnpm verify:catalogo`.
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+- **Build de producción:** Vite compila `dist/` exitosamente en 29s (1,815 módulos).
+
+---
+
+### Sprint 16: Portal de Servicios al Socio CANACO & Ecosistema B2B Ark Systems (Completado ✅)
+
+#### 1. Distinción Clara de Portal al Socio
+
+- **Navegación y Cabecera Institucional:** Badge distintivo patrimonial `Portal del Socio` integrado en `CanacoLandingPage.tsx` junto a la heráldica oficial de CANACO Mérida.
+- **Hero Institucional:** Incorporación de badge oficial `🏛️ Portal Oficial de Servicios al Socio • Fundada en 1906 · 120 Años de Trayectoria Empresarial` y subtítulo destacado `Ventanilla Digital y Suite de Servicios al Afiliado` para diferenciar la plataforma de un portal de noticias gremiales.
+- **Suite Completa sin Restricciones:** Mantenimiento de la suite de 19 herramientas visible y operativa para demostración ante el Consejo Directivo y Directores de la Cámara.
+
+#### 2. Atribución Tecnológica y Captura de Leads B2B (Product-Led Growth)
+
+- **Footer Institucional CANACO:** Sello oficial `Desarrollado con tecnología de Ark Systems (Substrate Holdings LLC)` con badge `White-Label`.
+- **Card de Captura Gremial:** Banner interactivo para líderes de cámaras y colegios: _"¿Quieres tener un portal similar para los socios o afiliados de tu cámara, colegio u organización empresarial? Escríbenos a pavel@arksystems.site"_ con enlace `mailto:` directo.
+- **Footer Global Multi-Marca:** Integración del banner B2B en `Footer.tsx` bajo la marca CANACO MÉRIDA.
+
+#### 3. Métricas de Calidad
+
+- **Pruebas:** 24 pruebas pasando en la suite cameral y de marca.
+- **Auditoría DOF:** 8/8 oficiales vigentes.
+- **Puerta completa:** `typecheck`, `lint` y `format` 100% verdes.
