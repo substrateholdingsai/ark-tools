@@ -19,7 +19,8 @@ import {
 } from 'lucide-react';
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/cn';
-import { Logo } from './Logo';
+import { BrandLogo } from './brand';
+import { currentBrand } from '@/config/brand';
 import { TeamModal } from './team/TeamModal';
 
 export interface NavItem {
@@ -131,15 +132,15 @@ export function Header({
           type="button"
           className="flex shrink-0 items-center gap-2 text-left md:gap-4"
           onClick={() => onNavigate?.('dashboard')}
-          aria-label="ARK LEDGER: volver al catálogo"
+          aria-label={`${currentBrand.brandName}: volver al catálogo`}
         >
-          <Logo size={32} />
+          <BrandLogo size={32} />
           <div className="leading-none">
             <div className="orbitron font-orbitron text-[12px] font-black tracking-[0.14em] text-navy sm:text-[14px] sm:tracking-[0.18em]">
-              ARK LEDGER
+              {currentBrand.brandName}
             </div>
             <div className="mt-[2px] hidden text-[8.5px] font-bold uppercase tracking-[0.22em] text-muted sm:block">
-              SUITE FISCAL & FINANCIERA MX
+              {currentBrand.headerSubtitle}
             </div>
           </div>
         </button>
@@ -188,11 +189,11 @@ export function Header({
         {/* Auth & Multi-tenant (Desktop & Mobile) */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
           <a
-            href="https://wa.me/525657062511?text=Hola,%20solicito%20atenci%C3%B3n%20sobre%20ARK%20TOOLS"
+            href={currentBrand.whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100/70 sm:inline-flex"
-            title="Soporte y atención directa por WhatsApp (+52 56 5706 2511)"
+            title={`Soporte y atención directa por WhatsApp (${currentBrand.supportPhone})`}
           >
             <MessageSquare size={13} className="text-emerald-600" />
             <span>Soporte</span>
@@ -325,8 +326,9 @@ export function Header({
                 )}
               </div>
 
-              {/* Botón Acceso Rápido Super Admin */}
-              {platformRole === 'super_admin' && (
+              {/* Botón Acceso Rápido Super Admin o Admin CANACO */}
+              {(platformRole === 'super_admin' ||
+                user?.email?.toLowerCase() === 'horus.i2d@gmail.com') && (
                 <button
                   type="button"
                   onClick={() => onNavigate?.('admin')}
@@ -336,11 +338,19 @@ export function Header({
                       ? 'border-gold bg-gold/20 text-navy'
                       : 'border-gold/40 bg-gradient-to-r from-amber-50 to-white text-navy hover:border-gold hover:bg-amber-100/50'
                   )}
-                  title="Consola de Super Administrador"
+                  title={
+                    currentBrand.id === 'canaco_merida' ||
+                    user?.email?.toLowerCase() === 'horus.i2d@gmail.com'
+                      ? 'Consola de Padrón SIEM CANACO'
+                      : 'Consola de Super Administrador'
+                  }
                 >
                   <Crown size={13} className="text-gold" />
                   <span className="hidden font-orbitron text-[10px] font-black tracking-wider sm:inline">
-                    ADMIN
+                    {currentBrand.id === 'canaco_merida' ||
+                    user?.email?.toLowerCase() === 'horus.i2d@gmail.com'
+                      ? 'PADRÓN'
+                      : 'ADMIN'}
                   </span>
                 </button>
               )}

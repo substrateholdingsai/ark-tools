@@ -1,0 +1,67 @@
+{
+  "schema": "bobs.asset-manifest.v1",
+  "system": "HENEQUÉN",
+  "slug": "canaco-henequen",
+  "cliente": "CANACO SERVYTUR Mérida",
+  "huesped": "service",
+  "kind": "vector-forge",
+  "stdlib_only": true,
+  "noise_seed": 1744,
+  "files": [
+    {
+      "path": "favicon.svg",
+      "bytes": 1483,
+      "kb": 1.45
+    },
+    {
+      "path": "logo-lockup.svg",
+      "bytes": 1753,
+      "kb": 1.71
+    },
+    {
+      "path": "monogram-henequen.svg",
+      "bytes": 1440,
+      "kb": 1.41
+    },
+    {
+      "path": "pattern-sisal.svg",
+      "bytes": 4943,
+      "kb": 4.83
+    },
+    {
+      "path": "pattern-greca.svg",
+      "bytes": 992,
+      "kb": 0.97
+    },
+    {
+      "path": "texture-cal.svg",
+      "bytes": 796,
+      "kb": 0.78
+    },
+    {
+      "path": "texture-sisal.svg",
+      "bytes": 783,
+      "kb": 0.76
+    },
+    {
+      "path": "divider-portal.svg",
+      "bytes": 721,
+      "kb": 0.7
+    },
+    {
+      "path": "og-image.svg",
+      "bytes": 3369,
+      "kb": 3.29
+    },
+    {
+      "path": "sprite-museo.svg",
+      "bytes": 2554,
+      "kb": 2.49
+    }
+  ],
+  "total_bytes": 18834,
+  "total_kb": 18.39,
+  "checks": {
+    "pattern_sisal_under_4kb": false
+  }
+}

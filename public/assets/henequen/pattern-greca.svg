@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <g>
+    <polyline points="4.0,20.0 22.0,20.0 22.0,24.5 17.5,24.5 17.5,29.0 13.0,29.0 13.0,33.5 8.5,33.5 8.5,29.0 4.0,29.0" fill="none" stroke="#B85C38" stroke-width="2.7" opacity="0.1" stroke-linejoin="miter"/>
+    <polyline points="20.0,20.0 38.0,20.0 38.0,24.5 33.5,24.5 33.5,29.0 29.0,29.0 29.0,33.5 24.5,33.5 24.5,29.0 20.0,29.0" fill="none" stroke="#4A7C6F" stroke-width="2.7" opacity="0.1" stroke-linejoin="miter"/>
+    <polyline points="36.0,20.0 54.0,20.0 54.0,24.5 49.5,24.5 49.5,29.0 45.0,29.0 45.0,33.5 40.5,33.5 40.5,29.0 36.0,29.0" fill="none" stroke="#B85C38" stroke-width="2.7" opacity="0.1" stroke-linejoin="miter"/>
+    <polyline points="52.0,20.0 70.0,20.0 70.0,24.5 65.5,24.5 65.5,29.0 61.0,29.0 61.0,33.5 56.5,33.5 56.5,29.0 52.0,29.0" fill="none" stroke="#4A7C6F" stroke-width="2.7" opacity="0.1" stroke-linejoin="miter"/>
+  </g>
+</svg>

@@ -1,6 +1,6 @@
 # ARK LEDGER — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 2.6 — Suite de 19 Herramientas + Social Meta Tags (Open Graph / Twitter Cards) con generador SVG puro `forge_ark_meta.py` + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
+**Versión:** 2.7 — Suite de 19 Herramientas + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags con generador SVG puro `forge_ark_meta.py` + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
 **Fecha:** Octubre 2026 (verificado contra `main` y desplegado en producción)  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://ledger.arksystems.site](https://ledger.arksystems.site)  
@@ -12,6 +12,7 @@
 
 | Métrica                                     | Estado                                                                                                                                                                                                                                                                                                                                             |
 | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Motor de Marca Blanca (White-Label)**     | 100% Implementado y Verificado (Brand Config Engine con resolución por variable de entorno o hostname, perfiles desacoplados `ark` y `canaco_merida`, logotipo SVG vectorial oficial CANACO SERVYTUR MÉRIDA con variantes `symbol` y `full`, catálogo curado de 12 herramientas para comercio y soporte para ventanilla de afiliaciones)           |
 | **Simulador Modalidad 40 (#19)**            | 100% Implementado (Cálculo actuarial LSS 1973 Art. 167 y 171 con restricción Acuerdo DOF 21/10/2026 ACDO.AS2.HCT.101026/302.P.DG, tope en salario previo + 1 UMA diaria, cuota 2026 al 14.438%, ROI financiero, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_modalidad_40`)                                                        |
 | **Actualización y Recargos (#18)**          | 100% Implementado y Desplegado en Producción (Cálculo determinista CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales sin redondeo, regla de no-deflación, mora al 1.47% mensual LIF Art. 8, desglose mes a mes, LiquidGlassDome, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_recargos_fiscales`)                 |
 | **Monitor LFPIORPI (#17)**                  | 100% Implementado (Evaluación determinista antilavado Art. 17 LFPIORPI, regla de acumulación móvil de 6 meses, ingesta CSV/Excel, semáforo de riesgo Verde/Amarillo/Rojo, umbrales UMA 2026 y Papel de Trabajo SHA-256 + QR)                                                                                                                       |
@@ -36,7 +37,8 @@
 | **Social Meta Tags (Open Graph / Twitter)** | 100% Implementado (14 tags: 7 OG + 7 Twitter Cards) con assets SVG generados por `forge_ark_meta.py` (1200×630 safe zone 100px, cubo isométrico ARK, tokens Navy/Gold exactos) — verificado en build producción                                                                                                                                    |
 | **Landing Pública**                         | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                                                                                                   |
 | **Navegación & Usabilidad**                 | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                              |
-| **Pruebas unitarias e integración**         | **441 pasadas en 62 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
+| **Consola Administrativa Cameral (SIEM)**   | 100% Implementado y Verificado (`CanacoAdminPadron.tsx` para `horus.i2d@gmail.com`, bypass de seguridad en `leadsApi.ts`, KPIs de padrón, filtros por giro/estatus, Cédula oficial imprimible, exportación CSV BOM UTF-8 y botones de contacto WhatsApp)                                                                                           |
+| **Pruebas unitarias e integración**         | **462 pasadas en 67 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
 | **Auditoría DOF Catálogo**                  | 100% Verificado con `pnpm verify:catalogo` (8/8 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                |
 | **Typecheck (TypeScript)**                  | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                         |
 | **Linting (ESLint)**                        | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                          |
@@ -1803,6 +1805,53 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 
 - **Pruebas unitarias e integración:** **441 pruebas en 62 suites (100% éxito)** — `pnpm test`.
 - **Nuevas pruebas:** `src/components/onboarding/OnboardingQuickstartModal.test.tsx` (5 pruebas) y `src/components/onboarding/OnboardingCelebrationModal.test.tsx` (4 pruebas).
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 28 (Octubre 2026) — Brand Config Engine & Marca Blanca Institucional (CANACO SERVYTUR MÉRIDA) — Completado ✅
+
+#### 1. Arquitectura de Desacoplamiento y Multi-Brand
+
+- Creación del motor de marca en `src/config/brand/`:
+  - `types.ts`: Contrato tipado `BrandConfig`, `BrandColors`, `BrandFeatures` y `BrandFooter`.
+  - `ark.ts`: Configuración canónica de ARK LEDGER (modo oscuro, Navy `#002B7F`, Oro `#FFD700`, 19 herramientas completas).
+  - `canacoMerida.ts`: Configuración institucional de CANACO SERVYTUR MÉRIDA (Azul institucional `#1a467e`, acento `#c49a45`, `ventanillaPagos: true`, catálogo curado de 12 herramientas prioritarias para comercio y MiPyMEs de Yucatán).
+  - `index.ts`: Selector dinámico de marca por variable de entorno (`VITE_BRAND`) o hostname del navegador (`canacomerida.com.mx`), con fallback transparente a ARK LEDGER.
+
+#### 2. Vector Gráfico Oficial y Componentes de Identidad
+
+- `src/components/brand/CanacoLogo.tsx`: Renderizador SVG oficial de CANACO SERVYTUR MÉRIDA con dos variantes:
+  - `symbol`: Isotipo triangular estilizado (`#1A3A5C`) para barras de navegación, botones y avatares compactos.
+  - `full`: Emblema institucional completo con tipografía serif ("CANACO SERVYTUR" / "MÉRIDA") y línea decorativa.
+- `src/components/brand/BrandLogo.tsx`: Conmutador dinámico de logo (`Logo` de ARK vs `CanacoLogo` de CANACO) según la marca activa.
+- Homologación de `Header.tsx` y `Footer.tsx` para consumir títulos, eslóganes, logotipos, enlaces de soporte y leyendas legales directamente de `currentBrand`.
+- `docs/canaco-henequen.md`: Documento maestro de diseño e identidad museográfica-patrimonial (120 Años, Regla del 8% henequenero, tokens Cal, Sisal, Muro, Arena, Añil `#1A3A5C`, Terracota `#B85C38` y Verde agave `#4A7C6F`).
+- `scripts/forge_henequen_meta.py`: Fábrica vectorial en Python stdlib pura que genera 10 assets vectoriales (18.39 KB) en `public/assets/henequen/` con `manifest.json`.
+- Tokens `henequen-*` integrados en `tailwind.config.js`.
+
+#### 3. Componentes Exclusivos CANACO SERVYTUR MÉRIDA & Persistencia CRM D1
+
+- `src/server/afiliacionesApi.ts`: Endpoint público `/api/afiliaciones/registro` con persistencia en `leads_ark_tools` bajo `tenant_id = 'canaco_merida'`.
+- `src/server/leadsApi.ts`: Autorización y bypass para `horus.i2d@gmail.com` sobre el tenant `canaco_merida` asegurando acceso administrativo directo al padrón.
+- `src/components/canaco/calculoCuota.ts`: Motor determinista de cálculo de cuotas del Registro SIEM (Ley Federal de Cámaras Empresariales) y Membresía Anual según número de colaboradores y sector (comercio, servicios, turismo).
+- `src/components/canaco/VentanillaAfiliacionModal.tsx`: Modal institucional completo de 3 pasos que captura el lead preliminar en CRM al avanzar de paso y sella la membresía a "Socio Activo" con timbrado CFDI al confirmar el pago.
+- `src/components/canaco/ConstanciaSocioModal.tsx`: Cédula oficial imprimible en tamaño Carta (`@media print`) con Sello Digital SHA-256 inmutable, Código QR de validación institucional y firmas de autoridad cameral.
+- `src/components/canaco/CanacoPortalBanner.tsx`: Banner interactivo del socio montado en el Dashboard de `App.tsx` que muestra el estatus de membresía y botón directo a la Ventanilla de Afiliación.
+- `src/components/canaco/CanacoAdminPadron.tsx`: Consola de Afiliaciones y Padrón SIEM enlazada en la barra de herramientas (`admin`) para `horus.i2d@gmail.com` o cuando la marca activa es CANACO. Incluye 4 KPIs camerales, filtros reactivos, visualización de Cédula de Socio, contacto directo por WhatsApp y exportación a CSV con BOM UTF-8.
+
+#### 4. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **462 pruebas en 67 suites (100% éxito)** — `pnpm test`.
+- **Nuevas suites:**
+  - `src/config/brand/brand.test.tsx` (4 pruebas).
+  - `src/components/canaco/calculoCuota.test.ts` (4 pruebas).
+  - `src/components/canaco/CanacoPortalBanner.test.tsx` (3 pruebas).
+  - `src/server/afiliacionesApi.test.ts` (5 pruebas).
+  - `src/components/canaco/CanacoAdminPadron.test.tsx` (5 pruebas).
+- **Auditoría DOF:** **8/8 valores oficiales vigentes** — `pnpm verify:catalogo`.
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).

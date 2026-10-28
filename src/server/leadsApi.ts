@@ -207,8 +207,10 @@ export async function handleLeadsApiRequest(
     request.headers.get('x-tenant-id') ||
     'ark';
 
-  // Tenant access check (super_admin bypasses)
-  if (principal.platformRole !== 'super_admin' && tenantId !== 'ark') {
+  // Tenant access check (super_admin y admin cameral de CANACO bypasses)
+  const isCanacoAdmin =
+    principal.email.toLowerCase() === 'horus.i2d@gmail.com' && tenantId === 'canaco_merida';
+  if (principal.platformRole !== 'super_admin' && !isCanacoAdmin && tenantId !== 'ark') {
     const membership = await requireTenantMembership(env, principal, tenantId);
     if (!membership) {
       return Response.json(

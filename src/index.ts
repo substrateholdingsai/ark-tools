@@ -14,6 +14,7 @@ import { handleAiApiRequest } from './server/ai/aiApi';
 import { authenticateRequest, handleAuthApiRequest } from './server/auth';
 import { handleAdminApiRequest } from './server/adminApi';
 import { handleLeadsApiRequest } from './server/leadsApi';
+import { handleAfiliacionesApiRequest } from './server/afiliacionesApi';
 import { handleInvitationsApiRequest } from './server/invitationsApi';
 import { handleAlegraApiRequest } from './server/alegra/alegraApi';
 import { checkAlegraAccountsHealth } from './server/alegra/cron';
@@ -171,7 +172,8 @@ async function handleApiRequest(
     (url.pathname === '/api/auth/login' && request.method === 'POST') ||
     (url.pathname === '/api/auth/verify-email' && request.method === 'POST') ||
     (url.pathname === '/api/auth/request-password-reset' && request.method === 'POST') ||
-    (url.pathname === '/api/auth/reset-password' && request.method === 'POST');
+    (url.pathname === '/api/auth/reset-password' && request.method === 'POST') ||
+    (url.pathname === '/api/afiliaciones/registro' && request.method === 'POST');
 
   if (request.method !== 'GET' && request.method !== 'HEAD' && !isPublicAuthEndpoint) {
     const origin = request.headers.get('Origin');
@@ -192,6 +194,11 @@ async function handleApiRequest(
   const authResponse = await handleAuthApiRequest(request, env, corsHeaders, authPrincipal);
   if (authResponse) {
     return authResponse;
+  }
+
+  const afiliacionesResponse = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+  if (afiliacionesResponse) {
+    return afiliacionesResponse;
   }
 
   const leadsResponse = await handleLeadsApiRequest(request, env, corsHeaders, authPrincipal);

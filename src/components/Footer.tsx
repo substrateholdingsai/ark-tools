@@ -8,7 +8,8 @@
 
 import { Mail, MessageSquare, ShieldCheck, Lock, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Logo } from './Logo';
+import { BrandLogo } from './brand';
+import { currentBrand } from '@/config/brand';
 
 interface FooterProps {
   className?: string;
@@ -34,8 +35,7 @@ export function Footer({ className, onSelectTool }: FooterProps) {
                 Privacidad & Confidencialidad Fiscal Garantizada
               </div>
               <p className="font-inter text-[12px] text-muted">
-                El análisis y procesamiento de tus XMLs, nóminas y CFDI se ejecuta de forma segura
-                en tu navegador. Tus datos no se transfieren ni se comercializan.
+                {currentBrand.footer.confidenceNotice}
               </p>
             </div>
           </div>
@@ -43,7 +43,7 @@ export function Footer({ className, onSelectTool }: FooterProps) {
           <div className="flex shrink-0 flex-wrap items-center justify-center gap-2">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-800">
               <CheckCircle2 size={13} className="text-emerald-600" />
-              Tablas Fiscales 2026 Vigentes
+              {currentBrand.footer.complianceBadge}
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-navy/15 bg-navy/5 px-3 py-1 text-[11px] font-semibold text-navy">
               <ShieldCheck size={13} className="text-navy" />
@@ -61,31 +61,29 @@ export function Footer({ className, onSelectTool }: FooterProps) {
           {/* Columna 1 & 2: Identidad y Contacto Directo */}
           <div className="space-y-5 lg:col-span-2">
             <div className="flex items-center gap-3">
-              <Logo size={42} />
+              <BrandLogo size={42} />
               <div>
                 <div className="orbitron font-orbitron text-[16px] font-black tracking-[0.16em] text-navy">
-                  ARK LEDGER
+                  {currentBrand.brandName}
                 </div>
                 <div className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.24em] text-muted">
-                  Suite Fiscal & Financiera MX
+                  {currentBrand.tagline}
                 </div>
               </div>
             </div>
 
             <p className="max-w-[380px] font-inter text-[13px] leading-relaxed text-muted">
-              Plataforma de alta precisión en cálculo tributario, nómina y cumplimiento CFDI.
-              Desarrollada para contadores independientes, firmas de auditoría y directores
-              financieros en México.
+              {currentBrand.description}
             </p>
 
             {/* Tarjeta de Soporte y Contacto Directo */}
             <div className="pt-2">
               <div className="mb-3 font-orbitron text-[11px] font-bold uppercase tracking-wider text-ink">
-                Mesa de Ayuda & Atención a Despachos
+                Mesa de Ayuda & Atención Institucional
               </div>
               <div className="space-y-2.5">
                 <a
-                  href="mailto:pavel@arksystems.site"
+                  href={`mailto:${currentBrand.supportEmail}`}
                   className="group flex items-center gap-3 rounded-xl border border-line/80 bg-surface-2 p-2.5 text-[12px] font-medium text-ink transition hover:border-navy/40 hover:bg-white"
                 >
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy/5 text-navy transition group-hover:bg-navy group-hover:text-white">
@@ -95,12 +93,14 @@ export function Footer({ className, onSelectTool }: FooterProps) {
                     <div className="text-[10px] font-bold uppercase tracking-wider text-muted">
                       Correo de Soporte
                     </div>
-                    <div className="truncate font-semibold text-navy">pavel@arksystems.site</div>
+                    <div className="truncate font-semibold text-navy">
+                      {currentBrand.supportEmail}
+                    </div>
                   </div>
                 </a>
 
                 <a
-                  href="https://wa.me/525657062511?text=Hola,%20solicito%20atenci%C3%B3n%20sobre%20ARK%20TOOLS"
+                  href={currentBrand.whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group flex items-center gap-3 rounded-xl border border-line/80 bg-surface-2 p-2.5 text-[12px] font-medium text-ink transition hover:border-emerald-500/40 hover:bg-white"
@@ -113,7 +113,7 @@ export function Footer({ className, onSelectTool }: FooterProps) {
                       WhatsApp Directo
                     </div>
                     <div className="flex items-center gap-1 font-semibold text-emerald-700">
-                      +52 56 5706 2511
+                      {currentBrand.supportPhone}
                       <ExternalLink size={11} className="opacity-70" />
                     </div>
                   </div>
@@ -283,17 +283,15 @@ export function Footer({ className, onSelectTool }: FooterProps) {
         <div className="mx-auto max-w-[1280px] space-y-4 px-6 py-6 md:px-10">
           <p className="text-justify font-inter text-[11px] leading-relaxed text-muted/90 md:text-left">
             <strong className="font-semibold text-ink">Descargo de Responsabilidad Legal:</strong>{' '}
-            Las calculadoras, módulos de auditoría y reportes provistos por ARK LEDGER tienen
-            propósito de apoyo operativo y técnico fundamentado en la legislación fiscal mexicana
-            vigente (CFF, LISR, LSS y LFT). Los resultados no constituyen una opinión fiscal formal
-            vinculante ni sustituyen la asesoría o dictamen emitido por un Contador Público
-            Colegiado o Asesor Legal Fiscal.
+            {currentBrand.footer.disclaimer}
           </p>
 
           <div className="flex flex-col items-center justify-between gap-4 border-t border-line/40 pt-2 text-[11px] text-muted sm:flex-row">
             <div className="flex items-center gap-2">
-              <span className="font-orbitron font-bold text-navy">ARK LEDGER</span>
-              <span>· Substrate Holdings LLC © {currentYear}. Todos los derechos reservados.</span>
+              <span className="font-orbitron font-bold text-navy">{currentBrand.brandName}</span>
+              <span>
+                · {currentBrand.legalEntity} © {currentYear}. Todos los derechos reservados.
+              </span>
             </div>
             <div className="flex items-center gap-4 font-medium">
               <span className="cursor-pointer transition hover:text-navy">Aviso de Privacidad</span>

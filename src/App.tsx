@@ -45,6 +45,8 @@ import {
 import type { NavItem } from './components';
 
 import { AlertasVigencia } from '@/data/valores-vigentes';
+import { currentBrand } from '@/config/brand';
+import { CanacoPortalBanner, CanacoAdminPadron } from '@/components/canaco';
 
 // Lazy-loaded tools para optimización máxima de bundle (<150 KB chunk inicial)
 const CalculadoraISN = lazy(() =>
@@ -141,7 +143,7 @@ const navItems: NavItem[] = [
 // APP
 // ═════════════════════════════════════════════════════════════════
 export function App() {
-  const { isLoaded, platformRole } = useAuth();
+  const { isLoaded, platformRole, user } = useAuth();
   const { loadDemoData } = useExpediente();
   const [activeTool, setActiveTool] = useState<ToolId>('dashboard');
   const [activeNavFilter, setActiveNavFilter] = useState<NavFilter>('dashboard');
@@ -216,6 +218,16 @@ export function App() {
   const renderTool = () => {
     switch (activeTool) {
       case 'admin':
+        if (
+          currentBrand.id === 'canaco_merida' ||
+          user?.email?.toLowerCase() === 'horus.i2d@gmail.com'
+        ) {
+          return (
+            <div className="mx-auto max-w-[1280px] px-6 py-8 md:px-10">
+              <CanacoAdminPadron />
+            </div>
+          );
+        }
         return platformRole === 'super_admin' ? (
           <AdminPanel onBack={goToDashboard} />
         ) : (
@@ -426,6 +438,13 @@ interface DashboardProps {
 function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps) {
   return (
     <div className="mx-auto max-w-[1280px] space-y-16 px-6 py-16 md:px-10">
+      {/* Banner de Ventanilla Institucional CANACO HENEQUÉN */}
+      {currentBrand.features.ventanillaPagos && (
+        <section>
+          <CanacoPortalBanner />
+        </section>
+      )}
+
       {/* Hero */}
       <section>
         <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-navy/20 bg-navy/5 px-3 py-1 font-orbitron text-[10px] font-bold uppercase tracking-[0.16em] text-navy">
