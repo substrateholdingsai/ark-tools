@@ -21,6 +21,7 @@ import {
 import { apiClient, type AdminOverview, type AdminUser, type AdminTenant } from '@/lib/apiClient';
 import { useAuth } from '@/context/AuthContext';
 import LeadsApp from './LeadsApp';
+import { CanacoAdminPadron } from '../canaco/CanacoAdminPadron';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -28,7 +29,7 @@ interface AdminPanelProps {
 
 export function AdminPanel({ onBack }: AdminPanelProps) {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'users' | 'leads'>(
+  const [activeTab, setActiveTab] = useState<'overview' | 'tenants' | 'users' | 'leads' | 'canaco'>(
     'overview'
   );
   const [loading, setLoading] = useState(true);
@@ -232,6 +233,17 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
           >
             <Target size={16} />
             CRM PROSPECTOS
+          </button>
+          <button
+            onClick={() => setActiveTab('canaco')}
+            className={`flex items-center gap-2 border-b-2 px-5 py-3 font-orbitron text-[12px] font-bold tracking-wider transition ${
+              activeTab === 'canaco'
+                ? 'border-henequen-anil text-henequen-anil'
+                : 'border-transparent text-muted hover:text-ink'
+            }`}
+          >
+            <Building2 size={16} className="text-henequen-anil" />
+            CANACO MÉRIDA
           </button>
         </div>
 
@@ -650,6 +662,13 @@ export function AdminPanel({ onBack }: AdminPanelProps) {
         {activeTab === 'leads' && (
           <div className="space-y-6">
             <LeadsApp />
+          </div>
+        )}
+
+        {/* TAB 5: PADRÓN CANACO MÉRIDA */}
+        {activeTab === 'canaco' && (
+          <div className="rounded-2xl border border-line bg-white p-6 shadow-sm">
+            <CanacoAdminPadron />
           </div>
         )}
       </div>

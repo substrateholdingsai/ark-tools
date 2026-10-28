@@ -25,7 +25,9 @@ import {
   FileText,
   DollarSign,
   Radio,
+  Crown,
 } from 'lucide-react';
+import { useOptionalAuth } from '@/context/AuthContext';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
 import { ConstanciaSocioModal } from './ConstanciaSocioModal';
 import { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
@@ -45,6 +47,8 @@ interface LeadRow {
 }
 
 export function CanacoAdminPadron() {
+  const auth = useOptionalAuth();
+  const isSuperAdmin = auth?.platformRole === 'super_admin';
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
@@ -297,13 +301,19 @@ export function CanacoAdminPadron() {
         <div className="flex items-center gap-3">
           <CanacoLogo size={52} variant="symbol" />
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-fraunces text-2xl font-bold tracking-tight text-henequen-anil">
                 Padrón de Afiliados & Control SIEM
               </h1>
               <span className="rounded-full border border-henequen-terra/30 bg-henequen-terra/10 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-henequen-terra-dark">
                 Admin: horus.i2d@gmail.com
               </span>
+              {isSuperAdmin && (
+                <span className="shadow-xs inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-100/90 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-amber-900">
+                  <Crown size={11} className="text-amber-700" />
+                  Super Admin Root ({auth?.user?.email || 'pavel@arksystems.site'})
+                </span>
+              )}
             </div>
             <p className="font-mono text-xs text-henequen-piedra">
               CANACO SERVYTUR MÉRIDA · Padrón Oficial ante Secretaría de Economía 2026

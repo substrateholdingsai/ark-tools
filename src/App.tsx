@@ -174,7 +174,7 @@ export function App() {
     }
 
     if (id === 'admin') {
-      if (platformRole === 'super_admin') {
+      if (platformRole === 'super_admin' || user?.email?.toLowerCase() === 'horus.i2d@gmail.com') {
         navigateTo('admin');
       }
       return;
