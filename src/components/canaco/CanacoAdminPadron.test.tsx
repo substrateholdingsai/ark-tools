@@ -47,10 +47,23 @@ const MOCK_LEADS = [
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
-  fetchMock = vi.fn(async () => ({
-    ok: true,
-    json: async () => ({ leads: MOCK_LEADS }),
-  }));
+  fetchMock = vi.fn(async (url: any) => {
+    if (typeof url === 'string' && url.includes('/api/canaco/sync-arkangel')) {
+      return {
+        ok: true,
+        json: async () => ({
+          ok: true,
+          socios_enviados: 1,
+          monto_total_cartera: 3700,
+          mensaje: 'Lote sincronizado con Arkangel Call Center.',
+        }),
+      };
+    }
+    return {
+      ok: true,
+      json: async () => ({ leads: MOCK_LEADS }),
+    };
+  });
   vi.stubGlobal('fetch', fetchMock);
 });
 
@@ -123,5 +136,17 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
       expect(screen.getByText(/Constancia Oficial de Afiliación Comercial/i)).toBeInTheDocument();
     });
     expect(screen.getByText(/Padrón Oficial SIEM/i)).toBeInTheDocument();
+  });
+
+  it('dispara la sincronización con Arkangel al pulsar el botón del Call Center', async () => {
+    await renderAdmin();
+
+    const botonSync = screen.getByRole('button', { name: /Sincronizar Call Center/i });
+    expect(botonSync).toBeInTheDocument();
+    fireEvent.click(botonSync);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Lote sincronizado con Arkangel Call Center/i)).toBeInTheDocument();
+    });
   });
 });

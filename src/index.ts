@@ -15,6 +15,7 @@ import { authenticateRequest, handleAuthApiRequest } from './server/auth';
 import { handleAdminApiRequest } from './server/adminApi';
 import { handleLeadsApiRequest } from './server/leadsApi';
 import { handleAfiliacionesApiRequest } from './server/afiliacionesApi';
+import { handleCanacoArkangelSyncApi } from './server/canacoArkangelSync';
 import { handleInvitationsApiRequest } from './server/invitationsApi';
 import { handleAlegraApiRequest } from './server/alegra/alegraApi';
 import { checkAlegraAccountsHealth } from './server/alegra/cron';
@@ -52,6 +53,12 @@ export interface Env {
   ARK_TOOLS_DB?: D1Database;
   // ARK_TOOLS_KV: KVNamespace;
   // ARK_TOOLS_R2: R2Bucket;
+
+  // Integración Arkangel Call Center (Worker-to-Worker Service Binding / REST)
+  ARKANGEL?: Fetcher;
+  ARKANGEL_URL?: string;
+  ARKANGEL_API_KEY?: string;
+  ARKANGEL_WEBHOOK_SECRET?: string;
 }
 
 export default {
@@ -199,6 +206,16 @@ async function handleApiRequest(
   const afiliacionesResponse = await handleAfiliacionesApiRequest(request, env, corsHeaders);
   if (afiliacionesResponse) {
     return afiliacionesResponse;
+  }
+
+  const arkangelResponse = await handleCanacoArkangelSyncApi(
+    request,
+    env,
+    corsHeaders,
+    authPrincipal
+  );
+  if (arkangelResponse) {
+    return arkangelResponse;
   }
 
   const leadsResponse = await handleLeadsApiRequest(request, env, corsHeaders, authPrincipal);

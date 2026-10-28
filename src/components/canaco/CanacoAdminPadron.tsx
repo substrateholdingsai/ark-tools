@@ -24,6 +24,7 @@ import {
   UserPlus,
   FileText,
   DollarSign,
+  Radio,
 } from 'lucide-react';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
 import { ConstanciaSocioModal } from './ConstanciaSocioModal';
@@ -51,6 +52,43 @@ export function CanacoAdminPadron() {
   const [filtroSector, setFiltroSector] = useState<string>('todos');
   const [socioSeleccionado, setSocioSeleccionado] = useState<SocioCanacoRegistro | null>(null);
   const [modalAltaOpen, setModalAltaOpen] = useState(false);
+  const [syncingArkangel, setSyncingArkangel] = useState(false);
+  const [syncFeedback, setSyncFeedback] = useState<{
+    tipo: 'success' | 'error';
+    mensaje: string;
+  } | null>(null);
+
+  // Sincronizar socios pendientes con Arkangel Call Center
+  const handleSyncArkangel = async () => {
+    setSyncingArkangel(true);
+    setSyncFeedback(null);
+    try {
+      const res = await fetch('/api/canaco/sync-arkangel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = (await res.json()) as any;
+      if (res.ok && data.ok) {
+        setSyncFeedback({
+          tipo: 'success',
+          mensaje: `Lote sincronizado con Arkangel Call Center: ${data.socios_enviados} socio(s) enviados ($${Number(data.monto_total_cartera || 0).toLocaleString('es-MX')} MXN en gestión). Recordatorios activados.`,
+        });
+        await cargarPadron();
+      } else {
+        setSyncFeedback({
+          tipo: 'error',
+          mensaje: data.error || data.mensaje || 'Error al conectar con Arkangel.',
+        });
+      }
+    } catch (err: any) {
+      setSyncFeedback({
+        tipo: 'error',
+        mensaje: `Fallo de red al invocar Arkangel: ${err.message}`,
+      });
+    } finally {
+      setSyncingArkangel(false);
+    }
+  };
 
   // Cargar comercios del tenant CANACO
   const cargarPadron = async () => {
@@ -295,6 +333,22 @@ export function CanacoAdminPadron() {
 
           <button
             type="button"
+            onClick={handleSyncArkangel}
+            disabled={syncingArkangel}
+            className="shadow-xs inline-flex items-center gap-1.5 rounded-lg border border-henequen-anil/40 bg-henequen-cal px-3.5 py-2 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/60 disabled:opacity-50"
+            title="Despachar socios pendientes al Call Center Arkangel para llamadas Voice AI y WhatsApp"
+          >
+            <Radio
+              size={13}
+              className={
+                syncingArkangel ? 'animate-pulse text-henequen-terra' : 'text-henequen-anil'
+              }
+            />
+            <span>{syncingArkangel ? 'Conectando...' : 'Sincronizar Call Center'}</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setModalAltaOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-lg bg-henequen-terra px-4 py-2 text-xs font-semibold text-white shadow transition hover:bg-henequen-terra-dark"
           >
@@ -303,6 +357,32 @@ export function CanacoAdminPadron() {
           </button>
         </div>
       </div>
+
+      {/* ═══ BANNER DE FEEDBACK SYNC ARKANGEL ═══ */}
+      {syncFeedback && (
+        <div
+          className={`flex items-center justify-between rounded-xl border p-3.5 text-xs ${
+            syncFeedback.tipo === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+              : 'border-red-200 bg-red-50 text-red-900'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Radio
+              size={15}
+              className={syncFeedback.tipo === 'success' ? 'text-emerald-700' : 'text-red-700'}
+            />
+            <span className="font-medium">{syncFeedback.mensaje}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSyncFeedback(null)}
+            className="font-bold hover:underline"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* ═══ TARJETAS DE KPIS ═══ */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
