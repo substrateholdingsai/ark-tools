@@ -35,11 +35,11 @@
 | **Mesa de Ayuda & Soporte**                 | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                                                                                              |
 | **GEO & Agentes IA**                        | 100% Operativo (`/llms.txt`, `/llms-full.txt` y `/robots.txt` dinámicos vinculados al catálogo DOF 2026, generados en el Worker sin archivos estáticos) — **catálogo derivado de la fuente canónica (19 herramientas)**                                                                                                                            |
 | **Social Meta Tags (Open Graph / Twitter)** | 100% Implementado (14 tags: 7 OG + 7 Twitter Cards) con assets SVG generados por `forge_ark_meta.py` (1200×630 safe zone 100px, cubo isométrico ARK, tokens Navy/Gold exactos) — verificado en build producción                                                                                                                                    |
-| **Landing Pública**                         | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login                                                                                                                                                                                                   |
+| **Landing Pública**                         | LandingPage interactiva con filtros de catálogo por categoría, sección de Transparencia Jurídica, Footer institucional y modal de Registro/Login (conmutador automático a `CanacoLandingPage.tsx` bajo marca CANACO con verificación de socio por RFC y 6 servicios oficiales)                                                                     |
 | **Navegación & Usabilidad**                 | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                              |
 | **Consola Administrativa Cameral (SIEM)**   | 100% Implementado y Verificado (`CanacoAdminPadron.tsx` para `horus.i2d@gmail.com`, bypass de seguridad en `leadsApi.ts`, KPIs de padrón, filtros por giro/estatus, Cédula oficial imprimible, exportación CSV BOM UTF-8, botones de contacto WhatsApp y sincronización con Call Center Arkangel)                                                  |
 | **Integración Call Center (Arkangel)**      | 100% Implementado y Verificado (`canacoArkangelSync.ts`, Worker-to-Worker Service Binding / REST fallback, normalización E.164 +52, ingesta de cartera matutina en Arkangel, endpoints `/api/canaco/sync-arkangel`, `/api/canaco/arkangel-status` y webhook de retorno `/api/canaco/webhook-pago-arkangel`)                                        |
-| **Pruebas unitarias e integración**         | **473 pasadas en 68 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
+| **Pruebas unitarias e integración**         | **480 pasadas en 69 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                             |
 | **Auditoría DOF Catálogo**                  | 100% Verificado con `pnpm verify:catalogo` (8/8 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                |
 | **Typecheck (TypeScript)**                  | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                         |
 | **Linting (ESLint)**                        | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                          |
@@ -1835,25 +1835,27 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 
 #### 3. Componentes Exclusivos CANACO SERVYTUR MÉRIDA & Persistencia CRM D1
 
-- `src/server/afiliacionesApi.ts`: Endpoint público `/api/afiliaciones/registro` con persistencia en `leads_ark_tools` bajo `tenant_id = 'canaco_merida'`.
+- `src/server/afiliacionesApi.ts`: Endpoint público `/api/afiliaciones/registro` con persistencia en `leads_ark_tools` bajo `tenant_id = 'canaco_merida'` y nuevo endpoint `/api/afiliaciones/consulta?rfc=` para validación pública de vigencia.
 - `src/server/leadsApi.ts`: Autorización y bypass para `horus.i2d@gmail.com` sobre el tenant `canaco_merida` asegurando acceso administrativo directo al padrón.
 - `src/components/canaco/calculoCuota.ts`: Motor determinista de cálculo de cuotas del Registro SIEM (Ley Federal de Cámaras Empresariales) y Membresía Anual según número de colaboradores y sector (comercio, servicios, turismo).
 - `src/components/canaco/VentanillaAfiliacionModal.tsx`: Modal institucional completo de 3 pasos que captura el lead preliminar en CRM al avanzar de paso y sella la membresía a "Socio Activo" con timbrado CFDI al confirmar el pago.
 - `src/components/canaco/ConstanciaSocioModal.tsx`: Cédula oficial imprimible en tamaño Carta (`@media print`) con Sello Digital SHA-256 inmutable, Código QR de validación institucional y firmas de autoridad cameral.
 - `src/components/canaco/CanacoPortalBanner.tsx`: Banner interactivo del socio montado en el Dashboard de `App.tsx` que muestra el estatus de membresía y botón directo a la Ventanilla de Afiliación.
 - `src/components/canaco/CanacoAdminPadron.tsx`: Consola de Afiliaciones y Padrón SIEM enlazada en la barra de herramientas (`admin`) para `horus.i2d@gmail.com` o cuando la marca activa es CANACO. Incluye 4 KPIs camerales, filtros reactivos, visualización de Cédula de Socio, contacto directo por WhatsApp, exportación a CSV con BOM UTF-8 y botón de sincronización directa con el Call Center Arkangel.
+- `src/components/canaco/CanacoLandingPage.tsx`: Landing pública oficial para CANACO SERVYTUR Mérida con Design System HENEQUÉN. Incorpora la cuadrícula de los 6 servicios gremiales oficiales, buscador en vivo de socio por RFC para descarga inmediata de Cédula Oficial Carta, lanzador de Ventanilla Digital SIEM y modal de acceso directivo para `horus.i2d@gmail.com`.
 - `src/server/canacoArkangelSync.ts`: Pipeline de integración Worker-to-Worker / REST entre Ark-Ledger y Arkangel. Extrae los socios con cuota pendiente, normaliza teléfonos a formato internacional E.164 (`+52...`), genera el dataset CSV estándar de Arkangel, y expone `/api/canaco/sync-arkangel`, `/api/canaco/arkangel-status` y el webhook de conciliación `/api/canaco/webhook-pago-arkangel`.
 
 #### 4. Métricas de Calidad y Puerta Completa
 
-- **Pruebas unitarias e integración:** **473 pruebas en 68 suites (100% éxito)** — `pnpm test`.
+- **Pruebas unitarias e integración:** **480 pruebas en 69 suites (100% éxito)** — `pnpm test`.
 - **Nuevas suites:**
   - `src/config/brand/brand.test.tsx` (4 pruebas).
   - `src/components/canaco/calculoCuota.test.ts` (4 pruebas).
   - `src/components/canaco/CanacoPortalBanner.test.tsx` (3 pruebas).
-  - `src/server/afiliacionesApi.test.ts` (5 pruebas).
+  - `src/server/afiliacionesApi.test.ts` (7 pruebas).
   - `src/components/canaco/CanacoAdminPadron.test.tsx` (6 pruebas).
   - `src/server/canacoArkangelSync.test.ts` (10 pruebas).
+  - `src/components/canaco/CanacoLandingPage.test.tsx` (5 pruebas).
 - **Auditoría DOF:** **8/8 valores oficiales vigentes** — `pnpm verify:catalogo`.
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).

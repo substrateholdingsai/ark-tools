@@ -46,7 +46,7 @@ import type { NavItem } from './components';
 
 import { AlertasVigencia } from '@/data/valores-vigentes';
 import { currentBrand } from '@/config/brand';
-import { CanacoPortalBanner, CanacoAdminPadron } from '@/components/canaco';
+import { CanacoPortalBanner, CanacoAdminPadron, CanacoLandingPage } from '@/components/canaco';
 
 // Lazy-loaded tools para optimización máxima de bundle (<150 KB chunk inicial)
 const CalculadoraISN = lazy(() =>
@@ -320,7 +320,7 @@ export function App() {
   return (
     <>
       <SignedOut>
-        <LandingPage />
+        {currentBrand.id === 'canaco_merida' ? <CanacoLandingPage /> : <LandingPage />}
       </SignedOut>
 
       <SignedIn>

@@ -180,4 +180,63 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
     expect(response?.status).toBe(503);
   });
+
+  it('permite consultar públicamente un socio por RFC en GET /api/afiliaciones/consulta', async () => {
+    const mockDb = {
+      prepare: vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn().mockResolvedValue({
+          id: 'lead-can-1',
+          web: 'Abarrotes del Mayab S.A. de C.V.',
+          whatsapp: '9999123456',
+          email: 'contacto@mayab.mx',
+          ciudad: 'Mérida',
+          especialidad: 'comercio',
+          status: 'Socio Activo',
+          last_contact: '2026-10-25',
+          contacto_nombre: 'Lic. Fernando Pech',
+          notas:
+            'Folio SIEM: SIEM-MID-2026-AMA2-MIC-4819 | RFC: AMA200101AB1 | Cuota: $2,000 MXN | Sello: SHA256:CANACO-MID-4819-2026',
+        }),
+      }),
+    };
+
+    const env = { ARK_TOOLS_DB: mockDb as any } as unknown as Env;
+
+    const request = new Request(
+      'https://ledger.arksystems.site/api/afiliaciones/consulta?rfc=AMA200101AB1',
+      { method: 'GET' }
+    );
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response).not.toBeNull();
+    expect(response?.status).toBe(200);
+    const json = (await response?.json()) as any;
+    expect(json.encontrado).toBe(true);
+    expect(json.socio.razonSocial).toBe('Abarrotes del Mayab S.A. de C.V.');
+    expect(json.socio.folioSiem).toBe('SIEM-MID-2026-AMA2-MIC-4819');
+    expect(json.estatus).toBe('Socio Activo');
+  });
+
+  it('retorna 404 cuando un RFC no está registrado en el Padrón', async () => {
+    const mockDb = {
+      prepare: vi.fn().mockReturnValue({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn().mockResolvedValue(null),
+      }),
+    };
+
+    const env = { ARK_TOOLS_DB: mockDb as any } as unknown as Env;
+
+    const request = new Request(
+      'https://ledger.arksystems.site/api/afiliaciones/consulta?rfc=NOREGISTRADO01',
+      { method: 'GET' }
+    );
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response).not.toBeNull();
+    expect(response?.status).toBe(404);
+    const json = (await response?.json()) as any;
+    expect(json.encontrado).toBe(false);
+  });
 });

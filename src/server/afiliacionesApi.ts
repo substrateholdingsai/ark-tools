@@ -39,11 +39,107 @@ export async function handleAfiliacionesApiRequest(
   const url = new URL(request.url);
   const path = url.pathname;
 
+  const db = env.ARK_TOOLS_DB;
+
+  // ─────────────────────────────────────────────────────────────────
+  // CONSULTA PÚBLICA DE SOCIO POR RFC (Landing Page / Cédula)
+  // GET /api/afiliaciones/consulta?rfc=XYZ
+  // ─────────────────────────────────────────────────────────────────
+  if (path === '/api/afiliaciones/consulta' && request.method === 'GET') {
+    const qRfc = url.searchParams.get('rfc')?.trim().toUpperCase();
+    if (!qRfc) {
+      return Response.json(
+        { error: 'El RFC es requerido para consultar la afiliación.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    if (!db) {
+      return Response.json(
+        { error: 'Base de datos D1 no disponible.' },
+        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    const row = await db
+      .prepare(
+        `SELECT id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas
+         FROM leads_ark_tools
+         WHERE tenant_id = 'canaco_merida'
+           AND (notas LIKE ? OR web LIKE ?)
+         LIMIT 1`
+      )
+      .bind(`%${qRfc}%`, `%${qRfc}%`)
+      .first<{
+        id: string;
+        web: string | null;
+        whatsapp: string | null;
+        email: string | null;
+        ciudad: string | null;
+        especialidad: string | null;
+        status: string | null;
+        last_contact: string | null;
+        contacto_nombre: string | null;
+        notas: string | null;
+      }>();
+
+    if (!row) {
+      return Response.json(
+        { encontrado: false, mensaje: 'No se encontró registro para este RFC en el Padrón 2026.' },
+        { status: 404, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    const folioMatch = row.notas?.match(/Folio SIEM:\s*([^\s|]+)/i);
+    const folioSiem = folioMatch ? folioMatch[1] : 'SIEM-MID-2026-OFICIAL';
+    const selloMatch = row.notas?.match(/Sello:\s*([^\s|]+)/i);
+    const selloSha = selloMatch ? selloMatch[1] : `SHA256:CANACO-MID-${row.id.slice(0, 8)}`;
+    const cuotaMatch = row.notas?.match(/Cuota:\s*\$?([\d,]+(\.\d+)?)/i);
+    const cuota = cuotaMatch && cuotaMatch[1] ? parseFloat(cuotaMatch[1].replace(/,/g, '')) : 2000;
+
+    const socioRegistro: SocioCanacoRegistro = {
+      folioSiem: folioSiem || 'SIEM-MID-2026-OFICIAL',
+      razonSocial: row.web || 'Comercio Afiliado de Yucatán',
+      nombreComercial: row.web || '',
+      rfc: qRfc,
+      sector: (row.especialidad as any) || 'comercio',
+      estrato: 'micro',
+      numEmpleados: 5,
+      direccion: {
+        calle: 'Domicilio Registrado',
+        colonia: 'Centro',
+        codigoPostal: '97000',
+        municipio: row.ciudad || 'Mérida',
+        ciudad: `${row.ciudad || 'Mérida'}, Yucatán`,
+      },
+      contacto: {
+        nombre: row.contacto_nombre || 'Representante Legal',
+        email: row.email || 'contacto@comercio.mx',
+        telefono: row.whatsapp || '9991234567',
+      },
+      fechaAfiliacion: row.last_contact || new Date().toISOString().split('T')[0] || '',
+      fechaVigencia: '2027-10-27',
+      estatus: row.status === 'Socio Activo' ? 'activo' : 'pendiente_pago',
+      montoPagado: cuota,
+      metodoPago: 'tarjeta',
+      cfdiRequerido: true,
+      selloDigitalSha256: selloSha || `SHA256:CANACO-MID-${row.id.slice(0, 8)}`,
+    };
+
+    return Response.json(
+      {
+        encontrado: true,
+        socio: socioRegistro,
+        estatus: row.status,
+      },
+      { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+
   if (path !== '/api/afiliaciones/registro' || request.method !== 'POST') {
     return null;
   }
 
-  const db = env.ARK_TOOLS_DB;
   if (!db) {
     return Response.json(
       { error: 'Base de datos D1 no disponible.' },

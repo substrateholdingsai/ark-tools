@@ -4,3 +4,4 @@ export { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
 export { ConstanciaSocioModal } from './ConstanciaSocioModal';
 export { CanacoPortalBanner } from './CanacoPortalBanner';
 export { CanacoAdminPadron } from './CanacoAdminPadron';
+export { CanacoLandingPage } from './CanacoLandingPage';
