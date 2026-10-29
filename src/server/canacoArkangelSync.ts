@@ -10,6 +10,7 @@
 
 import type { Env } from '../index';
 import type { AuthPrincipal } from './auth';
+import { sendCanacoConfirmacionPagoEmail } from './canacoEmailService';
 
 export interface SocioCobranzaRecord {
   id: string;
@@ -398,6 +399,7 @@ export async function handleCanacoArkangelSyncApi(
         monto?: number;
         tenant_id?: string;
         metodo?: string;
+        email?: string;
       };
 
       if (!body.rfc?.trim()) {
@@ -419,14 +421,26 @@ export async function handleCanacoArkangelSyncApi(
       // Buscar si el socio existe por RFC en notas
       const existing = await db
         .prepare(
-          `SELECT id, notas FROM leads_ark_tools 
+          `SELECT id, email, web, contacto_nombre, notas FROM leads_ark_tools 
            WHERE tenant_id = 'canaco_merida' 
              AND (notas LIKE ? OR web LIKE ?)`
         )
         .bind(`%${rfcClean}%`, `%${rfcClean}%`)
-        .first<{ id: string; notas: string | null }>();
+        .first<{
+          id: string;
+          email: string | null;
+          web: string | null;
+          contacto_nombre: string | null;
+          notas: string | null;
+        }>();
+
+      let razonSocialFinal = `Comercio Afiliado ${rfcClean}`;
+      let contactoNombreFinal = 'Representante Legal';
+      const emailDestino = body.email?.trim() || existing?.email?.trim();
 
       if (existing) {
+        razonSocialFinal = existing.web || razonSocialFinal;
+        contactoNombreFinal = existing.contacto_nombre || contactoNombreFinal;
         const notasActualizadas = `${existing.notas || ''} | Folio SIEM: ${folioSiem} | Pago Confirmado Call Center: ${folioPago} ($${body.monto || 0} MXN) | Sello: ${sello}`;
         await db
           .prepare(
@@ -450,18 +464,44 @@ export async function handleCanacoArkangelSyncApi(
           )
           .bind(
             newId,
-            `Comercio Afiliado ${rfcClean}`,
+            razonSocialFinal,
             '',
-            '',
+            emailDestino || '',
             'Mérida',
             'comercio',
             'Socio Activo',
             todayIso,
-            'Representante Legal',
+            contactoNombreFinal,
             notasNuevas,
             'canaco_merida'
           )
           .run();
+      }
+
+      // ─────────────────────────────────────────────────────────────────
+      // Disparo de Correo Oficial Transaccional vía RESEND
+      // ─────────────────────────────────────────────────────────────────
+      let emailEnviado = false;
+      let emailId: string | undefined;
+
+      if (emailDestino && emailDestino.includes('@')) {
+        const emailRes = await sendCanacoConfirmacionPagoEmail(env, {
+          email: emailDestino,
+          contactoNombre: contactoNombreFinal,
+          razonSocial: razonSocialFinal,
+          rfc: rfcClean,
+          folioSiem,
+          folioPago,
+          monto: Number(body.monto || 2000),
+          selloDigitalSha256: sello,
+          metodo: body.metodo || 'SPEI (Arkangel)',
+        }).catch((err: any) => {
+          console.warn('[CANACO Webhook] Error no bloqueante al enviar correo Resend:', err);
+          return { success: false, error: err.message, id: undefined };
+        });
+
+        emailEnviado = emailRes.success;
+        emailId = emailRes.id;
       }
 
       return Response.json(
@@ -472,6 +512,8 @@ export async function handleCanacoArkangelSyncApi(
           folioSiem,
           folioPago,
           estatus: 'Socio Activo',
+          emailEnviado,
+          emailId,
           timestamp: nowIso,
         },
         { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }

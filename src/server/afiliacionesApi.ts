@@ -6,6 +6,7 @@
  */
 
 import type { Env } from '../index';
+import { sendCanacoConfirmacionPagoEmail } from './canacoEmailService';
 import {
   calcularCuotaAfiliacion,
   determinarEstrato,
@@ -262,6 +263,30 @@ export async function handleAfiliacionesApiRequest(
       selloDigitalSha256,
     };
 
+    // Disparar correo oficial de confirmación vía Resend si el pago quedó activo
+    let emailEnviado = false;
+    let emailId: string | undefined;
+
+    if (body.estatus === 'activo' && body.email && body.email.includes('@')) {
+      const emailRes = await sendCanacoConfirmacionPagoEmail(env, {
+        email: body.email.trim(),
+        contactoNombre: body.contactoNombre?.trim(),
+        razonSocial: razonSocialUpper,
+        rfc: rfcUpper,
+        folioSiem,
+        folioPago: `VENTANILLA-${Date.now().toString(36).toUpperCase()}`,
+        monto: cotizacion.totalAnual,
+        selloDigitalSha256,
+        metodo: body.metodoPago || 'tarjeta',
+      }).catch((err: any) => {
+        console.warn('[Afiliaciones API] Error no bloqueante al enviar correo Resend:', err);
+        return { success: false, error: err.message, id: undefined };
+      });
+
+      emailEnviado = emailRes.success;
+      emailId = emailRes.id;
+    }
+
     return Response.json(
       {
         success: true,
@@ -269,6 +294,8 @@ export async function handleAfiliacionesApiRequest(
         leadId,
         socio: socioRegistro,
         cotizacion,
+        emailEnviado,
+        emailId,
       },
       { status: 201, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
     );
