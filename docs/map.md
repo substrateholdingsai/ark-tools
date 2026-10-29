@@ -39,7 +39,7 @@
 | **Navegación & Usabilidad**                                | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                                                                                                  |
 | **Consola Administrativa Cameral (SIEM)**                  | 100% Implementado y Verificado (`CanacoAdminPadron.tsx` para `horus.i2d@gmail.com`, bypass de seguridad en `leadsApi.ts`, KPIs de padrón, filtros por giro/estatus, Cédula oficial imprimible, exportación CSV BOM UTF-8, botones de contacto WhatsApp y sincronización con Call Center Arkangel)                                                                                                                      |
 | **Integración Call Center & Cobranza (Arkangel + Resend)** | 100% Implementado y Verificado (`canacoArkangelSync.ts`, Worker-to-Worker Service Binding / REST fallback, normalización E.164 +52, ingesta de cartera matutina en Arkangel, endpoints `/api/canaco/sync-arkangel`, `/api/canaco/arkangel-status`, webhook de liquidación SPEI `/api/canaco/webhook-pago-arkangel` y emisión automática de correo oficial con Cédula Carta SHA-256 vía Resend `canacoEmailService.ts`) |
-| **Pruebas unitarias e integración**                        | **509 pasadas en 72 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                                                                                                 |
+| **Pruebas unitarias e integración**                        | **518 pasadas en 73 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                                                                                                 |
 | **Auditoría DOF Catálogo**                                 | 100% Verificado con `pnpm verify:catalogo` (8/8 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                                                                                    |
 | **Typecheck (TypeScript)**                                 | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                                                                                             |
 | **Linting (ESLint)**                                       | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                                                                                              |
@@ -2037,3 +2037,25 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 32 (Octubre 2026) — Pipeline de Ingesta y Clasificación de Bots (Grok / Hermes) + Filosofía "Modo Sarita" (Completado ✅)
+
+#### 1. Ingesta y Clasificación en el Edge con Hono y Workers AI
+
+- **Router Dedicado Hono (`src/server/bots/botIngestionApi.ts`):** Montado sobre `/api/bots` con endpoints `/api/bots/health`, `/api/bots/ingest` y `/api/bots/logs`.
+- **Compatibilidad Multi-Bot:** Acepta payloads heterogéneos de agentes autónomos y bots externos (Grok de xAI, Hermes de Nous Research / OpenRouter, webhooks genéricos).
+- **Clasificador Inteligente Edge:** Clasifica el documento entrante entre `comprobante_pago`, `datos_fiscales`, `texto_legal`, `plantilla_contenido` y `consulta_general`. Extrae RFC, montos, folios de rastreo y metadatos con Workers AI (Llama 3.1) o fallback determinista.
+- **Persistencia Inmutable:** Registra el payload en Cloudflare D1 (`bot_payloads_log`) con Sello Digital SHA-256 inmutable y encola en Cloudflare Queues (`BOT_PAYLOADS_QUEUE`) si el binding está habilitado. Si detecta un pago de socio cameral o cliente, actualiza automáticamente `leads_ark_tools`.
+
+#### 2. Directriz Operativa: "Modo Sarita" (UX de Cero Fricción Técnica)
+
+- **Operación a 1-Solo Clic:** Los administradores no técnicos operan con botones directos ("Iniciar Recordatorio Masivo") sin ver configuraciones de red, APIs o modelos de IA.
+- **Cero Código para Carga de Machotes:** Sarita no manipula HTML, plantillas ni código. Envía sus machotes, circulares y documentos por correo a `pavel@arksystems.site`, y el pipeline backend se encarga de la extracción, validación y despliegue.
+
+#### 3. Métricas de Calidad
+
+- **Pruebas unitarias e integración:** **518 pasadas en 73 suites (100% éxito)** — `pnpm test`.
+- **Nueva suite:** `src/server/bots/botIngestionApi.test.ts` (9 pruebas).
+- **Puerta completa:** `typecheck`, `lint` y `format` 100% limpios.

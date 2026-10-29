@@ -20,6 +20,7 @@ import { handleInvitationsApiRequest } from './server/invitationsApi';
 import { handleAlegraApiRequest } from './server/alegra/alegraApi';
 import { checkAlegraAccountsHealth } from './server/alegra/cron';
 import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './server/llmsTxt';
+import { botApp } from './server/bots/botIngestionApi';
 
 export interface Env {
   // Assets (SPA)
@@ -59,6 +60,10 @@ export interface Env {
   ARKANGEL_URL?: string;
   ARKANGEL_API_KEY?: string;
   ARKANGEL_WEBHOOK_SECRET?: string;
+
+  // Ingesta de bots externos (Grok / Hermes) & Queues
+  BOT_INGEST_SECRET?: string;
+  BOT_PAYLOADS_QUEUE?: any;
 }
 
 export default {
@@ -172,6 +177,13 @@ async function handleApiRequest(
   // Preflight
   if (request.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // DEDICATED BOT & AGENT INGESTION (Hono App: Grok / Hermes)
+  // ─────────────────────────────────────────────────────────────────
+  if (url.pathname.startsWith('/api/bots')) {
+    return botApp.fetch(request, env, _ctx);
   }
 
   const isPublicAuthEndpoint =
