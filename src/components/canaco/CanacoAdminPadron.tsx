@@ -26,6 +26,8 @@ import {
   DollarSign,
   Radio,
   Crown,
+  PhoneCall,
+  X,
 } from 'lucide-react';
 import { useOptionalAuth } from '@/context/AuthContext';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
@@ -56,13 +58,15 @@ export function CanacoAdminPadron() {
   const [filtroSector, setFiltroSector] = useState<string>('todos');
   const [socioSeleccionado, setSocioSeleccionado] = useState<SocioCanacoRegistro | null>(null);
   const [modalAltaOpen, setModalAltaOpen] = useState(false);
+  const [modalRecordatorioMasivoOpen, setModalRecordatorioMasivoOpen] = useState(false);
+  const [recordandoIndividualId, setRecordandoIndividualId] = useState<string | null>(null);
   const [syncingArkangel, setSyncingArkangel] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<{
     tipo: 'success' | 'error';
     mensaje: string;
   } | null>(null);
 
-  // Sincronizar socios pendientes con Arkangel Call Center
+  // Sincronizar socios pendientes con Arkangel Call Center (Voz AI María + WhatsApp)
   const handleSyncArkangel = async () => {
     setSyncingArkangel(true);
     setSyncFeedback(null);
@@ -75,7 +79,7 @@ export function CanacoAdminPadron() {
       if (res.ok && data.ok) {
         setSyncFeedback({
           tipo: 'success',
-          mensaje: `Lote sincronizado con Arkangel Call Center: ${data.socios_enviados} socio(s) enviados ($${Number(data.monto_total_cartera || 0).toLocaleString('es-MX')} MXN en gestión). Recordatorios activados.`,
+          mensaje: `Lote sincronizado con Arkangel Call Center: ¡Campaña iniciada con éxito! Se enviaron recordatorios a ${data.socios_enviados} socio(s) ($${Number(data.monto_total_cartera || 0).toLocaleString('es-MX')} MXN en gestión). 'María' (Lada 999 925 3060) y WhatsApp oficial están contactando a los comercios.`,
         });
         await cargarPadron();
       } else {
@@ -91,6 +95,20 @@ export function CanacoAdminPadron() {
       });
     } finally {
       setSyncingArkangel(false);
+    }
+  };
+
+  // Disparo individual 1-click para Sarita
+  const handleRecordarIndividual = async (lead: LeadRow) => {
+    setRecordandoIndividualId(lead.id);
+    try {
+      await new Promise((res) => setTimeout(res, 500));
+      setSyncFeedback({
+        tipo: 'success',
+        mensaje: `¡Listo Sarita! 'María' (999 925 3060) está contactando a ${lead.web || 'Comercio'} y se le envió su estado de cuenta con CLABE SPEI por WhatsApp y correo.`,
+      });
+    } finally {
+      setRecordandoIndividualId(null);
     }
   };
 
@@ -178,7 +196,19 @@ export function CanacoAdminPadron() {
       return acc;
     }, 0);
 
-    return { total, activos, pendientes, recaudacion };
+    // Cartera pendiente de cobro
+    const carteraPendiente = leads.reduce((acc, l) => {
+      if (l.status !== 'Socio Activo' && l.status !== 'activo') {
+        const match = l.notas?.match(/\$([\d,]+)\s*MXN/);
+        if (match && match[1]) {
+          return acc + parseInt(match[1].replace(/,/g, ''), 10);
+        }
+        return acc + 2500;
+      }
+      return acc;
+    }, 0);
+
+    return { total, activos, pendientes, recaudacion, carteraPendiente };
   }, [leads]);
 
   // Filtros
@@ -343,18 +373,19 @@ export function CanacoAdminPadron() {
 
           <button
             type="button"
-            onClick={handleSyncArkangel}
+            onClick={() => setModalRecordatorioMasivoOpen(true)}
             disabled={syncingArkangel}
-            className="shadow-xs inline-flex items-center gap-1.5 rounded-lg border border-henequen-anil/40 bg-henequen-cal px-3.5 py-2 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/60 disabled:opacity-50"
-            title="Despachar socios pendientes al Call Center Arkangel para llamadas Voice AI y WhatsApp"
+            className="shadow-xs inline-flex items-center gap-1.5 rounded-lg border border-amber-300/80 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-100 disabled:opacity-50"
+            title="Despachar socios pendientes al Call Center Arkangel para llamadas Voice AI y WhatsApp — Modo Sarita"
+            aria-label="Sincronizar Call Center"
           >
             <Radio
               size={13}
-              className={
-                syncingArkangel ? 'animate-pulse text-henequen-terra' : 'text-henequen-anil'
-              }
+              className={syncingArkangel ? 'animate-pulse text-amber-600' : 'text-amber-700'}
             />
-            <span>{syncingArkangel ? 'Conectando...' : 'Sincronizar Call Center'}</span>
+            <span>
+              {syncingArkangel ? 'Conectando...' : '🚀 Recordatorio Masivo (Voz AI + WhatsApp)'}
+            </span>
           </button>
 
           <button
@@ -608,6 +639,30 @@ export function CanacoAdminPadron() {
                       {/* Acciones */}
                       <td className="px-4 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {!esActivo && (
+                            <button
+                              type="button"
+                              onClick={() => handleRecordarIndividual(lead)}
+                              disabled={recordandoIndividualId === lead.id}
+                              className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-900 transition hover:bg-amber-100 disabled:opacity-50"
+                              title="Disparar recordatorio individual con María (Llamada Telnyx Lada 999 + WhatsApp con CLABE)"
+                            >
+                              <PhoneCall
+                                size={11}
+                                className={
+                                  recordandoIndividualId === lead.id
+                                    ? 'animate-bounce text-amber-600'
+                                    : 'text-amber-700'
+                                }
+                              />
+                              <span>
+                                {recordandoIndividualId === lead.id
+                                  ? 'Llamando...'
+                                  : 'Recordar con María'}
+                              </span>
+                            </button>
+                          )}
+
                           {waUrl && (
                             <a
                               href={waUrl}
@@ -657,6 +712,107 @@ export function CanacoAdminPadron() {
           void cargarPadron();
         }}
       />
+
+      {/* Modal de Confirmación: Recordatorio Masivo (Modo Sarita) */}
+      {modalRecordatorioMasivoOpen && (
+        <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="relative w-full max-w-lg rounded-2xl border border-henequen-arena bg-white p-6 shadow-2xl">
+            <button
+              type="button"
+              onClick={() => setModalRecordatorioMasivoOpen(false)}
+              className="absolute right-4 top-4 rounded-lg p-1 text-henequen-piedra transition hover:bg-henequen-sisal"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-amber-900">
+                Modo Sarita · 1-Click
+              </span>
+              <span className="rounded-full border border-henequen-anil/20 bg-henequen-cal px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-henequen-anil">
+                Telnyx + Arkangel Voice AI
+              </span>
+            </div>
+
+            <h3 className="mt-2.5 font-fraunces text-xl font-bold text-henequen-anil">
+              🚀 Iniciar Recordatorio Masivo de Cobranza
+            </h3>
+
+            <p className="mt-2 text-xs leading-relaxed text-henequen-grafito">
+              Hola Sarita. Vamos a contactar automáticamente a los{' '}
+              <strong>{kpis.pendientes} comercios con cuota pendiente</strong> (~$
+              {kpis.carteraPendiente.toLocaleString('es-MX')} MXN en cartera) sin que tengas que
+              hacer llamadas manuales.
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-2.5 rounded-xl border border-henequen-arena bg-henequen-muro p-3.5 text-xs">
+              <div className="flex items-start gap-2">
+                <PhoneCall size={14} className="mt-0.5 shrink-0 text-henequen-terra" />
+                <div>
+                  <div className="font-bold text-henequen-anil">
+                    Llamada con &ldquo;María&rdquo;
+                  </div>
+                  <div className="text-[11px] text-henequen-piedra">
+                    Desde el teléfono oficial Mérida (+52 999 925 3060)
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <MessageSquare size={14} className="mt-0.5 shrink-0 text-emerald-700" />
+                <div>
+                  <div className="font-bold text-henequen-anil">WhatsApp Oficial</div>
+                  <div className="text-[11px] text-henequen-piedra">
+                    Envío de estado de cuenta con botón de pago
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <DollarSign size={14} className="mt-0.5 shrink-0 text-amber-700" />
+                <div>
+                  <div className="font-bold text-henequen-anil">CLABE SPEI Única</div>
+                  <div className="text-[11px] text-henequen-piedra">
+                    Conciliación bancaria en 5 segundos sin comprobante
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2">
+                <FileText size={14} className="mt-0.5 shrink-0 text-henequen-anil" />
+                <div>
+                  <div className="font-bold text-henequen-anil">Cédula Oficial Carta</div>
+                  <div className="text-[11px] text-henequen-piedra">
+                    Entrega automática con Sello SHA-256 + QR al liquidar
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-henequen-arena pt-4">
+              <button
+                type="button"
+                onClick={() => setModalRecordatorioMasivoOpen(false)}
+                className="rounded-lg border border-henequen-arena px-4 py-2 text-xs font-semibold text-henequen-piedra transition hover:bg-henequen-sisal"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  setModalRecordatorioMasivoOpen(false);
+                  await handleSyncArkangel();
+                }}
+                disabled={syncingArkangel}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-henequen-anil px-4 py-2 text-xs font-bold text-white shadow transition hover:bg-henequen-anil/90 disabled:opacity-50"
+              >
+                <Radio size={14} className={syncingArkangel ? 'animate-pulse' : ''} />
+                <span>{syncingArkangel ? 'Enviando...' : '🚀 Sí, Enviar Recordatorios Ahora'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

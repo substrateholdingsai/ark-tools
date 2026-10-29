@@ -138,15 +138,32 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
     expect(screen.getByText(/Padrón Oficial SIEM/i)).toBeInTheDocument();
   });
 
-  it('dispara la sincronización con Arkangel al pulsar el botón del Call Center', async () => {
+  it('dispara la sincronización con Arkangel al confirmar en el modal de Recordatorio Masivo', async () => {
     await renderAdmin();
 
     const botonSync = screen.getByRole('button', { name: /Sincronizar Call Center/i });
     expect(botonSync).toBeInTheDocument();
     fireEvent.click(botonSync);
 
+    // Modal de confirmación "Modo Sarita"
+    expect(await screen.findByText(/Iniciar Recordatorio Masivo de Cobranza/i)).toBeInTheDocument();
+    const botonConfirmar = screen.getByRole('button', { name: /Sí, Enviar Recordatorios Ahora/i });
+    fireEvent.click(botonConfirmar);
+
     await waitFor(() => {
       expect(screen.getByText(/Lote sincronizado con Arkangel Call Center/i)).toBeInTheDocument();
+    });
+  });
+
+  it('permite a Sarita disparar un recordatorio individual de 1-click con María', async () => {
+    await renderAdmin();
+
+    const botonIndividual = screen.getByRole('button', { name: /Recordar con María/i });
+    expect(botonIndividual).toBeInTheDocument();
+    fireEvent.click(botonIndividual);
+
+    await waitFor(() => {
+      expect(screen.getByText(/¡Listo Sarita! 'María'/i)).toBeInTheDocument();
     });
   });
 });
