@@ -21,6 +21,7 @@ import { handleAlegraApiRequest } from './server/alegra/alegraApi';
 import { checkAlegraAccountsHealth } from './server/alegra/cron';
 import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './server/llmsTxt';
 import { botApp } from './server/bots/botIngestionApi';
+import { handleBillingApiRequest } from './server/billing/billingWebhook';
 
 export interface Env {
   // Assets (SPA)
@@ -192,7 +193,8 @@ async function handleApiRequest(
     (url.pathname === '/api/auth/verify-email' && request.method === 'POST') ||
     (url.pathname === '/api/auth/request-password-reset' && request.method === 'POST') ||
     (url.pathname === '/api/auth/reset-password' && request.method === 'POST') ||
-    (url.pathname === '/api/afiliaciones/registro' && request.method === 'POST');
+    (url.pathname === '/api/afiliaciones/registro' && request.method === 'POST') ||
+    (url.pathname === '/api/billing/webhook' && request.method === 'POST');
 
   if (request.method !== 'GET' && request.method !== 'HEAD' && !isPublicAuthEndpoint) {
     const origin = request.headers.get('Origin');
@@ -218,6 +220,11 @@ async function handleApiRequest(
   const afiliacionesResponse = await handleAfiliacionesApiRequest(request, env, corsHeaders);
   if (afiliacionesResponse) {
     return afiliacionesResponse;
+  }
+
+  const billingResponse = await handleBillingApiRequest(request, env, corsHeaders, authPrincipal);
+  if (billingResponse) {
+    return billingResponse;
   }
 
   const arkangelResponse = await handleCanacoArkangelSyncApi(
@@ -253,6 +260,7 @@ async function handleApiRequest(
   const isPublicApi =
     (url.pathname === '/api/version' && request.method === 'GET') ||
     (url.pathname === '/api/clip/status' && request.method === 'GET') ||
+    (url.pathname === '/api/billing/status' && request.method === 'GET') ||
     (url.pathname === '/api/expedientes/verify' && request.method === 'GET') ||
     (['/api/ai/status', '/api/ai/models', '/api/ai/tools'].includes(url.pathname) &&
       request.method === 'GET');

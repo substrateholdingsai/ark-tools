@@ -2059,3 +2059,43 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **Pruebas unitarias e integración:** **518 pasadas en 73 suites (100% éxito)** — `pnpm test`.
 - **Nueva suite:** `src/server/bots/botIngestionApi.test.ts` (9 pruebas).
 - **Puerta completa:** `typecheck`, `lint` y `format` 100% limpios.
+
+---
+
+### Sprint 33 (Octubre 2026) — Arquitectura de Suscripciones Plan Despacho Pro & Paywall Suave (Completado ✅)
+
+#### 1. Persistencia y Gestión de Suscripciones Multi-Tenant en Cloudflare D1
+
+- **Migración D1 `0008_tenant_subscriptions.sql`:**
+  - Creación de tabla inmutable `tenant_subscriptions` con esquema multi-tenant (`tenant_id`, `plan`, `status`, `amount_mxn`, `payment_method`, `external_payment_id`, `billing_email`, timestamps).
+  - Índices dedicados para consulta rápida por inquilino y estatus.
+  - Aplicada exitosamente en producción D1 (`ark_tools_db`).
+- **Servicio Backend `src/server/billing/subscriptions.ts`:**
+  - Consulta unificada de estatus (`getTenantSubscriptionPlan`).
+  - Bypass Pro permanente e incondicional para `canaco_merida`, super administradores (`ark`) y cuentas institucionales.
+  - Activación/renovación atómica de planes con sincronización bidireccional en `ai_usage.is_pro`.
+
+#### 2. Webhook Transaccional Clip / SPEI y Endpoint de Facturación
+
+- **Controlador `src/server/billing/billingWebhook.ts`:**
+  - `POST /api/billing/webhook`: Procesa eventos de checkout de Clip (`CHECKOUT.PAID`, `PAYMENT.SUCCESSFUL`) y transferencias SPEI para activar la suscripción Pro ($399–$499 MXN/mes).
+  - `GET /api/billing/status`: Retorna estatus en tiempo real, días restantes del periodo, límites de IA y banderas Pro para el front-end.
+  - `POST /api/billing/manual-activate`: Permite a Super Admins activar planes manualmente para despachos o cortesías comerciales.
+
+#### 3. Experiencia de Usuario Front-End: Hook & Modal Institucional
+
+- **Hook React `src/hooks/useProPlan.ts`:**
+  - Monitorea reactivamente el estatus Pro del despacho, almacena en caché local y expone funciones de verificación `canUseProFeature()` y `openUpgradeModal()`.
+- **Componente `src/components/billing/ProUpgradeModal.tsx`:**
+  - Modal sobrio y respetuoso que comunica los beneficios del Plan Pro (consultas ilimitadas con Noah AI, descargas de papeles de trabajo oficiales, auditoría de layouts y soporte prioritario).
+  - Botón de checkout directo con Clip y opción transparente de continuar en Modo Libre sin bloqueos hostiles.
+
+#### 4. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **531 pruebas en 75 suites (100% éxito)** — `pnpm test`.
+- **Nuevas suites de prueba:**
+  - `src/server/billing/billingWebhook.test.ts` (7 pruebas backend).
+  - `src/components/billing/ProUpgradeModal.test.tsx` (5 pruebas frontend).
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
