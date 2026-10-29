@@ -51,4 +51,32 @@ describe('ErrorBoundary Component', () => {
 
     expect(handleReset).toHaveBeenCalledTimes(1);
   });
+
+  it('detecta falla de chunk dinámico y ofrece actualizar la plataforma', async () => {
+    function ChunkFailChild(): JSX.Element {
+      throw new Error(
+        'Failed to fetch dynamically imported module: https://ledger.arksystems.site/assets/index-BV46_aFI.js'
+      );
+    }
+
+    const reloadMock = vi.fn();
+    Object.defineProperty(window, 'location', {
+      configurable: true,
+      value: { reload: reloadMock },
+    });
+
+    render(
+      <ErrorBoundary toolName="Cierre de Nómina Masivo">
+        <ChunkFailChild />
+      </ErrorBoundary>
+    );
+
+    expect(screen.getByText('Actualización Disponible')).toBeInTheDocument();
+    expect(screen.getByText(/Se ha desplegado una versión actualizada/i)).toBeInTheDocument();
+    const updateButton = screen.getByRole('button', { name: /Actualizar Plataforma/i });
+    expect(updateButton).toBeInTheDocument();
+
+    await userEvent.click(updateButton);
+    expect(reloadMock).toHaveBeenCalledTimes(1);
+  });
 });

@@ -40,7 +40,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Cierre de Nómina Masivo (Batch DOF)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Ingesta de plantillas CSV/Excel. Determina simultáneamente por colaborador ISR Art. 96, Subsidio al Empleo, factor de integración y SBC topado a 25 UMAs, cuotas IMSS Obrero e ISN estatal de las 32 entidades. Emite Cédula Concentradora Carta horizontal con Sello SHA-256 + QR descargable en PDF y Layout de Dispersión Bancaria.',
+      'Ingesta de plantillas CSV/Excel y módulo de Cruce Laboral-Fiscal (CFDI Nómina vs. Reloj Checador Art. 132 LFT). Determina simultáneamente por colaborador ISR Art. 96, Subsidio al Empleo, factor de integración, cuotas IMSS obrero e ISN estatal de las 32 entidades. Audita discrepancias de jornada y horas extras, emitiendo Cédula Concentradora y Cédula de Cruce con Sello SHA-256 + QR descargable en PDF y Layout de Dispersión Bancaria.',
   },
   {
     id: 'nomina',

@@ -75,5 +75,59 @@ describe('CierreNomina Component — Sprint 11', () => {
       expect(screen.getByText('Cierre Procesado & Sellado con Éxito')).toBeDefined();
       expect(screen.getByText('Ver Cédula Oficial (PDF & Sello)')).toBeDefined();
     });
-  }, 30_000); // paralela de la suite completa puede rebasar el timeout por defecto de 5 s. // El batch con sellado SHA-256 y QR es intrínsecamente lento en jsdom; bajo carga
+  }, 30_000);
+
+  it('permite alternar a la pestaña de Cruce Laboral-Fiscal y renderiza las zonas de carga', () => {
+    render(
+      <ExpedienteProvider>
+        <CierreNomina onBack={() => {}} />
+      </ExpedienteProvider>
+    );
+
+    const cruceTabBtn = screen.getByText('Cruce Laboral-Fiscal (CFDI vs Checador)');
+    fireEvent.click(cruceTabBtn);
+
+    expect(
+      screen.getByText(/Marco Normativo: Registro de Jornada vs. Deducibilidad/i)
+    ).toBeDefined();
+    expect(screen.getByText(/1. CFDIs de Nómina \(XML\)/i)).toBeDefined();
+    expect(screen.getByText(/2. Reloj Checador \(CSV\)/i)).toBeDefined();
+    expect(screen.getByText('Plantilla Checador CSV')).toBeDefined();
+    expect(screen.getByText('Cargar Demo (CFDI + Checador)')).toBeDefined();
+  });
+
+  it('ejecuta el cruce con el lote de demostración y visualiza score, semáforo y cédula oficial', async () => {
+    render(
+      <ExpedienteProvider>
+        <CierreNomina onBack={() => {}} />
+      </ExpedienteProvider>
+    );
+
+    // 1. Cambiar a la pestaña de Cruce
+    const cruceTabBtn = screen.getByText('Cruce Laboral-Fiscal (CFDI vs Checador)');
+    fireEvent.click(cruceTabBtn);
+
+    // 2. Cargar caso demo de 1-clic
+    const btnDemo = screen.getByText('Cargar Demo (CFDI + Checador)');
+    fireEvent.click(btnDemo);
+
+    // 3. Verificar que se calcula y renderiza el dictamen de inmediato
+    await waitFor(() => {
+      expect(screen.getByText(/Auditoría de Jornada/i)).toBeDefined();
+      expect(screen.getByText(/Score de Consistencia/i)).toBeDefined();
+      expect(screen.getByText(/Diagnóstico y Conclusiones de Auditoría Cruzada/i)).toBeDefined();
+      expect(screen.getByText('HERNANDEZ GARCIA ROBERTO')).toBeDefined();
+      expect(screen.getByText('LOPEZ MARTINEZ MARIANA')).toBeDefined();
+      expect(screen.getByText('SANCHEZ TORRES SOFIA')).toBeDefined();
+    });
+
+    // 4. Abrir la Cédula Oficial de Cruce
+    const btnCedula = screen.getByText('Ver Cédula Oficial (PDF & Sello)');
+    fireEvent.click(btnCedula);
+
+    await waitFor(() => {
+      expect(screen.getByText('ARK LEDGER • AUDITORÍA INTEGRAL DE JORNADA Y NÓMINA')).toBeDefined();
+      expect(screen.getByText('Descargar Auditoría CSV')).toBeDefined();
+    });
+  }, 30_000);
 });

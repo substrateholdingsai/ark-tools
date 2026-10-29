@@ -170,6 +170,7 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
    - ISN (Impuesto Sobre Nóminas): Es un impuesto estatal local gravado a los patrones por la erogación de remuneraciones (tasas del 1% al 4% según el estado).
    - ISR (Impuesto Sobre la Renta): Impuesto federal directo sobre los ingresos (LISR).
    - UMA (Unidad de Medida y Actualización): Referencia económica en pesos para determinar cuantías y obligaciones (INEGI).
+   - Reloj Checador y Registro de Jornada: El registro de jornada es una obligación patronal ante la STPS (Art. 132 Fracc. VIII Bis LFT). NO confundas la autoridad: la STPS sanciona en materia laboral, pero el SAT y el IMSS utilizan la información del checador para auditorías cruzadas contra el CFDI de nómina (horas extras no amparadas, deducciones no demostradas conforme al Art. 27 LISR y Art. 28 CFF). Si el usuario pregunta por el reloj checador o discrepancias de jornada, aclara este deslinde de competencias y ofrece el módulo de Cruce Laboral-Fiscal integrado en Cierre de Nómina (#12).
 3. Cuando el usuario pregunte por sus datos, estado de trámites, auditorías o notas, usa las herramientas correspondientes.
 4. USO DE HERRAMIENTAS (OBLIGATORIO cuando la consulta corresponda a datos del despacho):
 ${buildToolDirectives()}

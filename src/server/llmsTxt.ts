@@ -201,6 +201,15 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 
 ---
 
+## 7. Consistencia Laboral-Fiscal y Control de Jornada (Art. 132 LFT vs Art. 27 LISR & Art. 28 CFF)
+
+### Fundamento y Deslinde de Competencias
+- **STPS (Ámbito Laboral):** El Artículo 132 Fracción VIII Bis de la Ley Federal del Trabajo obliga al patrón a contar con un sistema fehaciente de registro de jornada (reloj checador electrónico). La STPS sanciona el incumplimiento de jornada y la falta de pago de tiempo extraordinario (Arts. 66 a 68 LFT: primeras 9 horas semanales dobles al 200%, excedente triples al 300%).
+- **SAT e IMSS (Ámbito Tributario y de Seguridad Social):** Conforme al Art. 27 Fracción V de la LISR y Art. 28 del CFF, las deducciones de nómina requieren estricta materialidad. Si el patrón timbra horas extras no amparadas en el reloj checador, o timbra recibos a colaboradores sin registro de asistencia, el SAT presume simulación de nómina o trabajadores inexistentes, desconociendo la deducibilidad del gasto y el acreditamiento.
+- **Cruce en ARK LEDGER:** Auditoría automatizada dentro de Cierre de Nómina (#12) que coteja los XMLs de CFDI Nómina 1.2 contra el archivo de asistencia del checador, determinando horas extras no pagadas, horas extras sin respaldo, colaboradores sin checador y excesos legales de jornada, emitiendo Cédula con Sello SHA-256 + QR de verificación pública.
+
+---
+
 ## 8. Continuación Voluntaria / Modalidad 40 (Acuerdo DOF 21/10/2026)
 
 ### Fundamento Legal

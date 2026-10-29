@@ -124,3 +124,88 @@ export interface ValidacionImportacion {
   advertencias: string[];
   errores: string[];
 }
+
+/**
+ * ════════════════════════════════════════════════════════════════════════════
+ * CRUCE LABORAL-FISCAL (CFDI NÓMINA VS. RELOJ CHECADOR / ASISTENCIA)
+ * Fundamento: Art. 132 Fracc. VIII Bis LFT, Arts. 66-68 LFT, Art. 27 LISR, Art. 28 CFF.
+ * ════════════════════════════════════════════════════════════════════════════
+ */
+
+export type TipoDiscrepanciaJornada =
+  | 'SIN_DISCREPANCIA'
+  | 'HORAS_EXTRAS_NO_PAGADAS'
+  | 'HORAS_EXTRAS_SIN_REGISTRO'
+  | 'SIN_REGISTRO_CHECADOR'
+  | 'EMPLEADO_SIN_CFDI'
+  | 'EXCESO_JORNADA_LEGAL_TRIPLE';
+
+export type NivelRiesgoCruce = 'BAJO' | 'MEDIO' | 'ALTO' | 'CRITICO';
+
+export interface EmpleadoCfdiNomina {
+  uuid?: string;
+  rfc: string;
+  nombre: string;
+  curp?: string;
+  numSeguridadSocial?: string;
+  fechaInicioPago?: string;
+  fechaFinPago?: string;
+  numDiasPagados: number;
+  horasOrdinariasPagadas: number;
+  horasExtrasPagadas: number;
+  horasDoblesPagadas: number;
+  horasTriplesPagadas: number;
+  importeHorasExtrasPagado: number;
+  totalPercepciones: number;
+}
+
+export interface EmpleadoChecadorConsolidado {
+  rfc: string;
+  nombre: string;
+  totalHorasTrabajadas: number;
+  totalHorasOrdinarias: number;
+  totalHorasExtras: number;
+  diasConRegistro: number;
+  fechas: string[];
+}
+
+export interface DiscrepanciaColaborador {
+  rfc: string;
+  nombre: string;
+  curp?: string;
+  horasChecadorTotal: number;
+  horasChecadorExtras: number;
+  horasCfdiOrdinarias: number;
+  horasCfdiExtras: number;
+  diferenciaHorasExtras: number;
+  tipoDiscrepancia: TipoDiscrepanciaJornada;
+  nivelRiesgo: NivelRiesgoCruce;
+  detalles: string;
+  fundamentoLegal: string;
+  impactoFiscalLaboral: string;
+}
+
+export interface DictamenCruceJornada {
+  id: string;
+  fechaEmision: string;
+  empresaNombre: string;
+  empresaRfc?: string;
+  periodoAnalizado: {
+    fechaInicio?: string;
+    fechaFin?: string;
+  };
+  totalColaboradoresCfdi: number;
+  totalColaboradoresChecador: number;
+  totalColaboradoresAuditados: number;
+  colaboradoresConDiscrepancia: number;
+  totalHorasExtrasChecador: number;
+  totalHorasExtrasPagadasCfdi: number;
+  diferenciaNetaHorasExtras: number;
+
+  scoreConsistencia: number;
+  nivelRiesgoGlobal: NivelRiesgoCruce;
+
+  alertasPrincipales: string[];
+  discrepancias: DiscrepanciaColaborador[];
+  selloSha256: string;
+}

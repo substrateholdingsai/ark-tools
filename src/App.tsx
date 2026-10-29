@@ -5,7 +5,7 @@
  * Fase D: Compliance — Auditoría de Cobranza + Guía SAT/IMSS.
  */
 
-import { useState, lazy, Suspense } from 'react';
+import { useState, Suspense } from 'react';
 import {
   Calculator,
   FileSpreadsheet,
@@ -47,58 +47,59 @@ import type { NavItem } from './components';
 import { AlertasVigencia } from '@/data/valores-vigentes';
 import { currentBrand } from '@/config/brand';
 import { CanacoPortalBanner, CanacoAdminPadron, CanacoLandingPage } from '@/components/canaco';
+import { lazyWithRetry } from '@/lib/lazyWithRetry';
 
-// Lazy-loaded tools para optimización máxima de bundle (<150 KB chunk inicial)
-const CalculadoraISN = lazy(() =>
+// Lazy-loaded tools para optimización máxima de bundle (<150 KB chunk inicial) con resiliencia ante despliegues
+const CalculadoraISN = lazyWithRetry(() =>
   import('./tools/isn').then((m) => ({ default: m.CalculadoraISN }))
 );
-const CalculadoraSBC = lazy(() =>
+const CalculadoraSBC = lazyWithRetry(() =>
   import('./tools/sbc').then((m) => ({ default: m.CalculadoraSBC }))
 );
-const CalculadoraNomina = lazy(() =>
+const CalculadoraNomina = lazyWithRetry(() =>
   import('./tools/nomina').then((m) => ({ default: m.CalculadoraNomina }))
 );
-const ConversorXML = lazy(() =>
+const ConversorXML = lazyWithRetry(() =>
   import('./tools/xml-excel').then((m) => ({ default: m.ConversorXML }))
 );
-const ValidadorXML = lazy(() =>
+const ValidadorXML = lazyWithRetry(() =>
   import('./tools/xml-validador').then((m) => ({ default: m.ValidadorXML }))
 );
-const GeneradorSPEI = lazy(() =>
+const GeneradorSPEI = lazyWithRetry(() =>
   import('./tools/spei').then((m) => ({ default: m.GeneradorSPEI }))
 );
-const CalculadoraLeasing = lazy(() =>
+const CalculadoraLeasing = lazyWithRetry(() =>
   import('./tools/leasing').then((m) => ({ default: m.CalculadoraLeasing }))
 );
-const GuiaSATIMSS = lazy(() =>
+const GuiaSATIMSS = lazyWithRetry(() =>
   import('./tools/guia-sat-imss').then((m) => ({ default: m.GuiaSATIMSS }))
 );
-const TimbradoFacturas = lazy(() =>
+const TimbradoFacturas = lazyWithRetry(() =>
   import('./tools/timbrado/TimbradoFacturas').then((m) => ({ default: m.TimbradoFacturas }))
 );
-const AuditorCobranza = lazy(() => import('@/tools/auditor-cobranza'));
-const MapaActivos = lazy(() => import('@/tools/mapa-activos'));
-const CalculadoraFiniquitos = lazy(() => import('@/tools/finiquitos'));
-const CierreNomina = lazy(() =>
+const AuditorCobranza = lazyWithRetry(() => import('@/tools/auditor-cobranza'));
+const MapaActivos = lazyWithRetry(() => import('@/tools/mapa-activos'));
+const CalculadoraFiniquitos = lazyWithRetry(() => import('@/tools/finiquitos'));
+const CierreNomina = lazyWithRetry(() =>
   import('@/tools/cierre-nomina').then((m) => ({ default: m.CierreNomina }))
 );
-const CalculadoraResico = lazy(() => import('@/tools/resico'));
-const AdminPanel = lazy(() =>
+const CalculadoraResico = lazyWithRetry(() => import('@/tools/resico'));
+const AdminPanel = lazyWithRetry(() =>
   import('./components/admin/AdminPanel').then((m) => ({ default: m.AdminPanel }))
 );
-const CalculadoraBalance = lazy(() =>
+const CalculadoraBalance = lazyWithRetry(() =>
   import('./tools/balance-general').then((m) => ({ default: m.CalculadoraBalance }))
 );
-const ConciliadorAnexo24 = lazy(() =>
+const ConciliadorAnexo24 = lazyWithRetry(() =>
   import('./tools/anexo24').then((m) => ({ default: m.ConciliadorAnexo24 }))
 );
-const MonitorLFPIORPI = lazy(() =>
+const MonitorLFPIORPI = lazyWithRetry(() =>
   import('./tools/monitor-lfpiorpi').then((m) => ({ default: m.MonitorLFPIORPI }))
 );
-const CalculadoraRecargos = lazy(() =>
+const CalculadoraRecargos = lazyWithRetry(() =>
   import('./tools/recargos').then((m) => ({ default: m.CalculadoraRecargos }))
 );
-const Modalidad40 = lazy(() =>
+const Modalidad40 = lazyWithRetry(() =>
   import('./tools/modalidad40').then((m) => ({ default: m.Modalidad40 }))
 );
 
