@@ -38,6 +38,7 @@ import { CanacoLogo } from '@/components/brand/CanacoLogo';
 import { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
 import { ConstanciaSocioModal } from './ConstanciaSocioModal';
 import { BuzonDocumentalModal } from './BuzonDocumentalModal';
+import { SimmpleReferralButton } from '../SimmpleReferralButton';
 import type { SocioCanacoRegistro } from './types';
 
 interface CanacoLandingPageProps {
@@ -476,6 +477,8 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                           </div>
                         </div>
                       </div>
+
+                      <SimmpleReferralButton className="hidden md:inline-flex" />
 
                       <button
                         type="button"

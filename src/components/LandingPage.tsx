@@ -29,6 +29,7 @@ import {
 import { useAuth } from '@/context/AuthContext';
 import { Logo } from './Logo';
 import { Footer } from './Footer';
+import { SimmpleReferralButton } from './SimmpleReferralButton';
 
 interface ToolPreview {
   icon: typeof Calculator;
@@ -394,6 +395,8 @@ export function LandingPage() {
               <MessageSquare size={13} className="text-emerald-600" />
               <span>Soporte Directo</span>
             </a>
+
+            <SimmpleReferralButton className="hidden md:inline-flex" />
 
             <button
               onClick={() => openAuth('login')}
