@@ -20,9 +20,9 @@ function leerToolIdsDelRouter(): string[] {
 }
 
 describe('Catálogo Canónico de Herramientas', () => {
-  it('expone 19 herramientas con identificadores únicos', () => {
-    expect(TOTAL_HERRAMIENTAS).toBe(19);
-    expect(CATALOGO_HERRAMIENTAS).toHaveLength(19);
+  it('expone 20 herramientas con identificadores únicos', () => {
+    expect(TOTAL_HERRAMIENTAS).toBe(20);
+    expect(CATALOGO_HERRAMIENTAS).toHaveLength(20);
 
     const ids = CATALOGO_HERRAMIENTAS.map((h) => h.id);
     expect(new Set(ids).size).toBe(ids.length);

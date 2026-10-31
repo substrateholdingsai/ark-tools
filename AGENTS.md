@@ -1,6 +1,6 @@
 # ARK LEDGER — Guía de trabajo para agentes y mantenedores
 
-Suite de 18 herramientas fiscales, laborales y de compliance para contadores en México.
+Suite de 20 herramientas fiscales, laborales y de compliance para contadores en México.
 SPA React + Cloudflare Workers + D1, conGEO Engine (`/llms.txt`) para descubrimiento por agentes IA.
 
 ## Comandos

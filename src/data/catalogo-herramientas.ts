@@ -167,6 +167,13 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     descripcion:
       'Proyección actuarial de pensión bajo el Régimen 1973 de la LSS conforme a los Arts. 167 y 218. Aplica la restricción del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026) que topa el nuevo registro al salario previo más 1 UMA diaria. Calcula cuota mensual (14.438% en 2026), retorno de inversión (ROI) y emite Papel de Trabajo Oficial con Sello SHA-256 + QR.',
   },
+  {
+    id: 'auditor-cfdi-atipico',
+    nombre: 'Detector de Comportamientos Atípicos en CFDI',
+    categoria: 'SAT y Auditoría CFDI 4.0 (100% Local en Navegador)',
+    descripcion:
+      'Auditor forense y preventivo de CFDI 4.0 y 3.3. Ingesta masiva ZIP/XML y cruce automático con Metadata del SAT. Algoritmos estadísticos de Ley de Benford, Z-Score mensual, detección de fraccionamiento de pagos en efectivo (Art. 27 LISR), cancelaciones extemporáneas (Art. 29-A CFF) y cruce con lista negra EFOS (Art. 69-B CFF). Malla mensual de calor, Matriz de Riesgo 5×5 y emisión de Dictamen Ejecutivo con exportación Excel multi-hoja.',
+  },
 ];
 
 /** Total de herramientas de la suite. Se deriva del catálogo: nunca se escribe a mano. */

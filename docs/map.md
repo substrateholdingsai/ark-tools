@@ -1,6 +1,6 @@
 # ARK LEDGER — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 2.8 — Suite de 19 Herramientas + Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2 (#12) + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags con generador SVG puro `forge_ark_meta.py` + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
+**Versión:** 2.9 — Suite de 20 Herramientas + Detector de Comportamientos Atípicos en CFDI (#20) + Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2 (#12) + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags con generador SVG puro `forge_ark_meta.py` + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
 **Fecha:** Octubre 2026 (verificado contra `main` y desplegado en producción)  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://ledger.arksystems.site](https://ledger.arksystems.site)  
@@ -12,6 +12,7 @@
 
 | Métrica                                                    | Estado                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Detector de Atípicos CFDI (#20)**                        | 100% Implementado y Verificado (Auditoría forense CFDI 4.0/3.3, ingesta masiva ZIP/XML/TXT en Web Worker + IndexedDB multi-RFC, cruce Metadata SAT, Ley de Benford en primer dígito, Z-Score mensual \|Z\|>2, fraccionamiento de efectivo Art. 27 LISR, cancelaciones extemporáneas Art. 29-A CFF, cruce EFOS 69-B, Matriz de Riesgo 5×5, Malla Mensual Jan-Dec, Dictamen Pericial exportable a Excel y PDF)           |
 | **Motor de Marca Blanca (White-Label)**                    | 100% Implementado y Verificado (Brand Config Engine con resolución por variable de entorno o hostname, perfiles desacoplados `ark` y `canaco_merida`, logotipo SVG vectorial oficial CANACO SERVYTUR MÉRIDA con variantes `symbol` y `full`, catálogo curado de 12 herramientas para comercio y soporte para ventanilla de afiliaciones)                                                                               |
 | **Simulador Modalidad 40 (#19)**                           | 100% Implementado (Cálculo actuarial LSS 1973 Art. 167 y 171 con restricción Acuerdo DOF 21/10/2026 ACDO.AS2.HCT.101026/302.P.DG, tope en salario previo + 1 UMA diaria, cuota 2026 al 14.438%, ROI financiero, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_modalidad_40`)                                                                                                                            |
 | **Actualización y Recargos (#18)**                         | 100% Implementado y Desplegado en Producción (Cálculo determinista CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales sin redondeo, regla de no-deflación, mora al 1.47% mensual LIF Art. 8, desglose mes a mes, LiquidGlassDome, Papel de Trabajo Oficial SHA-256 + QR y tool de IA `calcular_recargos_fiscales`)                                                                                     |
@@ -47,7 +48,7 @@
 | **Continuous Integration**                                 | GitHub Actions en `push` a `main` y pull requests: typecheck, lint, format:check, verify:catalogo, test y build (`.github/workflows/ci.yml`)                                                                                                                                                                                                                                                                           |
 | **Build Vite (SPA)**                                       | 100% funcional con bundle optimizado (Vite build completado; 1,815 módulos transformados)                                                                                                                                                                                                                                                                                                                              |
 | **Git & Repositorio**                                      | Rama `main` en Sprint 29 (Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2)                                                                                                                                                                                                                                                                                                                                  |
-| **Herramientas Integradas**                                | 19 de 19 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Conciliación Anexo 24, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo, Monitor LFPIORPI, Actualización y Recargos CFF, Modalidad 40 IMSS) + Admin + Team                                                                     |
+| **Herramientas Integradas**                                | 20 de 20 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Conciliación Anexo 24, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo, Monitor LFPIORPI, Actualización y Recargos CFF, Modalidad 40 IMSS, Detector de Comportamientos Atípicos CFDI) + Admin + Team                          |
 
 ---
 
@@ -1770,6 +1771,48 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 
 ---
 
+### Sprint 30 (Octubre 2026) — Detector de Comportamientos Atípicos en CFDI (#20) — Completado ✅
+
+#### 1. Arquitectura y Capacidades de Auditoría Forense Local-First
+
+- **Ingesta y Procesamiento 100% en Cliente:** Soporte para descompresión de paquetes `.zip`, ingesta de archivos `.xml` (CFDI 4.0/3.3) y metadata `.txt` del SAT con delimitador `~`. Procesamiento streaming en memoria con persistencia en **IndexedDB** (`ark_auditor_cfdi_db`) sin límite de 5 MB de localStorage.
+- **Gestión Multi-RFC:** Alta, cambio y administración de contribuyentes con conservación de datos y parámetros independientes por RFC y ejercicio fiscal.
+- **Motor Estadístico y Forense:**
+  1. _Ley de Benford:_ Evaluación del primer dígito (1–9) contra la distribución teórica de Benford $P(d)=\log_{10}(1+1/d)$ para detectar alteración manual o facturación artificial.
+  2. _Puntaje Z y Rango Intercuartílico (IQR):_ Detección de volatilidad de importes mensuales que superen $|Z| > 2.0$.
+  3. _Fraccionamiento de Efectivo:_ Detección de comprobantes emitidos o recibidos en el mismo día hacia la misma contraparte $< \$2,000$ que acumulados eluden el Art. 27 Fracc. III de la LISR.
+  4. _Efectivo Superior a \$2,000:_ Detección directa de erogaciones Forma 01 no deducibles.
+  5. _Desfase de Timbrado:_ Alerta de comprobantes timbrados más de 72 horas después de su emisión (Art. 39 RCFF).
+  6. _Horarios Atípicos:_ Timbrados en madrugada (23:00 a 05:00) o días inhábiles.
+  7. _Conciliación Metadata SAT:_ Detección de comprobantes con estatus `0` (Cancelados ante el SAT) que subsisten activos en contabilidad local, y cancelaciones extemporáneas posteriores al ejercicio (Art. 29-A CFF).
+  8. _Cruce 69-B:_ Identificación de operaciones con RFCs presuntos o definitivos del listado de EFOS.
+  9. _Concentración HHI:_ Índice Herfindahl-Hirschman de clientes y proveedores.
+- **Malla Mensual Jan–Dec:** Tablero de 12 meses con mapas de calor semánticos, cálculo de flujo neto e inspección modal de comprobantes (drilldown con copia de UUID).
+- **Matriz de Riesgo 5×5:** Cuadrante interactivo de Probabilidad (1–5) vs Impacto (1–5) con semáforo y estatus de seguimiento de hallazgos (_pendiente_, _en revisión_, _aclarado_, _corregido_).
+- **Resumen Ejecutivo & Dictamen Pericial:** Redacción automática en tercera persona formal con exportación directa a PDF/impresión y Cédula Excel multi-hoja (`xlsx`).
+- **Respaldo y Recuperación:** Exportación de instantánea JSON y cargador instantáneo de datos demo para validación inmediata sin archivos reales.
+
+#### 2. Componentes y Código Creado
+
+- `src/tools/auditor-cfdi-atipico/types.ts`
+- `src/tools/auditor-cfdi-atipico/lib/indexedDbStorage.ts`
+- `src/tools/auditor-cfdi-atipico/lib/zipIngestor.ts`
+- `src/tools/auditor-cfdi-atipico/lib/motorForense.ts`
+- `src/tools/auditor-cfdi-atipico/lib/motorForense.test.ts` (7 tests unitarios)
+- `src/tools/auditor-cfdi-atipico/lib/generadorDemo.ts`
+- `src/tools/auditor-cfdi-atipico/lib/exportarAuditoriaExcel.ts`
+- `src/tools/auditor-cfdi-atipico/components/GestionContribuyentes.tsx`
+- `src/tools/auditor-cfdi-atipico/components/MallaMensual.tsx`
+- `src/tools/auditor-cfdi-atipico/components/MatrizRiesgo5x5.tsx`
+- `src/tools/auditor-cfdi-atipico/components/ConciliacionMetadata.tsx`
+- `src/tools/auditor-cfdi-atipico/components/CriteriosConfig.tsx`
+- `src/tools/auditor-cfdi-atipico/components/ResumenEjecutivo.tsx`
+- `src/tools/auditor-cfdi-atipico/components/DetalleComprobantesModal.tsx`
+- `src/tools/auditor-cfdi-atipico/AuditorCFDIAtipico.tsx`
+- `src/tools/auditor-cfdi-atipico/index.ts`
+
+---
+
 ### Sprint 29 (Octubre 2026) — Módulo de Cruce Laboral-Fiscal de Jornada (CFDI Nómina 1.2 vs Reloj Checador / Asistencia LFT Art. 132 Fracc. VIII Bis) — Completado ✅
 
 #### 1. Fundamentación Jurídica y Análisis de Auditoría Cruzada (SAT vs IMSS vs STPS)
@@ -1937,6 +1980,48 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 30 (Octubre 2026) — Detector de Comportamientos Atípicos en CFDI (#20) — Completado ✅
+
+#### 1. Arquitectura y Capacidades de Auditoría Forense Local-First
+
+- **Ingesta y Procesamiento 100% en Cliente:** Soporte para descompresión de paquetes `.zip`, ingesta de archivos `.xml` (CFDI 4.0/3.3) y metadata `.txt` del SAT con delimitador `~`. Procesamiento streaming en memoria con persistencia en **IndexedDB** (`ark_auditor_cfdi_db`) sin límite de 5 MB de localStorage.
+- **Gestión Multi-RFC:** Alta, cambio y administración de contribuyentes con conservación de datos y parámetros independientes por RFC y ejercicio fiscal.
+- **Motor Estadístico y Forense:**
+  1. _Ley de Benford:_ Evaluación del primer dígito (1–9) contra la distribución teórica de Benford $P(d)=\log_{10}(1+1/d)$ para detectar alteración manual o facturación artificial.
+  2. _Puntaje Z y Rango Intercuartílico (IQR):_ Detección de volatilidad de importes mensuales que superen $|Z| > 2.0$.
+  3. _Fraccionamiento de Efectivo:_ Detección de comprobantes emitidos o recibidos en el mismo día hacia la misma contraparte $< \$2,000$ que acumulados eluden el Art. 27 Fracc. III de la LISR.
+  4. _Efectivo Superior a \$2,000:_ Detección directa de erogaciones Forma 01 no deducibles.
+  5. _Desfase de Timbrado:_ Alerta de comprobantes timbrados más de 72 horas después de su emisión (Art. 39 RCFF).
+  6. _Horarios Atípicos:_ Timbrados en madrugada (23:00 a 05:00) o días inhábiles.
+  7. _Conciliación Metadata SAT:_ Detección de comprobantes con estatus `0` (Cancelados ante el SAT) que subsisten activos en contabilidad local, y cancelaciones extemporáneas posteriores al ejercicio (Art. 29-A CFF).
+  8. _Cruce 69-B:_ Identificación de operaciones con RFCs presuntos o definitivos del listado de EFOS.
+  9. _Concentración HHI:_ Índice Herfindahl-Hirschman de clientes y proveedores.
+- **Malla Mensual Jan–Dec:** Tablero de 12 meses con mapas de calor semánticos, cálculo de flujo neto e inspección modal de comprobantes (drilldown con copia de UUID).
+- **Matriz de Riesgo 5×5:** Cuadrante interactivo de Probabilidad (1–5) vs Impacto (1–5) con semáforo y estatus de seguimiento de hallazgos (_pendiente_, _en revisión_, _aclarado_, _corregido_).
+- **Resumen Ejecutivo & Dictamen Pericial:** Redacción automática en tercera persona formal con exportación directa a PDF/impresión y Cédula Excel multi-hoja (`xlsx`).
+- **Respaldo y Recuperación:** Exportación de instantánea JSON y cargador instantáneo de datos demo para validación inmediata sin archivos reales.
+
+#### 2. Componentes y Código Creado
+
+- `src/tools/auditor-cfdi-atipico/types.ts`
+- `src/tools/auditor-cfdi-atipico/lib/indexedDbStorage.ts`
+- `src/tools/auditor-cfdi-atipico/lib/zipIngestor.ts`
+- `src/tools/auditor-cfdi-atipico/lib/motorForense.ts`
+- `src/tools/auditor-cfdi-atipico/lib/motorForense.test.ts` (7 tests unitarios)
+- `src/tools/auditor-cfdi-atipico/lib/generadorDemo.ts`
+- `src/tools/auditor-cfdi-atipico/lib/exportarAuditoriaExcel.ts`
+- `src/tools/auditor-cfdi-atipico/components/GestionContribuyentes.tsx`
+- `src/tools/auditor-cfdi-atipico/components/MallaMensual.tsx`
+- `src/tools/auditor-cfdi-atipico/components/MatrizRiesgo5x5.tsx`
+- `src/tools/auditor-cfdi-atipico/components/ConciliacionMetadata.tsx`
+- `src/tools/auditor-cfdi-atipico/components/CriteriosConfig.tsx`
+- `src/tools/auditor-cfdi-atipico/components/ResumenEjecutivo.tsx`
+- `src/tools/auditor-cfdi-atipico/components/DetalleComprobantesModal.tsx`
+- `src/tools/auditor-cfdi-atipico/AuditorCFDIAtipico.tsx`
+- `src/tools/auditor-cfdi-atipico/index.ts`
 
 ---
 

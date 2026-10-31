@@ -102,6 +102,9 @@ const CalculadoraRecargos = lazyWithRetry(() =>
 const Modalidad40 = lazyWithRetry(() =>
   import('./tools/modalidad40').then((m) => ({ default: m.Modalidad40 }))
 );
+const AuditorCFDIAtipico = lazyWithRetry(() =>
+  import('./tools/auditor-cfdi-atipico').then((m) => ({ default: m.AuditorCFDIAtipico }))
+);
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -127,6 +130,7 @@ export type ToolId =
   | 'monitor-lfpiorpi'
   | 'recargos'
   | 'modalidad40'
+  | 'auditor-cfdi-atipico'
   | 'admin';
 
 export type ToolRoute = ToolId;
@@ -247,6 +251,7 @@ export function App() {
     'monitor-lfpiorpi': 'Monitor LFPIORPI',
     recargos: 'Actualización y Recargos CFF',
     modalidad40: 'Simulador Modalidad 40 (DOF 2026)',
+    'auditor-cfdi-atipico': 'Detector de Atípicos CFDI',
     admin: 'Super Admin Console',
   };
 
@@ -334,6 +339,9 @@ export function App() {
 
       case 'modalidad40':
         return <Modalidad40 onBack={goToDashboard} />;
+
+      case 'auditor-cfdi-atipico':
+        return <AuditorCFDIAtipico />;
 
       case 'dashboard':
       default:
@@ -694,6 +702,14 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
             badge="PRO"
             badgeVariant="gold"
             onSelect={() => onSelectTool('anexo24')}
+          />
+          <ToolCard
+            icon={ShieldAlert}
+            title="Detector de Atípicos CFDI"
+            description="Auditoría forense CFDI 4.0, cruce Metadata SAT, Ley de Benford, Z-Score y matriz 5×5."
+            badge="NUEVO"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('auditor-cfdi-atipico')}
           />
         </CategorySection>
       )}
