@@ -28,11 +28,13 @@ import {
   Crown,
   PhoneCall,
   X,
+  Inbox,
 } from 'lucide-react';
 import { useOptionalAuth } from '@/context/AuthContext';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
 import { ConstanciaSocioModal } from './ConstanciaSocioModal';
 import { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
+import { AdminExpedienteModal } from './AdminExpedienteModal';
 import type { SocioCanacoRegistro } from './types';
 
 interface LeadRow {
@@ -57,6 +59,7 @@ export function CanacoAdminPadron() {
   const [filtroEstatus, setFiltroEstatus] = useState<string>('todos');
   const [filtroSector, setFiltroSector] = useState<string>('todos');
   const [socioSeleccionado, setSocioSeleccionado] = useState<SocioCanacoRegistro | null>(null);
+  const [expedienteAdminSocio, setExpedienteAdminSocio] = useState<LeadRow | null>(null);
   const [modalAltaOpen, setModalAltaOpen] = useState(false);
   const [modalRecordatorioMasivoOpen, setModalRecordatorioMasivoOpen] = useState(false);
   const [recordandoIndividualId, setRecordandoIndividualId] = useState<string | null>(null);
@@ -677,6 +680,16 @@ export function CanacoAdminPadron() {
 
                           <button
                             type="button"
+                            onClick={() => setExpedienteAdminSocio(lead)}
+                            className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-henequen-terra/40 bg-amber-50/50 px-2.5 py-1 text-[11px] font-semibold text-henequen-terra transition hover:bg-amber-100/60"
+                            title="Cotejar expediente documental del socio"
+                          >
+                            <Inbox size={12} />
+                            <span>Expediente</span>
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={() => verCedulaSocio(lead)}
                             className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-henequen-arena bg-white px-2.5 py-1 text-[11px] font-semibold text-henequen-anil transition hover:bg-henequen-sisal/40"
                             title="Ver Cédula Oficial SIEM con QR"
@@ -701,6 +714,23 @@ export function CanacoAdminPadron() {
           isOpen={!!socioSeleccionado}
           onClose={() => setSocioSeleccionado(null)}
           socio={socioSeleccionado}
+        />
+      )}
+
+      {/* Modal de Cotejo Documental (Admin Expedientes) */}
+      {expedienteAdminSocio && (
+        <AdminExpedienteModal
+          isOpen={!!expedienteAdminSocio}
+          onClose={() => setExpedienteAdminSocio(null)}
+          rfc={
+            expedienteAdminSocio.notas?.match(/RFC:\s*([A-Z0-9]{12,13})/i)?.[1] || 'AMA200101AB1'
+          }
+          razonSocial={expedienteAdminSocio.web || 'Comercio Registrado'}
+          whatsapp={expedienteAdminSocio.whatsapp}
+          contactoNombre={expedienteAdminSocio.contacto_nombre}
+          onDictamenActualizado={() => {
+            void cargarPadron();
+          }}
         />
       )}
 

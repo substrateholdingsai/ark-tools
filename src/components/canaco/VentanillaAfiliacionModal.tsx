@@ -15,9 +15,12 @@ import {
   QrCode,
   ArrowRight,
   FileCheck2,
+  Sparkles,
+  Inbox,
 } from 'lucide-react';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
 import { calcularCuotaAfiliacion, determinarEstrato, generarFolioSiem } from './calculoCuota';
+import { BuzonDocumentalModal } from './BuzonDocumentalModal';
 import type { SectorEconomico, SocioCanacoRegistro } from './types';
 
 interface VentanillaAfiliacionModalProps {
@@ -47,6 +50,9 @@ export function VentanillaAfiliacionModal({
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
   const [isProcessing, setIsProcessing] = useState(false);
   const [registroExitoso, setRegistroExitoso] = useState<SocioCanacoRegistro | null>(null);
+  const [isMigrating, setIsMigrating] = useState(false);
+  const [migracionError, setMigracionError] = useState<string | null>(null);
+  const [buzonOpen, setBuzonOpen] = useState(false);
 
   // Formulario
   const [razonSocial, setRazonSocial] = useState('');
@@ -112,6 +118,49 @@ export function VentanillaAfiliacionModal({
   const handleCompletarPago = async () => {
     setIsProcessing(true);
 
+    // Si se selecciona tarjeta o SPEI, intentamos enrutar por Conekta
+    if (metodoPago === 'tarjeta' || metodoPago === 'spei') {
+      try {
+        const estratoActual = determinarEstrato(numEmpleados);
+        const folioSiemCalculado = generarFolioSiem(rfc, estratoActual);
+
+        const conektaRes = await fetch('/api/canaco/conekta/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razonSocial: razonSocial.trim().toUpperCase() || 'EMPRESA COMERCIAL DE YUCATÁN',
+            rfc: rfc.trim().toUpperCase() || 'XAXX010101000',
+            folioSiem: folioSiemCalculado,
+            email: email.trim() || 'contacto@empresa.com',
+            telefono: telefono.trim() || '9991234567',
+            monto: cotizacion.totalAnual,
+            cfdiRequerido,
+          }),
+        });
+
+        if (conektaRes.ok) {
+          const conektaData = (await conektaRes.json()) as {
+            ok?: boolean;
+            url?: string;
+            simulated?: boolean;
+          };
+
+          // Redirección a Conekta Checkout en vivo (CANACO merchant of record)
+          if (
+            conektaData.ok &&
+            conektaData.url &&
+            !conektaData.simulated &&
+            typeof window !== 'undefined'
+          ) {
+            window.location.href = conektaData.url;
+            return;
+          }
+        }
+      } catch {
+        // Modo offline / fallback
+      }
+    }
+
     const socioGuardado = await registrarEnCrm('activo');
 
     if (socioGuardado) {
@@ -166,9 +215,69 @@ export function VentanillaAfiliacionModal({
     onAfiliacionCompletada?.(nuevoSocio);
   };
 
+  const handleMigrarALedger = async () => {
+    if (!registroExitoso) return;
+    setIsMigrating(true);
+    setMigracionError(null);
+
+    try {
+      const res = await fetch('/api/afiliaciones/migrar-a-ledger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          folioSiem: registroExitoso.folioSiem,
+          rfc: registroExitoso.rfc,
+          razonSocial: registroExitoso.razonSocial,
+          nombreComercial: registroExitoso.nombreComercial,
+          email: registroExitoso.contacto.email,
+          telefono: registroExitoso.contacto.telefono,
+          contactoNombre: registroExitoso.contacto.nombre,
+          numEmpleados: registroExitoso.numEmpleados,
+          sector: registroExitoso.sector,
+          municipio: registroExitoso.direccion.municipio,
+          codigoPostal: registroExitoso.direccion.codigoPostal,
+        }),
+      });
+
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        tenantId?: string;
+        client?: any;
+        redirectTo?: string;
+      };
+
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'No se pudo vincular la empresa con el Expediente Único.');
+      }
+
+      if (typeof window !== 'undefined') {
+        if (data.tenantId && data.client) {
+          window.localStorage.setItem('ark.auth.active-tenant.v1', data.tenantId);
+          window.localStorage.setItem(
+            `ark_tools_active_client_${data.tenantId}`,
+            JSON.stringify(data.client)
+          );
+          window.localStorage.setItem(
+            `ark_tools_clients_cache_${data.tenantId}`,
+            JSON.stringify([data.client])
+          );
+          window.localStorage.setItem('ark_onboarding_completed', 'true');
+        }
+        window.location.href = data.redirectTo || '/?tool=nomina&welcome=siem';
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al conectar con ARK LEDGER';
+      setMigracionError(msg);
+      setIsMigrating(false);
+    }
+  };
+
   const resetForm = () => {
     setPaso(1);
     setRegistroExitoso(null);
+    setIsMigrating(false);
+    setMigracionError(null);
     onClose();
   };
 
@@ -266,14 +375,92 @@ export function VentanillaAfiliacionModal({
               </div>
             </div>
 
-            <div className="flex flex-col gap-3 pt-2 sm:flex-row">
-              <button
-                type="button"
-                onClick={resetForm}
-                className="w-full rounded-lg bg-henequen-anil px-5 py-3 text-xs font-semibold uppercase tracking-wider text-white shadow transition hover:bg-henequen-anil-deep"
-              >
-                Comenzar a usar la Suite Fiscal HENEQUÉN
-              </button>
+            {/* ═══ ACCESO DIRECTO AL BUZÓN DOCUMENTAL ═══ */}
+            <div className="rounded-xl border border-henequen-arena bg-henequen-muro p-4 text-left shadow-sm">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-henequen-anil text-white shadow">
+                    <Inbox size={18} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-henequen-anil">
+                      Paso Final: Depósito en Oficialía de Partes
+                    </h4>
+                    <p className="mt-0.5 text-[11px] text-henequen-piedra">
+                      Para emitir tu constancia definitiva, la Secretaría de Economía solicita
+                      integrar tu expediente (INE, CSF, comprobante y anexos). Puedes depositar hoy
+                      o regresar luego.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setBuzonOpen(true)}
+                  className="shadow-xs inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-henequen-terra px-4 py-2.5 text-xs font-bold text-white transition hover:bg-henequen-terra-dark"
+                >
+                  <Inbox size={14} />
+                  <span>Abrir Buzón de Expediente</span>
+                </button>
+              </div>
+            </div>
+
+            {/* ═══ PUENTE DE HANDOFF AL EXPEDIENTE ÚNICO ARK LEDGER ═══ */}
+            <div className="rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 p-5 text-left shadow-md">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow">
+                  <Building2 size={20} />
+                </div>
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                    <Sparkles size={11} />
+                    Beneficio Exclusivo Socio CANACO
+                  </div>
+                  <h4 className="font-fraunces text-base font-bold text-henequen-anil">
+                    ¡Felicidades, tu registro SIEM está listo!
+                  </h4>
+                  <p className="text-xs leading-relaxed text-henequen-grafito">
+                    Como socio de CANACO, tienes acceso gratis a la suite fiscal{' '}
+                    <strong>ARK LEDGER</strong>. ¿Quieres importar los datos de tu empresa para
+                    empezar a facturar y calcular nómina?
+                  </p>
+                </div>
+              </div>
+
+              {migracionError && (
+                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+                  {migracionError}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-end">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="rounded-lg border border-henequen-arena bg-white px-4 py-2.5 text-xs font-semibold text-henequen-piedra transition hover:text-henequen-anil"
+                >
+                  Continuar navegando en el portal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMigrarALedger}
+                  disabled={isMigrating}
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {isMigrating ? (
+                    <>
+                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      <span>Importando a Expediente Único...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={14} />
+                      <span>Importar Empresa y Abrir Nómina</span>
+                      <ArrowRight size={14} />
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         ) : (
@@ -715,6 +902,15 @@ export function VentanillaAfiliacionModal({
           </div>
         )}
       </div>
+
+      {registroExitoso && (
+        <BuzonDocumentalModal
+          isOpen={buzonOpen}
+          onClose={() => setBuzonOpen(false)}
+          rfcInicial={registroExitoso.rfc}
+          emailInicial={registroExitoso.contacto?.email || ''}
+        />
+      )}
     </div>
   );
 }

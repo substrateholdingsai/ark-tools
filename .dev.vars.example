@@ -20,9 +20,11 @@ CLIP_ENVIRONMENT=sandbox # 'sandbox' | 'production'
 # Si en el futuro se integra IA para borradores
 # OPENAI_API_KEY=sk-...
 
-# Si en el futuro se integra Stripe para planes Pro
-# STRIPE_SECRET_KEY=sk_test_...
-# STRIPE_WEBHOOK_SECRET=whsec_...
+# Conekta (CANACO SERVYTUR Mérida — merchant of record)
+# Obtén tus llaves en: https://panel.conekta.com/
+# CONEKTA_PRIVATE_KEY=key_xxxxxxxxxxxxxxxx
+# CONEKTA_WEBHOOK_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
+# CONEKTA_ENVIRONMENT=sandbox # 'sandbox' | 'production'
 
 # Si en el futuro se integra analytics
 # POSTHOG_API_KEY=phc_...

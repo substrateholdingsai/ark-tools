@@ -2099,3 +2099,117 @@ El reformateo **expuso un bug preexistente** en `src/data/valores-vigentes/hooks
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 30 — Handoff SIEM ➔ Expediente Único en LEDGER (Puente de Conversión y Onboarding Frictionless)
+
+Implementación del puente controlado entre el Padrón Cameral SIEM (`leads_ark_tools` bajo tenant `canaco_merida`) y el Expediente Único contable de los despachos (`clients` y `expedientes`).
+
+#### 1. Arquitectura y Seguridad Multi-Tenant
+
+- **Aislamiento CFF Art. 69 respetado:** No se mezclan las tablas de la Cámara con los despachos contables. La migración es unidireccional y voluntaria (opt-in explícito del contador o empresario).
+- **Auto-provisioning frictionless:** Si el socio no cuenta con sesión de ARK LEDGER al terminar su SIEM, el endpoint provisiona de forma segura su usuario verificado, su espacio de trabajo (`tenants`) y emite una cookie de sesión cifrada (`ark_session`).
+- **Deduplicación inteligente:** Clasifica según longitud de RFC (`persona_fisica` con 13 caracteres vs `empresa` con 12) y actualiza el cliente si ya existía en ese despacho en lugar de duplicar.
+- **Trazabilidad Cameral:** Sella la nota en `leads_ark_tools` con el tag `Migrado a LEDGER: [Fecha]` para visibilidad del Call Center y CRM.
+
+#### 2. Componentes y Endpoints
+
+- **Endpoint Backend `POST /api/afiliaciones/migrar-a-ledger` (`src/server/afiliacionesApi.ts`):**
+  - Ingesta Folio SIEM, RFC, Razón Social, Sector y Contacto.
+  - Resuelve tenant del usuario o crea uno nuevo con membresía `owner`.
+  - Siembra el registro en `clients` con metadatos de origen cameral (`origen: 'siem_canaco'`, `folio_siem`).
+  - Emite `Set-Cookie` y payload de redirección `/?tool=nomina&welcome=siem`.
+- **Handoff Front-End (`src/components/canaco/VentanillaAfiliacionModal.tsx`):**
+  - Pantalla post-SIEM con tarjeta destacada de beneficios y llamado a la acción: _"¡Felicidades, tu registro SIEM está listo! Como socio de CANACO, tienes acceso gratis a la suite fiscal ARK LEDGER. ¿Quieres importar los datos de tu empresa para empezar a facturar y calcular nómina?"_.
+  - Botón esmeralda institucional: _"Importar Empresa y Abrir Nómina"_.
+  - Persistencia en `localStorage` de `activeClient` y `activeTenant` para hidratación instantánea de `ExpedienteContext`.
+- **Ruteo y Bienvenida en App (`src/App.tsx`):**
+  - Soporte para inicialización de herramientas vía query parameter `?tool=nomina`.
+  - Banner de bienvenida `welcome=siem` que confirma la activación del Expediente Único listo para sellar el primer papel de trabajo.
+
+#### 3. Métricas de Calidad
+
+- **Pruebas unitarias e integración:** **536 pruebas en 75 suites (100% éxito)** — `pnpm test`.
+- **Nuevas pruebas:**
+  - `src/server/afiliacionesApi.test.ts` (4 pruebas nuevas para guest onboarding, usuarios autenticados, deduplicación y validación 400).
+  - `src/components/canaco/CanacoPortalBanner.test.tsx` (1 prueba nueva de integración para la tarjeta y botón de migración).
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 31 — Riel de Cobranza Stripe Connect (CANACO Mérida Connected Account) & Webhooks
+
+Implementación del riel institucional de pagos para CANACO SERVYTUR Mérida bajo arquitectura Stripe Connect:
+
+#### 1. Arquitectura Legal y Financiera
+
+- **Plataforma (Substrate Holdings LLC / ARK LEDGER):** Controla la infraestructura, código y emite las sesiones de Checkout.
+- **Cuenta Conectada (`STRIPE_CANACO_ACCOUNT_ID`):** CANACO Mérida es el receptor legal y titular de los fondos de registro SIEM y membresías anuales, delegando KYC a Stripe y evitando ingresos acumulables para la plataforma.
+- **Doble Riel Multimoneda Nacional:**
+  - **Stripe Connect:** Destinado a cuotas de afiliación y trámites camerales (Tarjeta de crédito/débito y CLABE dinámico SPEI vía `mx_bank_transfer`).
+  - **Clip:** Conservado para los paywalls y suscripciones Pro de ARK LEDGER ($399–$499 MXN/mes).
+
+#### 2. Endpoints y Automatizaciones
+
+- **`POST /api/canaco/stripe/create-checkout` (`src/server/canacoStripeService.ts`):**
+  - Genera sesiones de Stripe Checkout con Destination Charges enrutadas a CANACO (`payment_intent_data[transfer_data][destination]`), con retención opcional de cuota de plataforma (`application_fee_amount`) y metadatos de trazabilidad.
+  - Modo simulado automático cuando las llaves de Stripe no están configuradas en entornos locales.
+- **`POST /api/canaco/stripe/webhook` (`src/server/canacoStripeService.ts`):**
+  - Validación criptográfica de encabezados `stripe-signature` con HMAC-SHA256 y ventana de tolerancia temporal.
+  - Escucha eventos `checkout.session.completed` y `payment_intent.succeeded`.
+  - Actualiza `leads_ark_tools` en D1 a `status = 'Socio Activo'`, asigna sello digital SHA-256 inmutable y dispara correo oficial de bienvenida con Cédula Carta vía Resend.
+- **`GET /api/canaco/stripe/status`:** Endpoint de telemetría y salud de la integración.
+
+#### 3. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **542 pruebas en 76 suites (100% éxito)** — `pnpm test`.
+- **Nueva suite:** `src/server/canacoStripeService.test.ts` (6 pruebas backend).
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 32 — Buzón Documental Físico-Digital CANACO (Oficialía de Partes SIEM & Cotejo)
+
+Implementación del buzón oficial documental para el cumplimiento con la Secretaría de Economía y la Ley Federal de Cámaras Empresariales:
+
+#### 1. Metáfora Visual & Experiencia "Subes 1, Regresas Luego"
+
+- **Diseño Buzón Físico (`BuzonDocumentalModal.tsx`):** Metáfora de buzón de oficialía de partes en metal añil con placa de latón grabada, remaches dorados, ranura metálica superior con animación de sobre cayendo y 7 casilleros numerados con acabados HENEQUÉN.
+- **Flujo Reanudable:** El socio puede depositar un documento hoy, cerrar la pestaña y regresar después desde el buscador de RFC en la landing pública (`CanacoLandingPage.tsx`). Su avance se conserva íntegro en Cloudflare D1 / R2.
+- **Diferenciación Fiscal Automática:**
+  - **Persona Moral (12 dígitos RFC):** Requiere los 7 documentos (INE, CSF, Domicilio, Acta Constitutiva, Poder Notarial, Solicitud y Aviso).
+  - **Persona Física (13 dígitos RFC):** Requiere 5 documentos; Acta Constitutiva y Poder quedan marcados automáticamente como _"No aplica"_.
+
+#### 2. Casilleros Inteligentes y Generador de Anexos
+
+- **Generador de Anexos Oficiales (`anexosCanaco.ts`):** Emite en 1 clic los formatos imprimibles listos para firmar:
+  1. _Solicitud Oficial de Registro SIEM 2026_ membretada con el RFC y razón social.
+  2. _Aviso de Privacidad Integral LFPDPPP_ para firma de conformidad.
+- **Validación y Sellado Criptográfico:** Acepta PDF, JPG, PNG y WEBP hasta 10 MB, calcula huella SHA-256 inmutable por documento y emite Acuse Digital de Recepción con folio único.
+
+#### 3. Backend e Integración Admin
+
+- **Migración D1 `0009_canaco_buzon_documental.sql`:** Tabla `canaco_documentos` con almacenamiento híbrido R2 (`CANACO_DOCS`) / respaldo D1 base64 y restricciones de unicidad por casillero y socio.
+- **Endpoints REST (`src/server/canacoBuzonApi.ts`):**
+  - `GET /api/canaco/buzon/estado?rfc=`: Consulta pública de avance (X de Y) sin exponer datos sensibles.
+  - `POST /api/canaco/buzon/acceso`: Apertura del casillero validando RFC + correo registrado.
+  - `POST /api/canaco/buzon/upload`: Ingesta multipart/form-data.
+  - `GET /api/canaco/buzon/admin/expediente`: Detalle completo para la Cámara.
+  - `GET /api/canaco/buzon/admin/archivo?id=`: Visualizador de documentos en streaming.
+  - `POST /api/canaco/buzon/admin/dictaminar`: Aprobación o rechazo con motivo oficial.
+- **Consola Administrativa (`AdminExpedienteModal.tsx` & `CanacoAdminPadron.tsx`):**
+  - Botón _"Expediente"_ directo en cada fila del padrón para `horus.i2d@gmail.com` y `super_admin`.
+  - Visor de documentos, botones de dictamen (Aprobar / Rechazar) y enlace directo a WhatsApp con mensaje prearmado si un documento es borroso o ilegible.
+
+#### 4. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **547 pruebas en 77 suites (100% éxito)** — `pnpm test`.
+- **Nueva suite:** `src/server/canacoBuzonApi.test.ts` (5 pruebas backend).
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).

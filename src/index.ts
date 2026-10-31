@@ -22,6 +22,8 @@ import { checkAlegraAccountsHealth } from './server/alegra/cron';
 import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './server/llmsTxt';
 import { botApp } from './server/bots/botIngestionApi';
 import { handleBillingApiRequest } from './server/billing/billingWebhook';
+import { handleCanacoConektaApiRequest } from './server/canacoConektaService';
+import { handleCanacoBuzonApiRequest } from './server/canacoBuzonApi';
 
 export interface Env {
   // Assets (SPA)
@@ -65,6 +67,14 @@ export interface Env {
   // Ingesta de bots externos (Grok / Hermes) & Queues
   BOT_INGEST_SECRET?: string;
   BOT_PAYLOADS_QUEUE?: any;
+
+  // Conekta (CANACO SERVYTUR Mérida — merchant of record)
+  CONEKTA_PRIVATE_KEY?: string;
+  CONEKTA_WEBHOOK_PUBLIC_KEY?: string;
+  CONEKTA_ENVIRONMENT?: string;
+
+  // Buzón Documental CANACO (R2 opcional; sin binding se usa respaldo base64 en D1)
+  CANACO_DOCS?: R2Bucket;
 }
 
 export default {
@@ -217,7 +227,12 @@ async function handleApiRequest(
     return authResponse;
   }
 
-  const afiliacionesResponse = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+  const afiliacionesResponse = await handleAfiliacionesApiRequest(
+    request,
+    env,
+    corsHeaders,
+    authPrincipal
+  );
   if (afiliacionesResponse) {
     return afiliacionesResponse;
   }
@@ -235,6 +250,21 @@ async function handleApiRequest(
   );
   if (arkangelResponse) {
     return arkangelResponse;
+  }
+
+  const conektaCanacoResponse = await handleCanacoConektaApiRequest(request, env, corsHeaders);
+  if (conektaCanacoResponse) {
+    return conektaCanacoResponse;
+  }
+
+  const buzonCanacoResponse = await handleCanacoBuzonApiRequest(
+    request,
+    env,
+    corsHeaders,
+    authPrincipal
+  );
+  if (buzonCanacoResponse) {
+    return buzonCanacoResponse;
   }
 
   const leadsResponse = await handleLeadsApiRequest(request, env, corsHeaders, authPrincipal);

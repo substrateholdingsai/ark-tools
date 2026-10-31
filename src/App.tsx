@@ -146,8 +146,42 @@ const navItems: NavItem[] = [
 export function App() {
   const { isLoaded, platformRole, user } = useAuth();
   const { loadDemoData } = useExpediente();
-  const [activeTool, setActiveTool] = useState<ToolId>('dashboard');
+  const [activeTool, setActiveTool] = useState<ToolId>(() => {
+    if (typeof window === 'undefined') return 'dashboard';
+    const params = new URLSearchParams(window.location.search);
+    const toolParam = params.get('tool') as ToolId | null;
+    const validTools: ToolId[] = [
+      'isn',
+      'sbc',
+      'nomina',
+      'finiquitos',
+      'cierre-nomina',
+      'resico',
+      'xml-excel',
+      'validador',
+      'anexo24',
+      'spei',
+      'timbrado',
+      'leasing',
+      'guia-sat-imss',
+      'auditor-cobranza',
+      'mapa-activos',
+      'balance-general',
+      'monitor-lfpiorpi',
+      'recargos',
+      'modalidad40',
+      'admin',
+    ];
+    if (toolParam && validTools.includes(toolParam)) {
+      return toolParam;
+    }
+    return 'dashboard';
+  });
   const [activeNavFilter, setActiveNavFilter] = useState<NavFilter>('dashboard');
+  const [showSiemWelcome, setShowSiemWelcome] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('welcome') === 'siem';
+  });
   const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('ark_onboarding_completed') !== 'true';
@@ -339,6 +373,29 @@ export function App() {
               <ExpedienteSelector />
               <div className="mx-auto max-w-[1280px] px-6 md:px-10">
                 <AlertasVigencia />
+              </div>
+            </div>
+          )}
+
+          {/* Banner de Bienvenida y Activación Post-SIEM */}
+          {showSiemWelcome && (
+            <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
+              <div className="shadow-xs flex items-center justify-between gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-xs text-emerald-950">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="shrink-0 text-emerald-600" />
+                  <span>
+                    <strong>¡Bienvenido a ARK LEDGER!</strong> Tu empresa ha sido importada
+                    exitosamente desde el Registro SIEM. El Expediente Único está activo y listo
+                    para tu primer cálculo y sellado criptográfico.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowSiemWelcome(false)}
+                  className="rounded px-2 py-1 font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                >
+                  Entendido
+                </button>
               </div>
             </div>
           )}

@@ -13,6 +13,14 @@ import {
   generarFolioSiem,
 } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico, SocioCanacoRegistro } from '@/components/canaco/types';
+import {
+  authenticateRequest,
+  createSession,
+  cookieHeader,
+  getTenantMemberships,
+  slugify,
+  type AuthPrincipal,
+} from './auth';
 
 interface AfiliacionPayload {
   razonSocial: string;
@@ -32,10 +40,25 @@ interface AfiliacionPayload {
   tenantId?: string;
 }
 
+export interface MigrarALedgerPayload {
+  folioSiem?: string;
+  rfc?: string;
+  razonSocial?: string;
+  nombreComercial?: string;
+  email?: string;
+  telefono?: string;
+  contactoNombre?: string;
+  numEmpleados?: number;
+  sector?: SectorEconomico;
+  municipio?: string;
+  codigoPostal?: string;
+}
+
 export async function handleAfiliacionesApiRequest(
   request: Request,
   env: Env,
-  corsHeaders: Record<string, string>
+  corsHeaders: Record<string, string>,
+  authPrincipal?: AuthPrincipal | null
 ): Promise<Response | null> {
   const url = new URL(request.url);
   const path = url.pathname;
@@ -137,6 +160,350 @@ export async function handleAfiliacionesApiRequest(
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // HANDOFF SIEM ➔ EXPEDIENTE ÚNICO EN LEDGER
+  // POST /api/afiliaciones/migrar-a-ledger
+  // ─────────────────────────────────────────────────────────────────
+  if (path === '/api/afiliaciones/migrar-a-ledger' && request.method === 'POST') {
+    if (!db) {
+      return Response.json(
+        { error: 'Base de datos D1 no disponible.' },
+        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    try {
+      const body = (await request.json().catch(() => ({}))) as MigrarALedgerPayload;
+      const qRfc = body.rfc?.trim().toUpperCase();
+      const qFolio = body.folioSiem?.trim();
+      const qEmail = body.email?.trim().toLowerCase();
+
+      if (!qRfc && !qFolio && !body.razonSocial?.trim()) {
+        return Response.json(
+          { error: 'Se requiere RFC, Folio SIEM o Razón Social para realizar la migración.' },
+          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      // 1. Buscar el registro canónico en el Padrón Cameral (leads_ark_tools)
+      const leadRow = await db
+        .prepare(
+          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, contacto_nombre, notas
+           FROM leads_ark_tools
+           WHERE tenant_id = 'canaco_merida'
+             AND (
+               (? IS NOT NULL AND notas LIKE ?) OR
+               (? IS NOT NULL AND (notas LIKE ? OR web LIKE ?)) OR
+               (? IS NOT NULL AND email = ?)
+             )
+           LIMIT 1`
+        )
+        .bind(
+          qFolio || null,
+          qFolio ? `%${qFolio}%` : '',
+          qRfc || null,
+          qRfc ? `%${qRfc}%` : '',
+          qRfc ? `%${qRfc}%` : '',
+          qEmail || null,
+          qEmail || ''
+        )
+        .first<{
+          id: string;
+          web: string | null;
+          whatsapp: string | null;
+          email: string | null;
+          ciudad: string | null;
+          especialidad: string | null;
+          status: string | null;
+          contacto_nombre: string | null;
+          notas: string | null;
+        }>();
+
+      // 2. Extraer metadatos oficiales del socio
+      const rfcFromNotas = leadRow?.notas?.match(/RFC:\s*([A-Z0-9]{12,13})/i)?.[1];
+      const folioFromNotas = leadRow?.notas?.match(/Folio SIEM:\s*([^\s|]+)/i)?.[1];
+      const finalRfc = (qRfc || rfcFromNotas || 'XAXX010101000').toUpperCase();
+      const finalNombre = (
+        body.razonSocial?.trim() ||
+        leadRow?.web ||
+        'Comercio Afiliado de Yucatán'
+      ).toUpperCase();
+      const finalEmail = (body.email?.trim() || leadRow?.email || '').toLowerCase();
+      const finalTelefono = body.telefono?.trim() || leadRow?.whatsapp || '';
+      const finalContacto = body.contactoNombre?.trim() || leadRow?.contacto_nombre || '';
+      const finalFolioSiem = qFolio || folioFromNotas || 'SIEM-MID-2026-OFICIAL';
+      const finalSector = body.sector || (leadRow?.especialidad as SectorEconomico) || 'comercio';
+      const finalNumEmpleados = Math.max(1, Number(body.numEmpleados) || 5);
+      const finalMunicipio = body.municipio?.trim() || leadRow?.ciudad || 'Mérida';
+      const tipoCliente: 'empresa' | 'persona_fisica' =
+        finalRfc.length === 13 ? 'persona_fisica' : 'empresa';
+
+      // 3. Determinar o auto-aprovisionar usuario y despacho contable (Tenant)
+      const principal =
+        authPrincipal !== undefined ? authPrincipal : await authenticateRequest(request, env);
+      let targetUserId = principal?.id;
+      let targetTenantId: string | null = null;
+      let sessionCookieHeader: string | null = null;
+      const nowSec = Math.floor(Date.now() / 1000);
+
+      const runBatchOrIndividual = async (stmts: Array<{ run: () => Promise<unknown> }>) => {
+        if (typeof db.batch === 'function') {
+          await db.batch(stmts as any);
+        } else {
+          for (const stmt of stmts) {
+            await stmt.run();
+          }
+        }
+      };
+
+      if (principal) {
+        targetUserId = principal.id;
+        const memberships = await getTenantMemberships(env, principal.id);
+        const requestedTenantId = request.headers.get('x-tenant-id');
+        const matched = memberships.find((m) => m.id === requestedTenantId) || memberships[0];
+
+        if (matched) {
+          targetTenantId = matched.id;
+        } else {
+          const tenantName =
+            `Despacho ${principal.fullName || principal.email.split('@')[0]}`.slice(0, 120);
+          targetTenantId = crypto.randomUUID();
+          await runBatchOrIndividual([
+            db
+              .prepare(
+                'INSERT INTO tenants (id, name, slug, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)'
+              )
+              .bind(targetTenantId, tenantName, slugify(tenantName)),
+            db
+              .prepare(
+                'INSERT INTO tenant_memberships (user_id, tenant_id, role, created_at) VALUES (?, ?, ?, ?)'
+              )
+              .bind(principal.id, targetTenantId, 'owner', nowSec),
+          ]);
+        }
+      } else {
+        // Socio invitado sin sesión activa: Onboarding frictionless
+        const userEmail = (finalEmail || `${finalRfc.toLowerCase()}@socio-canaco.mx`)
+          .trim()
+          .toLowerCase();
+        const existingUser = await db
+          .prepare('SELECT id, email, full_name, platform_role FROM users WHERE email = ? LIMIT 1')
+          .bind(userEmail)
+          .first<{
+            id: string;
+            email: string;
+            full_name: string | null;
+            platform_role: 'user' | 'super_admin';
+          }>();
+
+        if (existingUser) {
+          targetUserId = existingUser.id;
+          const memberships = await getTenantMemberships(env, existingUser.id);
+          const firstMembership = memberships[0];
+          if (firstMembership) {
+            targetTenantId = firstMembership.id;
+          } else {
+            const tenantName =
+              `Despacho ${existingUser.full_name || existingUser.email.split('@')[0]}`.slice(
+                0,
+                120
+              );
+            targetTenantId = crypto.randomUUID();
+            await runBatchOrIndividual([
+              db
+                .prepare(
+                  'INSERT INTO tenants (id, name, slug, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)'
+                )
+                .bind(targetTenantId, tenantName, slugify(tenantName)),
+              db
+                .prepare(
+                  'INSERT INTO tenant_memberships (user_id, tenant_id, role, created_at) VALUES (?, ?, ?, ?)'
+                )
+                .bind(existingUser.id, targetTenantId, 'owner', nowSec),
+            ]);
+          }
+        } else {
+          targetUserId = crypto.randomUUID();
+          const fullName = finalContacto || finalNombre || 'Socio CANACO';
+          const tenantName = `Despacho ${fullName}`.slice(0, 120);
+          targetTenantId = crypto.randomUUID();
+
+          await runBatchOrIndividual([
+            db
+              .prepare(
+                `INSERT INTO users (id, email, full_name, platform_role, email_verified_at, created_at, updated_at)
+                 VALUES (?, ?, ?, 'user', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+              )
+              .bind(targetUserId, userEmail, fullName, nowSec),
+            db
+              .prepare(
+                'INSERT INTO tenants (id, name, slug, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)'
+              )
+              .bind(targetTenantId, tenantName, slugify(tenantName)),
+            db
+              .prepare(
+                'INSERT INTO tenant_memberships (user_id, tenant_id, role, created_at) VALUES (?, ?, ?, ?)'
+              )
+              .bind(targetUserId, targetTenantId, 'owner', nowSec),
+          ]);
+        }
+
+        const session = await createSession(env, targetUserId);
+        sessionCookieHeader = cookieHeader(session.token, env);
+      }
+
+      if (!targetTenantId) {
+        return Response.json(
+          { error: 'No se pudo determinar el despacho contable de destino.' },
+          { status: 500, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      // 4. Inserción o actualización en el catálogo de clientes del Expediente Único
+      const metadataObj = {
+        origen: 'siem_canaco',
+        folio_siem: finalFolioSiem,
+        sector: finalSector,
+        num_empleados: finalNumEmpleados,
+        contacto_nombre: finalContacto,
+        email: finalEmail,
+        telefono: finalTelefono,
+        municipio: finalMunicipio,
+        importado_en: new Date().toISOString(),
+      };
+      const metadataJson = JSON.stringify(metadataObj);
+
+      const existingClient = await db
+        .prepare(
+          'SELECT id, tenant_id, nombre, rfc, tipo, estado FROM clients WHERE tenant_id = ? AND rfc = ? LIMIT 1'
+        )
+        .bind(targetTenantId, finalRfc)
+        .first<{
+          id: string;
+          tenant_id: string;
+          nombre: string;
+          rfc: string;
+          tipo: string;
+          estado: string;
+        }>();
+
+      let clientRecord: any = null;
+
+      if (existingClient) {
+        await db
+          .prepare(
+            `UPDATE clients
+             SET nombre = ?, tipo = ?, estado = 'activo', metadata = ?, updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND tenant_id = ?`
+          )
+          .bind(finalNombre, tipoCliente, metadataJson, existingClient.id, targetTenantId)
+          .run();
+
+        clientRecord = {
+          id: existingClient.id,
+          tenant_id: targetTenantId,
+          user_id: targetUserId,
+          parent_id: null,
+          tipo: tipoCliente,
+          nombre: finalNombre,
+          rfc: finalRfc,
+          curp: null,
+          nss: null,
+          salario_diario: 0,
+          salario_diario_integrado: 0,
+          fecha_ingreso: null,
+          factor_integracion: 1.049315,
+          estado: 'activo',
+          metadata: metadataObj,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      } else {
+        const clientId = crypto.randomUUID();
+        await db
+          .prepare(
+            `INSERT INTO clients (
+               id, tenant_id, user_id, tipo, nombre, rfc, estado, metadata,
+               created_at, updated_at
+             ) VALUES (?, ?, ?, ?, ?, ?, 'activo', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+          )
+          .bind(
+            clientId,
+            targetTenantId,
+            targetUserId,
+            tipoCliente,
+            finalNombre,
+            finalRfc,
+            metadataJson
+          )
+          .run();
+
+        clientRecord = {
+          id: clientId,
+          tenant_id: targetTenantId,
+          user_id: targetUserId,
+          parent_id: null,
+          tipo: tipoCliente,
+          nombre: finalNombre,
+          rfc: finalRfc,
+          curp: null,
+          nss: null,
+          salario_diario: 0,
+          salario_diario_integrado: 0,
+          fecha_ingreso: null,
+          factor_integracion: 1.049315,
+          estado: 'activo',
+          metadata: metadataObj,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+
+      // 5. Trazabilidad en CRM Padrón Cameral
+      if (leadRow?.id) {
+        const stamp = `Migrado a LEDGER: ${new Date().toISOString().split('T')[0]}`;
+        const notasPrev = leadRow.notas || '';
+        if (!notasPrev.includes('Migrado a LEDGER')) {
+          const updatedNotas = notasPrev ? `${notasPrev} | ${stamp}` : stamp;
+          await db
+            .prepare(
+              'UPDATE leads_ark_tools SET notas = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+            )
+            .bind(updatedNotas, leadRow.id)
+            .run();
+        }
+      }
+
+      const respHeaders: Record<string, string> = {
+        ...corsHeaders,
+        'Cache-Control': 'no-store',
+      };
+      if (sessionCookieHeader) {
+        respHeaders['Set-Cookie'] = sessionCookieHeader;
+      }
+
+      return Response.json(
+        {
+          success: true,
+          ok: true,
+          clientId: clientRecord.id,
+          client: clientRecord,
+          tenantId: targetTenantId,
+          redirectTo: '/?tool=nomina&welcome=siem',
+          message: 'Empresa vinculada exitosamente con el Expediente Único de ARK LEDGER.',
+        },
+        { status: 200, headers: respHeaders }
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Error al migrar la empresa a ARK LEDGER.';
+      return Response.json(
+        { error: message },
+        { status: 500, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+  }
+
   if (path !== '/api/afiliaciones/registro' || request.method !== 'POST') {
     return null;
   }
@@ -175,7 +542,7 @@ export async function handleAfiliacionesApiRequest(
 
     const selloDigitalSha256 = `SHA256:CANACO-MID-${folioSiem.slice(-8)}-${Date.now().toString(36).toUpperCase()}`;
 
-    const notasDetalle = `Folio SIEM: ${folioSiem} | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Cuota: $${cotizacion.totalAnual.toLocaleString('es-MX')} MXN | Sector: ${sector} | CFDI: ${body.cfdiRequerido ? 'Requerido' : 'No'} | Sello: ${selloDigitalSha256}`;
+    const notasDetalle = `RFC: ${rfcUpper} | Folio SIEM: ${folioSiem} | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Cuota: $${cotizacion.totalAnual.toLocaleString('es-MX')} MXN | Sector: ${sector} | CFDI: ${body.cfdiRequerido ? 'Requerido' : 'No'} | Sello: ${selloDigitalSha256}`;
 
     // Verificar si el comercio ya existe registrado en este tenant por su RFC o Email
     const existing = await db

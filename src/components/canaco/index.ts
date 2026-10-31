@@ -5,3 +5,7 @@ export { ConstanciaSocioModal } from './ConstanciaSocioModal';
 export { CanacoPortalBanner } from './CanacoPortalBanner';
 export { CanacoAdminPadron } from './CanacoAdminPadron';
 export { CanacoLandingPage } from './CanacoLandingPage';
+export { BuzonDocumentalModal } from './BuzonDocumentalModal';
+export { AdminExpedienteModal } from './AdminExpedienteModal';
+export * from './documentosBuzon';
+export * from './anexosCanaco';

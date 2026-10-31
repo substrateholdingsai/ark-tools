@@ -32,12 +32,12 @@ function json(
 }
 
 export function cookieHeader(token: string, env: Env): string {
-  const secure = env.APP_URL.startsWith('https://') ? '; Secure' : '';
+  const secure = env.APP_URL?.startsWith('https://') ? '; Secure' : '';
   return `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}${secure}`;
 }
 
 function clearCookieHeader(env: Env): string {
-  const secure = env.APP_URL.startsWith('https://') ? '; Secure' : '';
+  const secure = env.APP_URL?.startsWith('https://') ? '; Secure' : '';
   return `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${secure}`;
 }
 
@@ -121,7 +121,7 @@ export async function verifyPassword(password: string, encoded: string): Promise
   return difference === 0;
 }
 
-function slugify(value: string): string {
+export function slugify(value: string): string {
   return value
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')

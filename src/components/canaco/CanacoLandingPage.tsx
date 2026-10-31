@@ -28,6 +28,7 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  Inbox,
   X,
   AlertCircle,
   Mail,
@@ -36,6 +37,7 @@ import { useAuth } from '@/context/AuthContext';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
 import { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
 import { ConstanciaSocioModal } from './ConstanciaSocioModal';
+import { BuzonDocumentalModal } from './BuzonDocumentalModal';
 import type { SocioCanacoRegistro } from './types';
 
 interface CanacoLandingPageProps {
@@ -48,6 +50,9 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
   // Modales
   const [modalAfiliacionOpen, setModalAfiliacionOpen] = useState(false);
   const [socioConsultado, setSocioConsultado] = useState<SocioCanacoRegistro | null>(null);
+  const [buzonOpen, setBuzonOpen] = useState(false);
+  const [buzonRfc, setBuzonRfc] = useState('');
+  const [buzonEmail, setBuzonEmail] = useState('');
 
   // Modal Login Admin
   const [modalAdminOpen, setModalAdminOpen] = useState(false);
@@ -432,14 +437,29 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => setSocioConsultado(resultadoConsulta.socio || null)}
-                        className="shadow-xs inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-800"
-                      >
-                        <Download size={13} />
-                        <span>Ver Cédula Oficial Carta</span>
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setBuzonRfc(resultadoConsulta.socio?.rfc || '');
+                            setBuzonEmail(resultadoConsulta.socio?.contacto?.email || '');
+                            setBuzonOpen(true);
+                          }}
+                          className="shadow-xs inline-flex items-center justify-center gap-1.5 rounded-lg border border-henequen-anil/40 bg-white px-3.5 py-2 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/30"
+                        >
+                          <Inbox size={13} />
+                          <span>Buzón de Expediente</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setSocioConsultado(resultadoConsulta.socio || null)}
+                          className="shadow-xs inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-800"
+                        >
+                          <Download size={13} />
+                          <span>Ver Cédula Oficial Carta</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -664,6 +684,14 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
           socio={socioConsultado}
         />
       )}
+
+      {/* Buzón Documental Oficial (Oficialía de Partes Digital) */}
+      <BuzonDocumentalModal
+        isOpen={buzonOpen}
+        onClose={() => setBuzonOpen(false)}
+        rfcInicial={buzonRfc}
+        emailInicial={buzonEmail}
+      />
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* MODAL DE ACCESO DIRECTIVO (horus.i2d@gmail.com)                     */}
