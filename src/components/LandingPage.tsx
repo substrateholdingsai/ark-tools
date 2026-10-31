@@ -396,7 +396,7 @@ export function LandingPage() {
               <span>Soporte Directo</span>
             </a>
 
-            <SimmpleReferralButton className="hidden md:inline-flex" />
+            <SimmpleReferralButton className="inline-flex" />
 
             <button
               onClick={() => openAuth('login')}

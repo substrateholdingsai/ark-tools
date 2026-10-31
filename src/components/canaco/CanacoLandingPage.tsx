@@ -478,7 +478,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                         </div>
                       </div>
 
-                      <SimmpleReferralButton className="hidden md:inline-flex" />
+                      <SimmpleReferralButton className="inline-flex" />
 
                       <button
                         type="button"
