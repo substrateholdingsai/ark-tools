@@ -1,6 +1,6 @@
 # ARK LEDGER — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 2.9 — Suite de 20 Herramientas + Detector de Comportamientos Atípicos en CFDI (#20) + Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2 (#12) + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags con generador SVG puro `forge_ark_meta.py` + Simulador Modalidad 40 Criterio DOF 2026 (#19) + Actualización y Recargos Fiscales (#18) + Monitor de Actividades Vulnerables LFPIORPI (#17) + Motor de Conciliación Anexo 24 (#16) + Balance General Comparativo #15 + CRM de Prospectos (Super Admin) + Propuesta Comercial vía Resend + Calculadora y Cédula RESICO 2026 + Timbrado CFDI 4.0 vía Alegra/PAC Quadrum + Colaboración en Despacho/Invitaciones + Cierre de Nómina Masivo + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo Oficial PDF & QR + GEO Engine /llms.txt para Agentes IA  
+**Versión:** 3.0 — Suite de 20 Herramientas + Integración Sentinela Legal RegTech Early Warning (DOF/SAT) + Detector de Comportamientos Atípicos en CFDI (#20) + Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2 (#12) + Buzón Documental Físico-Digital CANACO + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags + Simulador Modalidad 40 (#19) + Actualización y Recargos (#18) + Monitor LFPIORPI (#17) + Motor Anexo 24 (#16) + Balance General (#15) + CRM Leads + RESICO 2026 + Timbrado CFDI 4.0 + Colaboración Despacho + Cierre Nómina + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo PDF & QR + GEO Engine /llms.txt  
 **Fecha:** Octubre 2026 (verificado contra `main` y desplegado en producción)  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://ledger.arksystems.site](https://ledger.arksystems.site)  
@@ -2295,6 +2295,43 @@ Implementación del buzón oficial documental para el cumplimiento con la Secret
 
 - **Pruebas unitarias e integración:** **547 pruebas en 77 suites (100% éxito)** — `pnpm test`.
 - **Nueva suite:** `src/server/canacoBuzonApi.test.ts` (5 pruebas backend).
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 33 — Integración Edge con Sentinela Legal (RegTech Early Warning)
+
+Conexión bidireccional entre el worker `sentinela-legal` (vigilancia autónoma de fuentes normativas DOF, SAT, CONDUSEF, CNBV y BANXICO) y **ARK LEDGER** para convertir a la suite en un radar de inteligencia regulatoria en vivo:
+
+#### 1. Arquitectura y Almacenamiento D1
+
+- **Migración D1 `0010_sentinela_regulatory_events.sql`:** Tabla `sentinela_events` en `ark_tools_db` con índices en `channel`, `severity` y `created_at` para persistir eventos regulatorios estructurados (título, resumen analítico de IA, severidad, artículos afectados y acciones requeridas).
+- **Módulo Backend (`src/server/sentinela/sentinelaWebhook.ts`):**
+  - Verificación criptográfica HMAC-SHA256 en tiempo constante vía Web Crypto contra `env.SENTINELA_WEBHOOK_SECRET`.
+  - Ingesta determinista en `POST /api/webhooks/sentinela` con upsert en D1.
+  - Endpoint de consulta `GET /api/regulatory/events` con soporte de filtros por canal (`fiscal`, `laboral`) y severidad (`critico`, `alto`, `medio`, `bajo`).
+
+#### 2. Suscripción Activa en Sentinela Legal
+
+- Registro del suscriptor `sub_ark_ledger_live` en la base de datos `sentinela-db`:
+  - **Nombre:** `ARK LEDGER`
+  - **Email:** `pavel@arksystems.site`
+  - **Canales:** `["fiscal", "laboral"]`
+  - **Webhook URL:** `https://ledger.arksystems.site/api/webhooks/sentinela`
+  - **Secreto Compartido:** `ark_sent_live_b7d8e2a149c0f3e6`
+  - **Estatus:** Activo (1).
+
+#### 3. Sincronización Canónica de la Suite
+
+- Documentación de la Herramienta #20 (`auditor-cfdi-atipico`) en el system prompt de Noah (`src/server/ai/agent.ts`).
+- Actualización de las guardas de tests de `llmsTxt.test.ts` reflejando el conteo canónico de 20 herramientas.
+- Nueva suite de pruebas unitarias: `src/server/sentinela/sentinelaWebhook.test.ts` (10 pruebas cubriendo criptografía HMAC, rechazo de firmas inválidas, parsing de payloads y consulta de eventos).
+
+#### 4. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **565 pruebas en 78 suites (100% éxito)** — `pnpm test`.
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).

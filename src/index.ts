@@ -24,6 +24,7 @@ import { botApp } from './server/bots/botIngestionApi';
 import { handleBillingApiRequest } from './server/billing/billingWebhook';
 import { handleCanacoConektaApiRequest } from './server/canacoConektaService';
 import { handleCanacoBuzonApiRequest } from './server/canacoBuzonApi';
+import { handleSentinelaApiRequest } from './server/sentinela/sentinelaWebhook';
 
 export interface Env {
   // Assets (SPA)
@@ -75,6 +76,9 @@ export interface Env {
 
   // Buzón Documental CANACO (R2 opcional; sin binding se usa respaldo base64 en D1)
   CANACO_DOCS?: R2Bucket;
+
+  // Integración Sentinela Legal (RegTech / Webhook Early Warning)
+  SENTINELA_WEBHOOK_SECRET?: string;
 }
 
 export default {
@@ -204,7 +208,8 @@ async function handleApiRequest(
     (url.pathname === '/api/auth/request-password-reset' && request.method === 'POST') ||
     (url.pathname === '/api/auth/reset-password' && request.method === 'POST') ||
     (url.pathname === '/api/afiliaciones/registro' && request.method === 'POST') ||
-    (url.pathname === '/api/billing/webhook' && request.method === 'POST');
+    (url.pathname === '/api/billing/webhook' && request.method === 'POST') ||
+    (url.pathname === '/api/webhooks/sentinela' && request.method === 'POST');
 
   if (request.method !== 'GET' && request.method !== 'HEAD' && !isPublicAuthEndpoint) {
     const origin = request.headers.get('Origin');
@@ -219,6 +224,11 @@ async function handleApiRequest(
         { status: 403, headers: corsHeaders }
       );
     }
+  }
+
+  const sentinelaResponse = await handleSentinelaApiRequest(request, env, corsHeaders);
+  if (sentinelaResponse) {
+    return sentinelaResponse;
   }
 
   const authPrincipal = await authenticateRequest(request, env);
