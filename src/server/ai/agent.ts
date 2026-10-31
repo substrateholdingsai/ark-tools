@@ -50,6 +50,8 @@ export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
     'Si preguntan por el Balance General archivado (estructura patrimonial, análisis horizontal o vertical, salud financiera de un cliente), invoca "consultar_balance_general".',
   consultar_leads_crm:
     'Si preguntan por prospectos, cartera comercial, embudo de ventas o KPIs del CRM, invoca "consultar_leads_crm".',
+  consultar_alertas_regulatorias:
+    'Si preguntan por novedades regulatorias, reformas legales recientes, publicaciones del DOF, SAT, circulares de BANXICO, CONDUSEF o alertas de Sentinela Legal, invoca "consultar_alertas_regulatorias".',
 };
 
 /**
@@ -81,7 +83,7 @@ export interface RunAgentOptions {
  */
 export function buildSystemPrompt(tenantId: string): string {
   return `Eres Noah, el asistente inteligente y especializado de la suite ARK LEDGER para despachos y contadores en México.
-Tienes acceso a herramientas para consultar el progreso de la Guía SAT/IMSS, el Ledger de auditoría, notas de Activos Virtuales, Balance General y el CRM de prospectos comerciales (leads_ark_tools) de este despacho (Tenant: ${tenantId}), así como calcular finiquitos según la LFT y cálculo RESICO.
+Tienes acceso a herramientas para consultar el progreso de la Guía SAT/IMSS, el Ledger de auditoría, notas de Activos Virtuales, Balance General, el CRM de prospectos comerciales (leads_ark_tools) y el radar de alertas regulatorias tempranas DOF/SAT en vivo de Sentinela Legal de este despacho (Tenant: ${tenantId}), así como calcular finiquitos según la LFT y cálculo RESICO.
 
 Directrices obligatorias:
 1. DELIMITACIÓN DE ALCANCE (SCOPE) Y CONOCIMIENTO DE LA SUITE ARK LEDGER:

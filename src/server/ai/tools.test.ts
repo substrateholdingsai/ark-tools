@@ -193,4 +193,50 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     expect(data.prospectos[0].id).toBe('lead-101');
     expect(data.filtros_aplicados.ciudad).toBe('Merida');
   });
+
+  it('ejecuta consultar_alertas_regulatorias consultando sentinela_events en D1', async () => {
+    const mockDb = {
+      prepare: vi.fn().mockImplementation((_query: string) => ({
+        bind: vi.fn().mockImplementation((..._binds: any[]) => ({
+          all: vi.fn().mockResolvedValue({
+            results: [
+              {
+                id: 'reg_dof_123',
+                channel: 'fiscal',
+                source: 'Diario Oficial de la Federación',
+                source_url: 'https://dof.gob.mx/test',
+                severity: 'critico',
+                title: 'Reforma Fiscal DOF 2026',
+                summary: 'Actualización urgente de tasas',
+                effective_date: '2026-11-01',
+                laws_affected: JSON.stringify(['CFF Art. 29-A']),
+                action_required: 'Revisar sistemas',
+                created_at: '2026-10-31 12:00:00',
+                read_status: 0,
+              },
+            ],
+          }),
+        })),
+      })),
+    } as unknown as D1Database;
+
+    const mockEnv = { ARK_TOOLS_DB: mockDb } as Env;
+
+    const res = await executeAiTool(
+      'consultar_alertas_regulatorias',
+      { canal: 'fiscal', severidad: 'critico', limite: 5 },
+      mockEnv,
+      'ark'
+    );
+
+    expect(res.success).toBe(true);
+    expect(res.data).toBeDefined();
+    const data = res.data as any;
+    expect(data.total).toBe(1);
+    expect(data.filtro_canal).toBe('fiscal');
+    expect(data.filtro_severidad).toBe('critico');
+    expect(data.alertas[0].id).toBe('reg_dof_123');
+    expect(data.alertas[0].leyes_afectadas).toEqual(['CFF Art. 29-A']);
+    expect(data.alertas[0].titulo).toBe('Reforma Fiscal DOF 2026');
+  });
 });

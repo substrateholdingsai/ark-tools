@@ -18,6 +18,7 @@ import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
 import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import type { ParametrosNomina } from '../../tools/nomina/types';
+import { listStoredRegulatoryEvents } from '../sentinela/sentinelaWebhook';
 
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
@@ -342,6 +343,32 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
       required: [],
     },
   },
+  {
+    name: 'consultar_alertas_regulatorias',
+    description:
+      'Consulta las últimas alertas regulatorias oficiales, reformas legales y publicaciones del DOF, SAT, CONDUSEF, CNBV y BANXICO vigiladas por Sentinela Legal. Permite filtrar por canal ("fiscal", "laboral", "cobranza", "fintech_banca") o severidad ("critico", "alto", "medio", "bajo").',
+    parameters: {
+      type: 'object',
+      properties: {
+        canal: {
+          type: 'string',
+          enum: ['fiscal', 'laboral', 'cobranza', 'fintech_banca'],
+          description:
+            'Canal normativo a filtrar: "fiscal" (SAT/RMF/CFF), "laboral" (LFT/IMSS), "cobranza" (CONDUSEF/REDECO) o "fintech_banca" (CNBV/BANXICO). Si se omite, consulta todos los canales.',
+        },
+        severidad: {
+          type: 'string',
+          enum: ['critico', 'alto', 'medio', 'bajo'],
+          description: 'Nivel de severidad o urgencia de la alerta regulatoria.',
+        },
+        limite: {
+          type: 'number',
+          description: 'Número máximo de alertas a devolver (por defecto 5, máximo 20).',
+        },
+      },
+      required: [],
+    },
+  },
 ];
 
 /**
@@ -651,6 +678,40 @@ export async function executeAiTool(
           .bind(tenantId)
           .first();
         return { success: true, data: result ?? { id: tenantId, name: 'Despacho sin registrar' } };
+      }
+
+      case 'consultar_alertas_regulatorias': {
+        const canal = typeof args.canal === 'string' ? args.canal.trim() : undefined;
+        const severidad = typeof args.severidad === 'string' ? args.severidad.trim() : undefined;
+        const limit = Math.min(Math.max(Number(args.limite) || 5, 1), 20);
+
+        const events = await listStoredRegulatoryEvents(db, {
+          channel: canal,
+          severity: severidad,
+          limit,
+        });
+
+        return {
+          success: true,
+          data: {
+            total: events.length,
+            filtro_canal: canal || 'todos',
+            filtro_severidad: severidad || 'todas',
+            alertas: events.map((ev) => ({
+              id: ev.id,
+              fuente: ev.source,
+              fuente_url: ev.source_url,
+              canal: ev.channel,
+              severidad: ev.severity,
+              titulo: ev.title,
+              fecha_vigencia: ev.effective_date,
+              resumen: ev.summary,
+              leyes_afectadas: ev.laws_affected,
+              accion_requerida: ev.action_required,
+              fecha_publicacion: ev.created_at,
+            })),
+          },
+        };
       }
 
       default:

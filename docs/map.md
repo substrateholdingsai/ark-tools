@@ -30,7 +30,7 @@
 | **Autenticación & AuthGate**                               | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant)                                                                                                                                                                                                                                                                               |
 | **Multi-Tenancy**                                          | 100% Operativo en Producción (Membresías D1 validadas por el Worker en cada ruta privada con estricto aislamiento)                                                                                                                                                                                                                                                                                                     |
 | **Base de Datos Cloudflare D1**                            | 100% Actualizada (`0001`–`0006` verificadas aplicadas en `ark_tools_db`; `0007_leads_crm.sql` incluida en el repo y requerida por el CRM de prospectos)                                                                                                                                                                                                                                                                |
-| **Cloudflare Workers AI**                                  | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM y streaming SSE — 10 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación)                                                                                                                                                                                           |
+| **Cloudflare Workers AI**                                  | 100% Operativo (Binding `[ai]`, orquestador Llama 3.3 70B, Agentic Tool-Calling seguro con D1/LFT/RESICO/Balance/CRM/Sentinela y streaming SSE — 11 herramientas registradas en `AI_TOOLS_CATALOG`, todas con directiva de invocación)                                                                                                                                                                                 |
 | **Persistencia & API REST**                                | Rutas privadas protegidas por sesión y membresía tenant; módulos dedicados para Auth, Admin, Invitaciones, D1 Expedientes, CRM de Leads, Workers AI, Alegra CFDI 4.0 y GEO (/llms.txt, /llms-full.txt, /robots.txt).                                                                                                                                                                                                   |
 | **Copy & Transparencia Legal**                             | 100% Optimizado con fundamentación jurídica (LISR, LSS, LFT, CFF Art. 28, Anexo 20 CFDI 4.0, Acuerdo DOF 21/10/2026) y cero cajas negras                                                                                                                                                                                                                                                                               |
 | **Mesa de Ayuda & Soporte**                                | Canales oficiales integrados vía WhatsApp directo (+52 56 5706 2511) y correo (pavel@arksystems.site)                                                                                                                                                                                                                                                                                                                  |
@@ -2329,9 +2329,22 @@ Conexión bidireccional entre el worker `sentinela-legal` (vigilancia autónoma 
 - Actualización de las guardas de tests de `llmsTxt.test.ts` reflejando el conteo canónico de 20 herramientas.
 - Nueva suite de pruebas unitarias: `src/server/sentinela/sentinelaWebhook.test.ts` (10 pruebas cubriendo criptografía HMAC, rechazo de firmas inválidas, parsing de payloads y consulta de eventos).
 
-#### 4. Métricas de Calidad y Puerta Completa
+#### 4. Paso 2 — Integración de Noah con Radar Regulatorio en Vivo (AI Tool Calling)
 
-- **Pruebas unitarias e integración:** **565 pruebas en 78 suites (100% éxito)** — `pnpm test`.
+- **Herramienta en Catálogo (`AI_TOOLS_CATALOG` en `src/server/ai/tools.ts`):**
+  - Registro de `consultar_alertas_regulatorias` con schema JSON estricto (`canal`: `fiscal`, `laboral`, `cobranza`, `fintech_banca`; `severidad`: `critico`, `alto`, `medio`, `bajo`; `limite`: 1–20).
+- **Ejecución de Herramienta (`executeAiTool`):**
+  - Despacho directo a `listStoredRegulatoryEvents` sobre la base D1 `ARK_TOOLS_DB`, formateando el retorno con total, filtros aplicados, fuentes oficiales, vigencias y acciones requeridas.
+- **Directivas y Orquestación del Agente Noah (`src/server/ai/agent.ts`):**
+  - Adición de `DIRECTIVAS_HERRAMIENTAS.consultar_alertas_regulatorias` para invocar la herramienta ante dudas sobre reformas legales, DOF, SAT, CONDUSEF, BANXICO o Sentinela Legal.
+  - Actualización del system prompt canónico de Noah reflejando el acceso al radar en vivo.
+- **Validación y Pruebas:**
+  - Caso de prueba en `src/server/ai/tools.test.ts` simulando consulta D1 con filtros y retorno estructurado.
+  - Verificación de paridad estricta entre `AI_TOOLS_CATALOG` y `DIRECTIVAS_HERRAMIENTAS` en `src/server/ai/agent.test.ts`.
+
+#### 5. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **566 pruebas en 78 suites (100% éxito)** — `pnpm test`.
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).
