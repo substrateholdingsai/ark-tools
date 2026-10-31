@@ -41,6 +41,7 @@ import {
   InviteAcceptModal,
   ErrorBoundary,
   OnboardingQuickstartModal,
+  RegulatoryTicker,
 } from './components';
 import type { NavItem } from './components';
 
@@ -363,11 +364,13 @@ export function App() {
   return (
     <>
       <SignedOut>
+        <RegulatoryTicker />
         {currentBrand.id === 'canaco_merida' ? <CanacoLandingPage /> : <LandingPage />}
       </SignedOut>
 
       <SignedIn>
         <div className="min-h-screen bg-surface font-inter text-ink antialiased">
+          <RegulatoryTicker onSelectTool={navigateTo} />
           <Header
             activeTool={activeTool === 'admin' ? 'admin' : activeNavFilter}
             currentToolLabel={activeTool === 'dashboard' ? undefined : toolLabels[activeTool]}

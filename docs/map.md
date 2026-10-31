@@ -2342,9 +2342,22 @@ Conexión bidireccional entre el worker `sentinela-legal` (vigilancia autónoma 
   - Caso de prueba en `src/server/ai/tools.test.ts` simulando consulta D1 con filtros y retorno estructurado.
   - Verificación de paridad estricta entre `AI_TOOLS_CATALOG` y `DIRECTIVAS_HERRAMIENTAS` en `src/server/ai/agent.test.ts`.
 
-#### 5. Métricas de Calidad y Puerta Completa
+#### 5. Paso 3 — Ticker Regulatorio en Vivo (Estilo Wall Street / Bloomberg Tape)
 
-- **Pruebas unitarias e integración:** **566 pruebas en 78 suites (100% éxito)** — `pnpm test`.
+- **Componente Visual (`src/components/RegulatoryTicker.tsx`):**
+  - Barra ultra-compacta (28px de altura, `h-7`, paleta terminal `bg-[#070b16]`) montada en el tope de la SPA tanto en vistas públicas (`SignedOut`) como privadas (`SignedIn`).
+  - Pin fijo con indicador LED pulsante: `RADAR REGTECH ● DOF · SAT EN VIVO` y badge de certeza `20/20 HERRAMIENTAS VIGENTES`.
+  - Animación continua `translate3d` por GPU sin layout thrashing (`animate-ticker-marquee`, 65s) con pausa automática al pasar el mouse (`hover:pause`).
+  - Doble canal de contenido:
+    1. Eventos normativos en vivo de Sentinela Legal ingestados asíncronamente desde `GET /api/regulatory/events`.
+    2. Garantías canónicas de blindaje normativo de las 20 herramientas (Recargos CFF Art. 17-A/21, Modalidad 40 tope DOF 21/10/2026, Auditor forense CFDI Benford/69-B, Cruce laboral LFT 132, Anexo 24 CFF 28 y Valores Oficiales DOF 2026).
+  - Modal interactivo de 1-click para inspección profunda con fundamento legal, autoridad emisora, resumen analítico y salto directo a la herramienta.
+- **Suite de Pruebas Unitarias (`src/components/RegulatoryTicker.test.tsx`):**
+  - 6 pruebas unitarias cubriendo renderizado de pines, garantías canónicas, consumo reactivo de API, apertura/cierre de modal, navegación a herramienta y resiliencia ante errores de red.
+
+#### 6. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **572 pruebas en 81 suites (100% éxito)** — `pnpm test`.
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).

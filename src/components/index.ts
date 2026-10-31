@@ -27,6 +27,7 @@ export { TeamModal, InviteAcceptModal } from './team';
 export { ErrorBoundary } from './ErrorBoundary';
 export { OnboardingQuickstartModal } from './onboarding/OnboardingQuickstartModal';
 export { OnboardingCelebrationModal } from './onboarding/OnboardingCelebrationModal';
+export { RegulatoryTicker } from './RegulatoryTicker';
 
 // Tipos
 export type { NavItem } from './Header';

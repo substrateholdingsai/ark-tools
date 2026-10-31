@@ -190,3 +190,24 @@ body {
   color: #2c1810;
   box-shadow: 0 4px 12px rgba(212, 175, 55, 0.25);
 }
+
+/* 5.8. Regulatory Ticker (Wall Street / Bloomberg Style) */
+@keyframes ticker-marquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-ticker-marquee {
+  display: flex;
+  width: max-content;
+  animation: ticker-marquee 65s linear infinite;
+  will-change: transform;
+}
+
+.animate-ticker-marquee:hover {
+  animation-play-state: paused;
+}
