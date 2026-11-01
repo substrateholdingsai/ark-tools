@@ -181,6 +181,11 @@ export async function activateProSubscription(
 
   // 3. Notificación opcional por correo vía Resend
   if (params.email && env.RESEND_API_KEY) {
+    const safeExtId = extId
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
     try {
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -198,7 +203,7 @@ export async function activateProSubscription(
             <ul>
               <li><strong>Plan:</strong> Despacho Pro ($${monto.toLocaleString('es-MX')} MXN/mes)</li>
               <li><strong>Vigencia:</strong> Hasta ${periodEnd.toLocaleDateString('es-MX')}</li>
-              <li><strong>Folio de Pago:</strong> ${extId}</li>
+              <li><strong>Folio de Pago:</strong> ${safeExtId}</li>
             </ul>
             <p>Ya puedes descargar todas las Cédulas Oficiales Carta con Sello SHA-256 + QR y consultar a Noah AI sin límite de mensajes.</p>
             <p><a href="${env.APP_URL}" style="display: inline-block; background-color: #002b7f; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none;">Ir al Portal</a></p>

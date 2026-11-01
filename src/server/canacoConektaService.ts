@@ -10,6 +10,7 @@
 
 import type { Env } from '../index';
 import { sendCanacoConfirmacionPagoEmail } from './canacoEmailService';
+import { rateLimit } from './auth';
 
 export interface CanacoCheckoutParams {
   razonSocial: string;
@@ -102,7 +103,12 @@ export async function createCanacoConektaCheckout(
   }
 
   try {
-    const montoCentavos = Math.round(Number(params.monto || 2000) * 100);
+    const rawMonto = Number(params.monto || 2000);
+    const clampedMonto = Math.max(
+      100,
+      Math.min(500_000, Number.isFinite(rawMonto) ? rawMonto : 2000)
+    );
+    const montoCentavos = Math.round(clampedMonto * 100);
     const baseUrl = 'https://api.conekta.io';
 
     const body = {
@@ -213,6 +219,14 @@ export async function handleCanacoConektaApiRequest(
   // ─────────────────────────────────────────────────────────────────
   if (path === '/api/canaco/conekta/create-checkout' && request.method === 'POST') {
     try {
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      if (await rateLimit(env, 'conekta:checkout', ip, 15, 3600)) {
+        return Response.json(
+          { error: 'Demasiados intentos de generación de orden de pago. Intenta más tarde.' },
+          { status: 429, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
       const body = (await request.json()) as CanacoCheckoutParams;
 
       if (!body.razonSocial?.trim() || !body.rfc?.trim() || !body.email?.trim()) {
@@ -251,20 +265,25 @@ export async function handleCanacoConektaApiRequest(
     const rawBody = await request.text();
     const digestHeader = request.headers.get('digest');
 
-    // Validación de firma Conekta (RSA) si la llave pública está configurada
-    if (env.CONEKTA_WEBHOOK_PUBLIC_KEY) {
-      const verification = await verifyConektaSignature(
-        rawBody,
-        digestHeader,
-        env.CONEKTA_WEBHOOK_PUBLIC_KEY
+    // Validación obligatoria de firma Conekta (RSA) — Fail-Closed
+    if (!env.CONEKTA_WEBHOOK_PUBLIC_KEY) {
+      return Response.json(
+        { error: 'Llave pública de webhook Conekta no configurada en el servidor.' },
+        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
       );
+    }
 
-      if (!verification.valid) {
-        return Response.json(
-          { error: 'Firma de webhook Conekta inválida.', motivo: verification.reason },
-          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-        );
-      }
+    const verification = await verifyConektaSignature(
+      rawBody,
+      digestHeader,
+      env.CONEKTA_WEBHOOK_PUBLIC_KEY
+    );
+
+    if (!verification.valid) {
+      return Response.json(
+        { error: 'Firma de webhook Conekta inválida.', motivo: verification.reason },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
     }
 
     if (!db) {

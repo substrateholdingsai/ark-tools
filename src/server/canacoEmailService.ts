@@ -20,13 +20,27 @@ export interface CanacoConfirmacionPagoEmailParams {
   metodo?: string;
 }
 
+export function escapeHtml(value: string | null | undefined): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export function buildCanacoConfirmacionEmailHtml(
   params: CanacoConfirmacionPagoEmailParams,
   appUrl = 'https://ledger.arksystems.site'
 ): string {
   const cedulaUrl = `${appUrl}/?brand=canaco&rfc=${encodeURIComponent(params.rfc)}`;
   const portalUrl = `${appUrl}/?brand=canaco`;
-  const nombreDestinatario = params.contactoNombre || params.razonSocial;
+  const nombreDestinatario = escapeHtml(params.contactoNombre || params.razonSocial);
+  const razonSocialSafe = escapeHtml(params.razonSocial);
+  const rfcSafe = escapeHtml(params.rfc);
+  const folioSiemSafe = escapeHtml(params.folioSiem);
+  const folioPagoSafe = escapeHtml(params.folioPago);
+  const selloSafe = escapeHtml(params.selloDigitalSha256);
   const montoFormateado = Number(params.monto || 0).toLocaleString('es-MX', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -78,15 +92,15 @@ export function buildCanacoConfirmacionEmailHtml(
               <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #FBF9F5; border: 1px solid #EFE7D8; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #777777; width: 40%;">Razón Social:</td>
-                  <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #1A3A5C;">${params.razonSocial}</td>
+                  <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #1A3A5C;">${razonSocialSafe}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #777777;">RFC:</td>
-                  <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #2C2C2C; font-family: monospace;">${params.rfc}</td>
+                  <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #2C2C2C; font-family: monospace;">${rfcSafe}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #777777;">Folio SIEM Oficial:</td>
-                  <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #B85C38; font-family: monospace;">${params.folioSiem}</td>
+                  <td style="padding: 6px 0; font-size: 13px; font-weight: 700; color: #B85C38; font-family: monospace;">${folioSiemSafe}</td>
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #777777;">Importe Acreditado:</td>
@@ -94,13 +108,13 @@ export function buildCanacoConfirmacionEmailHtml(
                 </tr>
                 <tr>
                   <td style="padding: 6px 0; font-size: 12px; color: #777777;">Referencia de Pago:</td>
-                  <td style="padding: 6px 0; font-size: 12px; font-weight: 600; color: #555555; font-family: monospace;">${params.folioPago}</td>
+                  <td style="padding: 6px 0; font-size: 12px; font-weight: 600; color: #555555; font-family: monospace;">${folioPagoSafe}</td>
                 </tr>
                 <tr>
                   <td colspan="2" style="padding-top: 12px; border-top: 1px dashed #E5DCCB;">
                     <div style="font-size: 10px; text-transform: uppercase; color: #888888; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 4px;">Sello Criptográfico Oficial:</div>
                     <div style="font-size: 11px; font-family: monospace; color: #1A3A5C; word-break: break-all; background-color: #FFFFFF; padding: 6px 10px; border-radius: 6px; border: 1px solid #EFE7D8;">
-                      ${params.selloDigitalSha256}
+                      ${selloSafe}
                     </div>
                   </td>
                 </tr>

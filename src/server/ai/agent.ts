@@ -15,6 +15,7 @@ import { TOTAL_HERRAMIENTAS } from '../../data/catalogo-herramientas';
 
 export const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 export const FAST_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+const ALLOWED_MODELS = new Set<string>([DEFAULT_MODEL, FAST_MODEL]);
 
 /**
  * Directivas de invocación por herramienta de IA.
@@ -201,7 +202,9 @@ export async function runAiAgent(env: Env, options: RunAgentOptions): Promise<Re
     );
   }
 
-  let selectedModel = (options.model || DEFAULT_MODEL) as Parameters<typeof ai.run>[0];
+  let selectedModel = (
+    options.model && ALLOWED_MODELS.has(options.model) ? options.model : DEFAULT_MODEL
+  ) as Parameters<typeof ai.run>[0];
   const tenantId = options.tenantId;
 
   // Formatear catálogo a estándar OpenAI / Cloudflare Tools

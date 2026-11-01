@@ -10,6 +10,7 @@
 import type { Env } from '../../index';
 import type { AuthPrincipal } from '../auth';
 import { getTenantSubscription, activateProSubscription } from './subscriptions';
+import { timingSafeEqual } from '../canacoConektaService';
 
 export async function handleBillingApiRequest(
   request: Request,
@@ -50,6 +51,29 @@ export async function handleBillingApiRequest(
   // ─────────────────────────────────────────────────────────────────
   if (url.pathname === '/api/billing/webhook' && request.method === 'POST') {
     try {
+      const webhookSecret = env.BILLING_WEBHOOK_SECRET || env.CLIP_API_SECRET;
+      if (webhookSecret) {
+        const authHeader =
+          request.headers.get('Authorization') ||
+          request.headers.get('X-Webhook-Secret') ||
+          request.headers.get('x-webhook-secret') ||
+          '';
+        const tokenCandidate = authHeader.startsWith('Bearer ')
+          ? authHeader.slice(7).trim()
+          : authHeader.trim();
+        if (!tokenCandidate || !timingSafeEqual(tokenCandidate, webhookSecret)) {
+          return Response.json(
+            { ok: false, error: 'Firma o secreto de webhook de facturación inválido.' },
+            { status: 401, headers: corsHeaders }
+          );
+        }
+      } else if (env.ENVIRONMENT === 'production') {
+        return Response.json(
+          { ok: false, error: 'Webhook de facturación no configurado en producción.' },
+          { status: 503, headers: corsHeaders }
+        );
+      }
+
       const body = (await request.json().catch(() => ({}))) as {
         event?: string;
         status?: string;
@@ -62,13 +86,12 @@ export async function handleBillingApiRequest(
         provider?: 'clip' | 'spei_arkangel' | 'manual';
       };
 
-      // Manejar formato Clip o formato genérico
+      // Manejar formato Clip o formato explícito aprobado (nunca activar si status viene vacío)
       const isApproved =
         body.status === 'approved' ||
         body.status === 'paid' ||
         body.status === 'COMPLETED' ||
-        body.event === 'payment.approved' ||
-        !body.status; // si mandan payload directo de activación
+        body.event === 'payment.approved';
 
       if (!isApproved) {
         return Response.json(
@@ -78,7 +101,7 @@ export async function handleBillingApiRequest(
       }
 
       // Resolver tenant_id: desde payload o buscando usuario por correo
-      let tenantId = body.tenant_id;
+      let tenantId = body.tenant_id?.trim();
       const email = body.email?.trim().toLowerCase();
 
       if (!tenantId && email && env.ARK_TOOLS_DB) {
@@ -96,7 +119,13 @@ export async function handleBillingApiRequest(
       }
 
       if (!tenantId) {
-        tenantId = 'ark'; // Fallback a tenant principal
+        return Response.json(
+          {
+            ok: false,
+            error: 'No se pudo identificar el despacho (tenant_id) para acreditar el pago.',
+          },
+          { status: 400, headers: corsHeaders }
+        );
       }
 
       const monto = Number(body.amount || body.monto || 399);

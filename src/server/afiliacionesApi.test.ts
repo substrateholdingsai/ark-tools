@@ -231,6 +231,70 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(json.socio.razonSocial).toBe('Abarrotes del Mayab S.A. de C.V.');
     expect(json.socio.folioSiem).toBe('SIEM-MID-2026-AMA2-MIC-4819');
     expect(json.estatus).toBe('Socio Activo');
+    // M-01: sin sesión autenticada, el correo y teléfono se enmascaran
+    expect(json.socio.contacto.email).toContain('***');
+    expect(json.socio.contacto.telefono).toContain('*');
+  });
+
+  it('rechaza con 404 búsquedas por prefijo corto en GET /api/afiliaciones/consulta (prevención de enumeración M-01)', async () => {
+    const mockDb = {
+      prepare: vi.fn(),
+    };
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/consulta?rfc=A', {
+      method: 'GET',
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response?.status).toBe(404);
+    expect(mockDb.prepare).not.toHaveBeenCalled();
+  });
+
+  it('bloquea con 401 la migración sin sesión cuando el email ya pertenece a una cuenta existente (prevención de Account Takeover C-01)', async () => {
+    const mockDb = {
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () => {
+          if (query.includes('FROM leads_ark_tools')) return null;
+          if (query.includes('FROM users')) {
+            return {
+              id: 'user-victim-1',
+              email: 'admin@arksystems.site',
+              full_name: 'Admin Víctima',
+            };
+          }
+          return null;
+        }),
+        all: vi.fn(async () => ({ results: [] })),
+        run: vi.fn(async () => ({ success: true })),
+      })),
+      batch: vi.fn(async () => [{ success: true }]),
+    };
+
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/migrar-a-ledger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rfc: 'AMA200101AB1',
+        razonSocial: 'Empresa Atacante S.A.',
+        email: 'admin@arksystems.site',
+      }),
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders, null);
+    expect(response?.status).toBe(401);
+    expect(response?.headers.get('Set-Cookie')).toBeNull();
+    const json = (await response?.json()) as any;
+    expect(json.requiresLogin).toBe(true);
   });
 
   it('retorna 404 cuando un RFC no está registrado en el Padrón', async () => {

@@ -41,14 +41,14 @@
 | **Navegación & Usabilidad**                                | Filtros funcionales por categoría, navegación móvil adaptable y retorno contextual desde herramientas                                                                                                                                                                                                                                                                                                                  |
 | **Consola Administrativa Cameral (SIEM)**                  | 100% Implementado y Verificado (`CanacoAdminPadron.tsx` para `horus.i2d@gmail.com`, bypass de seguridad en `leadsApi.ts`, KPIs de padrón, filtros por giro/estatus, Cédula oficial imprimible, exportación CSV BOM UTF-8, botones de contacto WhatsApp y sincronización con Call Center Arkangel)                                                                                                                      |
 | **Integración Call Center & Cobranza (Arkangel + Resend)** | 100% Implementado y Verificado (`canacoArkangelSync.ts`, Worker-to-Worker Service Binding / REST fallback, normalización E.164 +52, ingesta de cartera matutina en Arkangel, endpoints `/api/canaco/sync-arkangel`, `/api/canaco/arkangel-status`, webhook de liquidación SPEI `/api/canaco/webhook-pago-arkangel` y emisión automática de correo oficial con Cédula Carta SHA-256 vía Resend `canacoEmailService.ts`) |
-| **Pruebas unitarias e integración**                        | **572 pasadas en 81 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                                                                                                 |
+| **Pruebas unitarias e integración**                        | **578 pasadas en 82 suites (100% éxito)** — verificado con `pnpm test`                                                                                                                                                                                                                                                                                                                                                 |
 | **Auditoría DOF Catálogo**                                 | 100% Verificado con `pnpm verify:catalogo` (8/8 vigentes oficiales, 0 proyecciones)                                                                                                                                                                                                                                                                                                                                    |
 | **Typecheck (TypeScript)**                                 | 0 errores en modo estricto (100% limpio) — verificado con `pnpm typecheck`                                                                                                                                                                                                                                                                                                                                             |
 | **Linting (ESLint)**                                       | 0 errores y 0 advertencias — verificado con `pnpm lint` (`--max-warnings 0`), con hook de pre-commit activo (lint-staged)                                                                                                                                                                                                                                                                                              |
 | **Formato (Prettier)**                                     | 100% uniforme en todo el repositorio — verificado con `pnpm format:check`                                                                                                                                                                                                                                                                                                                                              |
 | **Continuous Integration**                                 | GitHub Actions en `push` a `main` y pull requests: typecheck, lint, format:check, verify:catalogo, test y build (`.github/workflows/ci.yml`)                                                                                                                                                                                                                                                                           |
 | **Build Vite (SPA)**                                       | 100% funcional con bundle optimizado (Vite build completado; 1,840 módulos transformados)                                                                                                                                                                                                                                                                                                                              |
-| **Git & Repositorio**                                      | Rama `main` en Sprint 33 (Integración Edge Sentinela Legal RegTech + Ticker Wall Street)                                                                                                                                                                                                                                                                                                                               |
+| **Git & Repositorio**                                      | Rama `main` en Sprint 34 (Auditoría Integral de Seguridad y Prevención de Abuso de Servicios)                                                                                                                                                                                                                                                                                                                          |
 | **Herramientas Integradas**                                | 20 de 20 (ISN, SBC, Nómina, Finiquitos, Cierre de Nómina Masivo, RESICO, Conversor XML, Validador XML, Conciliación Anexo 24, Links Clip, Timbrado Facturas Alegra, Leasing, Guía SAT/IMSS, Auditoría de Cobranza, Mapa de Activos, Balance General Comparativo, Monitor LFPIORPI, Actualización y Recargos CFF, Modalidad 40 IMSS, Detector de Comportamientos Atípicos CFDI) + Admin + Team                          |
 
 ---
@@ -2323,7 +2323,7 @@ Conexión bidireccional entre el worker `sentinela-legal` (vigilancia autónoma 
   - **Email:** `pavel@arksystems.site`
   - **Canales:** `["fiscal", "laboral"]`
   - **Webhook URL:** `https://ledger.arksystems.site/api/webhooks/sentinela`
-  - **Secreto Compartido:** `ark_sent_live_b7d8e2a149c0f3e6`
+  - **Secreto Compartido:** Gestionado como Cloudflare Secret (`SENTINELA_WEBHOOK_SECRET`, modo _fail-closed_)
   - **Estatus:** Activo (1).
 
 #### 3. Sincronización Canónica de la Suite
@@ -2361,6 +2361,58 @@ Conexión bidireccional entre el worker `sentinela-legal` (vigilancia autónoma 
 #### 6. Métricas de Calidad y Puerta Completa
 
 - **Pruebas unitarias e integración:** **572 pruebas en 81 suites (100% éxito)** — `pnpm test`.
+- **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
+- **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
+- **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+---
+
+### Sprint 34 — Auditoría Integral de Seguridad y Prevención de Abuso de Servicios (Hardening Edge & D1)
+
+Ejecución de auditoría ofensiva/defensiva de arquitectura y remediación completa de 12 hallazgos (Críticos `C-01..C-03`, Altos `A-01..A-04`, Medios `M-01..M-04` y Bajos `B-01`) sobre el Worker, base de datos D1, Workers AI, Resend y pasarelas de pago:
+
+#### 1. Remediaciones Críticas (P0)
+
+- **C-01 — Prevención de Account Takeover en Handoff SIEM (`src/server/afiliacionesApi.ts`):**
+  - En `POST /api/afiliaciones/migrar-a-ledger`, cuando la solicitud se realiza sin sesión activa (`!principal`) pero el correo indicado ya pertenece a una cuenta registrada en `users`, se eliminó la emisión automática de sesión (`createSession`) y ahora se responde `401 Unauthorized` (`requiresLogin: true`).
+- **C-02 — Blindaje del Webhook de Facturación Pro (`src/server/billing/billingWebhook.ts`):**
+  - En `POST /api/billing/webhook`, se eliminó la condición permisiva `|| !body.status`, se exigió validación de secreto en tiempo constante (`BILLING_WEBHOOK_SECRET || CLIP_API_SECRET`, modo _fail-closed_ en producción) y se removió el fallback a `tenant_id = 'ark'` cuando falta el identificador del despacho (`400 Bad Request`).
+- **C-03 — Remoción de Secreto en Texto Plano y Webhook Sentinela Fail-Closed (`wrangler.toml`, `src/server/sentinela/sentinelaWebhook.ts`):**
+  - Se removió `SENTINELA_WEBHOOK_SECRET` de `[vars]`, `[env.staging]` y `[env.production]` en `wrangler.toml` para gestionarlo exclusivamente vía `wrangler secret put`.
+  - `POST /api/webhooks/sentinela` ahora responde `503` si el secreto no está configurado y `401` si la firma HMAC-SHA256 no coincide.
+
+#### 2. Remediaciones de Severidad Alta (P1)
+
+- **A-01 — Aislamiento Multi-Tenant Estricto en CRM (`src/server/leadsApi.ts`):**
+  - Se eliminó la excepción `&& tenantId !== 'ark'` en `/api/admin/leads`, exigiendo rol `super_admin` o membresía explícita verificada en `tenant_memberships`. Se restringió el override de `body.tenant_id` en `POST /api/admin/leads` a `super_admin`.
+- **A-02 — Protección del Padrón CANACO y Escape HTML en Resend (`src/server/afiliacionesApi.ts`, `src/server/canacoEmailService.ts`, `src/server/invitationsApi.ts`, `src/server/billing/subscriptions.ts`):**
+  - Rate limiting por IP (`rateLimit`) en `POST /api/afiliaciones/registro`, bloqueo de sobreescritura sin sesión sobre registros con estatus `'Socio Activo'` (`409 Conflict`) y bloqueo de auto-activación (`estatus: 'activo'`) no autenticada en producción cuando Conekta está configurado.
+  - Sanitización HTML (`escapeHtml`) en todas las plantillas transaccionales enviadas vía Resend.
+- **A-03 — Autenticación en Bots y Webhooks Fail-Closed (`src/server/bots/botIngestionApi.ts`, `src/server/canacoArkangelSync.ts`, `src/server/canacoConektaService.ts`):**
+  - `GET /api/bots/logs` ahora exige token de bot o sesión administrativa (`401`).
+  - Los webhooks de Bots (`/api/bots/ingest`), Arkangel (`/api/canaco/webhook-pago-arkangel`) y Conekta (`/api/canaco/conekta/webhook`) verifican sus secretos en tiempo constante (`timingSafeEqual`) y operan en modo _fail-closed_ en producción.
+- **A-04 — Protección de Cuota de Workers AI y Límite de Despachos (`src/server/auth.ts`, `src/server/ai/aiApi.ts`, `src/server/ai/agent.ts`):**
+  - Límite de máximo 5 despachos por cuenta estándar + rate limit (`5/hora`) en `POST /api/auth/tenants`.
+  - Límite de 30 mensajes y 24,000 caracteres por solicitud en `POST /api/ai/chat`, y lista blanca estricta de modelos (`ALLOWED_MODELS`) en `runAiAgent`.
+
+#### 3. Remediaciones de Severidad Media y Baja (P2)
+
+- **M-01 — Privacidad en Consulta Pública de Socio y Buzón Documental (`src/server/afiliacionesApi.ts`, `src/server/canacoBuzonApi.ts`):**
+  - En `GET /api/afiliaciones/consulta`, exigencia de RFC completo (12–13 caracteres alfanuméricos) para impedir enumeración por prefijo y enmascarado de `email` y `telefono` para consultas no autenticadas.
+  - Rate limiting por IP en `POST /api/canaco/buzon/acceso` y `POST /api/canaco/buzon/upload`.
+- **M-02 — Sanitización de Redirección Clip y Acotado de Montos Conekta (`src/index.ts`, `src/server/canacoConektaService.ts`):**
+  - En `POST /api/clip/checkout`, validación de origen (`same-origin` con `env.APP_URL`) para `redirection_url`. En Conekta checkout, rate limit por IP y rango válido `[100, 500_000]`.
+- **M-03 — Rate Limit en Aceptación de Invitaciones (`src/server/invitationsApi.ts`):**
+  - Rate limit (`10 intentos / 15 min`) por correo invitado antes de `verifyPassword` en `POST /api/invitations/accept`.
+- **M-04 — Cifrado Alegra y Secreto de Cron Dedicado (`src/server/alegra/credentials.ts`, `src/server/canacoArkangelSync.ts`):**
+  - `getAlegraEncryptionSecret` exige `ALEGRA_ENCRYPTION_KEY` en producción (`throw new Error`). `/api/canaco/sync-arkangel` autentica con `CRON_SECRET || ARKANGEL_WEBHOOK_SECRET` en tiempo constante.
+- **B-01 — Cabeceras Perimetrales HSTS/CSP y Endurecimiento CSRF (`src/index.ts`):**
+  - Cabeceras `Strict-Transport-Security` y `Content-Security-Policy` en respuestas SPA y validación de `Sec-Fetch-Site` cuando `Origin` está ausente.
+
+#### 4. Métricas de Calidad y Puerta Completa
+
+- **Pruebas unitarias e integración:** **578 pruebas en 82 suites (100% éxito)** — `pnpm test`.
+- **Nuevas pruebas de seguridad:** `src/server/billing/billingWebhook.test.ts` (C-02) y casos adicionales en `afiliacionesApi.test.ts` (C-01, M-01), `sentinelaWebhook.test.ts` (C-03), `leadsApi.test.ts` (A-01) y `botIngestionApi.test.ts` (A-03).
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).

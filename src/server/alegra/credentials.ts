@@ -46,9 +46,7 @@ export function getAlegraEncryptionSecret(env: Env): string {
     return env.ALEGRA_ENCRYPTION_KEY.trim();
   }
   if (env.ENVIRONMENT === 'production') {
-    console.warn(
-      '[Alegra Credentials] ALEGRA_ENCRYPTION_KEY no configurada en producción. Usando fallback temporal.'
-    );
+    throw new Error('ALEGRA_ENCRYPTION_KEY es obligatoria en producción.');
   }
   return FALLBACK_KEY_SEED;
 }

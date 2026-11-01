@@ -226,6 +226,24 @@ export async function handleAiApiRequest(
         );
       }
 
+      if (body.messages.length > 30) {
+        return Response.json(
+          { error: 'El historial de conversación excede el límite de 30 mensajes.' },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
+      const totalChars = body.messages.reduce(
+        (acc, msg) => acc + (typeof msg?.content === 'string' ? msg.content.length : 0),
+        0
+      );
+      if (totalChars > 24000) {
+        return Response.json(
+          { error: 'El tamaño total del prompt excede el límite permitido (24,000 caracteres).' },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+
       // Tenant is a selector only; authorization comes from the verified session membership.
       const headerTenant = request.headers.get('x-tenant-id');
       const tenantId = headerTenant || body.tenant_id;

@@ -11,6 +11,7 @@
 import type { Env } from '../index';
 import type { AuthPrincipal } from './auth';
 import { sendCanacoConfirmacionPagoEmail } from './canacoEmailService';
+import { timingSafeEqual } from './canacoConektaService';
 
 export interface SocioCobranzaRecord {
   id: string;
@@ -282,9 +283,16 @@ export async function handleCanacoArkangelSyncApi(
   // POST /api/canaco/sync-arkangel
   // ─────────────────────────────────────────────────────────────────
   if (path === '/api/canaco/sync-arkangel' && request.method === 'POST') {
-    // Verificación de autorización: super_admin, admin de canaco (horus.i2d@gmail.com) o cron secret
-    const cronSecret = request.headers.get('X-Cron-Key') || request.headers.get('x-cron-key');
-    const isAuthorizedCron = Boolean(cronSecret && cronSecret === env.RESEND_API_KEY?.slice(0, 16));
+    // Verificación de autorización: super_admin, admin de canaco (horus.i2d@gmail.com) o CRON_SECRET dedicado
+    const cronSecret = (
+      request.headers.get('X-Cron-Key') ||
+      request.headers.get('x-cron-key') ||
+      ''
+    ).trim();
+    const expectedCronSecret = env.CRON_SECRET || env.ARKANGEL_WEBHOOK_SECRET || '';
+    const isAuthorizedCron = Boolean(
+      cronSecret && expectedCronSecret && timingSafeEqual(cronSecret, expectedCronSecret)
+    );
     const isCanacoAdmin =
       principal?.email.toLowerCase() === 'horus.i2d@gmail.com' ||
       principal?.platformRole === 'super_admin';
@@ -373,16 +381,20 @@ export async function handleCanacoArkangelSyncApi(
   // POST /api/canaco/webhook-pago-arkangel
   // ─────────────────────────────────────────────────────────────────
   if (path === '/api/canaco/webhook-pago-arkangel' && request.method === 'POST') {
-    // Validación opcional de secreto de webhook
-    const authHeader = request.headers.get('Authorization');
-    if (env.ARKANGEL_WEBHOOK_SECRET) {
-      const expected = `Bearer ${env.ARKANGEL_WEBHOOK_SECRET}`;
-      if (authHeader !== expected) {
-        return Response.json(
-          { error: 'Secreto de webhook inválido.' },
-          { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-        );
-      }
+    // Validación obligatoria de secreto de webhook (Fail-Closed)
+    if (!env.ARKANGEL_WEBHOOK_SECRET) {
+      return Response.json(
+        { error: 'Secreto de webhook Arkangel no configurado en el servidor.' },
+        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const authHeader = request.headers.get('Authorization') || '';
+    const expected = `Bearer ${env.ARKANGEL_WEBHOOK_SECRET}`;
+    if (!timingSafeEqual(authHeader, expected)) {
+      return Response.json(
+        { error: 'Secreto de webhook inválido.' },
+        { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
     }
 
     if (!db) {

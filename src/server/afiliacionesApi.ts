@@ -18,9 +18,25 @@ import {
   createSession,
   cookieHeader,
   getTenantMemberships,
+  rateLimit,
   slugify,
   type AuthPrincipal,
 } from './auth';
+
+function maskEmail(email: string | null | undefined): string {
+  if (!email || !email.includes('@')) return 'contacto@comercio.mx';
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return 'contacto@comercio.mx';
+  const visible = local.slice(0, Math.min(2, local.length));
+  return `${visible}***@${domain}`;
+}
+
+function maskPhone(phone: string | null | undefined): string {
+  if (!phone) return '******4567';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 4) return '******';
+  return `******${digits.slice(-4)}`;
+}
 
 interface AfiliacionPayload {
   razonSocial: string;
@@ -85,6 +101,14 @@ export async function handleAfiliacionesApiRequest(
       );
     }
 
+    // Evitar enumeración con prefijos cortos (ej. ?rfc=A)
+    if (qRfc.length < 12 || qRfc.length > 13 || !/^[A-Z&Ñ0-9]+$/.test(qRfc)) {
+      return Response.json(
+        { encontrado: false, mensaje: 'No se encontró registro para este RFC en el Padrón 2026.' },
+        { status: 404, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
     const row = await db
       .prepare(
         `SELECT id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas
@@ -138,8 +162,8 @@ export async function handleAfiliacionesApiRequest(
       },
       contacto: {
         nombre: row.contacto_nombre || 'Representante Legal',
-        email: row.email || 'contacto@comercio.mx',
-        telefono: row.whatsapp || '9991234567',
+        email: authPrincipal ? row.email || 'contacto@comercio.mx' : maskEmail(row.email),
+        telefono: authPrincipal ? row.whatsapp || '9991234567' : maskPhone(row.whatsapp),
       },
       fechaAfiliacion: row.last_contact || new Date().toISOString().split('T')[0] || '',
       fechaVigencia: '2027-10-27',
@@ -297,31 +321,15 @@ export async function handleAfiliacionesApiRequest(
           }>();
 
         if (existingUser) {
-          targetUserId = existingUser.id;
-          const memberships = await getTenantMemberships(env, existingUser.id);
-          const firstMembership = memberships[0];
-          if (firstMembership) {
-            targetTenantId = firstMembership.id;
-          } else {
-            const tenantName =
-              `Despacho ${existingUser.full_name || existingUser.email.split('@')[0]}`.slice(
-                0,
-                120
-              );
-            targetTenantId = crypto.randomUUID();
-            await runBatchOrIndividual([
-              db
-                .prepare(
-                  'INSERT INTO tenants (id, name, slug, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)'
-                )
-                .bind(targetTenantId, tenantName, slugify(tenantName)),
-              db
-                .prepare(
-                  'INSERT INTO tenant_memberships (user_id, tenant_id, role, created_at) VALUES (?, ?, ?, ?)'
-                )
-                .bind(existingUser.id, targetTenantId, 'owner', nowSec),
-            ]);
-          }
+          // Seguridad C-01: Nunca emitir una sesión sin contraseña para un usuario que ya existe
+          return Response.json(
+            {
+              error:
+                'Ya existe una cuenta registrada con este correo en ARK LEDGER. Inicia sesión primero para vincular esta empresa a tu despacho.',
+              requiresLogin: true,
+            },
+            { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
         } else {
           targetUserId = crypto.randomUUID();
           const fullName = finalContacto || finalNombre || 'Socio CANACO';
@@ -525,7 +533,18 @@ export async function handleAfiliacionesApiRequest(
       );
     }
 
-    const tenantId = body.tenantId || 'canaco_merida';
+    const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+    if (await rateLimit(env, 'afiliacion:registro', ip, 20, 3600)) {
+      return Response.json(
+        { error: 'Demasiadas solicitudes de registro. Intenta más tarde.' },
+        { status: 429, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    const isSuperOrCanacoAdmin =
+      authPrincipal?.platformRole === 'super_admin' ||
+      authPrincipal?.email?.toLowerCase() === 'horus.i2d@gmail.com';
+    const tenantId = isSuperOrCanacoAdmin && body.tenantId ? body.tenantId.trim() : 'canaco_merida';
     const sector: SectorEconomico = body.sector || 'comercio';
     const numEmpleados = Math.max(1, Number(body.numEmpleados) || 1);
     const estrato = determinarEstrato(numEmpleados);
@@ -534,7 +553,11 @@ export async function handleAfiliacionesApiRequest(
     const razonSocialUpper = body.razonSocial.trim().toUpperCase();
     const nombreComercial = (body.nombreComercial || body.razonSocial).trim();
     const municipio = (body.municipio || 'Mérida').trim();
-    const estatus = body.estatus === 'activo' ? 'Socio Activo' : 'Nuevo / Pendiente';
+    // En producción con Conekta activo, un usuario sin privilegios no puede auto-activarse sin webhook de pago
+    const allowDirectActive =
+      isSuperOrCanacoAdmin || !(env.ENVIRONMENT === 'production' && env.CONEKTA_PRIVATE_KEY);
+    const effectiveActive = body.estatus === 'activo' && allowDirectActive;
+    const estatus = effectiveActive ? 'Socio Activo' : 'Nuevo / Pendiente';
     const folioSiem = generarFolioSiem(rfcUpper, estrato);
     const fechaHoy = new Date().toISOString().split('T')[0] || '';
     const fechaVigencia =
@@ -555,6 +578,15 @@ export async function handleAfiliacionesApiRequest(
     let leadId = existing?.id;
 
     if (existing) {
+      if (existing.status === 'Socio Activo' && !isSuperOrCanacoAdmin) {
+        return Response.json(
+          {
+            error:
+              'Este RFC o correo ya pertenece a un Socio Activo en el Padrón 2026. Inicia sesión o contacta a CANACO para actualizar tus datos.',
+          },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
       // Actualizar registro existente
       await db
         .prepare(
@@ -623,7 +655,7 @@ export async function handleAfiliacionesApiRequest(
       },
       fechaAfiliacion: fechaHoy,
       fechaVigencia,
-      estatus: body.estatus === 'activo' ? 'activo' : 'pendiente_pago',
+      estatus: effectiveActive ? 'activo' : 'pendiente_pago',
       montoPagado: cotizacion.totalAnual,
       metodoPago: body.metodoPago || 'tarjeta',
       cfdiRequerido: !!body.cfdiRequerido,
@@ -634,7 +666,7 @@ export async function handleAfiliacionesApiRequest(
     let emailEnviado = false;
     let emailId: string | undefined;
 
-    if (body.estatus === 'activo' && body.email && body.email.includes('@')) {
+    if (effectiveActive && body.email && body.email.includes('@')) {
       const emailRes = await sendCanacoConfirmacionPagoEmail(env, {
         email: body.email.trim(),
         contactoNombre: body.contactoNombre?.trim(),

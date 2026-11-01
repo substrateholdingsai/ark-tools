@@ -163,5 +163,23 @@ describe('ARK LEDGER — Bot & Agent Ingestion Pipeline (Grok / Hermes)', () => 
       const json = (await res.json()) as any;
       expect(json.error).toContain('no autorizado');
     });
+
+    it('GET /api/bots/logs exige autenticación de bot o sesión de administrador (A-03)', async () => {
+      const env = createMockEnv({ BOT_INGEST_SECRET: 'secreto-super-seguro' });
+      const unauthReq = new Request('https://ledger.arksystems.site/api/bots/logs', {
+        method: 'GET',
+      });
+      const unauthRes = await botApp.fetch(unauthReq, env);
+      expect(unauthRes.status).toBe(401);
+
+      const authReq = new Request('https://ledger.arksystems.site/api/bots/logs', {
+        method: 'GET',
+        headers: {
+          Authorization: 'Bearer secreto-super-seguro',
+        },
+      });
+      const authRes = await botApp.fetch(authReq, env);
+      expect(authRes.status).toBe(200);
+    });
   });
 });

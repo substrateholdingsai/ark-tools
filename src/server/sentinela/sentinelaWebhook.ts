@@ -203,24 +203,28 @@ export async function handleSentinelaApiRequest(
   if (url.pathname === '/api/webhooks/sentinela' && request.method === 'POST') {
     const rawBody = await request.text();
 
-    // Verificación criptográfica HMAC-SHA256 (si el secreto está configurado)
-    if (env.SENTINELA_WEBHOOK_SECRET) {
-      const signatureHeader =
-        request.headers.get('X-Sentinela-Signature') ||
-        request.headers.get('x-sentinela-signature');
-
-      const isValid = await verifySentinelaSignature(
-        env.SENTINELA_WEBHOOK_SECRET,
-        rawBody,
-        signatureHeader
+    // Verificación criptográfica HMAC-SHA256 obligatoria (Fail-Closed)
+    if (!env.SENTINELA_WEBHOOK_SECRET) {
+      return Response.json(
+        { error: 'Secreto de webhook de Sentinela no configurado en el servidor.' },
+        { status: 503, headers: corsHeaders }
       );
+    }
 
-      if (!isValid) {
-        return Response.json(
-          { error: 'Firma de webhook de Sentinela inválida o ausente.' },
-          { status: 401, headers: corsHeaders }
-        );
-      }
+    const signatureHeader =
+      request.headers.get('X-Sentinela-Signature') || request.headers.get('x-sentinela-signature');
+
+    const isValid = await verifySentinelaSignature(
+      env.SENTINELA_WEBHOOK_SECRET,
+      rawBody,
+      signatureHeader
+    );
+
+    if (!isValid) {
+      return Response.json(
+        { error: 'Firma de webhook de Sentinela inválida o ausente.' },
+        { status: 401, headers: corsHeaders }
+      );
     }
 
     let payload: SentinelaWebhookPayload;

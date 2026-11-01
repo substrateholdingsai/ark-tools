@@ -26,6 +26,7 @@ import {
   sha256,
   verifyPassword,
 } from './auth';
+import { escapeHtml } from './canacoEmailService';
 
 const INVITATION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
@@ -58,6 +59,8 @@ async function sendInvitationEmail(
   url.searchParams.set('token', token);
   const inviteUrl = url.toString();
   const roleLabel = role === 'admin' ? 'Administrador' : 'Colaborador';
+  const safeInviterName = escapeHtml(inviterName);
+  const safeTenantName = escapeHtml(tenantName);
   const subject = `Invitación para unirte a ${tenantName} en ARK LEDGER`;
 
   const html = `
@@ -71,7 +74,7 @@ async function sendInvitationEmail(
       Hola,
     </p>
     <p style="font-size: 16px; line-height: 24px;">
-      <strong>${inviterName}</strong> te ha invitado a unirte y colaborar en el despacho <strong>${tenantName}</strong> con el rol de <strong>${roleLabel}</strong>.
+      <strong>${safeInviterName}</strong> te ha invitado a unirte y colaborar en el despacho <strong>${safeTenantName}</strong> con el rol de <strong>${roleLabel}</strong>.
     </p>
     <div style="text-align: center; margin: 32px 0;">
       <a href="${inviteUrl}" style="background-color: #0f172a; color: #ffffff; padding: 12px 28px; border-radius: 6px; text-decoration: none; font-weight: 600; display: inline-block;">
@@ -321,6 +324,13 @@ export async function handleInvitationsApiRequest(
       const password = typeof body?.password === 'string' ? body.password : '';
 
       if (existingUser) {
+        if (await rateLimit(env, 'invite:accept', invitation.email, 10, 900)) {
+          return json(
+            { error: 'Demasiados intentos de contraseña. Espera 15 minutos.' },
+            corsHeaders,
+            429
+          );
+        }
         if (!password) {
           return json(
             { error: 'Ingresa tu contraseña para aceptar la invitación e iniciar sesión.' },
@@ -352,7 +362,7 @@ export async function handleInvitationsApiRequest(
         // Registro de nuevo usuario a través de la invitación
         if (!password || !passwordIsValid(password)) {
           return json(
-            { error: 'La contraseña debe tener entre 15 y 128 caracteres.' },
+            { error: 'La contraseña debe tener entre 12 y 128 caracteres.' },
             corsHeaders,
             400
           );

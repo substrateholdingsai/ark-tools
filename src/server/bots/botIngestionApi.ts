@@ -18,6 +18,8 @@
 
 import { Hono } from 'hono';
 import type { Env } from '../../index';
+import { authenticateRequest } from '../auth';
+import { timingSafeEqual } from '../canacoConektaService';
 
 export type BotSource = 'grok' | 'hermes' | 'nous_research' | 'generic_agent' | 'sarita_pipeline';
 
@@ -299,17 +301,24 @@ botApp.post('/ingest', async (c) => {
   const env = c.env;
   const db = env.ARK_TOOLS_DB;
 
-  // 1. Verificación opcional de Token de Bot si está configurado en entorno
+  // 1. Verificación de Token de Bot (Obligatoria en producción / cuando BOT_INGEST_SECRET está configurado)
   const botSecret = env.BOT_INGEST_SECRET;
+  let isAuthenticatedBot = false;
   if (botSecret) {
     const authHeader =
       c.req.header('Authorization') ||
       c.req.header('X-Bot-Token') ||
-      c.req.header('X-Agent-Secret');
-    const expected = `Bearer ${botSecret}`;
-    if (authHeader !== botSecret && authHeader !== expected) {
+      c.req.header('X-Agent-Secret') ||
+      '';
+    const candidate = authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : authHeader.trim();
+    if (!candidate || !timingSafeEqual(candidate, botSecret)) {
       return c.json({ error: 'Token de bot o agente no autorizado.' }, 401);
     }
+    isAuthenticatedBot = true;
+  } else if (env.ENVIRONMENT === 'production') {
+    return c.json({ error: 'BOT_INGEST_SECRET no configurado en producción.' }, 503);
   }
 
   // 2. Extracción de Payload
@@ -423,8 +432,11 @@ botApp.post('/ingest', async (c) => {
 
         if (leadExistente) {
           const nuevaNota = `${leadExistente.notas || ''} | Bot ${botSource} [${classification.categoria}]: ${classification.resumen} (Sello ${selloSha256.slice(0, 18)})`;
+          // Solo acreditar estatus 'Socio Activo' si el bot presentó credencial verificada
           const nuevoStatus =
-            classification.categoria === 'comprobante_pago' ? 'Socio Activo' : undefined;
+            classification.categoria === 'comprobante_pago' && isAuthenticatedBot
+              ? 'Socio Activo'
+              : undefined;
 
           if (nuevoStatus) {
             await db
@@ -467,9 +479,29 @@ botApp.post('/ingest', async (c) => {
   );
 });
 
-// GET /api/bots/logs — Auditoría de payloads recibidos
+// GET /api/bots/logs — Auditoría de payloads recibidos (Requiere token de bot o sesión administrativa)
 botApp.get('/logs', async (c) => {
   const env = c.env;
+  const botSecret = env.BOT_INGEST_SECRET;
+  const authHeader =
+    c.req.header('Authorization') ||
+    c.req.header('X-Bot-Token') ||
+    c.req.header('X-Agent-Secret') ||
+    '';
+  const candidate = authHeader.startsWith('Bearer ')
+    ? authHeader.slice(7).trim()
+    : authHeader.trim();
+
+  const hasValidBotToken = Boolean(botSecret && candidate && timingSafeEqual(candidate, botSecret));
+  const principal = hasValidBotToken ? null : await authenticateRequest(c.req.raw, env);
+  const isAdminUser =
+    principal?.platformRole === 'super_admin' ||
+    principal?.email.toLowerCase() === 'horus.i2d@gmail.com';
+
+  if (!hasValidBotToken && !isAdminUser) {
+    return c.json({ error: 'No autorizado para consultar bitácora de bots.' }, 401);
+  }
+
   const db = env.ARK_TOOLS_DB;
   if (!db) {
     return c.json({ logs: [] });

@@ -100,6 +100,19 @@ describe('handleLeadsApiRequest', () => {
     expect(res?.status).toBe(401);
   });
 
+  it('retorna 403 si un usuario estándar sin membresía intenta acceder al tenant ark (A-01)', async () => {
+    const env = createEnv();
+    const regularUser: AuthPrincipal = {
+      id: 'user-regular',
+      email: 'regular@example.com',
+      fullName: 'Usuario Regular',
+      platformRole: 'user',
+    };
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads');
+    const res = await handleLeadsApiRequest(req, env, corsHeaders, regularUser);
+    expect(res?.status).toBe(403);
+  });
+
   it('obtiene estadísticas agrupadas en GET /api/admin/leads/stats', async () => {
     const env = createEnv();
     const req = new Request('https://ledger.arksystems.site/api/admin/leads/stats');

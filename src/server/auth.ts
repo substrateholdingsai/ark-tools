@@ -723,6 +723,26 @@ export async function handleAuthApiRequest(
     }
     if (path === '/api/auth/tenants' && request.method === 'POST') {
       if (!principal) return json({ error: 'No hay sesión activa.' }, cors, 401);
+      if (await rateLimit(env, 'tenants:create', principal.id, 5, 3600)) {
+        return json(
+          { error: 'Demasiados intentos de creación de despacho. Intenta más tarde.' },
+          cors,
+          429
+        );
+      }
+      if (principal.platformRole !== 'super_admin') {
+        const existingTenants = await getTenantMemberships(env, principal.id);
+        if (existingTenants.length >= 5) {
+          return json(
+            {
+              error:
+                'Has alcanzado el límite máximo de 5 despachos por cuenta. Contacta a soporte para ampliar tu límite.',
+            },
+            cors,
+            403
+          );
+        }
+      }
       const body = (await request.json()) as { name?: string };
       const name = body.name?.trim().slice(0, 120) || '';
       if (!name) return json({ error: 'El nombre del despacho es obligatorio.' }, cors, 400);

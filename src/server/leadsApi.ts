@@ -1,5 +1,6 @@
 import type { Env } from '../index';
 import { requireTenantMembership, type AuthPrincipal } from './auth';
+import { escapeHtml } from './canacoEmailService';
 
 interface Lead {
   id: string;
@@ -18,6 +19,8 @@ interface Lead {
 }
 
 export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): string {
+  const safeNombreSocio = escapeHtml(nombreSocio);
+  const safeLogoUrl = escapeHtml(logoUrl);
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -38,7 +41,7 @@ export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): st
                     <!-- Header -->
                     <tr>
                         <td align="center" style="padding: 40px 40px 20px 40px; background-color: #ffffff;">
-                            <img src="${logoUrl}" alt="Ark Systems Logo" width="120" style="display: block; max-width: 120px; height: auto;">
+                            <img src="${safeLogoUrl}" alt="Ark Systems Logo" width="120" style="display: block; max-width: 120px; height: auto;">
                         </td>
                     </tr>
 
@@ -46,7 +49,7 @@ export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): st
                     <tr>
                         <td style="padding: 20px 40px 40px 40px;">
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6; color: #1e293b;">
-                                Hola <strong>${nombreSocio}</strong>,
+                                Hola <strong>${safeNombreSocio}</strong>,
                             </p>
                             
                             <p style="margin: 0 0 20px 0; font-size: 16px; line-height: 1.6;">
@@ -207,10 +210,10 @@ export async function handleLeadsApiRequest(
     request.headers.get('x-tenant-id') ||
     'ark';
 
-  // Tenant access check (super_admin y admin cameral de CANACO bypasses)
+  // Tenant access check (solo super_admin, admin cameral para canaco_merida o miembro verificado del despacho)
   const isCanacoAdmin =
     principal.email.toLowerCase() === 'horus.i2d@gmail.com' && tenantId === 'canaco_merida';
-  if (principal.platformRole !== 'super_admin' && !isCanacoAdmin && tenantId !== 'ark') {
+  if (principal.platformRole !== 'super_admin' && !isCanacoAdmin) {
     const membership = await requireTenantMembership(env, principal, tenantId);
     if (!membership) {
       return Response.json(
@@ -369,7 +372,10 @@ export async function handleLeadsApiRequest(
       const contacto_nombre =
         body.contacto_nombre == null ? null : String(body.contacto_nombre).trim() || null;
       const notas = body.notas == null ? null : String(body.notas).trim() || null;
-      const tId = body.tenant_id == null ? tenantId : String(body.tenant_id).trim() || tenantId;
+      const tId =
+        principal.platformRole === 'super_admin' && body.tenant_id != null
+          ? String(body.tenant_id).trim() || tenantId
+          : tenantId;
 
       await db
         .prepare(

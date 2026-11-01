@@ -79,6 +79,10 @@ export interface Env {
 
   // Integración Sentinela Legal (RegTech / Webhook Early Warning)
   SENTINELA_WEBHOOK_SECRET?: string;
+
+  // Secreto para Webhooks de Facturación (Clip / SPEI) y Cron
+  BILLING_WEBHOOK_SECRET?: string;
+  CRON_SECRET?: string;
 }
 
 export default {
@@ -152,6 +156,11 @@ export default {
     secureHeaders.set('X-Frame-Options', 'DENY');
     secureHeaders.set('Referrer-Policy', 'strict-origin-when-cross-origin');
     secureHeaders.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+    secureHeaders.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    secureHeaders.set(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self';"
+    );
 
     return new Response(assetResponse.body, {
       status: assetResponse.status,
@@ -213,6 +222,7 @@ async function handleApiRequest(
 
   if (request.method !== 'GET' && request.method !== 'HEAD' && !isPublicAuthEndpoint) {
     const origin = request.headers.get('Origin');
+    const secFetchSite = request.headers.get('Sec-Fetch-Site');
     const configuredOrigin = new URL(env.APP_URL).origin;
     const isLocalDevelopment =
       env.ENVIRONMENT !== 'production' &&
@@ -221,6 +231,12 @@ async function handleApiRequest(
     if (origin && origin !== configuredOrigin && !isLocalDevelopment) {
       return Response.json(
         { error: 'Origen no permitido.' },
+        { status: 403, headers: corsHeaders }
+      );
+    }
+    if (!origin && secFetchSite && secFetchSite !== 'same-origin' && secFetchSite !== 'none') {
+      return Response.json(
+        { error: 'Solicitud cross-site no permitida.' },
         { status: 403, headers: corsHeaders }
       );
     }
@@ -395,15 +411,29 @@ async function handleApiRequest(
       const description = (body.purchase_description || 'Servicios Profesionales').slice(0, 250);
       const currency = (body.currency || 'MXN').toUpperCase();
       const returnUrl = env.APP_URL || 'https://ledger.arksystems.site';
+      const allowedReturnOrigin = new URL(returnUrl).origin;
+
+      const sanitizeRedirectUrl = (candidate: string | undefined, fallback: string): string => {
+        if (!candidate) return fallback;
+        try {
+          const parsed = new URL(candidate, returnUrl);
+          return parsed.origin === allowedReturnOrigin ? parsed.toString() : fallback;
+        } catch {
+          return fallback;
+        }
+      };
 
       const payload = {
         amount,
         currency,
         purchase_description: description,
         redirection_url: {
-          success: body.redirection_url?.success || `${returnUrl}/?status=success`,
-          error: body.redirection_url?.error || `${returnUrl}/?status=error`,
-          default: body.redirection_url?.default || returnUrl,
+          success: sanitizeRedirectUrl(
+            body.redirection_url?.success,
+            `${returnUrl}/?status=success`
+          ),
+          error: sanitizeRedirectUrl(body.redirection_url?.error, `${returnUrl}/?status=error`),
+          default: sanitizeRedirectUrl(body.redirection_url?.default, returnUrl),
         },
         ...(body.expires_at ? { expires_at: body.expires_at } : {}),
         ...(body.enable_oxxo ? { payment_method_types: ['cash'] } : {}),

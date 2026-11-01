@@ -14,7 +14,7 @@
  */
 
 import type { Env } from '../index';
-import type { AuthPrincipal } from './auth';
+import { rateLimit, type AuthPrincipal } from './auth';
 import {
   MAX_BYTES_BUZON_D1,
   MAX_BYTES_BUZON_R2,
@@ -230,6 +230,10 @@ export async function handleCanacoBuzonApiRequest(
     // SOCIO: abrir el buzón con RFC + correo registrado
     // ───────────────────────────────────────────────────────────────
     if (path === '/api/canaco/buzon/acceso' && request.method === 'POST') {
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      if (await rateLimit(env, 'buzon:acceso', ip, 15, 900)) {
+        return json({ error: 'Demasiados intentos. Intenta más tarde.' }, corsHeaders, 429);
+      }
       const body = (await request.json().catch(() => ({}))) as { rfc?: unknown; email?: unknown };
       const rfc = normalizarRfc(body.rfc);
       const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
@@ -270,6 +274,14 @@ export async function handleCanacoBuzonApiRequest(
     // SOCIO: depositar documento en un casillero (multipart/form-data)
     // ───────────────────────────────────────────────────────────────
     if (path === '/api/canaco/buzon/upload' && request.method === 'POST') {
+      const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
+      if (await rateLimit(env, 'buzon:upload', ip, 30, 3600)) {
+        return json(
+          { error: 'Demasiadas cargas de archivos. Intenta más tarde.' },
+          corsHeaders,
+          429
+        );
+      }
       const form = await request.formData().catch(() => null);
       if (!form) return json({ error: 'Se esperaba multipart/form-data.' }, corsHeaders, 400);
 

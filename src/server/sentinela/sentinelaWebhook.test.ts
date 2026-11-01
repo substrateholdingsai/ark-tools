@@ -155,6 +155,22 @@ describe('Sentinela Legal — Integración Webhook & Alertas Regulatorias', () =
       expect(json.error).toContain('Firma de webhook de Sentinela inválida');
     });
 
+    it('responde 503 (fail-closed) cuando SENTINELA_WEBHOOK_SECRET no está configurado (C-03)', async () => {
+      const envWithoutSecret = {
+        ARK_TOOLS_DB: createMockDb(),
+        ENVIRONMENT: 'production',
+      } as unknown as Env;
+
+      const request = new Request('https://ledger.arksystems.site/api/webhooks/sentinela', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(samplePayload),
+      });
+
+      const response = await handleSentinelaApiRequest(request, envWithoutSecret, corsHeaders);
+      expect(response?.status).toBe(503);
+    });
+
     it('rechaza webhook con JSON malformado', async () => {
       const rawBody = '{ broken json ';
       const signature = await calculateHmacSha256Hex(mockSecret, rawBody);
