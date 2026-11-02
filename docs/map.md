@@ -1,7 +1,7 @@
 # ARK LEDGER — Mapa del Proyecto y Checklist de Estado
 
-**Versión:** 3.0 — Suite de 20 Herramientas + Integración Sentinela Legal RegTech Early Warning (DOF/SAT) + Detector de Comportamientos Atípicos en CFDI (#20) + Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2 (#12) + Buzón Documental Físico-Digital CANACO + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags + Simulador Modalidad 40 (#19) + Actualización y Recargos (#18) + Monitor LFPIORPI (#17) + Motor Anexo 24 (#16) + Balance General (#15) + CRM Leads + RESICO 2026 + Timbrado CFDI 4.0 + Colaboración Despacho + Cierre Nómina + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo PDF & QR + GEO Engine /llms.txt  
-**Fecha:** Octubre 2026 (verificado contra `main` y desplegado en producción)  
+**Versión:** 3.1 — Suite de 20 Herramientas + Bóveda Offline Criptográfica (Art. 30 CFF & Anti Vendor-Lock-In) + Integración Sentinela Legal RegTech Early Warning (DOF/SAT) + Detector de Comportamientos Atípicos en CFDI (#20) + Módulo de Cruce Laboral-Fiscal Checador vs CFDI Nómina 1.2 (#12) + Buzón Documental Físico-Digital CANACO + Motor de Marca Blanca (Brand Config Engine / White-Label CANACO SERVYTUR MÉRIDA) + Social Meta Tags + Simulador Modalidad 40 (#19) + Actualización y Recargos (#18) + Monitor LFPIORPI (#17) + Motor Anexo 24 (#16) + Balance General (#15) + CRM Leads + RESICO 2026 + Timbrado CFDI 4.0 + Colaboración Despacho + Cierre Nómina + Multi-Tenant + Expediente Único + Workers AI + Papel de Trabajo PDF & QR + GEO Engine /llms.txt  
+**Fecha:** Noviembre 2026 (verificado contra `main` y desplegado en producción)  
 **Mantenedor:** Substrate Holdings LLC  
 **URL de Producción:** [https://ledger.arksystems.site](https://ledger.arksystems.site)  
 **Repositorio:** [https://github.com/substrateholdingsai/ark-tools](https://github.com/substrateholdingsai/ark-tools)
@@ -25,6 +25,7 @@
 | **Cierre de Nómina Masivo & Cruce Laboral-Fiscal (#12)**   | 100% Operativo (Ingesta CSV/Excel, cálculo de retenciones SAT/IMSS/ISN, y módulo de Cruce Laboral-Fiscal CFDI Nómina 1.2 vs Asistencia/Checador LFT Art. 132 Fracc. VIII Bis, score de consistencia, alertas de riesgo cruzado SAT-IMSS-STPS, Cédula Oficial SHA-256 + QR)                                                                                                                                             |
 | **Papel de Trabajo Oficial (PDF/QR)**                      | 100% Operativo (Formato institucional tamaño Carta, `@media print`, Sello SHA-256 inmutable, Importe en Letras M.N., QR de Verificación Pública)                                                                                                                                                                                                                                                                       |
 | **Verificación Pública de Expedientes**                    | 100% Operativo (`/api/expedientes/verify?hash=` y portal visual público `/?verify={hash}` con validación de autenticidad para terceros y auditores)                                                                                                                                                                                                                                                                    |
+| **Bóveda Offline Anti-Lock-In (Art. 30 CFF)**              | 100% Implementado y Verificado (Exportación empaquetada .zip con JSZip: `datos_expediente.json` canónico, `papel_de_trabajo.html` imprimible Carta, `offline-viewer.html` visor interactivo 100% autónomo con recálculo SHA-256 en Web Crypto API sin dependencias de red, y `manifest.sha256` FIPS 180-4 auditable con `sha256sum -c`)                                                                                |
 | **CRM de Prospectos (Super Admin)**                        | 100% Implementado e integrado (Pestaña `leads` en la consola de Super Admin, tabla `leads_ark_tools` en D1, KPIs de embudo, filtros por ciudad/especialidad/estatus, alta y baja de prospectos, envío de propuesta comercial vía Resend y tool de IA `consultar_leads_crm`)                                                                                                                                            |
 | **Expediente Único & Catálogo**                            | 100% Operativo (Catálogo central de clientes/trabajadores, auto-hidratación y sellado SHA-256 con versión DOF)                                                                                                                                                                                                                                                                                                         |
 | **Autenticación & AuthGate**                               | 100% Operativo en Producción (Registro, verificación por correo, login, recuperación, sesiones HttpOnly y permisos por membresía tenant)                                                                                                                                                                                                                                                                               |
@@ -2416,3 +2417,26 @@ Ejecución de auditoría ofensiva/defensiva de arquitectura y remediación compl
 - **Typecheck:** 0 errores TypeScript (`tsc --noEmit`).
 - **Linting:** 0 errores y 0 advertencias (`eslint --max-warnings 0`).
 - **Formato:** 100% Prettier uniforme (`pnpm format:check`).
+
+### Sprint 35 — Bóveda Offline Criptográfica, Visor Autónomo sin Servidor y Cumplimiento Art. 30 CFF (Anti Vendor-Lock-In)
+
+Diseño e implementación de la primera capa de soberanía documental y preservación fiscal a 10 años, garantizando la inmutabilidad de los papeles de trabajo sin dependencia obligatoria de la nube ni de servidores externos:
+
+#### 1. Módulo Canónico de Bóveda Offline (src/lib/bovedaOffline.ts)
+
+- Generación de ZIP client-side (generarBovedaOfflineZip): Empaqueta mediante JSZip (compresión DEFLATE nivel 9) los componentes indispensables para auditoría forense:
+  - datos_expediente.json: Snapshot canónico con inputs, outputs, contribuyente, folio y versión del catálogo DOF.
+  - papel_de_trabajo.html: Cédula formal optimizada para impresión física en tamaño Carta (@media print) con firmas de auditoría y conformidad.
+  - offline-viewer.html: Visor interactivo 100% autocontenido (HTML5 + CSS + JS inline, sin CDNs ni conexiones a internet) que recalcula el digest SHA-256 en vivo usando la Web Crypto API nativa (crypto.subtle.digest) y provee zona Drag & Drop para verificación local de archivos.
+  - manifest.sha256: Manifiesto estándar UNIX (FIPS 180-4) con los digests de cada archivo en el paquete, compatible con sha256sum -c manifest.sha256 en Linux/macOS y Get-FileHash * -Algorithm SHA256 en Windows PowerShell.
+- Descarga en 1-clic (descargarBovedaOfflineZip): Disparo de descarga con nomenclatura normalizada BOVEDA_OFFLINE_{RFC}_{HERRAMIENTA}_{HASH8}.zip.
+
+#### 2. Componente de UI Reutilizable (src/components/BotonBovedaOffline.tsx)
+
+- Botón accesible con estados de carga (isGenerating), retroalimentación visual (downloaded), y variantes primary, secondary y compact.
+- Integrado en PapelDeTrabajoModal.tsx (dictamen universal), CedulaModalidad40Modal.tsx (Simulador Modalidad 40) y CedulaRecargosModal.tsx (Actualización y Recargos CFF).
+
+#### 3. Métricas y Pruebas
+
+- Pruebas unitarias nuevas: src/lib/bovedaOffline.test.ts con 8 tests que verifican computeSha256, normalización determinística de llaves en computeDeterministicHash, formato estándar UNIX del manifiesto, estructura HTML del papel de trabajo, autonomía de red del visor offline y descompresión/verificación de hashes del ZIP con JSZip.
+- Suite completa: 581 tests en 83 suites (100% éxito) — pnpm test.

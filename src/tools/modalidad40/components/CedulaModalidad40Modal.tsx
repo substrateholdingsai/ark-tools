@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { Printer, X, ShieldCheck } from 'lucide-react';
 import type { ResultadoModalidad40 } from '../types';
+import { BotonBovedaOffline } from '@/components/BotonBovedaOffline';
 
 interface Props {
   isOpen: boolean;
@@ -60,6 +61,48 @@ export function CedulaModalidad40Modal({
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <BotonBovedaOffline
+              variant="secondary"
+              params={{
+                titulo: 'Simulador y Dictamen de Pensión Modalidad 40 IMSS',
+                toolId: 'modalidad-40',
+                despachoName,
+                client: {
+                  nombre: nombreAsegurado,
+                  nss: nssAsegurado,
+                  tipo: 'trabajador',
+                },
+                folio: `M40-${hash.slice(0, 8).toUpperCase()}`,
+                inputHash: hash,
+                inputs: (resultado.parametros as unknown as Record<string, unknown>) || {},
+                outputs: (resultado as unknown as Record<string, unknown>) || {},
+                filasConceptos: [
+                  {
+                    concepto: 'Pensión Mensual Estimada (con Asignaciones)',
+                    dias: `${resultado.pension.semanasTotales} sem`,
+                    formula: `Cuantía Básica (${(resultado.pension.pctCuantiaBasica ?? 0).toFixed(2)}%) + Inc. Anual (${(resultado.pension.pctIncrementoAnual ?? 0).toFixed(2)}%)`,
+                    fundamento: 'LSS 1973 Art. 167',
+                    importe: resultado.pension.pensionMensualEstimada,
+                  },
+                  {
+                    concepto: 'Inversión Total Acumulada M40',
+                    dias: `${resultado.parametros.mesesAportacion} meses`,
+                    formula: `Cuota mensual aprox. $${(resultado.inversion.cuotaMensual ?? 0).toLocaleString('es-MX')} × ${resultado.parametros.mesesAportacion} meses`,
+                    fundamento: 'LSS Art. 218',
+                    importe: resultado.inversion.inversionTotal,
+                  },
+                  {
+                    concepto: 'Retorno de Inversión (ROI Financiero)',
+                    dias: `${resultado.roi.mesesRecuperacionRoi} meses`,
+                    formula: `Recuperación estimada en ${resultado.roi.tiempoRecuperacionFormateado}`,
+                    fundamento: 'Evaluación Actuarial Financiera',
+                    importe: resultado.roi.incrementoMensualPension,
+                  },
+                ],
+                totalMonto: resultado.pension.pensionMensualEstimada,
+                qrDataUrl,
+              }}
+            />
             <button
               type="button"
               onClick={handlePrint}

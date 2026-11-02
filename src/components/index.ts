@@ -21,6 +21,7 @@ export { AiAssistantWidget } from './AiAssistantWidget';
 export { ExpedienteSelector } from './ExpedienteSelector';
 export { ExpedienteToolBanner } from './ExpedienteToolBanner';
 export { PapelDeTrabajoModal } from './PapelDeTrabajoModal';
+export { BotonBovedaOffline } from './BotonBovedaOffline';
 export { VerificacionPublicaModal } from './VerificacionPublicaModal';
 export { AdminPanel } from './admin/AdminPanel';
 export { TeamModal, InviteAcceptModal } from './team';

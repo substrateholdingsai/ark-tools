@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { Printer, X, ShieldCheck } from 'lucide-react';
 import type { ResultadoRecargos } from '../types';
+import { BotonBovedaOffline } from '@/components/BotonBovedaOffline';
 
 interface Props {
   isOpen: boolean;
@@ -61,6 +62,53 @@ export function CedulaRecargosModal({
             </span>
           </div>
           <div className="flex items-center gap-2">
+            <BotonBovedaOffline
+              variant="secondary"
+              params={{
+                titulo: 'Actualización y Recargos Fiscales (CFF Art. 17-A y 21)',
+                toolId: 'recargos',
+                despachoName,
+                client: {
+                  nombre: clienteNombre,
+                  rfc: clienteRfc,
+                  tipo: 'persona_fisica',
+                },
+                folio: `REC-${hash.slice(0, 8).toUpperCase()}`,
+                inputHash: hash,
+                inputs: {
+                  importeHistorico: resultado.importeHistorico,
+                  fechaVencimiento: resultado.fechaVencimiento,
+                  fechaPago: resultado.fechaPago,
+                  tasaRecargosTotal: resultado.tasaRecargosTotal,
+                },
+                outputs: (resultado as unknown as Record<string, unknown>) || {},
+                filasConceptos: [
+                  {
+                    concepto: 'Impuesto Histórico Omitido',
+                    dias: `${resultado.mesesMora} meses mora`,
+                    formula: `Fecha de vencimiento: ${resultado.fechaVencimiento}`,
+                    fundamento: 'CFF Art. 21',
+                    importe: resultado.importeHistorico,
+                  },
+                  {
+                    concepto: 'Actualización por Inflación (INPC)',
+                    dias: resultado.factorActualizacion.toFixed(4),
+                    formula: `Factor ${resultado.factorActualizacion.toFixed(4)} s/adeudo histórico`,
+                    fundamento: 'CFF Art. 17-A',
+                    importe: resultado.montoActualizacion,
+                  },
+                  {
+                    concepto: 'Recargos por Mora',
+                    dias: `${(resultado.tasaRecargosTotal * 100).toFixed(2)}%`,
+                    formula: `Tasa acumulada ${resultado.mesesMora} meses al 1.47%`,
+                    fundamento: 'LIF Art. 8 / CFF Art. 21',
+                    importe: resultado.montoRecargos,
+                  },
+                ],
+                totalMonto: resultado.totalPagar,
+                qrDataUrl,
+              }}
+            />
             <button
               type="button"
               onClick={handlePrint}

@@ -16,6 +16,7 @@ import QRCode from 'qrcode';
 import { Printer, X, ShieldCheck } from 'lucide-react';
 import type { ClientRecord, ExpedienteRecord } from '@/lib/apiClient';
 import { numeroALetras } from '@/lib/numeroALetras';
+import { BotonBovedaOffline } from '@/components/BotonBovedaOffline';
 
 interface Props {
   isOpen: boolean;
@@ -312,6 +313,25 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
     <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-2 sm:p-4">
       {/* ═══ BARRA FLOTANTE DE ACCIONES (NO IMPRIME) ═══ */}
       <div className="fixed right-4 top-4 z-50 flex items-center gap-2 print:hidden">
+        <BotonBovedaOffline
+          params={{
+            titulo: expediente.titulo || 'Papel de Trabajo Oficial',
+            toolId: expediente.tool_id,
+            despachoName,
+            client,
+            folio,
+            fecha: fechaStr,
+            catalogVersion: expediente.catalog_version,
+            inputHash: expediente.input_hash,
+            inputs: expediente.inputs,
+            outputs: expediente.outputs,
+            filasConceptos,
+            totalMonto,
+            importeEnLetras,
+            qrDataUrl,
+          }}
+        />
+
         <button
           type="button"
           onClick={handlePrint}
