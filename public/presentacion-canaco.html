@@ -1,0 +1,1556 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CANACO SERVYTUR MÉRIDA × ARK LEDGER — Sistema Operativo White-Label 2026</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #206d67;
+        --primary-dark: #164e4a;
+        --primary-light: #2c8c84;
+        --accent: #0e7c86;
+        --accent-light: #17a2b0;
+        --ink: #10302f;
+        --ink-muted: #3d5856;
+        --paper: #ebfaf1;
+        --paper-card: #ffffff;
+        --border: rgba(32, 109, 103, 0.16);
+        --border-focus: #0e7c86;
+        --alert-bg: #fde8e8;
+        --alert-text: #9b1c1c;
+        --alert-border: #f8b4b4;
+        --success-bg: #d1e7dd;
+        --success-text: #0f5132;
+        --success-border: #a3cfbb;
+        --shadow-sm: 0 2px 8px rgba(16, 48, 47, 0.06);
+        --shadow-md: 0 8px 24px rgba(16, 48, 47, 0.08);
+        --shadow-lg: 0 16px 40px rgba(16, 48, 47, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          'Inter',
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background-color: #0d2120;
+        color: var(--ink);
+        line-height: 1.5;
+        overflow: hidden;
+        height: 100vh;
+        width: 100vw;
+        user-select: none;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4,
+      .brand-display {
+        font-family: 'Manrope', system-ui, sans-serif;
+        font-weight: 700;
+        color: var(--ink);
+        letter-spacing: -0.02em;
+      }
+
+      .deck-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(circle at 50% 20%, #1a423f 0%, #0d2120 100%);
+        padding: 24px;
+      }
+
+      .slide {
+        position: absolute;
+        width: min(1360px, 94vw);
+        height: min(780px, 90vh);
+        background: var(--paper);
+        border-radius: 20px;
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border);
+        padding: 44px 56px;
+        display: none;
+        flex-direction: column;
+        justify-content: space-between;
+        opacity: 0;
+        transform: translateY(12px) scale(0.99);
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow-y: auto;
+      }
+
+      .slide.active {
+        display: flex;
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      /* Header de cada slide */
+      .slide-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid rgba(32, 109, 103, 0.12);
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+      }
+
+      .slide-title-area h2 {
+        font-size: 1.85rem;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .slide-subtitle {
+        font-size: 0.95rem;
+        color: var(--ink-muted);
+        margin-top: 4px;
+        font-weight: 500;
+      }
+
+      .brand-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        background: rgba(32, 109, 103, 0.08);
+        border: 1px solid rgba(32, 109, 103, 0.2);
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      /* Content Area */
+      .slide-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      /* Footer */
+      .slide-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 16px;
+        border-top: 1px solid rgba(32, 109, 103, 0.1);
+        font-size: 0.8rem;
+        color: var(--ink-muted);
+      }
+
+      .slide-footer-meta {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      .badge-pill {
+        background: var(--primary);
+        color: white;
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 0.72rem;
+        font-weight: 600;
+      }
+
+      /* Grid Layouts */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 24px;
+      }
+
+      .grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+
+      .grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+      }
+
+      /* Tarjetas Interactivas */
+      .card {
+        background: var(--paper-card);
+        border-radius: 14px;
+        border: 1px solid var(--border);
+        padding: 22px;
+        box-shadow: var(--shadow-sm);
+        position: relative;
+      }
+
+      .card.highlight {
+        border-color: var(--accent);
+        background: linear-gradient(180deg, #ffffff 0%, #f4fbf8 100%);
+        box-shadow: var(--shadow-md);
+      }
+
+      .card-title {
+        font-size: 1.1rem;
+        color: var(--primary);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .card-p {
+        font-size: 0.88rem;
+        color: var(--ink-muted);
+        line-height: 1.45;
+      }
+
+      /* Comparativa Antes / Después */
+      .compare-box {
+        border-radius: 14px;
+        padding: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .compare-box.before {
+        background: var(--alert-bg);
+        border: 1px solid var(--alert-border);
+        color: var(--alert-text);
+      }
+
+      .compare-box.after {
+        background: var(--success-bg);
+        border: 1px solid var(--success-border);
+        color: var(--success-text);
+      }
+
+      .compare-header {
+        font-size: 1.1rem;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .step-chain {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin: 12px 0;
+        font-size: 0.82rem;
+        font-weight: 600;
+      }
+
+      .step-item {
+        padding: 6px 12px;
+        background: white;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      }
+
+      .step-arrow {
+        color: #999;
+        font-weight: bold;
+      }
+
+      /* Tabla de herramientas */
+      .tools-table-container {
+        max-height: 380px;
+        overflow-y: auto;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: white;
+      }
+
+      .tools-table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 0.85rem;
+      }
+
+      .tools-table th {
+        background: #e4f5ed;
+        color: var(--primary-dark);
+        font-weight: 700;
+        padding: 10px 14px;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+      }
+
+      .tools-table td {
+        padding: 10px 14px;
+        border-bottom: 1px solid rgba(32, 109, 103, 0.08);
+        color: var(--ink);
+      }
+
+      .tools-table tr:hover {
+        background: #f7fdfa;
+      }
+
+      .law-code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.76rem;
+        background: rgba(32, 109, 103, 0.08);
+        color: var(--primary);
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+      }
+
+      /* Controles de Navegación */
+      .deck-controls {
+        position: fixed;
+        bottom: 24px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        background: rgba(13, 33, 32, 0.85);
+        backdrop-filter: blur(8px);
+        padding: 8px 18px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+        z-index: 100;
+      }
+
+      .btn-nav {
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.2s ease;
+      }
+
+      .btn-nav:hover {
+        background: var(--accent);
+        border-color: var(--accent);
+        transform: scale(1.05);
+      }
+
+      .progress-track {
+        width: 140px;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--accent-light);
+        width: 10%;
+        transition: width 0.3s ease;
+      }
+
+      .slide-counter {
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: white;
+        min-width: 45px;
+        text-align: center;
+      }
+
+      .btn-aux {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .btn-aux:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      /* Modal de Notas del Orador */
+      .speaker-notes-drawer {
+        position: fixed;
+        top: 0;
+        right: -420px;
+        width: 400px;
+        height: 100vh;
+        background: #10302f;
+        color: #ebfaf1;
+        box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+        padding: 30px;
+        transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 200;
+        overflow-y: auto;
+        border-left: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .speaker-notes-drawer.open {
+        right: 0;
+      }
+
+      .notes-title {
+        font-size: 1.1rem;
+        color: #2c8c84;
+        margin-bottom: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .notes-content {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: #c9e4dc;
+      }
+
+      /* Estilo Hero Slide 1 */
+      .hero-slide {
+        text-align: center;
+        justify-content: center;
+        align-items: center;
+        padding: 60px 40px;
+      }
+
+      .hero-emblem {
+        width: 84px;
+        height: 84px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2.2rem;
+        margin: 0 auto 20px;
+        box-shadow: 0 10px 25px rgba(32, 109, 103, 0.3);
+      }
+
+      .hero-title {
+        font-size: 2.8rem;
+        line-height: 1.15;
+        color: var(--primary-dark);
+        margin-bottom: 14px;
+      }
+
+      .hero-subtitle {
+        font-size: 1.25rem;
+        color: var(--ink-muted);
+        max-width: 800px;
+        margin: 0 auto 30px;
+        font-weight: 500;
+      }
+
+      .hero-pills {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .hero-pill {
+        background: white;
+        border: 1px solid var(--border);
+        padding: 8px 18px;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--primary);
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* Media Print */
+      @media print {
+        body {
+          overflow: visible;
+          background: white;
+        }
+        .deck-container {
+          display: block;
+          padding: 0;
+          background: white;
+        }
+        .slide {
+          display: flex !important;
+          opacity: 1 !important;
+          transform: none !important;
+          page-break-after: always;
+          width: 100% !important;
+          height: 100vh !important;
+          border: none;
+          box-shadow: none;
+          padding: 40px;
+        }
+        .deck-controls,
+        .speaker-notes-drawer {
+          display: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="deck-container">
+      <!-- SLIDE 1: PORTADA -->
+      <div
+        class="slide hero-slide active"
+        data-slide="1"
+        data-notes="Dar la bienvenida al Consejo y Presidencia. Enfatizar que no venimos a venderles una app genérica ni a pedirles que cambien su forma de trabajar. Construimos este sistema sobre el proceso real de la Cámara."
+      >
+        <div>
+          <div class="hero-emblem">🏛️</div>
+          <div class="brand-tag" style="margin-bottom: 12px">
+            CANACO SERVYTUR MÉRIDA × ARK LEDGER
+          </div>
+          <h1 class="hero-title">Sistema Operativo White-Label 2026</h1>
+          <p class="hero-subtitle">
+            Ventanilla Única SIEM + Registro CANACO + Cobranza Digital y Suite de 20 Herramientas
+            Fiscales para el Comercio Yucateco.
+          </p>
+          <div class="hero-pills">
+            <div class="hero-pill">⚡ Proceso en 90 Segundos</div>
+            <div class="hero-pill">🛡️ Bóveda Offline Art. 30 CFF</div>
+            <div class="hero-pill">💰 Ahorro de $35,000+ por Socio</div>
+            <div class="hero-pill">🔒 Certidumbre para la Operadora</div>
+          </div>
+        </div>
+        <div class="slide-footer" style="width: 100%; justify-content: space-between">
+          <span
+            >Versión 1.0 — Producción: <code>ledger.arksystems.site</code> (Marca:
+            <code>canaco_merida</code>)</span
+          >
+          <span>Noviembre 2026 • Substrate Holdings LLC</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 2: EL PROBLEMA (EL FRANKENSTEIN) -->
+      <div
+        class="slide"
+        data-slide="2"
+        data-notes="Explicar el dolor real: Lupita y Marisol hoy usan 6 aplicaciones distintas para afiliar a 1 solo socio. La culpa de cualquier error recae en ellas. Con 40 llamadas al día, se pierden 5 horas."
+      >
+        <div class="slide-header">
+          <div class="slide-title-area">
+            <h2>¿QUÉ? — El Problema que Resolvemos</h2>
+            <div class="slide-subtitle">
+              La fragmentación operativa del registro SIEM y la membresía CANACO.
+            </div>
+          </div>
+          <div class="brand-tag">Diagnóstico Operativo</div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="compare-box before">
+              <div class="compare-header">
+                <span>⚠️ El Proceso Frankenstein Actual</span>
+              </div>
+              <p style="font-size: 0.9rem">
+                Hoy, registrar a un socio requiere saltar entre 6 programas sin comunicación:
+              </p>
+              <div class="step-chain">
+                <span class="step-item">📞 Llamada</span>
+                <span class="step-arrow">➔</span>
+                <span class="step-item">📊 Excel</span>
+                <span class="step-arrow">➔</span>
+                <span class="step-item">💾 Arkangel</span>
+                <span class="step-arrow">➔</span>
+                <span class="step-item">✉️ Correo</span>
+                <span class="step-arrow">➔</span>
+                <span class="step-item">💳 Conekta</span>
+                <span class="step-arrow">➔</span>
+                <span class="step-item">📄 PDF a mano</span>
+                <span class="step-arrow">➔</span>
+                <span class="step-item">💬 WhatsApp</span>
+              </div>
+              <ul style="font-size: 0.85rem; padding-left: 20px; line-height: 1.6">
+                <li>
+                  <strong>40 a 60 llamadas diarias</strong> de socios preguntando "¿Ya quedó mi
+                  registro?".
+                </li>
+                <li>
+                  <strong>5 horas hombre perdidas al día</strong> recapturando nombres y RFCs.
+                </li>
+                <li>
+                  <strong>Riesgo legal y fiscal</strong> que recae injustamente en la secretaria.
+                </li>
+              </ul>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title">🚨 La Falla Raíz de los Softwares Comerciales</div>
+              <p class="card-p" style="margin-bottom: 16px">
+                Ningún sistema comercial respeta el
+                <strong>proceso real de la Cámara de Comercio</strong> ni la legislación fiscal
+                mexicana aplicable.
+              </p>
+              <div
+                style="
+                  background: white;
+                  border: 1px solid var(--border);
+                  border-radius: 8px;
+                  padding: 14px;
+                  margin-bottom: 12px;
+                "
+              >
+                <strong style="color: var(--primary); font-size: 0.88rem"
+                  >Obligan a la Cámara a adaptarse al software:</strong
+                >
+                <p style="font-size: 0.82rem; color: var(--ink-muted); margin-top: 4px">
+                  Sistemas rígidos que no integran el cobro con el cotejo de INE, ni emiten el papel
+                  de trabajo con QR, obligando a parchar con correos y hojas de cálculo.
+                </p>
+              </div>
+              <div
+                style="
+                  background: #e6f6ee;
+                  border: 1px solid var(--success-border);
+                  border-radius: 8px;
+                  padding: 14px;
+                "
+              >
+                <strong style="color: var(--success-text); font-size: 0.88rem"
+                  >Nuestra Filosofía:</strong
+                >
+                <p style="font-size: 0.82rem; color: var(--success-text); margin-top: 4px">
+                  Construimos el sistema alrededor del escritorio de Lupita y Marisol para hacerles
+                  la vida fácil. De 20 minutos a 90 segundos.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <span>CANACO Mérida × ARK LEDGER</span>
+          <span>02 / 10 • Diagnóstico</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 3: ¿CÓMO? — LA ARQUITECTURA EN 3 CAPAS -->
+      <div
+        class="slide"
+        data-slide="3"
+        data-notes="Detallar las 3 capas: Capa 1 es el marco legal (Art 30 Bóveda 10 años, Art 17-A/21 recargos, RESICO 2026). Capa 2 es el proceso real (Buzón físico-digital, marca blanca canaco_merida). Capa 3 es la seguridad para la operadora con 578 tests."
+      >
+        <div class="slide-header">
+          <div class="slide-title-area">
+            <h2>¿CÓMO? — 1 Solo Sistema Operativo en 3 Capas</h2>
+            <div class="slide-subtitle">
+              Arquitectura modular construida con legislación estricta y empatía operativa.
+            </div>
+          </div>
+          <div class="brand-tag">Arquitectura del Sistema</div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <div class="badge-pill" style="margin-bottom: 12px; display: inline-block">
+                CAPA 1
+              </div>
+              <div class="card-title">⚖️ Legislación Vigente</div>
+              <p class="card-p" style="margin-bottom: 12px">
+                El marco normativo es el cimiento, no un añadido posterior:
+              </p>
+              <ul style="font-size: 0.8rem; line-height: 1.6; color: var(--ink)">
+                <li>
+                  <strong>Art. 30 CFF:</strong> Bóveda Offline garantizada a 10 años con SHA-256
+                  client-side.
+                </li>
+                <li>
+                  <strong>Art. 17-A y 21 CFF:</strong> Recargos e INPC oficial con factor a 4
+                  decimales.
+                </li>
+                <li>
+                  <strong>Art. 29-A CFF:</strong> Validación estricta CFDI 4.0 y cancelaciones.
+                </li>
+                <li><strong>RESICO 2026:</strong> Tasas de 1% al 2.5% PF y PM.</li>
+                <li><strong>LFPIORPI Art. 17:</strong> Monitor antilavado 6 meses.</li>
+                <li><strong>LSS Modalidad 40:</strong> Topes vigentes 2026.</li>
+              </ul>
+            </div>
+
+            <div class="card highlight">
+              <div
+                class="badge-pill"
+                style="margin-bottom: 12px; display: inline-block; background: var(--accent)"
+              >
+                CAPA 2
+              </div>
+              <div class="card-title">⚡ Proceso Real CANACO</div>
+              <p class="card-p" style="margin-bottom: 12px">
+                Adaptado fielmente al flujo de ventanilla de la Cámara:
+              </p>
+              <ul style="font-size: 0.8rem; line-height: 1.6; color: var(--ink)">
+                <li>
+                  <strong>Buzón Documental:</strong> Socio sube INE y Constancia Fiscal; operadora
+                  valida con 1 clic.
+                </li>
+                <li>
+                  <strong>Brand Config Engine:</strong> El dominio activa el perfil institucional de
+                  CANACO Mérida.
+                </li>
+                <li>
+                  <strong>Pasarela Híbrida:</strong> Conekta en línea [$100-$500,000] y cobro Clip
+                  en mostrador.
+                </li>
+                <li>
+                  <strong>Sincronizador Arkangel:</strong> Conexión silenciosa con la base de datos
+                  histórica.
+                </li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <div
+                class="badge-pill"
+                style="margin-bottom: 12px; display: inline-block; background: #164e4a"
+              >
+                CAPA 3
+              </div>
+              <div class="card-title">🛡️ Seguridad Operativa</div>
+              <p class="card-p" style="margin-bottom: 12px">
+                Paz mental absoluta para la operadora y el consejo:
+              </p>
+              <ul style="font-size: 0.8rem; line-height: 1.6; color: var(--ink)">
+                <li>
+                  <strong>578 Tests en 82 Suites:</strong> 0 errores de TypeScript, 0 advertencias
+                  ESLint.
+                </li>
+                <li>
+                  <strong>Cifrado AES-GCM 256:</strong> HSTS y Content-Security-Policy estricta.
+                </li>
+                <li>
+                  <strong>Multi-tenant Infranqueable:</strong> Cero fuga de información entre
+                  organizaciones.
+                </li>
+                <li>
+                  <strong>Papel de Trabajo Certificado:</strong> PDF Carta con QR público
+                  inviolable.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <span>CANACO Mérida × ARK LEDGER</span>
+          <span>03 / 10 • Arquitectura</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 4: SUITE DE 20 HERRAMIENTAS (RETENCIÓN Y VALOR) -->
+      <div
+        class="slide"
+        data-slide="4"
+        data-notes="Punto clave para el Consejo: La afiliación antes era solo un papel que el socio compraba por obligación. Ahora, con estas 20 herramientas (12 clave para comercio), el socio ahorra de $35,000 a $60,000 al año en contadores y multas. Es el mayor motor de retención que la Cámara ha tenido."
+      >
+        <div class="slide-header">
+          <div class="slide-title-area">
+            <h2>El Arma de Retención: 20 Herramientas Fiscales</h2>
+            <div class="slide-subtitle">
+              La membresía de la Cámara convertida en un escudo fiscal de alto valor para el
+              comerciante.
+            </div>
+          </div>
+          <div class="brand-tag">Valor Agregado al Socio</div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-2" style="align-items: center; margin-bottom: 16px">
+            <div>
+              <p style="font-size: 0.92rem; color: var(--ink)">
+                El socio ya no paga solo por el <strong>"trámite obligatorio del SIEM"</strong>.
+                Recibe una suite tecnológica que le ahorra honorarios externos y lo protege ante
+                revisiones del SAT y la Secretaría de Economía.
+              </p>
+            </div>
+            <div style="text-align: right">
+              <span
+                style="
+                  background: #e6f7f0;
+                  color: var(--success-text);
+                  border: 1px solid var(--success-border);
+                  padding: 8px 16px;
+                  border-radius: 8px;
+                  font-weight: 700;
+                  font-size: 0.95rem;
+                "
+              >
+                💰 Ahorro Estimado por Socio: $35,000 a $60,000 MXN / año
+              </span>
+            </div>
+          </div>
+
+          <div class="tools-table-container">
+            <table class="tools-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Herramienta Integrada</th>
+                  <th>Fundamento Legal</th>
+                  <th>Beneficio Inmediato para el Socio Comerciante</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>01</strong></td>
+                  <td><strong>Ventanilla SIEM + CANACO</strong></td>
+                  <td><span class="law-code">Ley de Cámaras</span></td>
+                  <td>Afiliación y constancia digital con QR en 90 segundos.</td>
+                </tr>
+                <tr>
+                  <td><strong>02</strong></td>
+                  <td><strong>Recargos y Actualización</strong></td>
+                  <td><span class="law-code">Art. 17-A y 21 CFF</span></td>
+                  <td>Cálculo exacto con INPC oficial sin pagar asesorías por recargo.</td>
+                </tr>
+                <tr>
+                  <td><strong>03</strong></td>
+                  <td><strong>Simulador RESICO 2026</strong></td>
+                  <td><span class="law-code">Art. 113-E / 206 LISR</span></td>
+                  <td>Comparativa de tasas del 1% al 2.5% vs régimen general.</td>
+                </tr>
+                <tr>
+                  <td><strong>04</strong></td>
+                  <td><strong>Validador Masivo CFDI 4.0</strong></td>
+                  <td><span class="law-code">Art. 29-A CFF</span></td>
+                  <td>Arrastra ZIPs de facturas; detecta cancelaciones y errores de método.</td>
+                </tr>
+                <tr>
+                  <td><strong>05</strong></td>
+                  <td><strong>Detector Lista Negra 69-B</strong></td>
+                  <td><span class="law-code">Art. 69-B CFF</span></td>
+                  <td>Audita proveedores locales contra la lista negra del SAT al instante.</td>
+                </tr>
+                <tr>
+                  <td><strong>06</strong></td>
+                  <td><strong>Monitor Antilavado LFPIORPI</strong></td>
+                  <td><span class="law-code">Art. 17 LFPIORPI</span></td>
+                  <td>Monitoreo móvil a 6 meses de cobros en efectivo y metales.</td>
+                </tr>
+                <tr>
+                  <td><strong>07</strong></td>
+                  <td><strong>Modalidad 40 IMSS</strong></td>
+                  <td><span class="law-code">LSS 1973 Art. 167</span></td>
+                  <td>Proyección de pensiones para los dueños y ejecutivos del comercio.</td>
+                </tr>
+                <tr>
+                  <td><strong>08</strong></td>
+                  <td><strong>Detector de Atípicos (Benford)</strong></td>
+                  <td><span class="law-code">Auditoría Pericial</span></td>
+                  <td>Pruebas de primer dígito y Z-Score para detectar fugas contables.</td>
+                </tr>
+                <tr>
+                  <td><strong>09</strong></td>
+                  <td><strong>Bóveda Offline Art. 30</strong></td>
+                  <td><span class="law-code">Art. 30 CFF</span></td>
+                  <td>Expediente ZIP sellado con SHA-256 que abre sin internet a 10 años.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <span>CANACO Mérida × ARK LEDGER</span>
+          <span>04 / 10 • Retención de Afiliados</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 5: USER PERSONA (LUPITA / MARISOL) -->
+      <div
+        class="slide"
+        data-slide="5"
+        data-notes="Hablar de Lupita y Marisol. Ellas son las verdaderas decisoras. Si el software les exige 3 clics más, lo van a boicotear y volver a Excel. Pero si les quita las 50 llamadas diarias y las protege con la Bóveda SHA-256, se vuelven sus mayores promotoras."
+      >
+        <div class="slide-header">
+          <div class="slide-title-area">
+            <h2>¿PARA QUÉ? — Diseñado para Quien Realmente Decide</h2>
+            <div class="slide-subtitle">
+              User Persona: Lupita / Marisol — Operadora de Afiliaciones de CANACO Mérida.
+            </div>
+          </div>
+          <div class="brand-tag">Psicología de Adopción</div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">👤 Perfil: La Operadora de Mostrador</div>
+              <p class="card-p" style="margin-bottom: 14px">
+                Es una <strong>programadora funcional de facto</strong>: domina hojas de Excel
+                complejas, atiende al público en ventanilla y lidia con los reclamos diarios.
+              </p>
+              <div
+                style="
+                  background: var(--alert-bg);
+                  border-left: 4px solid var(--alert-text);
+                  padding: 10px 14px;
+                  margin-bottom: 12px;
+                  font-size: 0.82rem;
+                  color: var(--alert-text);
+                "
+              >
+                <strong>Su mayor dolor:</strong> "El sistema falla, pero el socio y el jefe me echan
+                la culpa a mí."
+              </div>
+              <div
+                style="
+                  background: #eef8f4;
+                  border-left: 4px solid var(--primary);
+                  padding: 10px 14px;
+                  font-size: 0.82rem;
+                  color: var(--primary-dark);
+                "
+              >
+                <strong>Su criterio de éxito:</strong> "Poder salir a mi hora, que no me timbren el
+                teléfono 50 veces y tener respaldo de que hice bien mi trabajo."
+              </div>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title">🎯 4 Pilares de Adopción Inmediata</div>
+              <div style="display: flex; flex-direction: column; gap: 10px; font-size: 0.84rem">
+                <div style="display: flex; gap: 10px">
+                  <span style="font-size: 1.2rem">⚡</span>
+                  <div>
+                    <strong>Mínimo Esfuerzo:</strong> 1 enlace de autoservicio para el socio, 1 clic
+                    de validación en buzón, 1 descarga de Bóveda.
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px">
+                  <span style="font-size: 1.2rem">🛡️</span>
+                  <div>
+                    <strong>Aversión a la Pérdida ("Que nunca sea tu culpa"):</strong> La Bóveda
+                    Offline certifica con fecha, hora y hash que el cálculo y los papeles eran
+                    correctos.
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px">
+                  <span style="font-size: 1.2rem">🌟</span>
+                  <div>
+                    <strong>Estatus y Reconocimiento:</strong> El panel ahora muestra:
+                    <em
+                      >"342 registros completados este mes — Operado con éxito por Lupita
+                      Cámara"</em
+                    >.
+                  </div>
+                </div>
+                <div style="display: flex; gap: 10px">
+                  <span style="font-size: 1.2rem">🚀</span>
+                  <div>
+                    <strong>Evolución Profesional:</strong> Pasa de ser "la secretaria que captura
+                    datos" a <strong>Directora de Operaciones Digitales</strong>.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <span>CANACO Mérida × ARK LEDGER</span>
+          <span>05 / 10 • Operatividad Humana</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 6: BÓVEDA OFFLINE ART. 30 CFF & SOBERANÍA -->
+      <div
+        class="slide"
+        data-slide="6"
+        data-notes="Presentar la Bóveda Offline. No hay trampa ni candados de proveedor. El expediente se guarda en ZIP con DEFLATE nivel 9, con un visor HTML autónomo que abre en cualquier PC sin internet. Si la Cámara cambia de proveedor en 10 años, sus expedientes siguen intactos."
+      >
+        <div class="slide-header">
+          <div class="slide-title-area">
+            <h2>Soberanía Documental: Bóveda Offline Art. 30 CFF</h2>
+            <div class="slide-subtitle">
+              Seguridad jurídica inmutable para la Cámara y el Socio sin depender de servidores
+              externos.
+            </div>
+          </div>
+          <div class="brand-tag">Criptografía y CFF</div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-title">📦 Nomenclatura y Contenido de la Bóveda</div>
+              <p class="card-p" style="margin-bottom: 12px">
+                Cada trámite genera un paquete autocontenido estándar UNIX:
+              </p>
+              <div
+                style="
+                  background: #10302f;
+                  color: #a5f3fc;
+                  padding: 12px;
+                  border-radius: 8px;
+                  font-family: 'JetBrains Mono', monospace;
+                  font-size: 0.78rem;
+                  margin-bottom: 12px;
+                "
+              >
+                BOVEDA_OFFLINE_{RFC}_{TRAMITE}_{HASH8}.zip<br />
+                ├── datos_expediente.json<br />
+                ├── papel_de_trabajo.html<br />
+                ├── offline-viewer.html (Visor sin internet)<br />
+                └── manifest.sha256 (Verificable con Get-FileHash)
+              </div>
+              <ul style="font-size: 0.8rem; line-height: 1.6; color: var(--ink-muted)">
+                <li>Comprimido client-side con <strong>JSZip DEFLATE nivel 9</strong>.</li>
+                <li>Sello criptográfico en vivo con <strong>Web Crypto API SHA-256</strong>.</li>
+                <li>Cumple estrictamente con el plazo legal de conservación de 10 años.</li>
+              </ul>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title">🔓 Cero Vendor Lock-In (Libertad Total)</div>
+              <p class="card-p" style="margin-bottom: 14px">
+                La Cámara es dueña absoluta de sus expedientes. No cobramos rescate por su
+                información:
+              </p>
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <div
+                  style="
+                    background: white;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    padding: 10px;
+                  "
+                >
+                  <strong style="color: var(--primary); font-size: 0.85rem"
+                    >Visor 100% Autónomo:</strong
+                  >
+                  <p style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 2px">
+                    El archivo <code>offline-viewer.html</code> no requiere CDN, ni base de datos,
+                    ni conexión a internet. Abre con doble clic en cualquier explorador moderno.
+                  </p>
+                </div>
+                <div
+                  style="
+                    background: white;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    padding: 10px;
+                  "
+                >
+                  <strong style="color: var(--primary); font-size: 0.85rem"
+                    >Código QR Público Verificable:</strong
+                  >
+                  <p style="font-size: 0.78rem; color: var(--ink-muted); margin-top: 2px">
+                    Cualquier inspector fiscal o comercial puede escanear la constancia con su
+                    celular y verificar el estatus en vivo sin contraseñas.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <span>CANACO Mérida × ARK LEDGER</span>
+          <span>06 / 10 • Soberanía de Datos</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 7: WHITE-LABEL Y BRAND CONFIG ENGINE -->
+      <div
+        class="slide"
+        data-slide="7"
+        data-notes="Mostrar cómo opera la marca blanca. El dominio afiliaciones.canacomerida.com activa automáticamente el escudo, paleta verde profundo y sellos oficiales de CANACO SERVYTUR Mérida. El socio solo ve la marca de la Cámara."
+      >
+        <div class="slide-header">
+          <div class="slide-title-area">
+            <h2>Brand Config Engine: White-Label 100% CANACO</h2>
+            <div class="slide-subtitle">
+              La tecnología de ARK LEDGER viste con orgullo la identidad institucional de Mérida.
+            </div>
+          </div>
+          <div class="brand-tag">Identidad Institucional</div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <div class="card-title">🎨 Paleta Henequén & Mar</div>
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px">
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div
+                    style="width: 24px; height: 24px; background: #206d67; border-radius: 4px"
+                  ></div>
+                  <div style="font-size: 0.8rem">
+                    <strong>#206D67</strong> — Verde Canaco Profundo
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div
+                    style="width: 24px; height: 24px; background: #0e7c86; border-radius: 4px"
+                  ></div>
+                  <div style="font-size: 0.8rem"><strong>#0E7C86</strong> — Teal de Acción</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div
+                    style="
+                      width: 24px;
+                      height: 24px;
+                      background: #ebfaf1;
+                      border: 1px solid #ccc;
+                      border-radius: 4px;
+                    "
+                  ></div>
+                  <div style="font-size: 0.8rem">
+                    <strong>#EBFAF1</strong> — Fondo Alivio Visual
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px">
+                  <div
+                    style="width: 24px; height: 24px; background: #10302f; border-radius: 4px"
+                  ></div>
+                  <div style="font-size: 0.8rem">
+                    <strong>#10302F</strong> — Tinta Contraste AAA
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title">🌐 Dominio Institucional</div>
+              <p class="card-p" style="margin-bottom: 12px">
+                Resolución determinista por hostname en el borde de Cloudflare:
+              </p>
+              <div
+                style="
+                  background: white;
+                  border: 1px solid var(--border);
+                  padding: 12px;
+                  border-radius: 8px;
+                  font-size: 0.82rem;
+                  margin-bottom: 10px;
+                "
+              >
+                <code style="color: var(--primary); font-weight: 700"
+                  >afiliaciones.canacomerida.com</code
+                >
+              </div>
+              <p style="font-size: 0.78rem; color: var(--ink-muted)">
+                Cualquier petición a este dominio bloquea por completo la marca de ARK LEDGER y
+                despliega el logotipo SVG oficial y sellos de la Cámara.
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="card-title">📜 Papel de Trabajo Carta</div>
+              <p class="card-p" style="margin-bottom: 10px">
+                Generador de constancias optimizado para impresión oficial:
+              </p>
+              <ul style="font-size: 0.78rem; line-height: 1.5; color: var(--ink)">
+                <li>Estilo nativo <code>@media print</code> sin desbordamientos de página.</li>
+                <li>Cédula oficial con sellos de Secretaría de Economía y CANACO.</li>
+                <li>QR dinámico para verificación inmediata en ventanilla y calle.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <span>CANACO Mérida × ARK LEDGER</span>
+          <span>07 / 10 • Marca Blanca</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 8: PLAN DE 30 DÍAS SIN DOLOR -->
+      <div
+        class="slide"
+        data-slide="8"
+        data-notes="Presentar la ruta de implementación de 30 días. Enfatizar: no hay riesgo. Arkangel sigue prendido en paralelo. No le quitamos el tiempo a directores: solo 45 minutos con Lupita y Marisol en su lugar de trabajo. Nosotros atendemos el chat el primer mes."
+      >
+        <div class="slide-header">
+          <div class="slide-title-area">
+            <h2>Implementación: Plan de 30 Días "Cero Dolor"</h2>
+            <div class="slide-subtitle">
+              Transición fluida sin interrumpir un solo día de afiliación ni cobranza.
+            </div>
+          </div>
+          <div class="brand-tag">Ruta Crítica</div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-4">
+            <div class="card">
+              <div class="badge-pill" style="margin-bottom: 8px; display: inline-block">
+                DÍAS 1 - 3
+              </div>
+              <div class="card-title" style="font-size: 0.95rem">🎨 Clonación de Marca</div>
+              <p class="card-p" style="font-size: 0.8rem">
+                Configuración de DNS en <code>afiliaciones.canacomerida.com</code>, carga de escudos
+                vectoriales y calibración de perfil <code>canaco_merida</code>.
+              </p>
+            </div>
+
+            <div class="card highlight">
+              <div
+                class="badge-pill"
+                style="margin-bottom: 8px; display: inline-block; background: var(--accent)"
+              >
+                DÍAS 4 - 7
+              </div>
+              <div class="card-title" style="font-size: 0.95rem">👩‍💻 Capacitación 45 Min</div>
+              <p class="card-p" style="font-size: 0.8rem">
+                En el escritorio de Lupita y Marisol. Sin directivos ni discursos abstractos:
+                procesamos 3 trámites reales en su monitor.
+              </p>
+            </div>
+
+            <div class="card">
+              <div class="badge-pill" style="margin-bottom: 8px; display: inline-block">
+                DÍAS 8 - 15
+              </div>
+              <div class="card-title" style="font-size: 0.95rem">🛡️ Piloto en Paralelo</div>
+              <p class="card-p" style="font-size: 0.8rem">
+                10 afiliaciones reales corridas en simultáneo. Arkangel sigue vivo como red de
+                seguridad. Cero margen de error.
+              </p>
+            </div>
+
+            <div class="card highlight">
+              <div
+                class="badge-pill"
+                style="margin-bottom: 8px; display: inline-block; background: #164e4a"
+              >
+                DÍAS 16 - 30
+              </div>
+              <div class="card-title" style="font-size: 0.95rem">🚀 Go-Live + Soporte</div>
+              <p class="card-p" style="font-size: 0.8rem">
+                Lanzamiento oficial a socios. Nuestro equipo de ingenieros atiende el soporte el
+                primer mes. Las operadoras no están solas.
+              </p>
+            </div>
+          </div>
+
+          <div
+            style="
+              margin-top: 20px;
+              background: white;
+              border: 1px solid var(--border);
+              border-radius: 12px;
+              padding: 16px;
+              display: flex;
+              justify-content: space-around;
+              text-align: center;
+            "
+          >
+            <div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: var(--primary)">45 Min</div>
+              <div style="font-size: 0.75rem; color: var(--ink-muted)">Tiempo de Capacitación</div>
+            </div>
+            <div style="border-right: 1px solid var(--border)"></div>
+            <div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: var(--accent)">0 Días</div>
+              <div style="font-size: 0.75rem; color: var(--ink-muted)">Interrupción Operativa</div>
+            </div>
+            <div style="border-right: 1px solid var(--border)"></div>
+            <div>
+              <div style="font-size: 1.4rem; font-weight: 800; color: var(--success-text)">
+                83% Menos
+              </div>
+              <div style="font-size: 0.75rem; color: var(--ink-muted)">
+                Llamadas Telefónicas de Estatus
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <span>CANACO Mérida × ARK LEDGER</span>
+          <span>08 / 10 • Implementación</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 9: IMPACTO Y ROI PARA LA CÁMARA Y SOCIOS -->
+      <div
+        class="slide"
+        data-slide="9"
+        data-notes="Resumir el ROI: Para la presidencia, modernidad absoluta y atracción de jóvenes comerciantes. Para tesorería, cero cuentas incobrables y conciliación al segundo. Para el socio, un ahorro que multiplica por 10 el costo de su cuota."
+      >
+        <div class="slide-header">
+          <div class="slide-title-area">
+            <h2>Impacto y Retorno de Inversión Institucional</h2>
+            <div class="slide-subtitle">
+              Una alianza que genera valor tangible para Presidencia, Operación y Socios.
+            </div>
+          </div>
+          <div class="brand-tag">Impacto Estratégico</div>
+        </div>
+        <div class="slide-body">
+          <div class="grid-3">
+            <div class="card">
+              <div class="card-title">🏛️ Presidencia y Consejo</div>
+              <ul style="font-size: 0.82rem; line-height: 1.6; color: var(--ink-muted)">
+                <li>
+                  <strong>Liderazgo Tecnológico:</strong> La cámara de comercio más avanzada de
+                  México.
+                </li>
+                <li>
+                  <strong>Crecimiento del Padrón:</strong> Atracción de comercios RESICO que buscan
+                  asesoría accesible.
+                </li>
+                <li>
+                  <strong>Membresía Indispensable:</strong> Renovación casi automática año con año.
+                </li>
+              </ul>
+            </div>
+
+            <div class="card highlight">
+              <div class="card-title">💼 Tesorería y Cobranza</div>
+              <ul style="font-size: 0.82rem; line-height: 1.6; color: var(--ink-muted)">
+                <li>
+                  <strong>Cero Cuentas Incobrables:</strong> Pagos con tarjeta, SPEI y OXXO
+                  conciliados en automático.
+                </li>
+                <li>
+                  <strong>Ahorro en Papelería:</strong> Adiós a archiveros de papel y expedientes
+                  traspapelados.
+                </li>
+                <li>
+                  <strong>Auditoría Blindada:</strong> Reportes SIEM listos para Secretaría de
+                  Economía.
+                </li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <div class="card-title">🏪 El Socio Comerciante</div>
+              <ul style="font-size: 0.82rem; line-height: 1.6; color: var(--ink-muted)">
+                <li>
+                  <strong>Ahorro Inmediato:</strong> Más de $35,000 anuales en consultas y software
+                  contable.
+                </li>
+                <li>
+                  <strong>Cero Vueltas:</strong> Trámite completado desde su celular o laptop en 90
+                  segundos.
+                </li>
+                <li>
+                  <strong>Credencial con QR:</strong> Acreditación formal lista para mostrar ante
+                  inspectores.
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="slide-footer">
+          <span>CANACO Mérida × ARK LEDGER</span>
+          <span>09 / 10 • Modelo de Retorno</span>
+        </div>
+      </div>
+
+      <!-- SLIDE 10: CONCLUSIÓN Y DEMO EN VIVO -->
+      <div
+        class="slide hero-slide"
+        data-slide="10"
+        data-notes="Cierre contundente. No venimos a prometer nada a futuro. El código ya está escrito, auditado con 578 pruebas y en producción. Invitar a abrir el enlace y probar un registro real en vivo en este momento."
+      >
+        <div>
+          <div
+            class="hero-emblem"
+            style="background: linear-gradient(135deg, #0e7c86 0%, #206d67 100%)"
+          >
+            🚀
+          </div>
+          <div class="brand-tag" style="margin-bottom: 12px">LISTO PARA OPERAR HOY MISMO</div>
+          <h2 style="font-size: 2.2rem; color: var(--primary-dark); margin-bottom: 12px">
+            "Si a ella le quita trabajo, se vuelve indispensable."
+          </h2>
+          <p
+            style="
+              font-size: 1.05rem;
+              color: var(--ink-muted);
+              max-width: 750px;
+              margin: 0 auto 24px;
+            "
+          >
+            El sistema está 100% programado, con 578 pruebas automatizadas superadas y desplegado en
+            producción.
+          </p>
+
+          <div
+            style="
+              background: white;
+              border: 1px solid var(--border);
+              border-radius: 14px;
+              padding: 18px 28px;
+              max-width: 580px;
+              margin: 0 auto 24px;
+              box-shadow: var(--shadow-md);
+            "
+          >
+            <div
+              style="
+                font-size: 0.85rem;
+                font-weight: 600;
+                color: var(--ink-muted);
+                margin-bottom: 6px;
+              "
+            >
+              URL DE PRODUCCIÓN (DEMO ACTIVO):
+            </div>
+            <a
+              href="https://ledger.arksystems.site"
+              target="_blank"
+              style="
+                font-size: 1.25rem;
+                font-weight: 800;
+                color: var(--accent);
+                text-decoration: none;
+              "
+            >
+              https://ledger.arksystems.site ↗
+            </a>
+            <div style="font-size: 0.76rem; color: var(--ink-muted); margin-top: 6px">
+              Perfil activo: <code>canaco_merida</code> • Bóveda Offline Art. 30 CFF integrada
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: center; gap: 14px">
+            <a
+              href="https://ledger.arksystems.site"
+              target="_blank"
+              class="btn-aux"
+              style="
+                background: var(--primary);
+                font-size: 0.9rem;
+                padding: 10px 24px;
+                text-decoration: none;
+              "
+            >
+              Iniciar Demostración en Vivo
+            </a>
+            <button
+              class="btn-aux"
+              onclick="window.print()"
+              style="font-size: 0.9rem; padding: 10px 24px"
+            >
+              🖨️ Imprimir / Exportar a PDF
+            </button>
+          </div>
+        </div>
+        <div class="slide-footer" style="width: 100%; justify-content: space-between">
+          <span>CANACO SERVYTUR MÉRIDA × ARK LEDGER</span>
+          <span>10 / 10 • Próximos Pasos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONTROLES FLOTANTES DE LA PRESENTACIÓN -->
+    <div class="deck-controls">
+      <button class="btn-nav" id="btnPrev" title="Anterior (Flecha izquierda)">◀</button>
+      <div class="slide-counter" id="slideIndicator">1 / 10</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <button class="btn-nav" id="btnNext" title="Siguiente (Flecha derecha o Espacio)">▶</button>
+      <button class="btn-aux" id="btnNotes" title="Ver notas del orador (P)">📝 Notas</button>
+      <button class="btn-aux" id="btnFullscreen" title="Pantalla completa (F)">⛶ Fullscreen</button>
+    </div>
+
+    <!-- DRAWER DE NOTAS DEL ORADOR -->
+    <aside class="speaker-notes-drawer" id="notesDrawer">
+      <div class="notes-title">
+        <span>GUÍA DEL ORADOR</span>
+        <button class="btn-aux" id="btnCloseNotes" style="padding: 2px 8px">✕</button>
+      </div>
+      <div class="notes-content" id="notesBody">Cargando notas...</div>
+    </aside>
+
+    <script>
+      const slides = document.querySelectorAll('.slide');
+      const totalSlides = slides.length;
+      let currentSlide = 1;
+
+      const slideIndicator = document.getElementById('slideIndicator');
+      const progressFill = document.getElementById('progressFill');
+      const notesBody = document.getElementById('notesBody');
+      const notesDrawer = document.getElementById('notesDrawer');
+
+      function updateDeck(targetSlide) {
+        if (targetSlide < 1 || targetSlide > totalSlides) return;
+        currentSlide = targetSlide;
+
+        slides.forEach((slide) => {
+          const index = parseInt(slide.getAttribute('data-slide'));
+          if (index === currentSlide) {
+            slide.classList.add('active');
+            const notes =
+              slide.getAttribute('data-notes') || 'Sin notas específicas para esta diapositiva.';
+            notesBody.innerHTML = `<strong>Diapositiva ${currentSlide} / ${totalSlides}:</strong><br><br>${notes}`;
+          } else {
+            slide.classList.remove('active');
+          }
+        });
+
+        slideIndicator.textContent = `${currentSlide} / ${totalSlides}`;
+        progressFill.style.width = `${(currentSlide / totalSlides) * 100}%`;
+      }
+
+      document
+        .getElementById('btnPrev')
+        .addEventListener('click', () => updateDeck(currentSlide - 1));
+      document
+        .getElementById('btnNext')
+        .addEventListener('click', () => updateDeck(currentSlide + 1));
+
+      document.getElementById('btnNotes').addEventListener('click', () => {
+        notesDrawer.classList.toggle('open');
+      });
+
+      document.getElementById('btnCloseNotes').addEventListener('click', () => {
+        notesDrawer.classList.remove('open');
+      });
+
+      document.getElementById('btnFullscreen').addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch((err) => alert(err.message));
+        } else {
+          document.exitFullscreen();
+        }
+      });
+
+      // Control de teclado
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+          e.preventDefault();
+          updateDeck(currentSlide + 1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+          e.preventDefault();
+          updateDeck(currentSlide - 1);
+        } else if (e.key === 'p' || e.key === 'P') {
+          notesDrawer.classList.toggle('open');
+        } else if (e.key === 'f' || e.key === 'F') {
+          if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(() => {});
+          } else {
+            document.exitFullscreen();
+          }
+        }
+      });
+
+      // Iniciar en slide 1
+      updateDeck(1);
+    </script>
+  </body>
+</html>

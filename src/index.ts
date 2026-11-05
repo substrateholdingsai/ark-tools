@@ -46,6 +46,8 @@ export interface Env {
   CLIP_API_KEY?: string;
   CLIP_API_SECRET?: string;
   CLIP_ENVIRONMENT?: string;
+  CLIP_PAYMENT_URL?: string;
+  PRO_PRICE_MXN?: string;
 
   // Email transaccional para autenticación nativa
   RESEND_API_KEY?: string;

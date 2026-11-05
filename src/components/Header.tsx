@@ -73,6 +73,11 @@ export function Header({
   const [newTenantName, setNewTenantName] = useState('');
   const [actionError, setActionError] = useState('');
   const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [billingStatus, setBillingStatus] = useState<{
+    isPro: boolean;
+    plan?: string;
+    currentPeriodEnd?: string | null;
+  } | null>(null);
 
   const orgRef = useRef<HTMLDivElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
@@ -117,6 +122,32 @@ export function Header({
   };
 
   const userInitials = (user?.fullName || user?.email || 'U').slice(0, 2).toUpperCase();
+
+  useEffect(() => {
+    const loadBilling = async () => {
+      try {
+        const orgAny = organization as any;
+        const tenantsAny = tenants as any;
+        const userAny = user as any;
+        const currentTenant =
+          orgAny?.id || tenantsAny?.find?.((t: any) => t.isDefault)?.id || userAny?.tenantId;
+        const tenantId = currentTenant || 'ark';
+        const res = await fetch(`/api/billing/status?tenant_id=${encodeURIComponent(tenantId)}`);
+        if (res.ok) {
+          const data = (await res.json()) as any;
+          setBillingStatus({
+            isPro: Boolean(data?.is_pro),
+            plan: data?.plan,
+            currentPeriodEnd: data?.subscription?.currentPeriodEnd || null,
+          });
+        }
+      } catch {
+        // ignore
+      }
+    };
+    void loadBilling();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [(user as any)?.tenantId, organization, tenants]);
 
   return (
     <header
@@ -200,16 +231,43 @@ export function Header({
           </a>
 
           <SignedOut>
-            <button
-              onClick={() => onOpenAuthModal?.()}
-              className="rounded-full bg-navy px-4 py-1.5 font-orbitron text-[11px] font-semibold tracking-wider text-white shadow-sm transition hover:bg-navy-dark"
-            >
-              ACCESO DESPACHOS
-            </button>
+            <div className="flex items-center gap-1.5">
+              <div className="hidden items-center gap-1 rounded-full border border-line bg-surface-2 px-2 py-1 text-[10px] font-bold text-muted sm:flex">
+                <Crown className="h-3 w-3 text-muted" />
+                <span>GRATIS</span>
+              </div>
+              <button
+                onClick={() => onOpenAuthModal?.()}
+                className="rounded-full bg-navy px-4 py-1.5 font-orbitron text-[11px] font-semibold tracking-wider text-white shadow-sm transition hover:bg-navy-dark"
+              >
+                ACCESO DESPACHOS
+              </button>
+            </div>
           </SignedOut>
 
           <SignedIn>
             <div className="flex items-center gap-1.5 sm:gap-3">
+              {/* Plan Badge Pro/Gratis */}
+              <div
+                className={cn(
+                  'hidden items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold sm:flex',
+                  billingStatus?.isPro
+                    ? 'border border-gold/40 bg-gold/10 text-navy'
+                    : 'border border-line bg-surface-2 text-muted'
+                )}
+                title={
+                  billingStatus?.isPro && billingStatus?.currentPeriodEnd
+                    ? `Renueva/caduca: ${billingStatus.currentPeriodEnd}`
+                    : billingStatus?.isPro
+                      ? 'Plan Pro activo'
+                      : 'Plan Gratis'
+                }
+              >
+                <Crown
+                  className={cn('h-3 w-3', billingStatus?.isPro ? 'text-gold-dark' : 'text-muted')}
+                />
+                <span>{billingStatus?.isPro ? 'PRO' : 'GRATIS'}</span>
+              </div>
               {/* D1 Cloud Status */}
               <div className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 sm:flex">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />

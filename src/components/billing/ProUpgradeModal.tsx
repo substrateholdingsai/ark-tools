@@ -154,7 +154,7 @@ export function ProUpgradeModal({
             className="shadow-xs inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-navy px-5 py-3 font-orbitron text-xs font-bold text-white transition hover:bg-navy-dark"
           >
             <Sparkles className="h-4 w-4 text-gold" />
-            <span>SUSCRIBIRSE PRO ($399 MXN)</span>
+            <span>Activar Pro</span>
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
 
@@ -163,7 +163,7 @@ export function ProUpgradeModal({
             onClick={onClose}
             className="rounded-xl border border-line px-4 py-3 text-xs font-semibold text-muted transition hover:bg-surface-2 hover:text-ink"
           >
-            Continuar en Modo Libre
+            Ahora no
           </button>
         </div>
       </div>

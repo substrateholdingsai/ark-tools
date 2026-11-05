@@ -13,9 +13,10 @@ import { runAiAgent, DEFAULT_MODEL, FAST_MODEL } from './agent';
 import { AI_TOOLS_CATALOG } from './tools';
 import type { AiChatRequestBody } from './types';
 import { requireTenantMembership, type AuthPrincipal } from '../auth';
+import { FREE_AI_QUOTA, getProPaymentUrl } from '../../config/billing';
 
-export const FREE_QUOTA_LIMIT = 10;
-export const PRO_PAYMENT_URL = 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65';
+export const FREE_QUOTA_LIMIT = FREE_AI_QUOTA;
+export const PRO_PAYMENT_URL = getProPaymentUrl();
 
 export function getAiPeriod(date: Date = new Date()): string {
   const y = date.getFullYear();
@@ -36,6 +37,7 @@ export async function getAiQuotaStatus(
   payment_url: string;
 }> {
   const period = getAiPeriod();
+  const paymentUrl = getProPaymentUrl(env);
   if (isSuperAdmin) {
     return {
       allowed: true,
@@ -43,7 +45,7 @@ export async function getAiQuotaStatus(
       limit: 999999,
       is_pro: true,
       period,
-      payment_url: PRO_PAYMENT_URL,
+      payment_url: paymentUrl,
     };
   }
 
@@ -54,7 +56,7 @@ export async function getAiQuotaStatus(
       limit: FREE_QUOTA_LIMIT,
       is_pro: false,
       period,
-      payment_url: PRO_PAYMENT_URL,
+      payment_url: paymentUrl,
     };
   }
 
@@ -75,7 +77,7 @@ export async function getAiQuotaStatus(
       limit: isPro ? 999999 : FREE_QUOTA_LIMIT,
       is_pro: isPro,
       period,
-      payment_url: PRO_PAYMENT_URL,
+      payment_url: paymentUrl,
     };
   } catch (err) {
     console.error('Error verificando cuota de IA:', err);
@@ -85,7 +87,7 @@ export async function getAiQuotaStatus(
       limit: FREE_QUOTA_LIMIT,
       is_pro: false,
       period,
-      payment_url: PRO_PAYMENT_URL,
+      payment_url: paymentUrl,
     };
   }
 }
@@ -270,7 +272,7 @@ export async function handleAiApiRequest(
             quota_exceeded: true,
             current_usage: quotaCheck.used,
             limit: quotaCheck.limit,
-            payment_url: PRO_PAYMENT_URL,
+            payment_url: quotaCheck.payment_url,
             result: `Has alcanzado el límite de **${quotaCheck.limit} consultas gratuitas de cortesía** de este mes.\n\nPara continuar utilizando **Noah** con consultas ilimitadas, respaldo automático en D1 y soporte prioritario, activa tu suscripción a **ARK LEDGER Pro** ($399 MXN/mes).`,
             message: 'Límite de consultas gratuitas de cortesía alcanzado.',
           },

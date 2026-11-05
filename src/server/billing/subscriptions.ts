@@ -8,6 +8,7 @@
  */
 
 import type { Env } from '../../index';
+import { getBillingConfig } from '../../config/billing';
 
 export type PlanType = 'free' | 'pro' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'past_due' | 'canceled';
@@ -103,15 +104,48 @@ export async function getTenantSubscription(
       };
     }
 
-    const isPro = (row.plan === 'pro' || row.plan === 'enterprise') && row.status === 'active';
+    const plan = (row.plan as PlanType) || 'free';
+    let status = (row.status as SubscriptionStatus) || 'active';
+    const currentPeriodEnd = row.current_period_end;
+
+    // Expiración on-demand
+    if ((plan === 'pro' || plan === 'enterprise') && status === 'active' && currentPeriodEnd) {
+      const endDate = new Date(currentPeriodEnd);
+      if (!isNaN(endDate.getTime()) && endDate.getTime() < Date.now()) {
+        status = 'past_due';
+        try {
+          await db
+            .prepare(
+              `UPDATE tenant_subscriptions SET status = 'past_due', updated_at = CURRENT_TIMESTAMP WHERE tenant_id = ?`
+            )
+            .bind(tenantId)
+            .run();
+        } catch (e) {
+          console.warn('[Subscriptions] No se pudo marcar suscripción como past_due:', e);
+        }
+        try {
+          const currentPeriod = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+          await db
+            .prepare(
+              `UPDATE ai_usage SET is_pro = 0, updated_at = ? WHERE tenant_id = ? AND period = ?`
+            )
+            .bind(Math.floor(Date.now() / 1000), tenantId, currentPeriod)
+            .run();
+        } catch (e) {
+          console.warn('[Subscriptions] No se pudo sincronizar ai_usage tras expiración:', e);
+        }
+      }
+    }
+
+    const isPro = (plan === 'pro' || plan === 'enterprise') && status === 'active';
 
     return {
       tenantId,
-      plan: (row.plan as PlanType) || 'free',
-      status: (row.status as SubscriptionStatus) || 'active',
+      plan,
+      status,
       isPro,
       billingProvider: row.billing_provider,
-      currentPeriodEnd: row.current_period_end,
+      currentPeriodEnd,
       montoMensual: row.monto_mensual || (isPro ? 399 : 0),
     };
   } catch (err) {
@@ -140,11 +174,12 @@ export async function activateProSubscription(
     throw new Error('Base de datos D1 no disponible.');
   }
 
+  const billingConfig = getBillingConfig(env);
   const now = new Date();
-  const duracion = params.duracionDias || 30;
+  const duracion = params.duracionDias || billingConfig.defaultProDays;
   const periodEnd = new Date(now.getTime() + duracion * 24 * 60 * 60 * 1000);
   const periodEndIso = periodEnd.toISOString();
-  const monto = params.monto || 399.0;
+  const monto = params.monto || billingConfig.proPriceMxn;
   const provider = params.billingProvider || 'clip';
   const extId = params.externalId || `CLIP-${Date.now().toString(36).toUpperCase()}`;
 
@@ -153,7 +188,7 @@ export async function activateProSubscription(
     .prepare(
       `INSERT INTO tenant_subscriptions 
         (tenant_id, plan, status, billing_provider, external_id, monto_mensual, current_period_start, current_period_end, updated_at)
-       VALUES (?, 'pro', 'active', ?, ?, ?, CURRENT_TIMESTAMP, ?, CURRENT_TIMESTAMP)
+       VALUES (?, 'pro', 'active', ?, ?, ?, COALESCE((SELECT current_period_start FROM tenant_subscriptions WHERE tenant_id = ?), CURRENT_TIMESTAMP), ?, CURRENT_TIMESTAMP)
        ON CONFLICT(tenant_id) DO UPDATE SET 
          plan = 'pro',
          status = 'active',
@@ -163,7 +198,7 @@ export async function activateProSubscription(
          current_period_end = excluded.current_period_end,
          updated_at = CURRENT_TIMESTAMP`
     )
-    .bind(params.tenantId, provider, extId, monto, periodEndIso)
+    .bind(params.tenantId, provider, extId, monto, params.tenantId, periodEndIso)
     .run();
 
   // 2. Sincronizar ai_usage para desbloqueo instantáneo de Noah AI

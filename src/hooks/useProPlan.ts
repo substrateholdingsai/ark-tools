@@ -21,6 +21,7 @@ export interface UseProPlanReturn {
   openUpgradeModal: (reason?: string) => void;
   closeUpgradeModal: () => void;
   requireProFeature: (reason: string, callback?: () => void) => boolean;
+  canUseProFeature: (callback?: () => void) => boolean;
 }
 
 export function useProPlan(): UseProPlanReturn {
@@ -96,6 +97,18 @@ export function useProPlan(): UseProPlanReturn {
     [isPro, openUpgradeModal]
   );
 
+  const canUseProFeature = useCallback(
+    (callback?: () => void): boolean => {
+      if (isPro) {
+        if (callback) callback();
+        return true;
+      }
+      openUpgradeModal('Acceso a funciones avanzadas Pro');
+      return false;
+    },
+    [isPro, openUpgradeModal]
+  );
+
   return {
     isPro,
     plan,
@@ -106,5 +119,6 @@ export function useProPlan(): UseProPlanReturn {
     openUpgradeModal,
     closeUpgradeModal,
     requireProFeature,
+    canUseProFeature,
   };
 }

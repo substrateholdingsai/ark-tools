@@ -11,6 +11,7 @@ import type { Env } from '../../index';
 import type { AuthPrincipal } from '../auth';
 import { getTenantSubscription, activateProSubscription } from './subscriptions';
 import { timingSafeEqual } from '../canacoConektaService';
+import { getProPaymentUrl } from '../../config/billing';
 
 export async function handleBillingApiRequest(
   request: Request,
@@ -26,7 +27,7 @@ export async function handleBillingApiRequest(
 
   // ─────────────────────────────────────────────────────────────────
   // GET /api/billing/status?tenant_id=...
-  // ─────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────────
   if (url.pathname === '/api/billing/status' && request.method === 'GET') {
     const tenantId =
       url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id') || 'ark';
@@ -40,7 +41,7 @@ export async function handleBillingApiRequest(
         subscription: sub,
         is_pro: sub.isPro,
         plan: sub.plan,
-        payment_url: 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+        payment_url: getProPaymentUrl(env),
       },
       { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
     );
