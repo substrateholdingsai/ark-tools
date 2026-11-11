@@ -284,12 +284,16 @@ export async function handleLeadsApiRequest(
       });
     }
 
-    // LIST
+    // LIST (Paginado: default 20, cap 100)
     if (path === '/api/admin/leads' && request.method === 'GET') {
       const ciudad = url.searchParams.get('ciudad');
       const status = url.searchParams.get('status');
       const especialidad = url.searchParams.get('especialidad');
       const q = (url.searchParams.get('q') || '').trim();
+      const rawLimit = Number.parseInt(url.searchParams.get('limit') || '20', 10);
+      const rawOffset = Number.parseInt(url.searchParams.get('offset') || '0', 10);
+      const limit = Math.min(100, Math.max(1, Number.isNaN(rawLimit) ? 20 : rawLimit));
+      const offset = Math.max(0, Number.isNaN(rawOffset) ? 0 : rawOffset);
 
       let query = 'SELECT * FROM leads_ark_tools WHERE tenant_id = ?';
       const binds: unknown[] = [tenantId];
@@ -312,16 +316,19 @@ export async function handleLeadsApiRequest(
         const wildcard = `%${q}%`;
         binds.push(wildcard, wildcard, wildcard, wildcard, wildcard);
       }
-      query += ' ORDER BY created_at DESC, id ASC';
+      query += ' ORDER BY created_at DESC, id ASC LIMIT ? OFFSET ?';
+      binds.push(limit, offset);
 
       const stmt = db.prepare(query);
       const { results } = await stmt.bind(...binds).all<Record<string, unknown>>();
-      const leads = (results || []).map(rowToLead);
+      const leads = (results || []).slice(0, limit).map(rowToLead);
 
       return Response.json(
         {
           success: true,
           ok: true,
+          limit,
+          offset,
           leads,
           results: leads,
           data: leads,

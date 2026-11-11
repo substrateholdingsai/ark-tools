@@ -25,6 +25,15 @@ import { handleBillingApiRequest } from './server/billing/billingWebhook';
 import { handleCanacoConektaApiRequest } from './server/canacoConektaService';
 import { handleCanacoBuzonApiRequest } from './server/canacoBuzonApi';
 import { handleSentinelaApiRequest } from './server/sentinela/sentinelaWebhook';
+import {
+  checkStayPuftApprovalGate,
+  extractRequestedTenantId,
+  handleStayPuftInternalRequest,
+  hasStayPuftHeader,
+  logStayPuftAudit,
+  sanitizeAuditPath,
+  verifyStayPuftKey,
+} from './server/staypuft/staypuftConnector';
 
 export interface Env {
   // Assets (SPA)
@@ -58,8 +67,12 @@ export interface Env {
 
   // Cloudflare D1 Database (Multi-Tenant)
   ARK_TOOLS_DB?: D1Database;
+  DB?: D1Database;
   // ARK_TOOLS_KV: KVNamespace;
   // ARK_TOOLS_R2: R2Bucket;
+
+  // Conector Interno de Operador StayPuft / Marina (Total Access, Fail-Closed)
+  LEDGER_STAYPUFT_API_KEY?: string;
 
   // Integración Arkangel Call Center (Worker-to-Worker Service Binding / REST)
   ARKANGEL?: Fetcher;
@@ -197,7 +210,8 @@ async function handleApiRequest(
     'Access-Control-Allow-Origin':
       env.ENVIRONMENT === 'production' ? 'https://ledger.arksystems.site' : '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-tenant-id',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, x-tenant-id, X-Tenant-ID, X-StayPuft-Key, x-staypuft-key',
   };
 
   // Preflight
@@ -206,10 +220,74 @@ async function handleApiRequest(
   }
 
   // ─────────────────────────────────────────────────────────────────
+  // STAYPUFT INTERNAL CONNECTOR (/api/internal/*) & FAIL-CLOSED GATE
+  // ─────────────────────────────────────────────────────────────────
+  if (url.pathname.startsWith('/api/internal')) {
+    return handleStayPuftInternalRequest(request, env, corsHeaders);
+  }
+
+  const stayPuftHeaderPresent = hasStayPuftHeader(request);
+  let stayPuftAuthorized = false;
+  if (stayPuftHeaderPresent) {
+    const stayPuftCheck = verifyStayPuftKey(request, env);
+    if (!stayPuftCheck.authorized) {
+      await logStayPuftAudit(env, {
+        method: request.method,
+        path: sanitizeAuditPath(url),
+        tenantId: extractRequestedTenantId(request, url),
+        statusCode: 401,
+        result: 'unauthorized',
+        details: stayPuftCheck.reason ?? 'INVALID_STAYPUFT_KEY',
+      });
+      return Response.json(
+        { ok: false, error: 'No autorizado. X-StayPuft-Key inválida.' },
+        { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    stayPuftAuthorized = true;
+
+    const gateCheck = checkStayPuftApprovalGate(request, url.pathname);
+    if (!gateCheck.allowed) {
+      await logStayPuftAudit(env, {
+        method: request.method,
+        path: sanitizeAuditPath(url),
+        tenantId: extractRequestedTenantId(request, url),
+        statusCode: 403,
+        result: 'approval_required',
+        details: gateCheck.actionType ?? 'APPROVAL_GATE_BLOCKED',
+      });
+      return Response.json(
+        {
+          ok: false,
+          error: 'APPROVAL_GATE_BLOCKED',
+          approval_required: true,
+          action_type: gateCheck.actionType,
+          message: gateCheck.reason,
+        },
+        { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+  }
+
+  const finalizeApiResponse = async (res: Response): Promise<Response> => {
+    if (stayPuftAuthorized) {
+      await logStayPuftAudit(env, {
+        method: request.method,
+        path: sanitizeAuditPath(url),
+        tenantId: extractRequestedTenantId(request, url),
+        statusCode: res.status,
+        result: res.status < 400 ? 'ok' : 'error',
+        details: `authorized_route_${res.status}`,
+      });
+    }
+    return res;
+  };
+
+  // ─────────────────────────────────────────────────────────────────
   // DEDICATED BOT & AGENT INGESTION (Hono App: Grok / Hermes)
   // ─────────────────────────────────────────────────────────────────
   if (url.pathname.startsWith('/api/bots')) {
-    return botApp.fetch(request, env, _ctx);
+    return finalizeApiResponse(await botApp.fetch(request, env, _ctx));
   }
 
   const isPublicAuthEndpoint =
@@ -222,7 +300,12 @@ async function handleApiRequest(
     (url.pathname === '/api/billing/webhook' && request.method === 'POST') ||
     (url.pathname === '/api/webhooks/sentinela' && request.method === 'POST');
 
-  if (request.method !== 'GET' && request.method !== 'HEAD' && !isPublicAuthEndpoint) {
+  if (
+    request.method !== 'GET' &&
+    request.method !== 'HEAD' &&
+    !isPublicAuthEndpoint &&
+    !stayPuftAuthorized
+  ) {
     const origin = request.headers.get('Origin');
     const secFetchSite = request.headers.get('Sec-Fetch-Site');
     const configuredOrigin = new URL(env.APP_URL).origin;
@@ -246,13 +329,13 @@ async function handleApiRequest(
 
   const sentinelaResponse = await handleSentinelaApiRequest(request, env, corsHeaders);
   if (sentinelaResponse) {
-    return sentinelaResponse;
+    return finalizeApiResponse(sentinelaResponse);
   }
 
   const authPrincipal = await authenticateRequest(request, env);
   const authResponse = await handleAuthApiRequest(request, env, corsHeaders, authPrincipal);
   if (authResponse) {
-    return authResponse;
+    return finalizeApiResponse(authResponse);
   }
 
   const afiliacionesResponse = await handleAfiliacionesApiRequest(
@@ -262,12 +345,12 @@ async function handleApiRequest(
     authPrincipal
   );
   if (afiliacionesResponse) {
-    return afiliacionesResponse;
+    return finalizeApiResponse(afiliacionesResponse);
   }
 
   const billingResponse = await handleBillingApiRequest(request, env, corsHeaders, authPrincipal);
   if (billingResponse) {
-    return billingResponse;
+    return finalizeApiResponse(billingResponse);
   }
 
   const arkangelResponse = await handleCanacoArkangelSyncApi(
@@ -277,12 +360,12 @@ async function handleApiRequest(
     authPrincipal
   );
   if (arkangelResponse) {
-    return arkangelResponse;
+    return finalizeApiResponse(arkangelResponse);
   }
 
   const conektaCanacoResponse = await handleCanacoConektaApiRequest(request, env, corsHeaders);
   if (conektaCanacoResponse) {
-    return conektaCanacoResponse;
+    return finalizeApiResponse(conektaCanacoResponse);
   }
 
   const buzonCanacoResponse = await handleCanacoBuzonApiRequest(
@@ -292,17 +375,17 @@ async function handleApiRequest(
     authPrincipal
   );
   if (buzonCanacoResponse) {
-    return buzonCanacoResponse;
+    return finalizeApiResponse(buzonCanacoResponse);
   }
 
   const leadsResponse = await handleLeadsApiRequest(request, env, corsHeaders, authPrincipal);
   if (leadsResponse) {
-    return leadsResponse;
+    return finalizeApiResponse(leadsResponse);
   }
 
   const adminResponse = await handleAdminApiRequest(request, env, corsHeaders, authPrincipal);
   if (adminResponse) {
-    return adminResponse;
+    return finalizeApiResponse(adminResponse);
   }
 
   const invitationsResponse = await handleInvitationsApiRequest(
@@ -312,7 +395,7 @@ async function handleApiRequest(
     authPrincipal
   );
   if (invitationsResponse) {
-    return invitationsResponse;
+    return finalizeApiResponse(invitationsResponse);
   }
 
   const isPublicApi =
@@ -323,9 +406,11 @@ async function handleApiRequest(
     (['/api/ai/status', '/api/ai/models', '/api/ai/tools'].includes(url.pathname) &&
       request.method === 'GET');
   if (!isPublicApi && !authPrincipal) {
-    return Response.json(
-      { error: 'Autenticación requerida.' },
-      { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    return finalizeApiResponse(
+      Response.json(
+        { error: 'Autenticación requerida.' },
+        { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      )
     );
   }
 
@@ -334,7 +419,7 @@ async function handleApiRequest(
   // ─────────────────────────────────────────────────────────────────
   const d1Response = await handleD1ApiRequest(request, env, corsHeaders, authPrincipal);
   if (d1Response) {
-    return d1Response;
+    return finalizeApiResponse(d1Response);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -342,7 +427,7 @@ async function handleApiRequest(
   // ─────────────────────────────────────────────────────────────────
   const aiResponse = await handleAiApiRequest(request, env, corsHeaders, authPrincipal);
   if (aiResponse) {
-    return aiResponse;
+    return finalizeApiResponse(aiResponse);
   }
 
   // ─────────────────────────────────────────────────────────────────
@@ -350,7 +435,7 @@ async function handleApiRequest(
   // ─────────────────────────────────────────────────────────────────
   const alegraResponse = await handleAlegraApiRequest(request, env, corsHeaders, authPrincipal);
   if (alegraResponse) {
-    return alegraResponse;
+    return finalizeApiResponse(alegraResponse);
   }
 
   // Endpoints de API

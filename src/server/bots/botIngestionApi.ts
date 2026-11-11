@@ -20,6 +20,7 @@ import { Hono } from 'hono';
 import type { Env } from '../../index';
 import { authenticateRequest } from '../auth';
 import { timingSafeEqual } from '../canacoConektaService';
+import { verifyStayPuftKey } from '../staypuft/staypuftConnector';
 
 export type BotSource = 'grok' | 'hermes' | 'nous_research' | 'generic_agent' | 'sarita_pipeline';
 
@@ -301,10 +302,11 @@ botApp.post('/ingest', async (c) => {
   const env = c.env;
   const db = env.ARK_TOOLS_DB;
 
-  // 1. Verificación de Token de Bot (Obligatoria en producción / cuando BOT_INGEST_SECRET está configurado)
+  // 1. Verificación de Token de Bot o X-StayPuft-Key (Obligatoria en producción / cuando BOT_INGEST_SECRET está configurado)
+  const stayPuftCheck = verifyStayPuftKey(c.req.raw, env);
   const botSecret = env.BOT_INGEST_SECRET;
-  let isAuthenticatedBot = false;
-  if (botSecret) {
+  let isAuthenticatedBot = stayPuftCheck.authorized;
+  if (!isAuthenticatedBot && botSecret) {
     const authHeader =
       c.req.header('Authorization') ||
       c.req.header('X-Bot-Token') ||
@@ -317,7 +319,7 @@ botApp.post('/ingest', async (c) => {
       return c.json({ error: 'Token de bot o agente no autorizado.' }, 401);
     }
     isAuthenticatedBot = true;
-  } else if (env.ENVIRONMENT === 'production') {
+  } else if (!isAuthenticatedBot && env.ENVIRONMENT === 'production') {
     return c.json({ error: 'BOT_INGEST_SECRET no configurado en producción.' }, 503);
   }
 
@@ -508,16 +510,19 @@ botApp.get('/logs', async (c) => {
   }
 
   try {
+    const rawLimit = Number.parseInt(c.req.query('limit') || '20', 10);
+    const limit = Math.min(100, Math.max(1, Number.isNaN(rawLimit) ? 20 : rawLimit));
     const { results } = await db
       .prepare(
         `SELECT id, bot_source, categoria, confianza, datos_extraidos, sello_sha256, tenant_id, status, created_at 
          FROM bot_payloads_log 
          ORDER BY created_at DESC 
-         LIMIT 50`
+         LIMIT ?`
       )
+      .bind(limit)
       .all();
 
-    return c.json({ logs: results || [] });
+    return c.json({ logs: (results || []).slice(0, limit), limit });
   } catch {
     return c.json({ logs: [] });
   }

@@ -139,15 +139,21 @@ export async function handleAdminApiRequest(
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // 2. GET /api/admin/users
+    // 2. GET /api/admin/users (Paginado: default 20, cap 100)
     // ─────────────────────────────────────────────────────────────────
     if (path === '/api/admin/users' && request.method === 'GET') {
+      const rawLimit = Number.parseInt(url.searchParams.get('limit') || '20', 10);
+      const rawOffset = Number.parseInt(url.searchParams.get('offset') || '0', 10);
+      const limit = Math.min(100, Math.max(1, Number.isNaN(rawLimit) ? 20 : rawLimit));
+      const offset = Math.max(0, Number.isNaN(rawOffset) ? 0 : rawOffset);
+
       const [usersResult, membershipsResult] = await Promise.all([
         db
           .prepare(
             `SELECT id, email, full_name, platform_role, created_at, email_verified_at
-             FROM users ORDER BY created_at DESC`
+             FROM users ORDER BY created_at DESC LIMIT ? OFFSET ?`
           )
+          .bind(limit, offset)
           .all<{
             id: string;
             email: string;
@@ -160,7 +166,8 @@ export async function handleAdminApiRequest(
           .prepare(
             `SELECT m.user_id, m.tenant_id, t.name AS tenant_name, m.role
              FROM tenant_memberships m
-             JOIN tenants t ON t.id = m.tenant_id`
+             JOIN tenants t ON t.id = m.tenant_id
+             LIMIT 100`
           )
           .all<{
             user_id: string;
@@ -180,20 +187,25 @@ export async function handleAdminApiRequest(
         membershipsByUser.set(m.user_id, list);
       }
 
-      const users = (usersResult.results || []).map((u) => ({
+      const users = (usersResult.results || []).slice(0, limit).map((u) => ({
         ...u,
         tenants: membershipsByUser.get(u.id) || [],
       }));
 
-      return json({ success: true, users }, corsHeaders, 200, {
+      return json({ success: true, limit, offset, users }, corsHeaders, 200, {
         'Cache-Control': 'no-store',
       });
     }
 
     // ─────────────────────────────────────────────────────────────────
-    // 3. GET /api/admin/tenants
+    // 3. GET /api/admin/tenants (Paginado: default 20, cap 100)
     // ─────────────────────────────────────────────────────────────────
     if (path === '/api/admin/tenants' && request.method === 'GET') {
+      const rawLimit = Number.parseInt(url.searchParams.get('limit') || '20', 10);
+      const rawOffset = Number.parseInt(url.searchParams.get('offset') || '0', 10);
+      const limit = Math.min(100, Math.max(1, Number.isNaN(rawLimit) ? 20 : rawLimit));
+      const offset = Math.max(0, Number.isNaN(rawOffset) ? 0 : rawOffset);
+
       const { results } = await db
         .prepare(
           `SELECT t.id, t.name, COALESCE(t.slug, '') AS slug, t.created_at,
@@ -205,8 +217,10 @@ export async function handleAdminApiRequest(
            LEFT JOIN clients c ON t.id = c.tenant_id
            LEFT JOIN expedientes e ON t.id = e.tenant_id
            GROUP BY t.id
-           ORDER BY t.created_at DESC`
+           ORDER BY t.created_at DESC
+           LIMIT ? OFFSET ?`
         )
+        .bind(limit, offset)
         .all<{
           id: string;
           name: string;
@@ -217,9 +231,14 @@ export async function handleAdminApiRequest(
           expediente_count: number;
         }>();
 
-      return json({ success: true, tenants: results || [] }, corsHeaders, 200, {
-        'Cache-Control': 'no-store',
-      });
+      return json(
+        { success: true, limit, offset, tenants: (results || []).slice(0, limit) },
+        corsHeaders,
+        200,
+        {
+          'Cache-Control': 'no-store',
+        }
+      );
     }
 
     // ─────────────────────────────────────────────────────────────────

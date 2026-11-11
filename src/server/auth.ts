@@ -1,4 +1,10 @@
 import type { Env } from '../index';
+import {
+  DEMO_TENANT_ID,
+  STAYPUFT_OPERATOR_ID,
+  hasStayPuftHeader,
+  verifyStayPuftKey,
+} from './staypuft/staypuftConnector';
 
 const SESSION_COOKIE = 'ark_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30;
@@ -631,6 +637,16 @@ export async function authenticateRequest(
   request: Request,
   env: Env
 ): Promise<AuthPrincipal | null> {
+  if (hasStayPuftHeader(request)) {
+    const check = verifyStayPuftKey(request, env);
+    if (!check.authorized) return null;
+    return {
+      id: STAYPUFT_OPERATOR_ID,
+      email: 'staypuft@arksystems.internal',
+      fullName: 'StayPuft Operator',
+      platformRole: 'super_admin',
+    };
+  }
   if (!env.ARK_TOOLS_DB) return null;
   const token = getCookie(request, SESSION_COOKIE);
   if (!token || !/^[0-9a-f]{64}$/.test(token)) return null;
@@ -652,6 +668,23 @@ export async function requireTenantMembership(
   principal: AuthPrincipal,
   tenantId: string
 ): Promise<TenantMembership | null> {
+  if (principal.id === STAYPUFT_OPERATOR_ID && principal.platformRole === 'super_admin') {
+    if (tenantId === 'ark' || tenantId === 'canaco_merida' || tenantId === DEMO_TENANT_ID) {
+      return {
+        id: tenantId,
+        name: tenantId,
+        slug: tenantId,
+        role: 'owner',
+      };
+    }
+    if (!env.ARK_TOOLS_DB) return null;
+    const tRow = await env.ARK_TOOLS_DB.prepare(
+      `SELECT id, name, COALESCE(slug, '') AS slug FROM tenants WHERE id = ? LIMIT 1`
+    )
+      .bind(tenantId)
+      .first<{ id: string; name: string; slug: string }>();
+    return tRow ? { ...tRow, role: 'owner' } : null;
+  }
   if (!env.ARK_TOOLS_DB) return null;
   return env.ARK_TOOLS_DB.prepare(
     `SELECT t.id, t.name, COALESCE(t.slug, '') AS slug, m.role
