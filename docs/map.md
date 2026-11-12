@@ -26,7 +26,8 @@
 | **Typecheck (TypeScript)**     | **0 errores** en modo estricto (`pnpm typecheck` → `tsc --noEmit`) — verificado                                                                                                                                                                                                                             |
 | **Linting (ESLint)**           | **0 errores, 0 advertencias** (`pnpm lint --max-warnings 0`) — verificado                                                                                                                                                                                                                                   |
 | **Formato (Prettier)**         | **100% uniforme** (`pnpm format:check` pasa) — verificado                                                                                                                                                                                                                                                   |
-| **Pruebas (Vitest)**           | **88 suites pasadas / 714 pruebas pasadas (100% de éxito en vitest run)** — verificado en puerta completa                                                                                                                                                                                                   |
+| **Pruebas (Vitest)**           | **89 suites pasadas / 718 pruebas pasadas (100% de éxito en vitest run)** — verificado en puerta completa                                                                                                                                                                                                   |
+| **Compliance Multi-Tenant**    | **Marco LFPDPPP (DRAFT pendiente de revisión legal):** 3 docs en `docs/compliance/`, fuente parametrizada `src/data/compliance-legal.ts`, `LegalComplianceModal.tsx` conectado a `Footer.tsx` y `CanacoLandingPage.tsx`                                                                                     |
 | **GEO Engine**                 | `/llms.txt`, `/llms-full.txt`, `/robots.txt` generados dinámicamente desde el catálogo canónico (20 herramientas)                                                                                                                                                                                           |
 
 ---
@@ -43,6 +44,10 @@ ark-tools/
 │   ├── canaco-henequen.md           ✅ Identidad museográfica-patrimonial CANACO Mérida
 │   ├── plan-remocion-stripe-conekta.md ✅ Plan de remoción de pasarelas legacy
 │   ├── map.md                       ✅ Este documento (estado actual)
+│   ├── compliance/                  ✅ Marco legal LFPDPPP multi-tenant (DRAFT pendiente de revisión legal)
+│   │   ├── aviso-de-privacidad.md   Aviso de Privacidad Integral (Responsable + Encargado; domicilio TODO)
+│   │   ├── terminos-de-servicio.md  Términos de Servicio (papeles de trabajo + Facturapi v2 preview_only)
+│   │   └── seguridad-y-datos.md     Política de Seguridad y Manejo de Datos Personales
 │   └── instructivos/                ✅ 20 instructivos .md (uno por herramienta, incluido auditor-cfdi-atipico.md)
 │       ├── README.md                Índice de instructivos
 │       ├── anexo24.md
@@ -317,7 +322,7 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 ### Catálogo e IA
 
 - `catalogo-herramientas.ts`: título/descripción de `timbrado` actualizado a **Facturapi PAC** (alimenta `/llms.txt` y el prompt de Noah).
-- **Se eliminaron/marcaron como reemplazadas** todas las referencias a "PAC Quadrum / Alegra" como PAC live. Alegra queda solo como alias de ruta `/api/alegra/*` y nombres de tabla D1 por compatibilidad. Esto se declara explícitamente arriba.
+- **Se eliminaron/marcaron como reemplazadas** todas las referencias user-facing a "PAC Quadrum / Alegra" y "ATEB en modo preview" en `Footer.tsx`, `LandingPage.tsx`, `App.tsx`, `TimbradoFacturas.tsx` y `docs/instructivos/timbrado.md`. Alegra queda solo como alias de ruta `/api/alegra/*` y nombres de tabla D1 por compatibilidad. Esto se declara explícitamente arriba.
 
 ### ⚠️ Aviso crítico para el walkthrough CANACO (lun 2026-11-16 10:00)
 

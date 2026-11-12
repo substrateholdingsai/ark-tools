@@ -44,6 +44,9 @@ import { BuzonDocumentalModal } from './BuzonDocumentalModal';
 import { SimmpleReferralButton } from '../SimmpleReferralButton';
 import { CANACO_WALKTHROUGH_SOCIO_DEMO, useCanacoDemoMode } from './canacoDemoMode';
 import type { SocioCanacoRegistro } from './types';
+import { CANACO_MERIDA_BRAND_CONFIG } from '@/config/brand/canacoMerida';
+import type { LegalDocId } from '@/data/compliance-legal';
+import { LegalComplianceModal } from '../LegalComplianceModal';
 
 interface CanacoLandingPageProps {
   onOpenAuth?: (tab: 'login' | 'register') => void;
@@ -59,6 +62,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
   const [buzonOpen, setBuzonOpen] = useState(false);
   const [buzonRfc, setBuzonRfc] = useState('');
   const [buzonEmail, setBuzonEmail] = useState('');
+  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocId | null>(null);
 
   // Modal Login Admin
   const [modalAdminOpen, setModalAdminOpen] = useState(false);
@@ -855,13 +859,47 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
           <div
             onDoubleClick={toggleDemoMode}
             title="Doble clic o Ctrl+Shift+D para alternar Modo Walkthrough"
-            className="mt-6 cursor-default select-none border-t border-henequen-arena/60 pt-4 text-center text-[10px] text-henequen-piedra/80"
+            className="mt-6 flex cursor-default select-none flex-col items-center justify-between gap-2 border-t border-henequen-arena/60 pt-4 text-center text-[10px] text-henequen-piedra/80 sm:flex-row sm:text-left"
           >
-            © {new Date().getFullYear()} CANACO SERVYTUR Mérida. Todos los derechos reservados.
-            Desarrollado con tecnología de Ark Systems (Substrate Holdings LLC).
+            <span>
+              © {new Date().getFullYear()} CANACO SERVYTUR Mérida. Todos los derechos reservados.
+              Desarrollado con tecnología de Ark Systems (Substrate Holdings LLC).
+            </span>
+            <div className="flex flex-wrap items-center justify-center gap-3 font-medium text-henequen-anil">
+              <button
+                type="button"
+                onClick={() => setActiveLegalDoc('privacidad')}
+                className="hover:underline focus:underline focus:outline-none"
+              >
+                Aviso de Privacidad
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => setActiveLegalDoc('terminos')}
+                className="hover:underline focus:underline focus:outline-none"
+              >
+                Términos de Servicio
+              </button>
+              <span>·</span>
+              <button
+                type="button"
+                onClick={() => setActiveLegalDoc('seguridad')}
+                className="hover:underline focus:underline focus:outline-none"
+              >
+                Seguridad de Datos
+              </button>
+            </div>
           </div>
         </div>
       </footer>
+
+      <LegalComplianceModal
+        isOpen={activeLegalDoc !== null}
+        initialTab={activeLegalDoc ?? 'privacidad'}
+        onClose={() => setActiveLegalDoc(null)}
+        brand={CANACO_MERIDA_BRAND_CONFIG}
+      />
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* BARRA FLOTANTE DE WALKTHROUGH DIRECTIVO (Solo visible con ?demo=1) */}

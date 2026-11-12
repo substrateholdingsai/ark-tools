@@ -144,7 +144,7 @@ export function generarHtmlAvisoPrivacidad(datos: DatosAnexoCanaco): string {
 
   <p><strong>I. Finalidades del Tratamiento de Datos:</strong></p>
   <ul>
-    <li>Integración del expediente oficial cameral y cumplimiento del registro ante el SIEM (Secretaría de Economía).</li>
+    <li>Integración del expediente oficial cameral, vinculación de datos de afiliación simultánea tripartita (AAFY–SAT–IMSS, incluyendo NRP y Registro Estatal de Contribuyentes) y cumplimiento del registro ante el SIEM (Secretaría de Economía).</li>
     <li>Emisión de la Cédula Digital de Socio Activo con validación QR y sellos criptográficos SHA-256.</li>
     <li>Contacto institucional, provisión de servicios gremiales, asesoría fiscal, defensa jurídica y vinculación comercial.</li>
   </ul>

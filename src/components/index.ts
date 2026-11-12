@@ -12,6 +12,7 @@ export * from './ui';
 export { Logo } from './Logo';
 export { Header } from './Header';
 export { Footer } from './Footer';
+export { LegalComplianceModal } from './LegalComplianceModal';
 export { ToolCard } from './ToolCard';
 export { CategorySection } from './CategorySection';
 export { ToolSkeleton } from './ToolSkeleton';

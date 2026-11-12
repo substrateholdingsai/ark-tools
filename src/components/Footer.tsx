@@ -6,18 +6,24 @@
  * garantías de privacidad de datos, directorio de herramientas y descargo legal.
  */
 
+import { useState } from 'react';
 import { Mail, MessageSquare, ShieldCheck, Lock, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { BrandLogo } from './brand';
 import { currentBrand } from '@/config/brand';
+import type { BrandConfig } from '@/config/brand/types';
+import type { LegalDocId } from '@/data/compliance-legal';
+import { LegalComplianceModal } from './LegalComplianceModal';
 
 interface FooterProps {
   className?: string;
   onSelectTool?: (toolId: any) => void;
+  brand?: BrandConfig;
 }
 
-export function Footer({ className, onSelectTool }: FooterProps) {
+export function Footer({ className, onSelectTool, brand = currentBrand }: FooterProps) {
   const currentYear = new Date().getFullYear();
+  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocId | null>(null);
 
   return (
     <footer className={cn('border-t border-line bg-white text-ink', className)}>
@@ -260,7 +266,7 @@ export function Footer({ className, onSelectTool }: FooterProps) {
                   onClick={() => onSelectTool?.('timbrado')}
                   className="text-left transition hover:text-navy"
                 >
-                  Timbrado Facturas CFDI 4.0 (Alegra)
+                  Timbrado Facturas CFDI 4.0 (Facturapi v2 · Sandbox SAT)
                 </button>
               </li>
               <li className="pt-2">
@@ -314,14 +320,30 @@ export function Footer({ className, onSelectTool }: FooterProps) {
                 · {currentBrand.legalEntity} © {currentYear}. Todos los derechos reservados.
               </span>
             </div>
-            <div className="flex items-center gap-4 font-medium">
-              <span className="cursor-pointer transition hover:text-navy">Aviso de Privacidad</span>
+            <div className="flex flex-wrap items-center gap-4 font-medium">
+              <button
+                type="button"
+                onClick={() => setActiveLegalDoc('privacidad')}
+                className="cursor-pointer transition hover:text-navy focus:underline focus:outline-none"
+              >
+                Aviso de Privacidad
+              </button>
               <span>·</span>
-              <span className="cursor-pointer transition hover:text-navy">
+              <button
+                type="button"
+                onClick={() => setActiveLegalDoc('terminos')}
+                className="cursor-pointer transition hover:text-navy focus:underline focus:outline-none"
+              >
                 Términos de Servicio
-              </span>
+              </button>
               <span>·</span>
-              <span className="cursor-pointer transition hover:text-navy">Seguridad de Datos</span>
+              <button
+                type="button"
+                onClick={() => setActiveLegalDoc('seguridad')}
+                className="cursor-pointer transition hover:text-navy focus:underline focus:outline-none"
+              >
+                Seguridad de Datos
+              </button>
               <span>·</span>
               <a
                 href={currentBrand.id === 'canaco_merida' ? '?brand=ark' : '?brand=canaco'}
@@ -334,6 +356,13 @@ export function Footer({ className, onSelectTool }: FooterProps) {
           </div>
         </div>
       </div>
+
+      <LegalComplianceModal
+        isOpen={activeLegalDoc !== null}
+        initialTab={activeLegalDoc ?? 'privacidad'}
+        onClose={() => setActiveLegalDoc(null)}
+        brand={brand}
+      />
     </footer>
   );
 }

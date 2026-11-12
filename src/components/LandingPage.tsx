@@ -132,8 +132,8 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     category: 'Cobros',
     title: 'Timbrado de Facturas CFDI 4.0',
     description:
-      'Emite y timbra facturas fiscales en tiempo real con el SAT delegando la certificación a Alegra / PAC Quadrum sin salir de ARK LEDGER.',
-    tag: 'PAC Quadrum',
+      'Pre-validación y timbrado CFDI 4.0 con Facturapi v2 en modo preview / Sandbox SAT (CSD de prueba EKU9003173C9) sin salir de ARK LEDGER.',
+    tag: 'Facturapi v2 (Sandbox)',
     isPremium: true,
   },
   {

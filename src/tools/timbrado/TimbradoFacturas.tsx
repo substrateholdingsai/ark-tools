@@ -1,9 +1,9 @@
 /**
- * ARK LEDGER — Timbrado de Facturas CFDI 4.0 vía Alegra (PAC Quadrum)
+ * ARK LEDGER — Timbrado de Facturas CFDI 4.0 vía Facturapi v2 (Sandbox SAT / preview_only)
  *
  * Herramienta dentro de la sección Cobros que permite a los despachos
- * emitir y timbrar comprobantes fiscales digitales por internet (CFDI 4.0)
- * delegando la certificación a Alegra / PAC Quadrum sin salir de ARK LEDGER.
+ * preparar, pre-validar y timbrar comprobantes fiscales digitales por internet (CFDI 4.0)
+ * mediante Facturapi v2 (Sandbox SAT EKU9003173C9 / Producción) sin salir de ARK LEDGER.
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -246,7 +246,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
   const handleEmitirFactura = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAccount) {
-      setStatusMessage('Debes conectar o seleccionar una cuenta de Alegra primero.');
+      setStatusMessage('Debes conectar o seleccionar una cuenta de Facturapi primero.');
       return;
     }
     if (!receptorNombre.trim() || !receptorRfc.trim() || !receptorCp.trim()) {
@@ -414,7 +414,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
             </div>
             <div>
               <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">
-                Atención requerida en tu cuenta de Alegra
+                Atención requerida en tu cuenta de Facturapi
               </h4>
               <p className="mt-0.5 text-xs text-amber-800 dark:text-amber-300">
                 {accountsNeedingAttention[0]?.alegra_company_name ||
@@ -426,12 +426,12 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
           </div>
           <div className="flex items-center gap-2 self-end sm:self-center">
             <a
-              href="https://app.alegra.com/configuration/certificates"
+              href="https://dashboard.facturapi.io/"
               target="_blank"
               rel="noreferrer"
               className="flex items-center gap-1 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-amber-700"
             >
-              Cargar CSD en Alegra
+              Configurar CSD en Facturapi
               <ExternalLink className="h-3 w-3" />
             </a>
             <button
@@ -525,9 +525,9 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               ¿Prefieres utilizar otro PAC?
             </h3>
             <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-              La integración con Alegra es 100% opcional. Si tu despacho ya cuenta con otro
-              proveedor de timbrado (ej. Facturama, Finkok o el portal del SAT), puedes timbrar por
-              fuera sin problema.
+              La integración con Facturapi v2 (Sandbox SAT / modo preview) es 100% opcional. Si tu
+              despacho ya cuenta con otro proveedor de timbrado (ej. Facturama, Finkok o el portal
+              del SAT), puedes timbrar por fuera sin problema.
             </p>
             <div className="border-t border-slate-200 pt-2 dark:border-slate-800">
               <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
@@ -703,7 +703,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                 <div className="flex items-center justify-between">
                   <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
                     <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                    Empresa Emisora (Cuenta Alegra)
+                    Empresa Emisora (Cuenta Facturapi)
                   </label>
                   {accounts.length > 1 && (
                     <span className="text-xs text-slate-500">
@@ -740,9 +740,9 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
 
                 {selectedAccount && !selectedAccount.csd_configured && (
                   <p className="pt-1 text-xs text-amber-700 dark:text-amber-300">
-                    ⚠️ Esta cuenta no tiene Certificado CSD configurado en Alegra. Puedes preparar
-                    la factura, pero requerirás subir tu CSD en Alegra antes de que el SAT la
-                    timbre.
+                    ⚠️ Esta cuenta no tiene Certificado CSD configurado en Facturapi. Puedes
+                    preparar la factura en Sandbox, pero requerirás subir tu CSD en Facturapi antes
+                    de timbrar en vivo.
                   </p>
                 )}
               </div>
@@ -1315,7 +1315,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
                 <div>
                   <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
-                    Cuentas Alegra Vinculadas ({accounts.length})
+                    Cuentas Facturapi Vinculadas ({accounts.length})
                   </h3>
                   <p className="text-xs text-slate-500">
                     Conecta múltiples empresas o razones sociales administradas por este despacho.
@@ -1375,7 +1375,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                               <AlertTriangle className="h-3.5 w-3.5" />
                             )}
                             {acc.csd_configured
-                              ? 'CSD Vigente en Alegra'
+                              ? 'CSD Vigente en Facturapi'
                               : 'Sin Certificado CSD configurado'}
                           </span>
                           {acc.last_checked_at && (
@@ -1392,7 +1392,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       <button
                         onClick={() => refreshAccountStatus(acc.alegra_account_id)}
                         className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800"
-                        title="Verificar CSD y credenciales con Alegra"
+                        title="Verificar CSD y credenciales con Facturapi"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
                         Verificar

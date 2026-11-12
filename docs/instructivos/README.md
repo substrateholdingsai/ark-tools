@@ -26,7 +26,7 @@
 
 ## Cobros y Facturación Fiscal B2B
 
-- [Timbrado de Facturas CFDI 4.0 vía Alegra / Quadrum PAC](timbrado.md) — disponible
+- [Timbrado de Facturas CFDI 4.0 vía Facturapi v2 (Sandbox SAT / preview_only)](timbrado.md) — disponible
 - [Generador de Enlaces de Pago Clip / SPEI](spei.md) — disponible
 - [Simulador Fiscal: Leasing vs Crédito vs Contado](leasing.md) — disponible
 

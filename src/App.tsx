@@ -821,7 +821,7 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
           <ToolCard
             icon={FileCode}
             title="Timbrado de Facturas"
-            description="Pre-validación CFDI 4.0 Anexo 20 y conector PAC (Timbrado ATEB en modo preview)."
+            description="Pre-validación CFDI 4.0 Anexo 20 y conector Facturapi v2 (Sandbox SAT · modo preview)."
             badge="PREVIEW"
             badgeVariant="gold"
             onSelect={() => onSelectTool('timbrado')}
