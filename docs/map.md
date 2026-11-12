@@ -2,7 +2,7 @@
 
 **Versión:** 3.1 — Suite de 20 Herramientas + Bóveda Offline Criptográfica (Art. 30 CFF) + Motor de Marca Blanca (CANACO SERVYTUR MÉRIDA) + Workers AI / StayPuft + Facturapi v2 (CFDI 4.0) + GEO Engine (/llms.txt)  
 **Fecha:** Noviembre 2026  
-**Rama:** `main` @ `3a58a0f` (último commit verificado localmente)  
+**Rama:** `main` @ `009634b` (`feat(canaco-tripartito): implementar afiliacion simultanea AAFY-SAT-IMSS con cedula AAFY y layout IDSE`)  
 **Worker:** `ark-tools-production` en `https://ledger.arksystems.site`  
 **Repositorio:** `https://github.com/substrateholdingsai/ark-tools`  
 **Mantenedor:** Substrate Holdings LLC
@@ -17,7 +17,8 @@
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Herramientas integradas**    | **20 de 20** (100% operativas en código; ver §3 y `src/data/catalogo-herramientas.ts`)                                                                                                                                                                                                                      |
 | **Catálogo fiscal (DOF 2026)** | **8 valores oficiales vigentes** (UMA diaria/mensual, SMG general/frontera, Tope SBC 25 UMAs, Tarifa ISR mensual, CUOTA_MODALIDAD_40_2026, TASA_RECARGOS_MORA_2026). Auditoría `pnpm verify:catalogo`: **8/8**, 0 proyecciones                                                                              |
-| **ISN Yucatán**                | **2.5%** (Art. 21 al 27 LGHY). Todo hardcode "3.0% / 3%" de YUC eliminado                                                                                                                                                                                                                                   |
+| **ISN Yucatán**                | **2.5%** (Art. 21 al 27 LGHY). Cédula Oficial AAFY exportable en CSV con BOM UTF-8 y base gravable estricta                                                                                                                                                                                                 |
+| **Ventanilla Tripartita**      | **CANACO — AAFY — SAT — IMSS**: Registro simultáneo (NRP IMSS 11 chars + REC Estatal AAFY), sincronización en D1 y distintivo `Tripartito AAFY-IMSS` en Padrón de Socios                                                                                                                                    |
 | **Migraciones D1**             | **0001 → 0013** (13 migraciones, `ark_tools_db`)                                                                                                                                                                                                                                                            |
 | **Timbrado CFDI 4.0**          | **Facturapi v2** (Sandbox SAT `EKU9003173C9` + Producción). Rutas `/api/facturapi/*` y alias `/api/alegra/*`. **Estado: `preview_only`** — timbrado en vivo deshabilitado hasta que el distribuidor ATEB/Facturapi firme precios por escrito. `ok: true` = pre-validación fiscal funciona, NO timbrado live |
 | **Approval Gate (StayPuft)**   | Bloquea POST timbrado y DELETE cancelación en `/api/facturapi/invoices` y `/api/alegra/invoices` sin aprobación explícita de Pavel                                                                                                                                                                          |
@@ -25,14 +26,14 @@
 | **Typecheck (TypeScript)**     | **0 errores** en modo estricto (`pnpm typecheck` → `tsc --noEmit`) — verificado                                                                                                                                                                                                                             |
 | **Linting (ESLint)**           | **0 errores, 0 advertencias** (`pnpm lint --max-warnings 0`) — verificado                                                                                                                                                                                                                                   |
 | **Formato (Prettier)**         | **100% uniforme** (`pnpm format:check` pasa) — verificado                                                                                                                                                                                                                                                   |
-| **Pruebas (Vitest)**           | Verificado con `pnpm test` (ver §7: no se publica un conteo fijo hasta que la corrida estable concluya)                                                                                                                                                                                                     |
+| **Pruebas (Vitest)**           | **88 suites pasadas / 714 pruebas pasadas (100% de éxito en vitest run)** — verificado en puerta completa                                                                                                                                                                                                   |
 | **GEO Engine**                 | `/llms.txt`, `/llms-full.txt`, `/robots.txt` generados dinámicamente desde el catálogo canónico (20 herramientas)                                                                                                                                                                                           |
 
 ---
 
 ## 2. Mapa de Arquitectura y Estado de Componentes
 
-> Árbol verificado contra el repositorio en `main` @ `3a58a0f`. Los módulos marcados ✅ existen físicamente y están integrados en el Worker o en la SPA.
+> Árbol verificado contra el repositorio en `main` @ `009634b`. Los módulos marcados ✅ existen físicamente y están integrados en el Worker o en la SPA.
 
 ```
 ark-tools/
@@ -147,11 +148,11 @@ ark-tools/
 │   │   ├── billing/                 ✅ ProUpgradeModal (paywall Pro)
 │   │   ├── brand/                   ✅ BrandLogo, CanacoLogo, conmutador de marca
 │   │   ├── canaco/                  ✅ Ecosistema CANACO SERVYTUR MÉRIDA (16 archivos)
-│   │   │   ├── CanacoLandingPage.tsx      ✅ Landing pública institucional (HENEQUÉN)
-│   │   │   ├── CanacoAdminPadron.tsx      ✅ Consola de Afiliaciones & Padrón SIEM
+│   │   │   ├── CanacoLandingPage.tsx      ✅ Landing pública institucional (HENEQUÉN) con banner Programa Afiliación Simultánea AAFY-SAT-IMSS
+│   │   │   ├── CanacoAdminPadron.tsx      ✅ Consola de Afiliaciones & Padrón SIEM con distintivo Tripartito AAFY-IMSS
 │   │   │   ├── CanacoPortalBanner.tsx     ✅ Banner de socio en Dashboard
 │   │   │   ├── ConstanciaSocioModal.tsx   ✅ Cédula oficial Carta con SHA-256 + QR
-│   │   │   ├── VentanillaAfiliacionModal.tsx ✅ Modal 3 pasos de afiliación
+│   │   │   ├── VentanillaAfiliacionModal.tsx ✅ Ventanilla digital tripartita 3 pasos (captura NRP IMSS 11 chars + REC AAFY)
 │   │   │   ├── BuzonDocumentalModal.tsx   ✅ Buzón documental físico-digital
 │   │   │   ├── AdminExpedienteModal.tsx   ✅ Modal de expediente cameral
 │   │   │   ├── calculoCuota.ts            ✅ Motor de cuotas SIEM / Membresía Anual
@@ -198,11 +199,11 @@ ark-tools/
 │   │   ├── comparadores-contrato-crm.ts ✅ 12 comparadores Contrato vs CRM
 │   │   └── demo-onboarding.ts       ✅ Entidades canónicas de demo (DEMO_EMPRESA, DEMO_TRABAJADOR)
 │   └── tools/                       ✅ 20 módulos de herramientas
-│       ├── isn/                     ✅ Calculadora ISN 32 estados + Cédula Oficial AAFY (Yucatán 2.5% LGHY)
+│       ├── isn/                     ✅ Calculadora ISN 32 estados + Cédula Oficial AAFY (Yucatán 2.5% LGHY, CSV UTF-8 BOM)
 │       ├── sbc/                     ✅ Calculadora SBC IMSS
 │       ├── nomina/                  ✅ Nómina Rápida 2026 (ISR + IMSS obrero)
 │       ├── finiquitos/              ✅ Finiquitos y Liquidaciones LFT
-│       ├── cierre-nomina/           ✅ Cierre de Nómina Masivo + Cruce Laboral-Fiscal (#12) + Layout IDSE/DISPMAG
+│       ├── cierre-nomina/           ✅ Cierre de Nómina Masivo + Cruce Laboral-Fiscal (#12) + Layout IDSE/DISPMAG (175 chars IMSS)
 │       ├── resico/                  ✅ RESICO 2026 PF/PM (#14)
 │       ├── balance-general/         ✅ Balance General Comparativo (#15)
 │       ├── anexo24/                 ✅ Conciliación Anexo 24 (#16)
@@ -261,20 +262,20 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 
 ### Grupo A — 12 esenciales PyME / CANACO (comercio y MiPyMEs)
 
-| #   | id                | Nombre                                            | Categoría                         | Estado           |
-| --- | ----------------- | ------------------------------------------------- | --------------------------------- | ---------------- |
-| 1   | `isn`             | Calculadora ISN (Impuesto Sobre Nómina)           | Fiscal y Laboral                  | active           |
-| 2   | `sbc`             | Calculadora SBC (Salario Base de Cotización IMSS) | Fiscal y Laboral                  | active           |
-| 3   | `nomina`          | Calculadora de Nómina Rápida 2026                 | Fiscal y Laboral                  | active           |
-| 4   | `finiquitos`      | Calculadora de Finiquitos y Liquidaciones LFT     | Fiscal y Laboral                  | active           |
-| 5   | `resico`          | Calculadora y Cédula RESICO 2026                  | Fiscal y Laboral                  | active           |
-| 6   | `balance-general` | Balance General Comparativo                       | Patrimonial y Análisis Financiero | active           |
-| 7   | `cierre-nomina`   | Cierre de Nómina Masivo (Batch DOF)               | Fiscal y Laboral                  | active           |
-| 8   | `xml-excel`       | Conversor XML a Excel (CFDI 4.0/3.3)              | SAT y Auditoría CFDI 4.0          | active           |
-| 9   | `validador`       | Validador y Auditor de XMLs                       | SAT y Auditoría CFDI 4.0          | active           |
-| 10  | `spei`            | Generador de Enlaces de Pago Clip / SPEI          | Cobros y Facturación Fiscal B2B   | active           |
-| 11  | `leasing`         | Simulador Fiscal: Leasing vs Crédito vs Contado   | Cobros y Facturación Fiscal B2B   | active           |
-| 12  | `timbrado`        | Timbrado de Facturas CFDI 4.0 vía Facturapi PAC   | Cobros y Facturación Fiscal B2B   | **preview_only** |
+| #   | id                | Nombre                                                    | Categoría                         | Estado           |
+| --- | ----------------- | --------------------------------------------------------- | --------------------------------- | ---------------- |
+| 1   | `isn`             | Calculadora ISN + Cédula Oficial AAFY Yucatán (CSV BOM)   | Fiscal y Laboral                  | active           |
+| 2   | `sbc`             | Calculadora SBC (Salario Base de Cotización IMSS)         | Fiscal y Laboral                  | active           |
+| 3   | `nomina`          | Calculadora de Nómina Rápida 2026                         | Fiscal y Laboral                  | active           |
+| 4   | `finiquitos`      | Calculadora de Finiquitos y Liquidaciones LFT             | Fiscal y Laboral                  | active           |
+| 5   | `resico`          | Calculadora y Cédula RESICO 2026                          | Fiscal y Laboral                  | active           |
+| 6   | `balance-general` | Balance General Comparativo                               | Patrimonial y Análisis Financiero | active           |
+| 7   | `cierre-nomina`   | Cierre de Nómina Masivo + Layout IDSE/DISPMAG (175 chars) | Fiscal y Laboral                  | active           |
+| 8   | `xml-excel`       | Conversor XML a Excel (CFDI 4.0/3.3)                      | SAT y Auditoría CFDI 4.0          | active           |
+| 9   | `validador`       | Validador y Auditor de XMLs                               | SAT y Auditoría CFDI 4.0          | active           |
+| 10  | `spei`            | Generador de Enlaces de Pago Clip / SPEI                  | Cobros y Facturación Fiscal B2B   | active           |
+| 11  | `leasing`         | Simulador Fiscal: Leasing vs Crédito vs Contado           | Cobros y Facturación Fiscal B2B   | active           |
+| 12  | `timbrado`        | Timbrado de Facturas CFDI 4.0 vía Facturapi PAC           | Cobros y Facturación Fiscal B2B   | **preview_only** |
 
 ### Grupo B — 8 corporativo / forense / PLD (Prevención de Lavado de Dinero)
 
@@ -338,7 +339,7 @@ Catálogo en `src/data/valores-vigentes/catalogo.ts` — **8 valores oficiales**
 7. `CUOTA_MODALIDAD_40_2026` — Cuota Modalidad 40 2026 (14.438%)
 8. `TASA_RECARGOS_MORA_2026` — Tasa recargos por mora 2026 (1.47% mensual)
 
-**ISN Yucatán:** 2.5% (Art. 21 al 27 LGHY) — definido en `src/tools/isn/data/estados.ts` (`id: 'YUC'`, `tasa: 2.5`). Nunca hardcodear valores fiscales; importar siempre desde `@/data/valores-vigentes/catalogo`.
+**ISN Yucatán:** 2.5% (Art. 21 al 27 LGHY) — definido en `src/tools/isn/data/estados.ts` (`id: 'YUC'`, `tasa: 2.5`). Incluye generador de Cédula Oficial AAFY en CSV con BOM UTF-8 (`src/tools/isn/lib/exportarCedulaAafy.ts`) con desglose estricto de base gravable y conceptos exentos. Nunca hardcodear valores fiscales; importar siempre desde `@/data/valores-vigentes/catalogo`.
 
 ---
 
@@ -370,12 +371,13 @@ Todas aplicadas en `ark_tools_db` en orden:
 
 Ejecutada localmente antes de revisar este mapa:
 
-| Comando                                  | Resultado                                                                                                                                                                                                                                                                                                                                                          |
-| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm typecheck` (`tsc --noEmit`)        | ✅ PASS — 0 errores TypeScript                                                                                                                                                                                                                                                                                                                                     |
-| `pnpm lint` (`eslint --max-warnings 0`)  | ✅ PASS — 0 errores, 0 advertencias                                                                                                                                                                                                                                                                                                                                |
-| `pnpm format:check` (`prettier --check`) | ✅ PASS — repositorio 100% uniforme                                                                                                                                                                                                                                                                                                                                |
-| `pnpm test` (`vitest run`)               | ✅ PASS — Suite de pruebas completa verificada (714 tests pasando). Fallo pre-existente en `ProUpgradeModal.test.tsx` resuelto; pruebas unitarias de `calcularLeasing.test.ts` (13 tests), `emailService.test.ts` (16 tests), `exportarCedulaAafy.test.ts` (2 tests), `layoutImssIdse.test.ts` (6 tests) y `afiliacionesApi.test.ts` integradas y pasando al 100%. |
+| Comando                                  | Resultado                                                                        |
+| ---------------------------------------- | -------------------------------------------------------------------------------- |
+| `pnpm typecheck` (`tsc --noEmit`)        | ✅ PASS — 0 errores TypeScript                                                   |
+| `pnpm lint` (`eslint --max-warnings 0`)  | ✅ PASS — 0 errores, 0 advertencias                                              |
+| `pnpm format:check` (`prettier --check`) | ✅ PASS — repositorio 100% uniforme                                              |
+| `pnpm verify:catalogo`                   | ✅ PASS — 8/8 valores oficiales DOF vigentes, 0 proyecciones                     |
+| `pnpm test` (`vitest run`)               | ✅ PASS — 88 suites pasadas / 714 pruebas pasadas (100% de éxito en vitest run). |
 
 > `map.md` solo afirma "100% uniforme" de formato porque `pnpm format:check` pasó en este commit.
 
@@ -387,4 +389,4 @@ El detalle cronológico de **Sprints 1-34** (incluyendo el evolución de conteos
 
 ---
 
-**Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 20 herramientas (12 PyME + 8 corporativo/forense/PLD), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 2.5%, WhatsApp Studio, CANACO wayfinding, formato Prettier verificado, typecheck/lint limpios.
+**Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 20 herramientas (12 PyME + 8 corporativo/forense/PLD), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 2.5% + Cédula Oficial AAFY, Cierre de Nómina + Layout IDSE/DISPMAG (175 chars), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 8/8, pruebas 88 suites / 714 tests (100%).
