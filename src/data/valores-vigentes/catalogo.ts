@@ -161,6 +161,28 @@ export const CUOTA_MODALIDAD_40_PCT_2026 = 14.438;
 // ─── TASA DE RECARGOS VIGENTE (LIF Art. 8 / CFF Art. 21) ───────────
 export const TASA_RECARGOS_MORA_MENSUAL = 1.47;
 
+// ─── TOPES Y TASAS DE DEDUCCIÓN DE INVERSIONES Y ARRENDAMIENTO (LISR Art. 28, 34 y 36) ─
+/** Tope MOI deducible para automóviles de combustión interna (LISR Art. 36 Fracc. II) */
+export const TOPE_MOI_AUTO_COMBUSTION = 175_000;
+/** Tope MOI deducible para automóviles híbridos o eléctricos (LISR Art. 36 Fracc. II) */
+export const TOPE_MOI_AUTO_HIBRIDO = 250_000;
+/** Renta diaria máxima deducible en arrendamiento puro de autos de combustión (LISR Art. 28 Fracc. XIII) */
+export const TOPE_RENTA_DIARIA_AUTO_COMBUSTION = 200;
+/** Renta diaria máxima deducible en arrendamiento puro de autos híbridos/eléctricos (LISR Art. 28 Fracc. XIII) */
+export const TOPE_RENTA_DIARIA_AUTO_HIBRIDO = 285;
+/** Tasa máxima de depreciación anual para automóviles (LISR Art. 34 Fracc. VI) */
+export const TASA_DEPRECIACION_ANUAL_AUTO = 0.25;
+/** Tasa máxima de depreciación anual para equipo de cómputo (LISR Art. 34 Fracc. VII) */
+export const TASA_DEPRECIACION_ANUAL_COMPUTO = 0.3;
+/** Tasa máxima de depreciación anual para maquinaria y equipo general (LISR Art. 34 Fracc. VIII / Art. 35) */
+export const TASA_DEPRECIACION_ANUAL_MAQUINARIA = 0.1;
+/** Tasa general de ISR Personas Morales (LISR Art. 9) */
+export const TASA_ISR_PERSONA_MORAL = 0.3;
+/** Tasa de Participación de los Trabajadores en las Utilidades (LFT Art. 117 / CPEUM Art. 123) */
+export const TASA_PTU_GENERAL = 0.1;
+/** Tasa general de IVA (LIVA Art. 1) */
+export const TASA_IVA_GENERAL = 0.16;
+
 // ─── ÍNDICE NACIONAL DE PRECIOS AL CONSUMIDOR (INPC - INEGI) ────────
 export interface InpcMensual {
   anio: number;

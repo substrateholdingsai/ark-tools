@@ -39,6 +39,11 @@ COMPANY_NAME = "Substrate Holdings LLC"
 COMPANY_EMAIL = "pavel@arksystems.site"
 SUPPORT_URL = "https://wa.me/525657062511"
 AUTH_EMAIL_FROM = "ARK LEDGER <no-reply@mail.arksystems.site>"
+# Configuración del Proveedor de Email Transaccional (Telnyx / Resend):
+# - TELNYX_API_KEY: secreto configurado vía `wrangler secret put TELNYX_API_KEY`
+# - RESEND_API_KEY: secreto configurado vía `wrangler secret put RESEND_API_KEY`
+# - EMAIL_PROVIDER: opcional ("telnyx" | "resend"). Si se omite, se autodetecta priorizando Telnyx.
+# EMAIL_PROVIDER = "telnyx"
 # SENTINELA_WEBHOOK_SECRET se configura como secreto seguro vía: wrangler secret put SENTINELA_WEBHOOK_SECRET
 
 # ─────────────────────────────────────────────────────────────────────

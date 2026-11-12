@@ -1,27 +1,27 @@
 /**
- * ARK LEDGER — Calculadora de Leasing y MRR para Despachos Contables
+ * ARK LEDGER — Simulador Fiscal: Arrendamiento Puro (Leasing) vs Crédito vs Contado
  * Componente Principal
  *
- * Modelo de negocio:
- *   - $500 Setup / Onboarding inicial por cliente
- *   - $2,500 Renta mensual recurrente por cliente
- *
- * Calcula MRR, ARR, LTV y proyección mes a mes para 12, 24 o 36 meses.
+ * Evalúa simultáneamente:
+ *   1. Compra de Contado (Depreciación MOI topada Art. 34 y 36 LISR)
+ *   2. Crédito Bancario Tradicional (Depreciación + Intereses en proporción deducible)
+ *   3. Arrendamiento Puro / Leasing (Rentas deducibles Art. 28 Fracc. XIII LISR + Opción CFF Art. 15)
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { ArrowLeft, Check, Building2, TrendingUp, ShieldCheck, DollarSign } from 'lucide-react';
+import { ArrowLeft, Check, Building2, Scale, ShieldCheck, FileSpreadsheet } from 'lucide-react';
 import { ParametrosLeasingCard, ResultadoLeasingCard, TablaProyeccionMensual } from './components';
-import { PARAMETROS_DEFAULT, proyectarMeses, calcularResumenLeasing } from './lib/calcularLeasing';
-import { descargarCSVProyeccion } from './lib/exportarProyeccion';
-import type { ParametrosLeasing } from './types';
+import { PARAMETROS_FISCAL_DEFAULT, compararLeasingFiscal } from './lib/calcularLeasing';
+import { descargarCSVComparativaFiscal } from './lib/exportarProyeccion';
+import type { ParametrosComparativaFiscal } from './types';
 
 interface CalculadoraLeasingProps {
   onBack?: () => void;
 }
 
 export function CalculadoraLeasing({ onBack }: CalculadoraLeasingProps) {
-  const [parametros, setParametros] = useState<ParametrosLeasing>(PARAMETROS_DEFAULT);
+  const [parametros, setParametros] =
+    useState<ParametrosComparativaFiscal>(PARAMETROS_FISCAL_DEFAULT);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
@@ -37,18 +37,12 @@ export function CalculadoraLeasing({ onBack }: CalculadoraLeasingProps) {
     toastTimer.current = window.setTimeout(() => setToast(null), 3000);
   }, []);
 
-  // Proyección reactiva
-  const proyeccion = useMemo(() => proyectarMeses(parametros), [parametros]);
-
-  const resumen = useMemo(
-    () => calcularResumenLeasing(parametros, proyeccion),
-    [parametros, proyeccion]
-  );
+  const resultado = useMemo(() => compararLeasingFiscal(parametros), [parametros]);
 
   const handleDescargarExcel = useCallback(() => {
-    descargarCSVProyeccion(proyeccion, resumen);
-    showToast('Proyección financiera descargada en CSV para Excel');
-  }, [proyeccion, resumen, showToast]);
+    descargarCSVComparativaFiscal(resultado);
+    showToast('Cédula comparativa fiscal descargada en CSV para Excel');
+  }, [resultado, showToast]);
 
   return (
     <div className="mx-auto max-w-[1280px] space-y-10 px-6 py-12 md:px-10">
@@ -68,61 +62,59 @@ export function CalculadoraLeasing({ onBack }: CalculadoraLeasingProps) {
         <div>
           <div className="flex items-center gap-2">
             <span className="orbitron font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
-              MODELO DE NEGOCIO SAAS
+              LISR ARTS. 28 XIII, 34, 36 II • CFF ART. 15
             </span>
             <span className="text-white/20">•</span>
-            <span className="text-xs text-muted">Despachos & Firmas Contables</span>
+            <span className="text-xs text-muted">
+              Planeación Patrimonial y Deducción de Activos
+            </span>
           </div>
           <h1 className="mt-2 font-playfair text-3xl font-black tracking-tight text-ink md:text-5xl">
-            Calculadora de Leasing y MRR
+            Simulador Fiscal: Leasing vs Crédito vs Contado
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-muted">
-            Proyecta los ingresos de tu despacho con el modelo de activación accesible ($500 setup)
-            y retención recurrente ($2,500 renta mensual). Simula flujo de caja, ingresos anuales y
-            valor de por vida del cliente (LTV).
+          <p className="mt-2 max-w-3xl text-sm text-muted">
+            Compara el costo financiero real después de impuestos (ISR y PTU), la proporción de IVA
+            acreditable (Art. 5 LIVA) y el impacto en liquidez al adquirir automóviles utilitarios,
+            híbridos/eléctricos, equipo de cómputo o maquinaria industrial.
           </p>
         </div>
       </div>
 
-      {/* Tarjeta de Métricas Clave */}
-      <section>
-        <ResultadoLeasingCard
-          resumen={resumen}
-          plazoMeses={parametros.plazoMeses}
-          onDescargarExcel={handleDescargarExcel}
-        />
-      </section>
-
-      {/* Panel de Parámetros */}
+      {/* Panel de Parámetros del Activo y Financiamiento */}
       <section className="bg-surface-raised/40 space-y-6 rounded-2xl border border-white/10 p-6 shadow-xl md:p-8">
         <div className="flex items-center gap-2 border-b border-white/10 pb-4">
           <Building2 className="h-5 w-5 text-gold" />
           <h2 className="font-playfair text-xl font-bold text-ink">
-            Ajuste de Variables y Supuestos del Negocio
+            Configuración del Activo, Tasa y Perfil Fiscal
           </h2>
         </div>
 
         <ParametrosLeasingCard parametros={parametros} onChange={setParametros} />
       </section>
 
-      {/* Tabla Cronológica */}
+      {/* Dictamen y Tarjetas Comparativas Tripartitas */}
       <section>
-        <TablaProyeccionMensual proyeccion={proyeccion} resumen={resumen} />
+        <ResultadoLeasingCard resultado={resultado} onDescargarExcel={handleDescargarExcel} />
       </section>
 
-      {/* Badges de Garantía */}
+      {/* Tabla Anualizada Comparativa */}
+      <section>
+        <TablaProyeccionMensual resultado={resultado} />
+      </section>
+
+      {/* Badges de Garantía Normativa */}
       <div className="flex flex-wrap items-center justify-center gap-6 border-t border-white/5 pt-4 text-xs text-muted">
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-emerald-400" />
-          <span>Fórmulas de Cohorte con Churn Realista</span>
+          <Scale className="h-4 w-4 text-gold" />
+          <span>Topes Oficiales LISR ($175k / $250k MOI y $200 / $285 diarios)</span>
         </div>
         <div className="flex items-center gap-2">
-          <DollarSign className="h-4 w-4 text-gold" />
-          <span>Ingreso Recurrente Predecible (MRR & ARR)</span>
+          <ShieldCheck className="h-4 w-4 text-emerald-400" />
+          <span>Proporción de IVA Acreditable conforme al Art. 5 Fracc. I LIVA</span>
         </div>
         <div className="flex items-center gap-2">
-          <ShieldCheck className="h-4 w-4 text-gold" />
-          <span>Exportable a Excel para Plan de Negocios</span>
+          <FileSpreadsheet className="h-4 w-4 text-gold" />
+          <span>Cédula Comparativa Exportable a Excel (UTF-8 BOM)</span>
         </div>
       </div>
 

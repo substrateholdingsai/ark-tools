@@ -9,6 +9,7 @@
 
 import type { Env } from '../../index';
 import { getBillingConfig } from '../../config/billing';
+import { isEmailServiceConfigured, sendTransactionalEmail } from '../email/emailService';
 
 export type PlanType = 'free' | 'pro' | 'enterprise';
 export type SubscriptionStatus = 'active' | 'past_due' | 'canceled';
@@ -214,25 +215,19 @@ export async function activateProSubscription(
     .bind(params.tenantId, currentPeriod, Date.now())
     .run();
 
-  // 3. Notificación opcional por correo vía Resend
-  if (params.email && env.RESEND_API_KEY) {
+  // 3. Notificación opcional por correo (Telnyx / Resend)
+  if (params.email && isEmailServiceConfigured(env)) {
     const safeExtId = extId
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
     try {
-      await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: env.AUTH_EMAIL_FROM || 'ARK LEDGER <no-reply@mail.arksystems.site>',
-          to: [params.email.trim()],
-          subject: '¡Tu suscripción a ARK Despacho Pro está activa! 🚀',
-          html: `<div style="font-family: sans-serif; padding: 24px; color: #0f172a;">
+      await sendTransactionalEmail(env, {
+        from: env.AUTH_EMAIL_FROM || 'ARK LEDGER <no-reply@mail.arksystems.site>',
+        to: [params.email.trim()],
+        subject: '¡Tu suscripción a ARK Despacho Pro está activa! 🚀',
+        html: `<div style="font-family: sans-serif; padding: 24px; color: #0f172a;">
             <h2 style="color: #002b7f;">¡Bienvenido a ARK Despacho Pro!</h2>
             <p>Tu cuenta ha sido activada exitosamente con acceso ilimitado.</p>
             <ul>
@@ -243,7 +238,6 @@ export async function activateProSubscription(
             <p>Ya puedes descargar todas las Cédulas Oficiales Carta con Sello SHA-256 + QR y consultar a Noah AI sin límite de mensajes.</p>
             <p><a href="${env.APP_URL}" style="display: inline-block; background-color: #002b7f; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none;">Ir al Portal</a></p>
           </div>`,
-        }),
       }).catch((e) => console.warn('[Subscription Email Warning]:', e));
     } catch {
       // no bloqueante

@@ -58,7 +58,9 @@ export interface Env {
   CLIP_PAYMENT_URL?: string;
   PRO_PRICE_MXN?: string;
 
-  // Email transaccional para autenticación nativa
+  // Email transaccional (Telnyx / Resend)
+  EMAIL_PROVIDER?: 'telnyx' | 'resend';
+  TELNYX_API_KEY?: string;
   RESEND_API_KEY?: string;
   AUTH_EMAIL_FROM?: string;
 

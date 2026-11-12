@@ -54,6 +54,8 @@ export function VentanillaAfiliacionModal({
   const contactoNombreId = useId();
   const emailId = useId();
   const telefonoId = useId();
+  const nrpId = useId();
+  const recId = useId();
 
   // Estados del flujo
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
@@ -77,6 +79,12 @@ export function VentanillaAfiliacionModal({
   const [telefono, setTelefono] = useState('');
   const [metodoPago, setMetodoPago] = useState<'tarjeta' | 'spei' | 'clip'>('tarjeta');
   const [cfdiRequerido, setCfdiRequerido] = useState(true);
+
+  // Afiliación Simultánea AAFY — SAT — IMSS en Yucatán
+  const [afiliacionSimultanea, setAfiliacionSimultanea] = useState(true);
+  const [registroPatronalImss, setRegistroPatronalImss] = useState('');
+  const [tramiteImssSolicitado, setTramiteImssSolicitado] = useState(false);
+  const [registroEstatalAafy, setRegistroEstatalAafy] = useState('');
 
   // Modo Demo / Walkthrough
   const { isDemoMode } = useCanacoDemoMode();
@@ -122,6 +130,10 @@ export function VentanillaAfiliacionModal({
         cfdiRequerido,
         estatus,
         tenantId: 'canaco_merida',
+        registroPatronalImss: registroPatronalImss.trim() || undefined,
+        registroEstatalAafy: registroEstatalAafy.trim() || undefined,
+        afiliacionSimultanea,
+        tramiteImssSolicitado,
       };
 
       const res = await fetch('/api/afiliaciones/registro', {
@@ -241,6 +253,14 @@ export function VentanillaAfiliacionModal({
       metodoPago,
       cfdiRequerido,
       selloDigitalSha256: selloDigital,
+      registroPatronalImss: registroPatronalImss.trim()
+        ? registroPatronalImss.trim().toUpperCase()
+        : undefined,
+      registroEstatalAafy: registroEstatalAafy.trim()
+        ? registroEstatalAafy.trim().toUpperCase()
+        : undefined,
+      afiliacionSimultanea,
+      tramiteImssSolicitado,
     };
 
     setRegistroExitoso(nuevoSocio);
@@ -269,6 +289,8 @@ export function VentanillaAfiliacionModal({
           sector: registroExitoso.sector,
           municipio: registroExitoso.direccion.municipio,
           codigoPostal: registroExitoso.direccion.codigoPostal,
+          registroPatronalImss: registroExitoso.registroPatronalImss,
+          registroEstatalAafy: registroExitoso.registroEstatalAafy,
         }),
       });
 
@@ -311,6 +333,10 @@ export function VentanillaAfiliacionModal({
     setRegistroExitoso(null);
     setIsMigrating(false);
     setMigracionError(null);
+    setRegistroPatronalImss('');
+    setTramiteImssSolicitado(false);
+    setRegistroEstatalAafy('');
+    setAfiliacionSimultanea(true);
     onClose();
   };
 
@@ -402,6 +428,31 @@ export function VentanillaAfiliacionModal({
                   </span>
                 </div>
               </div>
+
+              {(registroExitoso.registroPatronalImss ||
+                registroExitoso.registroEstatalAafy ||
+                registroExitoso.afiliacionSimultanea) && (
+                <div className="flex flex-wrap items-center gap-1.5 border-t border-henequen-arena/40 pt-2 text-[10px]">
+                  <span className="rounded-full bg-henequen-anil/10 px-2 py-0.5 font-mono font-bold uppercase text-henequen-anil">
+                    Ventanilla Única Tripartita
+                  </span>
+                  {registroExitoso.registroPatronalImss && (
+                    <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 font-mono font-semibold text-emerald-800">
+                      NRP IMSS: {registroExitoso.registroPatronalImss}
+                    </span>
+                  )}
+                  {registroExitoso.tramiteImssSolicitado && (
+                    <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 font-mono font-semibold text-amber-800">
+                      Alta Patronal IMSS en gestión
+                    </span>
+                  )}
+                  {registroExitoso.registroEstatalAafy && (
+                    <span className="rounded-full border border-purple-300 bg-purple-50 px-2 py-0.5 font-mono font-semibold text-purple-800">
+                      REC AAFY: {registroExitoso.registroEstatalAafy}
+                    </span>
+                  )}
+                </div>
+              )}
 
               <div className="break-all rounded border border-henequen-arena/60 bg-henequen-sisal/40 p-2 font-mono text-[9.5px] text-henequen-piedra">
                 {registroExitoso.selloDigitalSha256}
@@ -753,6 +804,89 @@ export function VentanillaAfiliacionModal({
                       className="w-full rounded-lg border border-henequen-arena bg-henequen-muro px-3 py-2 text-xs focus:border-henequen-anil focus:outline-none"
                     />
                   </div>
+                </div>
+
+                {/* ═══ PROGRAMA DE AFILIACIÓN SIMULTÁNEA AAFY — SAT — IMSS ═══ */}
+                <div className="space-y-3 rounded-xl border border-henequen-anil/25 bg-gradient-to-br from-henequen-cal to-henequen-sisal/30 p-3.5">
+                  <div className="flex items-start gap-2.5">
+                    <input
+                      id="check-afiliacion-simultanea"
+                      type="checkbox"
+                      checked={afiliacionSimultanea}
+                      onChange={(e) => setAfiliacionSimultanea(e.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-henequen-arena text-henequen-terra focus:ring-henequen-anil"
+                    />
+                    <label htmlFor="check-afiliacion-simultanea" className="cursor-pointer">
+                      <span className="block text-xs font-bold text-henequen-anil">
+                        Participar en el Programa de Afiliación Simultánea AAFY — SAT — IMSS
+                      </span>
+                      <span className="block text-[11px] leading-relaxed text-henequen-piedra">
+                        Ventanilla Única CANACO Mérida: Vincula tu registro patronal del IMSS y el
+                        Padrón Estatal del Impuesto Sobre Nómina de Yucatán (ISN 2.5% — LGHY) con tu
+                        alta mercantil.
+                      </span>
+                    </label>
+                  </div>
+
+                  {afiliacionSimultanea && (
+                    <div className="grid grid-cols-1 gap-3 border-t border-henequen-arena/60 pt-2 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor={nrpId}
+                          className="mb-1 block text-[11px] font-semibold text-henequen-grafito"
+                        >
+                          Registro Patronal IMSS (NRP - 11 caracteres)
+                        </label>
+                        <input
+                          id={nrpId}
+                          type="text"
+                          maxLength={11}
+                          disabled={tramiteImssSolicitado}
+                          placeholder={
+                            tramiteImssSolicitado
+                              ? 'Trámite de alta patronal solicitado'
+                              : 'Ej. Y1234567101'
+                          }
+                          value={registroPatronalImss}
+                          onChange={(e) => setRegistroPatronalImss(e.target.value.toUpperCase())}
+                          className="w-full rounded-lg border border-henequen-arena bg-white px-3 py-1.5 font-mono text-xs uppercase focus:border-henequen-anil focus:outline-none disabled:bg-henequen-muro disabled:text-henequen-piedra"
+                        />
+                        <label className="mt-1.5 flex cursor-pointer items-center gap-1.5 text-[10px] text-henequen-piedra">
+                          <input
+                            type="checkbox"
+                            checked={tramiteImssSolicitado}
+                            onChange={(e) => {
+                              setTramiteImssSolicitado(e.target.checked);
+                              if (e.target.checked) setRegistroPatronalImss('');
+                            }}
+                            className="h-3 w-3 rounded text-henequen-terra"
+                          />
+                          <span>Aún no tengo NRP, requiero asesoría para mi Alta Patronal</span>
+                        </label>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor={recId}
+                          className="mb-1 block text-[11px] font-semibold text-henequen-grafito"
+                        >
+                          Padrón Estatal AAFY (REC / ISN 2.5%)
+                        </label>
+                        <input
+                          id={recId}
+                          type="text"
+                          placeholder="Ej. REC-MID-2026 / Opcional"
+                          value={registroEstatalAafy}
+                          onChange={(e) => setRegistroEstatalAafy(e.target.value.toUpperCase())}
+                          className="w-full rounded-lg border border-henequen-arena bg-white px-3 py-1.5 font-mono text-xs uppercase focus:border-henequen-anil focus:outline-none"
+                        />
+                        <span className="mt-1 block text-[10px] text-henequen-piedra">
+                          Cédula mensual ISN generada conforme a la Ley General de Hacienda de
+                          Yucatán.
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-3">

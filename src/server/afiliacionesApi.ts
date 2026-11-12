@@ -54,6 +54,10 @@ interface AfiliacionPayload {
   cfdiRequerido?: boolean;
   estatus?: 'pendiente_pago' | 'activo';
   tenantId?: string;
+  registroPatronalImss?: string;
+  registroEstatalAafy?: string;
+  afiliacionSimultanea?: boolean;
+  tramiteImssSolicitado?: boolean;
 }
 
 export interface MigrarALedgerPayload {
@@ -68,6 +72,8 @@ export interface MigrarALedgerPayload {
   sector?: SectorEconomico;
   municipio?: string;
   codigoPostal?: string;
+  registroPatronalImss?: string;
+  registroEstatalAafy?: string;
 }
 
 export async function handleAfiliacionesApiRequest(
@@ -144,6 +150,10 @@ export async function handleAfiliacionesApiRequest(
     const selloSha = selloMatch ? selloMatch[1] : `SHA256:CANACO-MID-${row.id.slice(0, 8)}`;
     const cuotaMatch = row.notas?.match(/Cuota:\s*\$?([\d,]+(\.\d+)?)/i);
     const cuota = cuotaMatch && cuotaMatch[1] ? parseFloat(cuotaMatch[1].replace(/,/g, '')) : 2000;
+    const nrpMatch = row.notas?.match(/NRP:\s*([A-Z0-9]{10,11})/i);
+    const aafyMatch = row.notas?.match(/AAFY:\s*([^\s|]+)/i);
+    const simultaneaFlag = /Afiliaci[oó]n Simult[aá]nea/i.test(row.notas || '');
+    const tramiteImssFlag = /Tr[aá]mite IMSS Solicitado/i.test(row.notas || '');
 
     const socioRegistro: SocioCanacoRegistro = {
       folioSiem: folioSiem || 'SIEM-MID-2026-OFICIAL',
@@ -172,6 +182,10 @@ export async function handleAfiliacionesApiRequest(
       metodoPago: 'tarjeta',
       cfdiRequerido: true,
       selloDigitalSha256: selloSha || `SHA256:CANACO-MID-${row.id.slice(0, 8)}`,
+      registroPatronalImss: nrpMatch ? nrpMatch[1] : undefined,
+      registroEstatalAafy: aafyMatch ? aafyMatch[1] : undefined,
+      afiliacionSimultanea: simultaneaFlag,
+      tramiteImssSolicitado: tramiteImssFlag,
     };
 
     return Response.json(
@@ -368,6 +382,8 @@ export async function handleAfiliacionesApiRequest(
       }
 
       // 4. Inserción o actualización en el catálogo de clientes del Expediente Único
+      const nrpFromNotas = leadRow?.notas?.match(/NRP:\s*([A-Z0-9]{10,11})/i)?.[1];
+      const aafyFromNotas = leadRow?.notas?.match(/AAFY:\s*([^\s|]+)/i)?.[1];
       const metadataObj = {
         origen: 'siem_canaco',
         folio_siem: finalFolioSiem,
@@ -377,6 +393,9 @@ export async function handleAfiliacionesApiRequest(
         email: finalEmail,
         telefono: finalTelefono,
         municipio: finalMunicipio,
+        registro_patronal_imss: body.registroPatronalImss || nrpFromNotas || null,
+        registro_estatal_aafy: body.registroEstatalAafy || aafyFromNotas || null,
+        afiliacion_simultanea: /Afiliaci[oó]n Simult[aá]nea/i.test(leadRow?.notas || ''),
         importado_en: new Date().toISOString(),
       };
       const metadataJson = JSON.stringify(metadataObj);
@@ -565,7 +584,16 @@ export async function handleAfiliacionesApiRequest(
 
     const selloDigitalSha256 = `SHA256:CANACO-MID-${folioSiem.slice(-8)}-${Date.now().toString(36).toUpperCase()}`;
 
-    const notasDetalle = `RFC: ${rfcUpper} | Folio SIEM: ${folioSiem} | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Cuota: $${cotizacion.totalAnual.toLocaleString('es-MX')} MXN | Sector: ${sector} | CFDI: ${body.cfdiRequerido ? 'Requerido' : 'No'} | Sello: ${selloDigitalSha256}`;
+    const extraSimultanea = [
+      body.afiliacionSimultanea ? 'Afiliación Simultánea AAFY-SAT-IMSS' : '',
+      body.registroPatronalImss ? `NRP: ${body.registroPatronalImss.trim().toUpperCase()}` : '',
+      body.tramiteImssSolicitado ? 'Trámite IMSS Solicitado' : '',
+      body.registroEstatalAafy ? `AAFY: ${body.registroEstatalAafy.trim().toUpperCase()}` : '',
+    ]
+      .filter(Boolean)
+      .join(' | ');
+
+    const notasDetalle = `RFC: ${rfcUpper} | Folio SIEM: ${folioSiem} | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Cuota: $${cotizacion.totalAnual.toLocaleString('es-MX')} MXN | Sector: ${sector} | CFDI: ${body.cfdiRequerido ? 'Requerido' : 'No'}${extraSimultanea ? ` | ${extraSimultanea}` : ''} | Sello: ${selloDigitalSha256}`;
 
     // Verificar si el comercio ya existe registrado en este tenant por su RFC o Email
     const existing = await db
@@ -660,6 +688,14 @@ export async function handleAfiliacionesApiRequest(
       metodoPago: body.metodoPago || 'tarjeta',
       cfdiRequerido: !!body.cfdiRequerido,
       selloDigitalSha256,
+      registroPatronalImss: body.registroPatronalImss
+        ? body.registroPatronalImss.trim().toUpperCase()
+        : undefined,
+      registroEstatalAafy: body.registroEstatalAafy
+        ? body.registroEstatalAafy.trim().toUpperCase()
+        : undefined,
+      afiliacionSimultanea: !!body.afiliacionSimultanea,
+      tramiteImssSolicitado: !!body.tramiteImssSolicitado,
     };
 
     // Disparar correo oficial de confirmación vía Resend si el pago quedó activo

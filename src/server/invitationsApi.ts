@@ -27,6 +27,7 @@ import {
   verifyPassword,
 } from './auth';
 import { escapeHtml } from './canacoEmailService';
+import { isEmailServiceConfigured, sendTransactionalEmail } from './email/emailService';
 
 const INVITATION_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 días
 
@@ -49,8 +50,8 @@ async function sendInvitationEmail(
   role: 'admin' | 'member',
   token: string
 ): Promise<void> {
-  if (!env.RESEND_API_KEY || !env.AUTH_EMAIL_FROM) {
-    console.warn('[Invitations] Resend not configured, skipping email delivery');
+  if (!isEmailServiceConfigured(env)) {
+    console.warn('[Invitations] Email service not configured, skipping email delivery');
     return;
   }
 
@@ -106,23 +107,19 @@ Este enlace es válido durante 7 días. Si no esperabas este mensaje, puedes ign
 ARK LEDGER
 https://ledger.arksystems.site`;
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: env.AUTH_EMAIL_FROM,
-      to: [to],
-      subject,
-      text,
-      html,
-    }),
+  const emailResult = await sendTransactionalEmail(env, {
+    to,
+    subject,
+    text,
+    html,
   });
 
-  if (!response.ok) {
-    console.error('[Invitations email] Resend rejected invitation message', response.status);
+  if (!emailResult.success) {
+    console.error(
+      '[Invitations email] Rejected invitation message via',
+      emailResult.provider,
+      emailResult.error
+    );
     throw new Error('No se pudo enviar el correo de invitación');
   }
 }

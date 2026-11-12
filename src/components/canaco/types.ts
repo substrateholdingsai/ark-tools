@@ -49,4 +49,12 @@ export interface SocioCanacoRegistro {
   metodoPago: 'tarjeta' | 'spei' | 'clip';
   cfdiRequerido: boolean;
   selloDigitalSha256: string;
+  /** Número de Registro Patronal ante el IMSS (NRP - 11 caracteres) */
+  registroPatronalImss?: string;
+  /** Registro Estatal de Contribuyentes ante la AAFY (Padrón ISN 2.5%) */
+  registroEstatalAafy?: string;
+  /** Si el socio participa en el Programa de Afiliación Simultánea AAFY-SAT-IMSS */
+  afiliacionSimultanea?: boolean;
+  /** Si solicitó asesoría para trámite de alta patronal por primera vez */
+  tramiteImssSolicitado?: boolean;
 }

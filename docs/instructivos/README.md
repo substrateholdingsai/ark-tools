@@ -28,7 +28,7 @@
 
 - [Timbrado de Facturas CFDI 4.0 vía Alegra / Quadrum PAC](timbrado.md) — disponible
 - [Generador de Enlaces de Pago Clip / SPEI](spei.md) — disponible
-- [Simulador de Leasing Tecnológico](leasing.md) — disponible
+- [Simulador Fiscal: Leasing vs Crédito vs Contado](leasing.md) — disponible
 
 ## Compliance y Defensa Jurídica
 

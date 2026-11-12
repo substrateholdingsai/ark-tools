@@ -25,9 +25,11 @@ interface ResumenISNProps {
   estado: Estado;
   /** Callback al hacer click en "Descargar Excel" */
   onExport?: () => void;
+  /** Callback para la Cédula AAFY (Yucatán) */
+  onExportAafy?: () => void;
 }
 
-export function ResumenISN({ resultado, estado, onExport }: ResumenISNProps) {
+export function ResumenISN({ resultado, estado, onExport, onExportAafy }: ResumenISNProps) {
   return (
     <LiquidGlassDome padding="lg" radius="dome">
       {/* Header con badge */}
@@ -112,6 +114,24 @@ export function ResumenISN({ resultado, estado, onExport }: ResumenISNProps) {
           <div className="mt-3 text-center font-orbitron text-[10px] tracking-[0.12em] text-muted">
             Incluye desglose de percepciones · Compatible con Excel/Sheets
           </div>
+
+          {estado.id === 'YUC' && onExportAafy && (
+            <div className="mt-4 border-t border-line/60 pt-3">
+              <GlassButton
+                variant="default"
+                size="md"
+                fullWidth
+                onClick={onExportAafy}
+                className="!orbitron border-amber-500/40 bg-amber-500/10 font-orbitron text-amber-900 transition hover:bg-amber-500/20"
+              >
+                <Download size={14} strokeWidth={2.5} />
+                CÉDULA AAFY (YUCATÁN 2.5% LGHY)
+              </GlassButton>
+              <div className="mt-1.5 text-center font-orbitron text-[9px] tracking-[0.08em] text-muted">
+                Papel de trabajo oficial conforme a los Arts. 21-27 LGHY
+              </div>
+            </div>
+          )}
         </>
       )}
     </LiquidGlassDome>

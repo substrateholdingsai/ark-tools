@@ -118,5 +118,40 @@ describe('CANACO Mérida — Servicio de Correos Transaccionales (Resend)', () =
       expect(res.success).toBe(false);
       expect(res.error).toContain('Error Resend 403');
     });
+
+    it('despacha exitosamente la solicitud a la API de Telnyx cuando TELNYX_API_KEY está configurada', async () => {
+      const mockEnv = {
+        TELNYX_API_KEY: 'KEY_TELNYX_MOCK_123',
+        AUTH_EMAIL_FROM: 'CANACO Mérida <afiliaciones@canacomerida.com.mx>',
+      } as Env;
+
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          data: {
+            id: 'email_telnyx_mid_99999',
+            record_type: 'email_message',
+            status: 'queued',
+          },
+        }),
+      });
+      vi.stubGlobal('fetch', fetchMock);
+
+      const res = await sendCanacoConfirmacionPagoEmail(mockEnv, mockParams);
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://api.telnyx.com/v2/email_messages',
+        expect.objectContaining({
+          method: 'POST',
+          headers: expect.objectContaining({
+            Authorization: 'Bearer KEY_TELNYX_MOCK_123',
+            'Content-Type': 'application/json',
+          }),
+        })
+      );
+      expect(res.success).toBe(true);
+      expect(res.id).toBe('email_telnyx_mid_99999');
+    });
   });
 });

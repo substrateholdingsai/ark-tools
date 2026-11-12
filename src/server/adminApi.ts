@@ -10,6 +10,7 @@
 
 import type { Env } from '../index';
 import type { AuthPrincipal } from './auth';
+import { isEmailServiceConfigured, getActiveEmailProvider } from './email/emailService';
 
 function json(
   body: Record<string, unknown>,
@@ -114,10 +115,14 @@ export async function handleAdminApiRequest(
         totalLedgerEntries: totalLedgerResult?.total || 0,
       };
 
+      const emailConfigured = isEmailServiceConfigured(env);
+      const emailProvider = getActiveEmailProvider(env);
       const systemHealth = {
         database: 'operational',
         aiWorkers: Boolean(env.AI),
-        resendEmail: Boolean(env.RESEND_API_KEY),
+        resendEmail: emailConfigured,
+        emailConfigured,
+        emailProvider,
         clipPayments: Boolean(env.CLIP_API_KEY && env.CLIP_API_SECRET),
         environment: env.ENVIRONMENT || 'production',
         appVersion: env.APP_VERSION || '1.0.0',

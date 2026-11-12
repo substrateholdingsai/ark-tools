@@ -736,6 +736,11 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                             ? lead.notas.split('|')[1]?.trim()
                             : 'Micro / MiPyME'}
                         </span>
+                        {lead.notas?.includes('Afiliación Simultánea') && (
+                          <span className="mt-1 inline-flex items-center rounded bg-henequen-anil/10 px-1.5 py-0.5 font-mono text-[9px] font-bold text-henequen-anil">
+                            Tripartito AAFY-IMSS
+                          </span>
+                        )}
                       </td>
 
                       {/* Folio SIEM */}

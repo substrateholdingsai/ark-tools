@@ -8,6 +8,7 @@
 import type { Env } from '../../index';
 import { AlegraClient, AlegraError } from './alegraClient';
 import { decryptToken, getAlegraEncryptionSecret } from './credentials';
+import { isEmailServiceConfigured, sendTransactionalEmail } from '../email/emailService';
 
 interface AccountRow {
   tenant_id: string;
@@ -25,8 +26,10 @@ export async function sendAlegraStatusAlertEmail(
   companyName: string,
   errorReason: string
 ): Promise<void> {
-  if (!env.RESEND_API_KEY || !env.AUTH_EMAIL_FROM) {
-    console.warn('[Alegra Cron] Resend no configurado, omitiendo envío de alerta por correo.');
+  if (!isEmailServiceConfigured(env)) {
+    console.warn(
+      '[Alegra Cron] Servicio de correo no configurado, omitiendo envío de alerta por correo.'
+    );
     return;
   }
 
@@ -65,21 +68,16 @@ export async function sendAlegraStatusAlertEmail(
 `;
 
   try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: env.AUTH_EMAIL_FROM,
-        to,
-        subject,
-        html,
-      }),
+    const res = await sendTransactionalEmail(env, {
+      to,
+      subject,
+      html,
     });
+    if (!res.success) {
+      console.error('[Alegra Cron] Error enviando correo de alerta vía', res.provider, res.error);
+    }
   } catch (err) {
-    console.error('[Alegra Cron] Error enviando correo de alerta vía Resend:', err);
+    console.error('[Alegra Cron] Error enviando correo de alerta:', err);
   }
 }
 

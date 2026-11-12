@@ -7,6 +7,7 @@
  */
 
 import type { Env } from '../index';
+import { isEmailServiceConfigured, sendTransactionalEmail } from './email/emailService';
 
 export interface CanacoConfirmacionPagoEmailParams {
   email: string;
@@ -179,8 +180,8 @@ export async function sendCanacoConfirmacionPagoEmail(
   env: Env,
   params: CanacoConfirmacionPagoEmailParams
 ): Promise<{ success: boolean; id?: string; error?: string }> {
-  if (!env.RESEND_API_KEY) {
-    console.warn('[CANACO Email] RESEND_API_KEY no configurado en entorno.');
+  if (!isEmailServiceConfigured(env)) {
+    console.warn('[CANACO Email] Proveedor de correo no configurado en entorno.');
     return { success: false, error: 'RESEND_API_KEY no configurado' };
   }
 
@@ -191,31 +192,16 @@ export async function sendCanacoConfirmacionPagoEmail(
   const fromAddress = env.AUTH_EMAIL_FROM || 'CANACO Mérida <afiliaciones@canacomerida.com.mx>';
   const htmlContent = buildCanacoConfirmacionEmailHtml(params, env.APP_URL);
 
-  try {
-    const res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        from: fromAddress,
-        to: [params.email.trim()],
-        subject: `¡Bienvenido a CANACO Mérida! Tu Cédula Oficial SIEM 2026 está activa (${params.rfc})`,
-        html: htmlContent,
-      }),
-    });
+  const result = await sendTransactionalEmail(env, {
+    from: fromAddress,
+    to: params.email.trim(),
+    subject: `¡Bienvenido a CANACO Mérida! Tu Cédula Oficial SIEM 2026 está activa (${params.rfc})`,
+    html: htmlContent,
+  });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error('[CANACO Email] Resend API error:', res.status, errText);
-      return { success: false, error: `Error Resend ${res.status}: ${errText}` };
-    }
-
-    const data = (await res.json().catch(() => ({}))) as { id?: string };
-    return { success: true, id: data.id };
-  } catch (err: any) {
-    console.error('[CANACO Email] Fallo de red al contactar Resend:', err);
-    return { success: false, error: err.message };
-  }
+  return {
+    success: result.success,
+    id: result.id,
+    error: result.error,
+  };
 }

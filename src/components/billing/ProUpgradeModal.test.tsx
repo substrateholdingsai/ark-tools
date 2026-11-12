@@ -9,7 +9,7 @@ describe('ProUpgradeModal Component', () => {
     expect(screen.getByText(/Eleva tu Práctica Contable/i)).toBeInTheDocument();
     expect(screen.getByText(/Plan Despacho Pro/i)).toBeInTheDocument();
     expect(screen.getByText('$399')).toBeInTheDocument();
-    expect(screen.getByText(/SUSCRIBIRSE PRO \(\$399 MXN\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Activar Pro/i)).toBeInTheDocument();
   });
 
   it('no renderiza nada en el DOM cuando isOpen es false', () => {
@@ -24,11 +24,11 @@ describe('ProUpgradeModal Component', () => {
     expect(screen.getByText(reasonText)).toBeInTheDocument();
   });
 
-  it('ejecuta onClose al hacer clic en Continuar en Modo Libre', () => {
+  it('ejecuta onClose al hacer clic en Ahora no', () => {
     const handleClose = vi.fn();
     render(<ProUpgradeModal isOpen={true} onClose={handleClose} />);
 
-    const botonModoLibre = screen.getByRole('button', { name: /Continuar en Modo Libre/i });
+    const botonModoLibre = screen.getByRole('button', { name: /Ahora no/i });
     fireEvent.click(botonModoLibre);
 
     expect(handleClose).toHaveBeenCalledTimes(1);
@@ -37,7 +37,7 @@ describe('ProUpgradeModal Component', () => {
   it('el enlace de pago contiene la URL del checkout de Clip', () => {
     render(<ProUpgradeModal isOpen={true} onClose={() => {}} />);
 
-    const link = screen.getByRole('link', { name: /SUSCRIBIRSE PRO/i });
+    const link = screen.getByRole('link', { name: /Activar Pro/i });
     expect(link).toHaveAttribute('href', expect.stringContaining('clip.mx'));
     expect(link).toHaveAttribute('target', '_blank');
   });

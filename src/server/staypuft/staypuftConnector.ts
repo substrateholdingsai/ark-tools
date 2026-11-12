@@ -1960,7 +1960,7 @@ function detectForbiddenPromptIntent(prompt: string): { blocked: boolean; reason
   }
 
   if (
-    /\b(enviar?|manda[r]?|send|disparar?)\b[\s\S]{0,50}\b(email|correo|whatsapp|resend|mensaje|notificaci[oó]n)\b/i.test(
+    /\b(enviar?|manda[r]?|send|disparar?)\b[\s\S]{0,50}\b(email|correo|whatsapp|resend|telnyx|mensaje|notificaci[oó]n)\b/i.test(
       text
     ) ||
     /\b(email|correo|whatsapp)\b[\s\S]{0,40}\b(enviar?|send)\b/i.test(text)
@@ -1968,7 +1968,7 @@ function detectForbiddenPromptIntent(prompt: string): { blocked: boolean; reason
     return {
       blocked: true,
       reason:
-        'Approval Gate activo: El modelo no puede enviar correos (Resend), WhatsApp ni notificaciones externas.',
+        'Approval Gate activo: El modelo no puede enviar correos (Telnyx/Resend), WhatsApp ni notificaciones externas.',
     };
   }
 

@@ -532,4 +532,41 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     const json = (await response?.json()) as any;
     expect(json.error).toContain('Se requiere RFC');
   });
+
+  it('procesa el registro con afiliación simultánea AAFY-SAT-IMSS persistiendo NRP y REC', async () => {
+    const mockDb = createMockDb();
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+
+    const payload = {
+      razonSocial: 'Innovaciones del Sureste S.A.P.I. de C.V.',
+      rfc: 'ISU200101XYZ',
+      sector: 'servicios',
+      numEmpleados: 8,
+      municipio: 'Mérida',
+      contactoNombre: 'Ing. Rodrigo Canto',
+      email: 'rodrigo@innovaciones.mx',
+      telefono: '9999112233',
+      afiliacionSimultanea: true,
+      registroPatronalImss: 'Y9876543101',
+      registroEstatalAafy: 'REC-AAFY-2026-99',
+      tramiteImssSolicitado: false,
+    };
+
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/registro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response?.status).toBe(201);
+    const json = (await response?.json()) as any;
+    expect(json.success).toBe(true);
+    expect(json.socio.registroPatronalImss).toBe('Y9876543101');
+    expect(json.socio.registroEstatalAafy).toBe('REC-AAFY-2026-99');
+    expect(json.socio.afiliacionSimultanea).toBe(true);
+  });
 });

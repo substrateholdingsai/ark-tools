@@ -23,6 +23,7 @@ import { ExpedienteToolBanner } from '@/components/ExpedienteToolBanner';
 import { CONCEPTOS_DEFAULT, getEstadoById, ESTADO_DEFAULT_ID } from './data/estados';
 import { calcularResultadoISN, formatearMXN } from './lib/calcularISN';
 import { descargarCSV } from './lib/exportarCSV';
+import { descargarCedulaAafy } from './lib/exportarCedulaAafy';
 import type { ConceptoPercepcion, Estado } from './types';
 
 interface CalculadoraISNProps {
@@ -159,6 +160,20 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
     mostrarToast(`✓ Excel generado: ISN ${estado.corto} ${formatearMXN(resultado.isn)}`);
   }, [estado, conceptos, resultado, mostrarToast]);
 
+  /**
+   * Exporta la Cédula Oficial AAFY (Yucatán 2.5% LGHY).
+   */
+  const handleExportAafy = useCallback(() => {
+    descargarCedulaAafy({
+      estado,
+      conceptos,
+      resultado,
+      razonSocial: activeClient?.nombre || undefined,
+      rfc: activeClient?.rfc || undefined,
+    });
+    mostrarToast(`✓ Cédula AAFY generada: Yucatán 2.5% (${formatearMXN(resultado.isn)})`);
+  }, [estado, conceptos, resultado, activeClient, mostrarToast]);
+
   // ─────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────
@@ -221,7 +236,12 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
 
         {/* COLUMNA DERECHA: Resultado (sticky en desktop) */}
         <div className="space-y-4 lg:sticky lg:top-[88px]">
-          <ResumenISN resultado={resultado} estado={estado} onExport={handleExport} />
+          <ResumenISN
+            resultado={resultado}
+            estado={estado}
+            onExport={handleExport}
+            onExportAafy={handleExportAafy}
+          />
 
           {/* Nota informativa */}
           <div className="rounded-[16px] border border-line bg-surface-2 p-4 text-[11px] leading-[1.5] text-muted">

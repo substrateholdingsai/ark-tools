@@ -1,4 +1,5 @@
 import type { Env } from '../index';
+import { isEmailServiceConfigured, sendTransactionalEmail } from './email/emailService';
 import {
   DEMO_TENANT_ID,
   STAYPUFT_OPERATOR_ID,
@@ -188,7 +189,7 @@ async function sendAuthEmail(
   action: 'verify' | 'reset',
   token: string
 ): Promise<void> {
-  if (!env.RESEND_API_KEY || !env.AUTH_EMAIL_FROM) {
+  if (!isEmailServiceConfigured(env)) {
     throw new Error('Auth email delivery is not configured');
   }
   const url = new URL('/', env.APP_URL);
@@ -247,22 +248,18 @@ Este enlace es válido durante 24 horas. Si no solicitaste esta acción, ignora 
 ARK LEDGER — Plataforma de Cumplimiento y Defensa Fiscal
 https://ledger.arksystems.site`;
 
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: env.AUTH_EMAIL_FROM,
-      to: [to],
-      subject,
-      text,
-      html,
-    }),
+  const emailResult = await sendTransactionalEmail(env, {
+    to,
+    subject,
+    text,
+    html,
   });
-  if (!response.ok) {
-    console.error('[Auth email] Resend rejected message', response.status);
+  if (!emailResult.success) {
+    console.error(
+      '[Auth email] Email delivery failed via',
+      emailResult.provider,
+      emailResult.error
+    );
     throw new Error('Auth email delivery failed');
   }
 }
@@ -351,7 +348,7 @@ async function handleRegister(request: Request, env: Env, cors: Record<string, s
   if (await rateLimited(request, env, 'register', email, 5, 3600)) {
     return json({ error: 'Demasiados intentos. Intenta más tarde.' }, cors, 429);
   }
-  if (!env.RESEND_API_KEY || !env.AUTH_EMAIL_FROM) {
+  if (!isEmailServiceConfigured(env)) {
     return json(
       { error: 'El registro aún no está disponible: falta configurar el envío de correo.' },
       cors,
@@ -563,7 +560,7 @@ async function handleRequestPasswordReset(
   if (await rateLimited(request, env, 'reset', email, 3, 3600)) {
     return json({ error: 'Demasiados intentos. Intenta más tarde.' }, cors, 429);
   }
-  if (!env.RESEND_API_KEY || !env.AUTH_EMAIL_FROM) {
+  if (!isEmailServiceConfigured(env)) {
     return json(
       { error: 'La recuperación aún no está disponible: falta configurar el envío de correo.' },
       cors,

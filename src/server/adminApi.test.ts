@@ -142,7 +142,41 @@ describe('Admin API Handlers', () => {
         database: 'operational',
         aiWorkers: true,
         resendEmail: true,
+        emailConfigured: true,
+        emailProvider: 'resend',
         clipPayments: true,
+      }),
+    });
+  });
+
+  it('reflects Telnyx as active emailProvider when TELNYX_API_KEY is configured', async () => {
+    const db = createMockDb();
+    const env = {
+      ARK_TOOLS_DB: db,
+      AI: {},
+      TELNYX_API_KEY: 'test_telnyx_key',
+      CLIP_API_KEY: 'test_clip',
+      CLIP_API_SECRET: 'test_secret',
+      ENVIRONMENT: 'production',
+      APP_VERSION: '1.0.0',
+    } as unknown as Env;
+
+    const response = await handleAdminApiRequest(
+      new Request('https://ledger.arksystems.site/api/admin/overview'),
+      env,
+      corsHeaders,
+      superAdminUser
+    );
+
+    expect(response?.status).toBe(200);
+    const body = await response?.json();
+    expect(body).toMatchObject({
+      success: true,
+      systemHealth: expect.objectContaining({
+        database: 'operational',
+        resendEmail: true,
+        emailConfigured: true,
+        emailProvider: 'telnyx',
       }),
     });
   });

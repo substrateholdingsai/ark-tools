@@ -283,6 +283,51 @@ describe('handleLeadsApiRequest', () => {
     }
   });
 
+  it('conmuta transparentemente a Telnyx Email API cuando TELNYX_API_KEY está configurada', async () => {
+    const originalFetch = globalThis.fetch;
+    let telnyxCalled = false;
+    globalThis.fetch = vi.fn().mockImplementation(async (url: string | URL | Request) => {
+      const urlStr = String(url);
+      if (urlStr.includes('api.telnyx.com/v2/email_messages')) {
+        telnyxCalled = true;
+        return new Response(
+          JSON.stringify({
+            data: { id: 'telnyx-lead-email-789', record_type: 'email_message' },
+          }),
+          {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }
+        );
+      }
+      return originalFetch(url);
+    });
+
+    try {
+      const env = {
+        ...createEnv(),
+        TELNYX_API_KEY: 'KEY_TELNYX_PROD_LEADS',
+      };
+      const req = new Request('https://ledger.arksystems.site/api/admin/leads/lead-1/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipient_name: 'Lic. Perez Telnyx' }),
+      });
+      const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
+      expect(res?.status).toBe(200);
+
+      const json = (await res?.json()) as {
+        ok: boolean;
+        resend_id: string;
+      };
+      expect(json.ok).toBe(true);
+      expect(json.resend_id).toBe('telnyx-lead-email-789');
+      expect(telnyxCalled).toBe(true);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
   it('registra actividad de WhatsApp Studio y retorna whatsapp_url en POST /api/admin/leads/:id/log-whatsapp', async () => {
     const env = createEnv();
     const req = new Request('https://ledger.arksystems.site/api/admin/leads/lead-1/log-whatsapp', {

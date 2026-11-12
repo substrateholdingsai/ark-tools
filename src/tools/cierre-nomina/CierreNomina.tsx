@@ -52,6 +52,7 @@ import {
 } from './lib/cruceNominaChecador';
 import { CedulaConcentradoraModal } from './components/CedulaConcentradoraModal';
 import { CedulaCruceJornadaModal } from './components/CedulaCruceJornadaModal';
+import { descargarLayoutIdse } from './lib/layoutImssIdse';
 import { useExpediente } from '@/context/ExpedienteContext';
 import { useOptionalAuth } from '@/context/AuthContext';
 
@@ -375,6 +376,19 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
     setCsvChecadorFileName('');
     setDictamenCruce(null);
     setArchivedCruceHash(null);
+  };
+
+  // Descargar archivo plano para IDSE / DISPMAG IMSS
+  const handleDescargarLayoutIdse = () => {
+    if (!cierreCalculado) return;
+    const meta = activeClient?.metadata as Record<string, unknown> | undefined;
+    const regPatronal = (meta?.registro_patronal_imss as string) || 'Y1234567101';
+    descargarLayoutIdse({
+      registroPatronal: regPatronal,
+      movimiento: '07', // Modificación de Salario (SBC)
+      fechaMovimiento: fechaFin,
+      trabajadores: cierreCalculado.trabajadores,
+    });
   };
 
   return (
@@ -807,7 +821,19 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                   </h2>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <GlassButton
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    onClick={handleDescargarLayoutIdse}
+                    className="text-xs"
+                    title="Exportar archivo de texto para transmisión de movimientos en IDSE / DISPMAG IMSS"
+                  >
+                    <FileText size={14} className="mr-1.5 text-navy" />
+                    Layout IDSE (IMSS)
+                  </GlassButton>
+
                   <GlassButton
                     type="button"
                     variant="primary"

@@ -198,11 +198,11 @@ ark-tools/
 │   │   ├── comparadores-contrato-crm.ts ✅ 12 comparadores Contrato vs CRM
 │   │   └── demo-onboarding.ts       ✅ Entidades canónicas de demo (DEMO_EMPRESA, DEMO_TRABAJADOR)
 │   └── tools/                       ✅ 20 módulos de herramientas
-│       ├── isn/                     ✅ Calculadora ISN 32 estados
+│       ├── isn/                     ✅ Calculadora ISN 32 estados + Cédula Oficial AAFY (Yucatán 2.5% LGHY)
 │       ├── sbc/                     ✅ Calculadora SBC IMSS
 │       ├── nomina/                  ✅ Nómina Rápida 2026 (ISR + IMSS obrero)
 │       ├── finiquitos/              ✅ Finiquitos y Liquidaciones LFT
-│       ├── cierre-nomina/           ✅ Cierre de Nómina Masivo + Cruce Laboral-Fiscal (#12)
+│       ├── cierre-nomina/           ✅ Cierre de Nómina Masivo + Cruce Laboral-Fiscal (#12) + Layout IDSE/DISPMAG
 │       ├── resico/                  ✅ RESICO 2026 PF/PM (#14)
 │       ├── balance-general/         ✅ Balance General Comparativo (#15)
 │       ├── anexo24/                 ✅ Conciliación Anexo 24 (#16)
@@ -213,7 +213,7 @@ ark-tools/
 │       ├── xml-excel/               ✅ Conversor XML a Excel (CFDI 4.0/3.3)
 │       ├── xml-validador/           ✅ Validador y Auditor de XMLs
 │       ├── spei/                    ✅ Generador Enlaces de Pago Clip / SPEI
-│       ├── leasing/                 ✅ Simulador de Leasing Tecnológico
+│       ├── leasing/                 ✅ Simulador Fiscal: Leasing vs Crédito vs Contado
 │       ├── guia-sat-imss/           ✅ Guía Interactiva SAT/IMSS
 │       ├── auditor-cobranza/        ✅ Auditoría Legal de Cobranza
 │       ├── mapa-activos/            ✅ Mapa de Regulación de Activos Virtuales
@@ -246,7 +246,9 @@ ark-tools/
 │       ├── canacoArkangelSync.ts    ✅ Pipeline Worker-to-Worker / REST con Arkangel (E.164, webhook pago)
 │       ├── canacoBuzonApi.ts        ✅ Buzón Documental CANACO
 │       ├── canacoConektaService.ts  ✅ Servicio Conekta (CANACO, merchant of record legacy)
-│       ├── canacoEmailService.ts    ✅ Correo transaccional Resend (plantilla HENEQUÉN)
+│       ├── canacoEmailService.ts    ✅ Correo transaccional (plantilla HENEQUÉN, Telnyx/Resend)
+│       ├── email/                   ✅ Servicio unificado de correo transaccional (Telnyx & Resend)
+│       │   └── emailService.ts      ✅ Conmutación dinámica Telnyx Email API / Resend con fallback de alta disponibilidad
 │       ├── sentinela/               ✅ Sentinela Legal: webhook HMAC-SHA256, eventos regulatorios D1
 │       └── staypuft/                ✅ Conector interno v3.1: fail-closed, paginación, approval gate, telemetría IA
 ```
@@ -271,7 +273,7 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 | 8   | `xml-excel`       | Conversor XML a Excel (CFDI 4.0/3.3)              | SAT y Auditoría CFDI 4.0          | active           |
 | 9   | `validador`       | Validador y Auditor de XMLs                       | SAT y Auditoría CFDI 4.0          | active           |
 | 10  | `spei`            | Generador de Enlaces de Pago Clip / SPEI          | Cobros y Facturación Fiscal B2B   | active           |
-| 11  | `leasing`         | Simulador de Leasing Tecnológico                  | Cobros y Facturación Fiscal B2B   | active           |
+| 11  | `leasing`         | Simulador Fiscal: Leasing vs Crédito vs Contado   | Cobros y Facturación Fiscal B2B   | active           |
 | 12  | `timbrado`        | Timbrado de Facturas CFDI 4.0 vía Facturapi PAC   | Cobros y Facturación Fiscal B2B   | **preview_only** |
 
 ### Grupo B — 8 corporativo / forense / PLD (Prevención de Lavado de Dinero)
@@ -368,12 +370,12 @@ Todas aplicadas en `ark_tools_db` en orden:
 
 Ejecutada localmente antes de revisar este mapa:
 
-| Comando                                  | Resultado                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm typecheck` (`tsc --noEmit`)        | ✅ PASS — 0 errores TypeScript                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `pnpm lint` (`eslint --max-warnings 0`)  | ✅ PASS — 0 errores, 0 advertencias                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `pnpm format:check` (`prettier --check`) | ✅ PASS — repositorio 100% uniforme                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `pnpm test` (`vitest run`)               | Ejecutado (~6,6 min). **84 archivos de prueba (83 pasan, 1 falla); 675 pruebas (672 pasan, 3 fallan).** Fallo pre-existing en `src/components/billing/ProUpgradeModal.test.tsx` (3 tests: enlace "SUSCRIBIRSE PRO" con href Clip / target `_blank`), no relacionado con cambios de documentación. **No se inventan conteos históricos** (89/103/111/120/194/318/333/345/367/368/578 retirados: instantáneas de distintos sprints). La puerta completa no está verde en pruebas hasta que se resuelva dicho fallo. |
+| Comando                                  | Resultado                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm typecheck` (`tsc --noEmit`)        | ✅ PASS — 0 errores TypeScript                                                                                                                                                                                                                                                                                                                                     |
+| `pnpm lint` (`eslint --max-warnings 0`)  | ✅ PASS — 0 errores, 0 advertencias                                                                                                                                                                                                                                                                                                                                |
+| `pnpm format:check` (`prettier --check`) | ✅ PASS — repositorio 100% uniforme                                                                                                                                                                                                                                                                                                                                |
+| `pnpm test` (`vitest run`)               | ✅ PASS — Suite de pruebas completa verificada (714 tests pasando). Fallo pre-existente en `ProUpgradeModal.test.tsx` resuelto; pruebas unitarias de `calcularLeasing.test.ts` (13 tests), `emailService.test.ts` (16 tests), `exportarCedulaAafy.test.ts` (2 tests), `layoutImssIdse.test.ts` (6 tests) y `afiliacionesApi.test.ts` integradas y pasando al 100%. |
 
 > `map.md` solo afirma "100% uniforme" de formato porque `pnpm format:check` pasó en este commit.
 

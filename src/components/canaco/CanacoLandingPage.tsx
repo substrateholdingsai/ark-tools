@@ -402,6 +402,46 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 2.25 BANNER INSTITUCIONAL: AFILIACIÓN SIMULTÁNEA AAFY — SAT — IMSS */}
+      {/* Sede Oficial: CANACO Servytur Mérida (aafy.yucatan.gob.mx/noticia.php?id=16) */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <section className="border-b border-henequen-arena bg-gradient-to-r from-henequen-anil via-henequen-anil to-slate-900 py-6 text-white">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
+          <div className="flex items-start gap-3.5">
+            <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-henequen-terra text-white shadow-md">
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-henequen-sisal">
+                  Sede Oficial CANACO Mérida · Ventanilla Única
+                </span>
+                <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 font-mono text-[9px] font-bold uppercase text-emerald-300">
+                  Cumplimiento Tripartito
+                </span>
+              </div>
+              <h2 className="mt-0.5 font-serif text-lg font-bold text-white sm:text-xl">
+                Programa de Afiliación Simultánea AAFY — SAT — IMSS
+              </h2>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-henequen-arena/90">
+                Formaliza tu comercio en un solo paso: Registro ante el SAT (CFF / CFDI 4.0), Alta
+                Patronal IMSS (LSS / IDSE) y Padrón Estatal AAFY (Impuesto Sobre Nómina 2.5% — LGHY
+                Art. 21-27). Suite contable ARK LEDGER precargada para todos los socios.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setModalAfiliacionOpen(true)}
+            className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-henequen-terra px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-henequen-terra-dark"
+          >
+            <UserPlus size={14} />
+            <span>Tramitar Afiliación Integral</span>
+          </button>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 2.5 GUÍA VISUAL DE 3 PASOS ("¿DÓNDE ESTOY Y CÓMO AVANZO?")          */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <section

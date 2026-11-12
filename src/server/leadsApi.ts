@@ -1,6 +1,7 @@
 import type { Env } from '../index';
 import { requireTenantMembership, type AuthPrincipal } from './auth';
 import { escapeHtml } from './canacoEmailService';
+import { isEmailServiceConfigured, sendTransactionalEmail } from './email/emailService';
 import { buildWhatsAppDeepLink, normalizeMexicanPhone } from '../lib/whatsappStudio';
 
 interface Lead {
@@ -614,9 +615,9 @@ export async function handleLeadsApiRequest(
         );
       }
 
-      if (!env.RESEND_API_KEY) {
+      if (!isEmailServiceConfigured(env)) {
         return Response.json(
-          { error: 'Servicio Resend no configurado (RESEND_API_KEY no presente).' },
+          { error: 'Servicio de correo no configurado (falta TELNYX_API_KEY o RESEND_API_KEY).' },
           { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
@@ -636,32 +637,24 @@ export async function handleLeadsApiRequest(
       const replyTo = 'pavel@arksystems.site';
       const subject = 'Infraestructura Tecnológica para su Firma';
 
-      const resendRes = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${env.RESEND_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: fromAddress,
-          reply_to: replyTo,
-          to: [targetEmail],
-          subject,
-          text,
-          html,
-        }),
+      const emailResult = await sendTransactionalEmail(env, {
+        from: fromAddress,
+        replyTo,
+        to: targetEmail,
+        subject,
+        text,
+        html,
       });
 
-      if (!resendRes.ok) {
-        const errorText = await resendRes.text();
-        console.error('[Leads API] Resend error:', resendRes.status, errorText);
+      if (!emailResult.success) {
+        console.error('[Leads API] Email dispatch error:', emailResult.provider, emailResult.error);
         return Response.json(
-          { error: `Resend rechazó el envío (HTTP ${resendRes.status}): ${errorText}` },
+          { error: `El servicio de correo rechazó el envío: ${emailResult.error}` },
           { status: 502, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
 
-      const resendData = (await resendRes.json().catch(() => ({}))) as { id?: string };
+      const resendData = { id: emailResult.id };
 
       // Si fue envío real (no prueba), actualizar estatus en D1
       const isTest = Boolean(body.test_email && body.test_email !== lead.email);

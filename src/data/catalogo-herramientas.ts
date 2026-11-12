@@ -113,10 +113,10 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
   },
   {
     id: 'leasing',
-    nombre: 'Simulador de Leasing Tecnológico',
+    nombre: 'Simulador Fiscal: Leasing vs Crédito vs Contado',
     categoria: 'Cobros y Facturación Fiscal B2B',
     descripcion:
-      'Proyección financiera de suscripciones B2B ($500 setup + $2,500/mes) con cálculo de MRR, ARR, LTV, tasa de retención y análisis de cohortes.',
+      'Comparador financiero y fiscal (LISR Arts. 28 Fracc. XIII, 34 y 36 Fracc. II; CFF Art. 15) entre arrendamiento puro, crédito bancario y compra de contado con escudo ISR/PTU.',
   },
   {
     id: 'guia-sat-imss',
