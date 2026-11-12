@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { handleAlegraApiRequest } from './alegraApi';
-import { AlegraClient } from './alegraClient';
+import { AlegraClient, FacturapiClient, toFacturapiInvoicePayload } from './alegraClient';
 import { decryptToken, encryptToken, getAlegraEncryptionSecret } from './credentials';
 import { checkAlegraAccountsHealth } from './cron';
 import type { Env } from '../../index';
@@ -77,40 +77,109 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
   });
 
   // ─────────────────────────────────────────────────────────────────
-  // 2. REST CLIENT (alegraClient.ts)
+  // 2. REST CLIENT (alegraClient.ts — Facturapi v2 Engine)
   // ─────────────────────────────────────────────────────────────────
-  describe('Alegra REST Client (alegraClient.ts)', () => {
-    it('sets correct Basic Auth header and parses company with CSD', async () => {
+  describe('Facturapi v2 REST Client (alegraClient.ts)', () => {
+    it('sets Bearer Auth header on Facturapi v2 /organizations/me and parses organization with CSD', async () => {
       const mockFetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => ({
-          id: 9988,
-          name: 'Despacho Alfa SC',
-          identification: 'ALF010101XYZ',
-          regime: '601',
-          certificate: { status: 'active' },
+          id: 'org_9988',
+          legal: {
+            name: 'Despacho Alfa SC',
+            tax_id: 'ALF010101XYZ',
+            tax_system: '601',
+          },
+          certificate: { has_certificate: true, expires_at: '2028-12-31T00:00:00Z' },
         }),
       });
       globalThis.fetch = mockFetch;
 
-      const client = new AlegraClient('test@alegra.com', 'tok_123');
+      const client = new AlegraClient('test@despacho.com', 'sk_live_123');
       const company = await client.getCompany();
 
       expect(company.name).toBe('Despacho Alfa SC');
       expect(company.identification).toBe('ALF010101XYZ');
       expect(company.csd_configured).toBe(true);
+      expect(company.environment).toBe('live');
 
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.alegra.com/api/v1/company',
+        'https://www.facturapi.io/v2/organizations/me',
         expect.objectContaining({
           headers: expect.any(Headers),
         })
       );
+      const calledHeaders = mockFetch.mock.calls[0]?.[1]?.headers as Headers;
+      expect(calledHeaders.get('Authorization')).toBe('Bearer sk_live_123');
     });
 
-    it('translates HTTP 401 and 403 into friendly AlegraError messages', async () => {
+    it('automatically marks csd_configured=true and EKU9003173C9 fallback in Sandbox (sk_test_)', async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({
+          id: 'org_sandbox_1',
+          legal: {},
+          certificate: { has_certificate: false },
+        }),
+      });
+
+      const client = new FacturapiClient('sk_test_sandbox_abc');
+      const company = await client.getCompany();
+
+      expect(company.environment).toBe('sandbox');
+      expect(company.csd_configured).toBe(true);
+      expect(company.identification).toBe('EKU9003173C9');
+    });
+
+    it('transforms Ark Ledger payload into Facturapi v2 CFDI 4.0 schema via toFacturapiInvoicePayload', () => {
+      const transformed = toFacturapiInvoicePayload({
+        client: {
+          name: 'COMERCIALIZADORA MAYAB SA DE CV',
+          identification: 'cma010101aaa',
+          email: 'facturas@mayab.mx',
+          cfdiUse: 'G03',
+          regime: '601',
+          address: { zipCode: '97000' },
+        },
+        items: [
+          {
+            name: 'Honorarios Contables',
+            description: 'Cierre mensual',
+            price: 3500,
+            quantity: 2,
+            productKey: '84111500',
+            unit: 'E48',
+            tax: [{ percentage: 16, name: 'IVA' }],
+          },
+        ],
+        paymentMethod: 'PUE',
+        paymentForm: '03',
+      });
+
+      expect(transformed.type).toBe('I');
+      expect(transformed.customer.legal_name).toBe('COMERCIALIZADORA MAYAB SA DE CV');
+      expect(transformed.customer.tax_id).toBe('CMA010101AAA');
+      expect(transformed.customer.tax_system).toBe('601');
+      expect(transformed.customer.address.zip).toBe('97000');
+      expect(transformed.use).toBe('G03');
+      expect(transformed.payment_method).toBe('PUE');
+      expect(transformed.payment_form).toBe('03');
+      expect(transformed.items).toHaveLength(1);
+      expect(transformed.items[0]?.product.product_key).toBe('84111500');
+      expect(transformed.items[0]?.product.unit_key).toBe('E48');
+      expect(transformed.items[0]?.product.price).toBe(3500);
+      expect(transformed.items[0]?.product.taxes?.[0]).toEqual({
+        type: 'IVA',
+        rate: 0.16,
+        withholding: false,
+      });
+    });
+
+    it('translates HTTP 401 and 403 into friendly FacturapiError messages', async () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 401,
@@ -122,31 +191,33 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       await expect(client.getCompany()).rejects.toThrow(/Email o token incorrecto/);
     });
 
-    it('creates and stamps CFDI 4.0 invoice with PAC Quadrum', async () => {
+    it('creates and stamps CFDI 4.0 invoice via POST /v2/invoices on Facturapi', async () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 201,
         headers: new Headers({ 'content-type': 'application/json' }),
         json: async () => ({
-          id: 5001,
-          numberTemplate: { prefix: 'FAC', number: '101' },
-          date: '2026-10-16',
+          id: '5001',
+          series: 'FAC',
+          folio_number: 101,
+          created_at: '2026-10-16T12:00:00Z',
           total: 5800,
-          status: 'open',
-          client: {
-            name: 'Cliente SA de CV',
-            identification: 'CLI010101AAA',
+          status: 'valid',
+          uuid: '3A56D123-BEEF-4567-8901-ABCDEF123456',
+          verification_url:
+            'https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx?id=3A56D123',
+          customer: {
+            legal_name: 'Cliente SA de CV',
+            tax_id: 'CLI010101AAA',
           },
           stamp: {
-            uuid: '3A56D123-BEEF-4567-8901-ABCDEF123456',
             date: '2026-10-16T12:00:00Z',
-            xml: 'https://alegra.com/xml/5001',
-            pdf: 'https://alegra.com/pdf/5001',
+            sat_cert_number: '00001000000504465028',
           },
         }),
       });
 
-      const client = new AlegraClient('user@test.com', 'token_ok');
+      const client = new AlegraClient('user@test.com', 'sk_test_token_ok');
       const invoice = await client.createInvoice({
         date: '2026-10-16',
         client: {
@@ -168,8 +239,11 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       });
 
       expect(invoice.id).toBe('5001');
+      expect(invoice.status).toBe('open');
+      expect(invoice.numberTemplate?.fullNumber).toBe('FAC-101');
       expect(invoice.stamp?.uuid).toBe('3A56D123-BEEF-4567-8901-ABCDEF123456');
-      expect(invoice.stamp?.pdf).toBe('https://alegra.com/pdf/5001');
+      expect(invoice.stamp?.pdf).toBe('/api/facturapi/invoices/5001/pdf');
+      expect(invoice.stamp?.xml).toBe('/api/facturapi/invoices/5001/xml');
     });
   });
 
@@ -398,6 +472,126 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       expect(res?.status).toBe(200);
       const data = (await res?.json()) as any;
       expect(data.ok).toBe(true);
+    });
+
+    it('GET /api/facturapi/invoices/:id/xml streams CFDI XML from Facturapi v2', async () => {
+      const secret = 'test-secret-key-32-bytes-long!!';
+      const encToken = await encryptToken('sk_test_facturapi_999', secret);
+      const xmlBytes = new TextEncoder().encode('<cfdi:Comprobante Version="4.0"/>');
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/xml; charset=utf-8' }),
+        arrayBuffer: async () => xmlBytes.buffer,
+      });
+
+      const mockDb = {
+        prepare: vi.fn((query: string) => ({
+          bind: vi.fn().mockReturnThis(),
+          first: vi.fn(async () => {
+            if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
+              return { id: 't-123', name: 'Despacho Pinos', role: 'owner' };
+            }
+            if (query.includes('FROM alegra_invoices')) {
+              return {
+                id: 'rec-1',
+                tenant_id: 't-123',
+                alegra_account_id: 'acc-1',
+                alegra_invoice_id: 'inv_fapi_77',
+                uuid: '8B765432-1234-5678-ABCD-0987654321AB',
+              };
+            }
+            if (query.includes('FROM tenant_alegra_accounts')) {
+              return {
+                tenant_id: 't-123',
+                alegra_account_id: 'acc-1',
+                alegra_email: 'sandbox@facturapi.io',
+                alegra_token_enc: encToken,
+                status: 'active',
+              };
+            }
+            return null;
+          }),
+        })),
+      };
+      const env = createMockEnv(mockDb);
+
+      const req = new Request(
+        'https://ledger.arksystems.site/api/facturapi/invoices/inv_fapi_77/xml?tenant_id=t-123',
+        { method: 'GET' }
+      );
+      const res = await handleAlegraApiRequest(req, env, corsHeaders, mockUser);
+      expect(res?.status).toBe(200);
+      expect(res?.headers.get('Content-Type')).toContain('application/xml');
+      const text = await res?.text();
+      expect(text).toContain('cfdi:Comprobante Version="4.0"');
+    });
+
+    it('DELETE /api/facturapi/invoices/:id cancels CFDI 4.0 in Facturapi with SAT motive and marks void in D1', async () => {
+      const secret = 'test-secret-key-32-bytes-long!!';
+      const encToken = await encryptToken('sk_test_facturapi_999', secret);
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({
+          id: 'inv_fapi_77',
+          status: 'canceled',
+          uuid: '8B765432-1234-5678-ABCD-0987654321AB',
+        }),
+      });
+      globalThis.fetch = mockFetch;
+
+      const runMock = vi.fn(async () => ({ success: true }));
+      const mockDb = {
+        prepare: vi.fn((query: string) => ({
+          bind: vi.fn().mockReturnThis(),
+          first: vi.fn(async () => {
+            if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
+              return { id: 't-123', name: 'Despacho Pinos', role: 'owner' };
+            }
+            if (query.includes('FROM alegra_invoices')) {
+              return {
+                id: 'rec-1',
+                tenant_id: 't-123',
+                alegra_account_id: 'acc-1',
+                alegra_invoice_id: 'inv_fapi_77',
+                uuid: '8B765432-1234-5678-ABCD-0987654321AB',
+              };
+            }
+            if (query.includes('FROM tenant_alegra_accounts')) {
+              return {
+                tenant_id: 't-123',
+                alegra_account_id: 'acc-1',
+                alegra_email: 'sandbox@facturapi.io',
+                alegra_token_enc: encToken,
+                status: 'active',
+              };
+            }
+            return null;
+          }),
+          run: runMock,
+        })),
+      };
+      const env = createMockEnv(mockDb);
+
+      const req = new Request(
+        'https://ledger.arksystems.site/api/facturapi/invoices/inv_fapi_77?tenant_id=t-123&motive=02',
+        { method: 'DELETE' }
+      );
+      const res = await handleAlegraApiRequest(req, env, corsHeaders, mockUser);
+      expect(res?.status).toBe(200);
+      const data = (await res?.json()) as any;
+      expect(data.ok).toBe(true);
+      expect(data.motive).toBe('02');
+      expect(data.invoice.status).toBe('void');
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://www.facturapi.io/v2/invoices/inv_fapi_77?motive=02',
+        expect.objectContaining({ method: 'DELETE' })
+      );
+      expect(runMock).toHaveBeenCalled();
     });
   });
 

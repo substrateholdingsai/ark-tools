@@ -42,11 +42,14 @@ function fromHex(hex: string): Uint8Array {
  * Obtiene la llave de encriptación configurada en el entorno o usa fallback en dev
  */
 export function getAlegraEncryptionSecret(env: Env): string {
-  if (env.ALEGRA_ENCRYPTION_KEY && env.ALEGRA_ENCRYPTION_KEY.trim().length > 0) {
-    return env.ALEGRA_ENCRYPTION_KEY.trim();
+  const configured = env.FACTURAPI_ENCRYPTION_KEY?.trim() || env.ALEGRA_ENCRYPTION_KEY?.trim();
+  if (configured && configured.length > 0) {
+    return configured;
   }
   if (env.ENVIRONMENT === 'production') {
-    throw new Error('ALEGRA_ENCRYPTION_KEY es obligatoria en producción.');
+    throw new Error(
+      'FACTURAPI_ENCRYPTION_KEY o ALEGRA_ENCRYPTION_KEY es obligatoria en producción.'
+    );
   }
   return FALLBACK_KEY_SEED;
 }

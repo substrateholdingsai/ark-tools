@@ -62,8 +62,10 @@ export interface Env {
   RESEND_API_KEY?: string;
   AUTH_EMAIL_FROM?: string;
 
-  // Encriptación Alegra (AES-GCM)
+  // Encriptación y API Key Facturapi / Alegra (AES-GCM, CFDI 4.0)
   ALEGRA_ENCRYPTION_KEY?: string;
+  FACTURAPI_ENCRYPTION_KEY?: string;
+  FACTURAPI_API_KEY?: string;
 
   // Cloudflare D1 Database (Multi-Tenant)
   ARK_TOOLS_DB?: D1Database;

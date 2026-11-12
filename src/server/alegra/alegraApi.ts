@@ -1,16 +1,20 @@
 /**
- * ARK LEDGER — Endpoints del Worker para Integración con Alegra (Timbrado CFDI 4.0)
+ * ARK LEDGER — Endpoints del Worker para Integración con Facturapi v2 (Timbrado CFDI 4.0)
+ *
+ * Reemplaza el motor legado de Alegra por Facturapi v2 (`https://www.facturapi.io/v2`)
+ * manteniendo compatibilidad 100% con las rutas `/api/alegra/*` y habilitando `/api/facturapi/*`.
  *
  * Soporta:
- * - Conexión de cuentas multi-empresa por despacho
- * - Consulta de estado y CSD en tiempo real
- * - Emisión y timbrado de facturas CFDI 4.0 con PAC Quadrum
- * - Historial y descarga de XML/PDF timbrados
+ * - Conexión de cuentas multi-organización por despacho (`sk_test_...` Sandbox o `sk_live_...` Live)
+ * - Consulta de estado y CSD en tiempo real (`/v2/organizations/me`)
+ * - Emisión y timbrado de facturas CFDI 4.0 (`POST /v2/invoices`)
+ * - Descarga directa de PDF y XML timbrados (`GET /invoices/:id/pdf` y `/xml`)
+ * - Cancelación de CFDI ante el SAT (`DELETE /invoices/:id?motive=01..04`)
  */
 
 import type { Env } from '../../index';
 import { type AuthPrincipal, requireTenantMembership } from '../auth';
-import { AlegraClient, AlegraError, type AlegraInvoicePayload } from './alegraClient';
+import { FacturapiClient, FacturapiError, type AlegraInvoicePayload } from './alegraClient';
 import { decryptToken, encryptToken, getAlegraEncryptionSecret } from './credentials';
 
 function jsonResponse(
@@ -44,6 +48,57 @@ async function verifyTenantAccess(
   return null;
 }
 
+async function resolveTenantFacturapiClient(
+  db: D1Database,
+  env: Env,
+  tenantId: string,
+  encryptionSecret: string,
+  accountId?: string | null
+): Promise<{
+  client: FacturapiClient;
+  accountId: string;
+} | null> {
+  let accountRow: any = null;
+  if (accountId) {
+    accountRow = await db
+      .prepare(
+        `SELECT * FROM tenant_alegra_accounts
+         WHERE tenant_id = ? AND alegra_account_id = ?
+         LIMIT 1`
+      )
+      .bind(tenantId, accountId)
+      .first();
+  } else {
+    accountRow = await db
+      .prepare(
+        `SELECT * FROM tenant_alegra_accounts
+         WHERE tenant_id = ? AND status = 'active'
+         ORDER BY is_default DESC, created_at ASC
+         LIMIT 1`
+      )
+      .bind(tenantId)
+      .first();
+  }
+
+  if (accountRow && accountRow.status === 'active') {
+    const rawToken = await decryptToken(accountRow.alegra_token_enc, encryptionSecret);
+    return {
+      client: new FacturapiClient(accountRow.alegra_email || '', rawToken),
+      accountId: String(accountRow.alegra_account_id),
+    };
+  }
+
+  if (env.FACTURAPI_API_KEY && env.FACTURAPI_API_KEY.trim().length > 0) {
+    const platformKey = env.FACTURAPI_API_KEY.trim();
+    return {
+      client: new FacturapiClient(platformKey),
+      accountId: 'acc_platform_facturapi',
+    };
+  }
+
+  return null;
+}
+
 export async function handleAlegraApiRequest(
   request: Request,
   env: Env,
@@ -51,9 +106,12 @@ export async function handleAlegraApiRequest(
   principal: AuthPrincipal | null
 ): Promise<Response | null> {
   const url = new URL(request.url);
-  if (!url.pathname.startsWith('/api/alegra/')) {
+  if (!url.pathname.startsWith('/api/alegra/') && !url.pathname.startsWith('/api/facturapi/')) {
     return null;
   }
+
+  // Normalizar ruta para soportar indistintamente `/api/alegra/*` y `/api/facturapi/*`
+  const subPath = url.pathname.replace(/^\/api\/(alegra|facturapi)/, '');
 
   const db = env.ARK_TOOLS_DB;
   if (!db) {
@@ -70,10 +128,10 @@ export async function handleAlegraApiRequest(
   const encryptionSecret = getAlegraEncryptionSecret(env);
 
   // ─────────────────────────────────────────────────────────────────
-  // 1. LISTAR CUENTAS DE ALEGRA DEL DESPACHO
-  // GET /api/alegra/accounts
+  // 1. LISTAR CUENTAS DE FACTURAPI / ALEGRA DEL DESPACHO
+  // GET /api/(alegra|facturapi)/accounts
   // ─────────────────────────────────────────────────────────────────
-  if (url.pathname === '/api/alegra/accounts' && request.method === 'GET') {
+  if (subPath === '/accounts' && request.method === 'GET') {
     const tenantId = url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id');
     if (!tenantId) {
       return jsonResponse({ error: 'Parámetro tenant_id requerido.' }, corsHeaders, 400);
@@ -96,6 +154,7 @@ export async function handleAlegraApiRequest(
 
       const accounts = (result.results || []).map((row: any) => ({
         ...row,
+        provider: 'facturapi',
         csd_configured: Boolean(row.csd_configured),
         is_default: Boolean(row.is_default),
       }));
@@ -103,7 +162,7 @@ export async function handleAlegraApiRequest(
       return jsonResponse({ accounts }, corsHeaders);
     } catch (err: any) {
       return jsonResponse(
-        { error: 'Error al consultar cuentas de Alegra.', details: err?.message },
+        { error: 'Error al consultar cuentas de timbrado.', details: err?.message },
         corsHeaders,
         500
       );
@@ -111,10 +170,10 @@ export async function handleAlegraApiRequest(
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // 2. CONECTAR NUEVA CUENTA DE ALEGRA
-  // POST /api/alegra/accounts
+  // 2. CONECTAR NUEVA CUENTA DE FACTURAPI
+  // POST /api/(alegra|facturapi)/accounts
   // ─────────────────────────────────────────────────────────────────
-  if (url.pathname === '/api/alegra/accounts' && request.method === 'POST') {
+  if (subPath === '/accounts' && request.method === 'POST') {
     let body: any;
     try {
       body = await request.json();
@@ -123,16 +182,16 @@ export async function handleAlegraApiRequest(
     }
 
     const tenantId = body.tenant_id || request.headers.get('x-tenant-id');
-    const email = (body.alegra_email || body.email || '').trim();
-    const token = (body.alegra_token || body.token || '').trim();
+    const rawEmail = (body.alegra_email || body.email || body.label || '').trim();
+    const token = (body.facturapi_key || body.alegra_token || body.token || '').trim();
     const isDefault = Boolean(body.is_default);
 
     if (!tenantId) {
       return jsonResponse({ error: 'tenant_id es requerido.' }, corsHeaders, 400);
     }
-    if (!email || !token) {
+    if (!token) {
       return jsonResponse(
-        { error: 'Email y token de API de Alegra son requeridos.' },
+        { error: 'Secret Key de Facturapi (sk_test_... o sk_live_...) requerida.' },
         corsHeaders,
         400
       );
@@ -141,22 +200,27 @@ export async function handleAlegraApiRequest(
     const accessDenied = await verifyTenantAccess(env, principal, tenantId, corsHeaders);
     if (accessDenied) return accessDenied;
 
-    // 1. Validar credenciales y consultar empresa con Alegra
+    // 1. Validar credenciales y consultar organización en Facturapi
     let company;
     try {
-      const client = new AlegraClient(email, token);
+      const client = new FacturapiClient(rawEmail, token);
       company = await client.getCompany();
     } catch (err: any) {
-      const status = err instanceof AlegraError ? err.statusCode : 400;
+      const status = err instanceof FacturapiError ? err.statusCode : 400;
       return jsonResponse(
         {
-          error: err?.message || 'Error validando credenciales con Alegra.',
+          error: err?.message || 'Error validando credenciales con Facturapi.',
           statusCode: status,
         },
         corsHeaders,
         status >= 400 && status < 600 ? status : 400
       );
     }
+
+    const email =
+      rawEmail ||
+      company.email ||
+      (token.startsWith('sk_test_') ? 'sandbox@facturapi.io' : 'live@facturapi.io');
 
     // 2. Encriptar el token con WebCrypto AES-GCM
     let encryptedToken: string;
@@ -228,6 +292,8 @@ export async function handleAlegraApiRequest(
             alegra_company_id: company.id,
             alegra_rfc: company.identification,
             csd_configured: company.csd_configured,
+            environment: company.environment,
+            provider: 'facturapi',
             is_default: shouldBeDefault,
             status: 'active',
             last_checked_at: now,
@@ -249,9 +315,9 @@ export async function handleAlegraApiRequest(
 
   // ─────────────────────────────────────────────────────────────────
   // 3. CONSULTAR ESTADO Y REFLEJAR CSD EN TIEMPO REAL
-  // GET /api/alegra/accounts/:id/status
+  // GET /api/(alegra|facturapi)/accounts/:id/status
   // ─────────────────────────────────────────────────────────────────
-  const statusMatch = url.pathname.match(/^\/api\/alegra\/accounts\/([^/]+)\/status$/);
+  const statusMatch = subPath.match(/^\/accounts\/([^/]+)\/status$/);
   if (statusMatch && request.method === 'GET') {
     const accountId = decodeURIComponent(statusMatch[1]!);
     const tenantId = url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id');
@@ -272,14 +338,14 @@ export async function handleAlegraApiRequest(
       .first<any>();
 
     if (!row) {
-      return jsonResponse({ error: 'Cuenta de Alegra no encontrada.' }, corsHeaders, 404);
+      return jsonResponse({ error: 'Cuenta de Facturapi no encontrada.' }, corsHeaders, 404);
     }
 
     const now = Math.floor(Date.now() / 1000);
 
     try {
       const rawToken = await decryptToken(row.alegra_token_enc, encryptionSecret);
-      const client = new AlegraClient(row.alegra_email, rawToken);
+      const client = new FacturapiClient(row.alegra_email, rawToken);
       const company = await client.getCompany();
 
       await db
@@ -318,6 +384,8 @@ export async function handleAlegraApiRequest(
             alegra_company_id: company.id,
             alegra_rfc: company.identification,
             csd_configured: company.csd_configured,
+            environment: company.environment,
+            provider: 'facturapi',
             is_default: Boolean(row.is_default),
             status: 'active',
             last_checked_at: now,
@@ -329,10 +397,10 @@ export async function handleAlegraApiRequest(
         corsHeaders
       );
     } catch (err: any) {
-      const statusCode = err instanceof AlegraError ? err.statusCode : 500;
+      const statusCode = err instanceof FacturapiError ? err.statusCode : 500;
       const isRevoked = statusCode === 401 || statusCode === 403;
       const newStatus = isRevoked ? 'revoked' : 'error';
-      const msg = err?.message || 'Error verificando cuenta con Alegra.';
+      const msg = err?.message || 'Error verificando cuenta con Facturapi.';
 
       await db
         .prepare(
@@ -372,9 +440,9 @@ export async function handleAlegraApiRequest(
 
   // ─────────────────────────────────────────────────────────────────
   // 4. ACTUALIZAR CUENTA (MARCAR COMO DEFAULT)
-  // PATCH /api/alegra/accounts/:id
+  // PATCH /api/(alegra|facturapi)/accounts/:id
   // ─────────────────────────────────────────────────────────────────
-  const patchMatch = url.pathname.match(/^\/api\/alegra\/accounts\/([^/]+)$/);
+  const patchMatch = subPath.match(/^\/accounts\/([^/]+)$/);
   if (patchMatch && request.method === 'PATCH') {
     const accountId = decodeURIComponent(patchMatch[1]!);
     let body: any;
@@ -410,10 +478,10 @@ export async function handleAlegraApiRequest(
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // 5. DESCONECTAR CUENTA DE ALEGRA
-  // DELETE /api/alegra/accounts/:id
+  // 5. DESCONECTAR CUENTA DE FACTURAPI
+  // DELETE /api/(alegra|facturapi)/accounts/:id
   // ─────────────────────────────────────────────────────────────────
-  const deleteMatch = url.pathname.match(/^\/api\/alegra\/accounts\/([^/]+)$/);
+  const deleteMatch = subPath.match(/^\/accounts\/([^/]+)$/);
   if (deleteMatch && request.method === 'DELETE') {
     const accountId = decodeURIComponent(deleteMatch[1]!);
     const tenantId = url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id');
@@ -451,10 +519,10 @@ export async function handleAlegraApiRequest(
   }
 
   // ─────────────────────────────────────────────────────────────────
-  // 6. EMITIR Y TIMBRAR FACTURA CFDI 4.0
-  // POST /api/alegra/invoices
+  // 6. EMITIR Y TIMBRAR FACTURA CFDI 4.0 EN FACTURAPI
+  // POST /api/(alegra|facturapi)/invoices
   // ─────────────────────────────────────────────────────────────────
-  if (url.pathname === '/api/alegra/invoices' && request.method === 'POST') {
+  if (subPath === '/invoices' && request.method === 'POST') {
     let body: any;
     try {
       body = await request.json();
@@ -463,16 +531,17 @@ export async function handleAlegraApiRequest(
     }
 
     const tenantId = body.tenant_id || request.headers.get('x-tenant-id');
-    const accountId = body.alegra_account_id;
+    const accountId = body.alegra_account_id || body.facturapi_account_id;
     const clientId = body.client_id || null;
-    const invoicePayload = body.invoice as AlegraInvoicePayload;
+    const invoicePayload = (body.invoice || body) as AlegraInvoicePayload;
 
     if (!tenantId) {
       return jsonResponse({ error: 'tenant_id es requerido.' }, corsHeaders, 400);
     }
-    if (!invoicePayload || !invoicePayload.client || !Array.isArray(invoicePayload.items)) {
+    const hasReceptor = Boolean(invoicePayload?.client || invoicePayload?.customer);
+    if (!invoicePayload || !hasReceptor || !Array.isArray(invoicePayload.items)) {
       return jsonResponse(
-        { error: 'Datos de la factura inválidos (requiere cliente y partidas).' },
+        { error: 'Datos de la factura inválidos (requiere receptor y conceptos).' },
         corsHeaders,
         400
       );
@@ -481,7 +550,7 @@ export async function handleAlegraApiRequest(
     const accessDenied = await verifyTenantAccess(env, principal, tenantId, corsHeaders);
     if (accessDenied) return accessDenied;
 
-    // Buscar la cuenta Alegra a utilizar
+    // Buscar la cuenta de timbrado a utilizar
     let accountRow: any;
     if (accountId) {
       accountRow = await db
@@ -493,7 +562,6 @@ export async function handleAlegraApiRequest(
         .bind(tenantId, accountId)
         .first();
     } else {
-      // Tomar la default o primera activa
       accountRow = await db
         .prepare(
           `SELECT * FROM tenant_alegra_accounts
@@ -505,10 +573,32 @@ export async function handleAlegraApiRequest(
         .first();
     }
 
-    if (!accountRow) {
+    let client: FacturapiClient;
+    let resolvedAccountId: string;
+
+    if (accountRow) {
+      if (accountRow.status !== 'active') {
+        return jsonResponse(
+          {
+            error: `La cuenta de Facturapi (${accountRow.alegra_company_name || accountRow.alegra_email}) no está activa (${accountRow.status}). Reconéctala antes de timbrar.`,
+            status: accountRow.status,
+            lastError: accountRow.last_error,
+          },
+          corsHeaders,
+          400
+        );
+      }
+      const rawToken = await decryptToken(accountRow.alegra_token_enc, encryptionSecret);
+      client = new FacturapiClient(accountRow.alegra_email, rawToken);
+      resolvedAccountId = accountRow.alegra_account_id;
+    } else if (env.FACTURAPI_API_KEY && env.FACTURAPI_API_KEY.trim().length > 0) {
+      client = new FacturapiClient(env.FACTURAPI_API_KEY.trim());
+      resolvedAccountId = 'acc_platform_facturapi';
+    } else {
       return jsonResponse(
         {
-          error: 'No hay ninguna cuenta de Alegra conectada o activa en este despacho.',
+          error:
+            'No hay ninguna cuenta de Facturapi conectada o activa en este despacho. Conecta tu Secret Key (sk_test_... o sk_live_...).',
           suggestConnect: true,
         },
         corsHeaders,
@@ -516,30 +606,16 @@ export async function handleAlegraApiRequest(
       );
     }
 
-    if (accountRow.status !== 'active') {
-      return jsonResponse(
-        {
-          error: `La cuenta de Alegra (${accountRow.alegra_company_name || accountRow.alegra_email}) no está activa (${accountRow.status}). Reconéctala antes de timbrar.`,
-          status: accountRow.status,
-          lastError: accountRow.last_error,
-        },
-        corsHeaders,
-        400
-      );
-    }
-
-    // Desencriptar token y emitir factura en Alegra
+    // Emitir y timbrar factura en Facturapi v2
     let invoiceRes;
     try {
-      const rawToken = await decryptToken(accountRow.alegra_token_enc, encryptionSecret);
-      const client = new AlegraClient(accountRow.alegra_email, rawToken);
       invoiceRes = await client.createInvoice(invoicePayload);
     } catch (err: any) {
-      const statusCode = err instanceof AlegraError ? err.statusCode : 500;
+      const statusCode = err instanceof FacturapiError ? err.statusCode : 500;
       return jsonResponse(
         {
-          error: err?.message || 'Error al timbrar factura con Alegra.',
-          details: err instanceof AlegraError ? err.details : undefined,
+          error: err?.message || 'Error al timbrar factura con Facturapi.',
+          details: err instanceof FacturapiError ? err.details : undefined,
         },
         corsHeaders,
         statusCode >= 400 && statusCode < 600 ? statusCode : 500
@@ -551,8 +627,18 @@ export async function handleAlegraApiRequest(
     const now = Math.floor(Date.now() / 1000);
     const uuid = invoiceRes.stamp?.uuid || null;
     const folio = invoiceRes.numberTemplate?.fullNumber || invoiceRes.id;
-    const pdfUrl = invoiceRes.stamp?.pdf || null;
-    const xmlUrl = invoiceRes.stamp?.xml || null;
+    const pdfUrl = invoiceRes.stamp?.pdf || invoiceRes.pdf || null;
+    const xmlUrl = invoiceRes.stamp?.xml || invoiceRes.xml || null;
+    const customerName =
+      invoiceRes.client?.name ||
+      invoicePayload.customer?.legal_name ||
+      invoicePayload.client?.name ||
+      null;
+    const customerRfc =
+      invoiceRes.client?.identification ||
+      invoicePayload.customer?.tax_id ||
+      invoicePayload.client?.identification ||
+      null;
 
     try {
       await db
@@ -566,13 +652,13 @@ export async function handleAlegraApiRequest(
         .bind(
           invoiceRecordId,
           tenantId,
-          accountRow.alegra_account_id,
+          resolvedAccountId,
           invoiceRes.id,
           clientId,
           uuid,
           folio,
-          invoiceRes.client.name,
-          invoiceRes.client.identification,
+          customerName,
+          customerRfc,
           invoiceRes.total,
           invoiceRes.status || 'open',
           pdfUrl,
@@ -582,24 +668,27 @@ export async function handleAlegraApiRequest(
         )
         .run();
     } catch (dbErr) {
-      console.error('[Alegra API] Error guardando factura timbrada en D1:', dbErr);
+      console.error('[Facturapi API] Error guardando factura timbrada en D1:', dbErr);
     }
 
     return jsonResponse(
       {
         ok: true,
+        provider: 'facturapi',
         invoice: {
           id: invoiceRecordId,
           alegra_invoice_id: invoiceRes.id,
           uuid,
           folio,
-          customer_name: invoiceRes.client.name,
-          customer_rfc: invoiceRes.client.identification,
+          customer_name: customerName,
+          customer_rfc: customerRfc,
           total: invoiceRes.total,
           currency: 'MXN',
           status: invoiceRes.status,
           pdf_url: pdfUrl,
           xml_url: xmlUrl,
+          verification_url:
+            invoiceRes.verification_url || invoiceRes.stamp?.verificationUrl || null,
           created_at: now,
           raw: invoiceRes,
         },
@@ -611,9 +700,9 @@ export async function handleAlegraApiRequest(
 
   // ─────────────────────────────────────────────────────────────────
   // 7. LISTAR FACTURAS TIMBRADAS DEL DESPACHO
-  // GET /api/alegra/invoices
+  // GET /api/(alegra|facturapi)/invoices
   // ─────────────────────────────────────────────────────────────────
-  if (url.pathname === '/api/alegra/invoices' && request.method === 'GET') {
+  if (subPath === '/invoices' && request.method === 'GET') {
     const tenantId = url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id');
     if (!tenantId) {
       return jsonResponse({ error: 'Parámetro tenant_id requerido.' }, corsHeaders, 400);
@@ -651,5 +740,168 @@ export async function handleAlegraApiRequest(
     }
   }
 
+  // ─────────────────────────────────────────────────────────────────
+  // 8. DESCARGAR ARCHIVO PDF O XML TIMBRADO DESDE FACTURAPI
+  // GET /api/(alegra|facturapi)/invoices/:id/(pdf|xml|zip)
+  // ─────────────────────────────────────────────────────────────────
+  const downloadMatch = subPath.match(/^\/invoices\/([^/]+)\/(pdf|xml|zip)$/);
+  if (downloadMatch && request.method === 'GET') {
+    const requestedId = decodeURIComponent(downloadMatch[1]!);
+    const format = downloadMatch[2] as 'pdf' | 'xml' | 'zip';
+    const tenantId = url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id');
+    if (!tenantId) {
+      return jsonResponse({ error: 'Parámetro tenant_id requerido.' }, corsHeaders, 400);
+    }
+
+    const accessDenied = await verifyTenantAccess(env, principal, tenantId, corsHeaders);
+    if (accessDenied) return accessDenied;
+
+    const invoiceRow = await db
+      .prepare(
+        `SELECT * FROM alegra_invoices
+         WHERE tenant_id = ? AND (alegra_invoice_id = ? OR id = ?)
+         LIMIT 1`
+      )
+      .bind(tenantId, requestedId, requestedId)
+      .first<any>();
+
+    const facturapiInvoiceId = invoiceRow ? String(invoiceRow.alegra_invoice_id) : requestedId;
+    const resolved = await resolveTenantFacturapiClient(
+      db,
+      env,
+      tenantId,
+      encryptionSecret,
+      invoiceRow?.alegra_account_id
+    );
+
+    if (!resolved) {
+      return jsonResponse(
+        { error: 'No se encontró una cuenta activa de Facturapi para descargar el comprobante.' },
+        corsHeaders,
+        404
+      );
+    }
+
+    try {
+      const { buffer, contentType } = await resolved.client.downloadInvoiceFile(
+        facturapiInvoiceId,
+        format
+      );
+      const filenameLabel = invoiceRow?.uuid || invoiceRow?.folio || facturapiInvoiceId;
+      const disposition =
+        format === 'pdf'
+          ? `inline; filename="CFDI-${filenameLabel}.pdf"`
+          : `attachment; filename="CFDI-${filenameLabel}.${format}"`;
+
+      return new Response(buffer, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': contentType,
+          'Content-Disposition': disposition,
+          'Cache-Control': 'private, max-age=300',
+        },
+      });
+    } catch (err: any) {
+      const statusCode = err instanceof FacturapiError ? err.statusCode : 502;
+      return jsonResponse(
+        {
+          error: err?.message || `Error al descargar ${format.toUpperCase()} de Facturapi.`,
+        },
+        corsHeaders,
+        statusCode
+      );
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────
+  // 9. CANCELAR FACTURA CFDI 4.0 ANTE EL SAT EN FACTURAPI
+  // DELETE /api/(alegra|facturapi)/invoices/:id?motive=02
+  // ─────────────────────────────────────────────────────────────────
+  const cancelMatch = subPath.match(/^\/invoices\/([^/]+)$/);
+  if (cancelMatch && request.method === 'DELETE') {
+    const requestedId = decodeURIComponent(cancelMatch[1]!);
+    const tenantId = url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id');
+    const rawMotive = (url.searchParams.get('motive') || '02').trim();
+    const motive = (['01', '02', '03', '04'].includes(rawMotive) ? rawMotive : '02') as
+      '01' | '02' | '03' | '04';
+    const substitution = url.searchParams.get('substitution') || undefined;
+
+    if (!tenantId) {
+      return jsonResponse({ error: 'Parámetro tenant_id requerido.' }, corsHeaders, 400);
+    }
+
+    const accessDenied = await verifyTenantAccess(env, principal, tenantId, corsHeaders);
+    if (accessDenied) return accessDenied;
+
+    const invoiceRow = await db
+      .prepare(
+        `SELECT * FROM alegra_invoices
+         WHERE tenant_id = ? AND (alegra_invoice_id = ? OR id = ?)
+         LIMIT 1`
+      )
+      .bind(tenantId, requestedId, requestedId)
+      .first<any>();
+
+    const facturapiInvoiceId = invoiceRow ? String(invoiceRow.alegra_invoice_id) : requestedId;
+    const resolved = await resolveTenantFacturapiClient(
+      db,
+      env,
+      tenantId,
+      encryptionSecret,
+      invoiceRow?.alegra_account_id
+    );
+
+    if (!resolved) {
+      return jsonResponse(
+        { error: 'No se encontró una cuenta activa de Facturapi para cancelar la factura.' },
+        corsHeaders,
+        404
+      );
+    }
+
+    try {
+      const canceled = await resolved.client.cancelInvoice(
+        facturapiInvoiceId,
+        motive,
+        substitution
+      );
+
+      await db
+        .prepare(
+          `UPDATE alegra_invoices
+           SET status = 'void'
+           WHERE tenant_id = ? AND (alegra_invoice_id = ? OR id = ?)`
+        )
+        .bind(tenantId, facturapiInvoiceId, requestedId)
+        .run();
+
+      return jsonResponse(
+        {
+          ok: true,
+          motive,
+          invoice: {
+            alegra_invoice_id: canceled.id,
+            uuid: canceled.stamp?.uuid || invoiceRow?.uuid || null,
+            status: 'void',
+          },
+        },
+        corsHeaders
+      );
+    } catch (err: any) {
+      const statusCode = err instanceof FacturapiError ? err.statusCode : 500;
+      return jsonResponse(
+        {
+          error: err?.message || 'Error al cancelar CFDI en Facturapi.',
+          details: err instanceof FacturapiError ? err.details : undefined,
+        },
+        corsHeaders,
+        statusCode
+      );
+    }
+  }
+
   return null;
 }
+
+export { handleAlegraApiRequest as handleFacturapiApiRequest };
