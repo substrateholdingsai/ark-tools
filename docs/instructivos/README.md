@@ -22,6 +22,7 @@
 - [Conversor XML a Excel (CFDI 4.0 / 3.3)](xml-excel.md) — disponible
 - [Validador y Auditor de XMLs](validador.md) — disponible
 - [Motor de Conciliación Anexo 24](anexo24.md) — disponible
+- [Detector de Comportamientos Atípicos en CFDI](auditor-cfdi-atipico.md) — disponible
 
 ## Cobros y Facturación Fiscal B2B
 
