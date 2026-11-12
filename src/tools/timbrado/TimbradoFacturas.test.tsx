@@ -24,6 +24,7 @@ vi.mock('@/lib/apiClient', () => ({
       setDefaultAccount: vi.fn(),
       disconnectAccount: vi.fn(),
       createInvoice: vi.fn(),
+      cancelInvoice: vi.fn(),
       getInvoices: vi.fn().mockResolvedValue([]),
     },
     clients: {
@@ -162,5 +163,88 @@ describe('TimbradoFacturas Component (Cobros CFDI 4.0)', () => {
       'href',
       'https://alegra.com/pdf/501'
     );
+  });
+
+  it('permite descargar XML/PDF vía proxy de Facturapi y cancelar un CFDI con motivo SAT en el historial', async () => {
+    vi.mocked(apiClient.alegra.getAccounts).mockResolvedValue([
+      {
+        tenant_id: 'tenant-123',
+        alegra_account_id: 'acc-sandbox',
+        alegra_email: 'sandbox@facturapi.io',
+        alegra_company_name: 'ESCUELA KEMPER URGATE (Sandbox Facturapi)',
+        alegra_company_id: 'org_sandbox',
+        alegra_rfc: 'EKU9003173C9',
+        csd_configured: true,
+        environment: 'sandbox',
+        is_default: true,
+        status: 'active',
+        last_checked_at: 1792000000,
+        last_error: null,
+        created_at: 1792000000,
+        updated_at: 1792000000,
+      },
+    ]);
+    vi.mocked(apiClient.alegra.getInvoices).mockResolvedValue([
+      {
+        id: 'rec-999',
+        tenant_id: 'tenant-123',
+        alegra_account_id: 'acc-sandbox',
+        alegra_invoice_id: 'inv_fapi_999',
+        client_id: null,
+        uuid: '9F887766-1111-2222-3333-444455556666',
+        folio: 'F-999',
+        customer_name: 'COMERCIALIZADORA MAYAB SA DE CV',
+        customer_rfc: 'CMA010101AAA',
+        total: 11600,
+        currency: 'MXN',
+        status: 'open',
+        pdf_url: '/api/facturapi/invoices/inv_fapi_999/pdf',
+        xml_url: '/api/facturapi/invoices/inv_fapi_999/xml',
+        created_by: 'user-owner',
+        created_at: 1792000000,
+      },
+    ]);
+    vi.mocked(apiClient.alegra.cancelInvoice).mockResolvedValueOnce({
+      ok: true,
+      motive: '02',
+      invoice: {
+        alegra_invoice_id: 'inv_fapi_999',
+        uuid: '9F887766-1111-2222-3333-444455556666',
+        status: 'void',
+      },
+    });
+
+    render(<TimbradoFacturas />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Historial Emitido/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Historial Emitido/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('COMERCIALIZADORA MAYAB SA DE CV')).toBeInTheDocument();
+    });
+
+    const xmlLink = screen.getByTitle('Descargar XML CFDI 4.0');
+    expect(xmlLink).toHaveAttribute(
+      'href',
+      '/api/facturapi/invoices/inv_fapi_999/xml?tenant_id=tenant-123'
+    );
+
+    const cancelBtn = screen.getByRole('button', { name: /Cancelar CFDI/i });
+    fireEvent.click(cancelBtn);
+
+    const confirmBtn = screen.getByRole('button', { name: /Confirmar/i });
+    fireEvent.click(confirmBtn);
+
+    await waitFor(() => {
+      expect(apiClient.alegra.cancelInvoice).toHaveBeenCalledWith({
+        tenant_id: 'tenant-123',
+        invoice_id: 'inv_fapi_999',
+        motive: '02',
+        substitution: undefined,
+      });
+    });
   });
 });

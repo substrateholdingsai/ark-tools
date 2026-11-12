@@ -109,8 +109,33 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
     disconnectAccount,
     refreshAccountStatus,
     createInvoice,
+    cancelInvoice,
     hasConnectedAccount,
   } = useAlegra();
+
+  // Helper para adjuntar tenant_id en descargas proxy de Facturapi (/api/facturapi/invoices/:id/pdf|xml)
+  const resolveDownloadUrl = (rawUrl?: string | null): string | null => {
+    if (!rawUrl) return null;
+    if (rawUrl.startsWith('/api/') && tenantId && !rawUrl.includes('tenant_id=')) {
+      const sep = rawUrl.includes('?') ? '&' : '?';
+      return `${rawUrl}${sep}tenant_id=${encodeURIComponent(tenantId)}`;
+    }
+    return rawUrl;
+  };
+
+  // Cancelación SAT en historial
+  const [cancellingInvoiceId, setCancellingInvoiceId] = useState<string | null>(null);
+  const [cancelMotive, setCancelMotive] = useState<'01' | '02' | '03' | '04'>('02');
+
+  const handleConfirmCancelInvoice = async (invoiceId: string) => {
+    try {
+      await cancelInvoice(invoiceId, cancelMotive);
+      setCancellingInvoiceId(null);
+      setStatusMessage(`CFDI cancelado ante el SAT con motivo ${cancelMotive}.`);
+    } catch {
+      // El hook ya actualiza `error`
+    }
+  };
 
   // Tabs
   const [activeTab, setActiveTab] = useState<TabType>('nueva');
@@ -324,7 +349,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
             </span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              CFDI 4.0 con PAC Quadrum
+              CFDI 4.0 con Facturapi PAC
             </span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-600 dark:border-emerald-900/50 dark:bg-emerald-950/50 dark:text-emerald-400">
@@ -337,9 +362,10 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
             Timbrado de Facturas CFDI 4.0
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-400">
-            Emite tus facturas fiscales con certificado de sello digital en tiempo real sin salir de
-            ARK LEDGER. La emisión y el sellado se delegan de forma segura a Alegra y su PAC
-            autorizado Quadrum.
+            Emite tus facturas fiscales con Certificado de Sello Digital en tiempo real sin salir de
+            ARK LEDGER. Timbrado directo con Facturapi (en modo Sandbox SAT{' '}
+            <code className="font-mono text-xs">EKU9003173C9</code> o Producción Live) con descarga
+            inmediata de XML y PDF.
           </p>
         </div>
 
@@ -354,7 +380,12 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                 </div>
                 <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
                   <span>{selectedAccount.alegra_rfc || 'Sin RFC'}</span>
-                  {selectedAccount.csd_configured ? (
+                  {selectedAccount.alegra_rfc === 'EKU9003173C9' ||
+                  selectedAccount.environment === 'sandbox' ? (
+                    <span className="font-semibold text-amber-600 dark:text-amber-400">
+                      • Sandbox SAT
+                    </span>
+                  ) : selectedAccount.csd_configured ? (
                     <span className="font-semibold text-emerald-600">• CSD Activo</span>
                   ) : (
                     <span className="font-semibold text-amber-600">• Sin CSD</span>
@@ -369,7 +400,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
             className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
           >
             <Key className="h-3.5 w-3.5" />
-            {hasConnectedAccount ? 'Conectar otra cuenta' : 'Conectar Alegra'}
+            {hasConnectedAccount ? 'Conectar otra cuenta' : 'Conectar Facturapi'}
           </button>
         </div>
       </div>
@@ -424,20 +455,21 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               Emite Facturas CFDI 4.0 directamente desde tu despacho
             </h2>
             <p className="mb-8 max-w-2xl text-sm leading-relaxed text-slate-300">
-              Conecta tu cuenta de Alegra para emitir facturas timbradas ante el SAT en segundos.
-              Tus honorarios contables, asesorías y cobranzas se facturan sin fricción ni doble
-              captura.
+              Conecta tu cuenta de Facturapi (en modo Sandbox{' '}
+              <code className="font-mono">sk_test_...</code> o Producción{' '}
+              <code className="font-mono">sk_live_...</code>) para emitir y cancelar facturas
+              timbradas ante el SAT en segundos.
             </p>
 
             <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="mb-1 flex items-center gap-2 text-sm font-bold text-emerald-400">
                   <CheckCircle2 className="h-4 w-4" />
-                  PAC Quadrum Oficial
+                  PAC Autorizado Facturapi
                 </div>
                 <p className="text-xs text-slate-300">
                   Timbrado garantizado bajo las especificaciones de la reforma fiscal y Anexo 20 del
-                  SAT.
+                  SAT, con Sandbox de pruebas inmediato.
                 </p>
               </div>
 
@@ -447,7 +479,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   Tus Sellos Seguros
                 </div>
                 <p className="text-xs text-slate-300">
-                  Tu CSD (.cer / .key) permanece seguro en Alegra. ARK LEDGER nunca toca tus
+                  Tu CSD (.cer / .key) permanece seguro en Facturapi. ARK LEDGER nunca toca tus
                   contraseñas privadas.
                 </p>
               </div>
@@ -455,22 +487,22 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="mb-1 flex items-center gap-2 text-sm font-bold text-emerald-400">
                   <CheckCircle2 className="h-4 w-4" />
-                  Multi-Empresa por Despacho
+                  Multi-Organización por Despacho
                 </div>
                 <p className="text-xs text-slate-300">
-                  Gestiona múltiples razones sociales o clientes con cuentas independientes de
-                  Alegra.
+                  Gestiona múltiples razones sociales o clientes con llaves independientes de
+                  Facturapi.
                 </p>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <div className="mb-1 flex items-center gap-2 text-sm font-bold text-emerald-400">
                   <CheckCircle2 className="h-4 w-4" />
-                  Descarga Instantánea
+                  Descarga y Cancelación SAT
                 </div>
                 <p className="text-xs text-slate-300">
-                  Obtén el Folio Fiscal UUID, XML sellado y representación impresa PDF en un solo
-                  clic.
+                  Obtén el Folio Fiscal UUID, XML sellado, PDF impreso y cancela CFDI con motivos
+                  01–04 en un clic.
                 </p>
               </div>
             </div>
@@ -480,7 +512,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400"
             >
               <Key className="h-4 w-4" />
-              Conectar Cuenta de Alegra Ahora
+              Conectar Cuenta de Facturapi Ahora
             </button>
           </div>
 
@@ -639,7 +671,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               <div className="flex flex-wrap items-center gap-3 pt-2">
                 {facturaEmitida.xml_url && (
                   <a
-                    href={facturaEmitida.xml_url}
+                    href={resolveDownloadUrl(facturaEmitida.xml_url) || '#'}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
@@ -650,7 +682,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                 )}
                 {facturaEmitida.pdf_url && (
                   <a
-                    href={facturaEmitida.pdf_url}
+                    href={resolveDownloadUrl(facturaEmitida.pdf_url) || '#'}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
@@ -1065,7 +1097,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                     {submitting ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Timbrando con PAC Quadrum...
+                        Timbrando con Facturapi PAC...
                       </>
                     ) : (
                       <>
@@ -1075,8 +1107,8 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                     )}
                   </button>
                   <p className="text-center text-[10px] text-slate-400">
-                    Al confirmar, Alegra generará el XML y lo timbrará ante el SAT mediante el PAC
-                    Quadrum.
+                    Al confirmar, Facturapi generará el XML CFDI 4.0 y lo timbrará ante el SAT en
+                    tiempo real.
                   </p>
                 </div>
               </div>
@@ -1169,33 +1201,102 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                             })}
                           </td>
                           <td className="px-3 py-3 text-center">
-                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                              Timbrada
-                            </span>
+                            {inv.status === 'void' ? (
+                              <span className="inline-flex items-center rounded-full bg-rose-100 px-2 py-0.5 text-[10px] font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                                Cancelada SAT
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                Timbrada
+                              </span>
+                            )}
                           </td>
                           <td className="whitespace-nowrap px-3 py-3 text-right">
                             <div className="flex items-center justify-end gap-2">
-                              {inv.xml_url && (
+                              {(inv.xml_url || inv.alegra_invoice_id) && (
                                 <a
-                                  href={inv.xml_url}
+                                  href={
+                                    resolveDownloadUrl(
+                                      inv.xml_url ||
+                                        `/api/facturapi/invoices/${inv.alegra_invoice_id}/xml`
+                                    ) || '#'
+                                  }
                                   target="_blank"
                                   rel="noreferrer"
                                   className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600 dark:text-slate-300 dark:hover:bg-slate-800"
-                                  title="Descargar XML"
+                                  title="Descargar XML CFDI 4.0"
                                 >
                                   <FileCode className="h-4 w-4 text-emerald-600" />
                                 </a>
                               )}
-                              {inv.pdf_url && (
+                              {(inv.pdf_url || inv.alegra_invoice_id) && (
                                 <a
-                                  href={inv.pdf_url}
+                                  href={
+                                    resolveDownloadUrl(
+                                      inv.pdf_url ||
+                                        `/api/facturapi/invoices/${inv.alegra_invoice_id}/pdf`
+                                    ) || '#'
+                                  }
                                   target="_blank"
                                   rel="noreferrer"
                                   className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-rose-600 dark:text-slate-300 dark:hover:bg-slate-800"
-                                  title="Descargar PDF"
+                                  title="Descargar PDF CFDI 4.0"
                                 >
                                   <FileText className="h-4 w-4 text-rose-600" />
                                 </a>
+                              )}
+                              {inv.status !== 'void' && (
+                                <>
+                                  {cancellingInvoiceId === (inv.alegra_invoice_id || inv.id) ? (
+                                    <div className="flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 dark:border-rose-900/50 dark:bg-rose-950/40">
+                                      <select
+                                        value={cancelMotive}
+                                        onChange={(e) =>
+                                          setCancelMotive(
+                                            e.target.value as '01' | '02' | '03' | '04'
+                                          )
+                                        }
+                                        aria-label="Motivo de cancelación SAT"
+                                        className="rounded border border-rose-300 bg-white px-1.5 py-0.5 text-[10px] text-slate-800 dark:border-rose-800 dark:bg-slate-900 dark:text-slate-100"
+                                      >
+                                        <option value="02">02 - Sin relación</option>
+                                        <option value="01">01 - Con relación</option>
+                                        <option value="03">03 - No se realizó</option>
+                                        <option value="04">04 - Factura global</option>
+                                      </select>
+                                      <button
+                                        type="button"
+                                        disabled={submitting}
+                                        onClick={() =>
+                                          void handleConfirmCancelInvoice(
+                                            inv.alegra_invoice_id || inv.id
+                                          )
+                                        }
+                                        className="rounded bg-rose-600 px-2 py-0.5 text-[10px] font-bold text-white hover:bg-rose-700"
+                                      >
+                                        Confirmar
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCancellingInvoiceId(null)}
+                                        className="px-1 text-[10px] text-slate-500 hover:text-slate-800"
+                                      >
+                                        ✕
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        setCancellingInvoiceId(inv.alegra_invoice_id || inv.id)
+                                      }
+                                      className="rounded-lg px-2 py-1 text-[10px] font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                      title="Cancelar CFDI ante el SAT"
+                                    >
+                                      Cancelar CFDI
+                                    </button>
+                                  )}
+                                </>
                               )}
                             </div>
                           </td>

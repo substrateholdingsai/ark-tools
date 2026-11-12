@@ -179,6 +179,8 @@ export interface AlegraAccount {
   alegra_company_id: string | null;
   alegra_rfc: string | null;
   csd_configured: boolean;
+  environment?: 'sandbox' | 'live';
+  provider?: 'facturapi' | 'alegra';
   is_default: boolean;
   status: 'active' | 'revoked' | 'error';
   last_checked_at: number | null;
@@ -923,18 +925,19 @@ export const apiClient = {
 
     async connectAccount(params: {
       tenant_id: string;
-      alegra_email: string;
+      alegra_email?: string;
       alegra_token: string;
+      facturapi_key?: string;
       is_default?: boolean;
     }): Promise<{ ok: boolean; account: AlegraAccount }> {
-      const res = await apiFetch('/api/alegra/accounts', {
+      const res = await apiFetch('/api/facturapi/accounts', {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify(params),
       });
       if (!res.ok) {
         const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
-        throw new Error(error.error || error.message || 'Error al conectar cuenta con Alegra');
+        throw new Error(error.error || error.message || 'Error al conectar cuenta con Facturapi');
       }
       return (await res.json()) as { ok: boolean; account: AlegraAccount };
     },
@@ -1015,6 +1018,41 @@ export const apiClient = {
       }
       const data = (await res.json()) as { invoices: AlegraInvoiceRecord[] };
       return data.invoices || [];
+    },
+
+    async cancelInvoice(params: {
+      tenant_id: string;
+      invoice_id: string;
+      motive?: '01' | '02' | '03' | '04';
+      substitution?: string;
+    }): Promise<{
+      ok: boolean;
+      motive: string;
+      invoice: { alegra_invoice_id: string; uuid: string | null; status: 'void' };
+    }> {
+      const query = new URLSearchParams({
+        tenant_id: params.tenant_id,
+        motive: params.motive || '02',
+      });
+      if (params.substitution) {
+        query.set('substitution', params.substitution);
+      }
+      const res = await apiFetch(
+        `/api/facturapi/invoices/${encodeURIComponent(params.invoice_id)}?${query.toString()}`,
+        {
+          method: 'DELETE',
+          headers: getHeaders(),
+        }
+      );
+      if (!res.ok) {
+        const error = (await res.json().catch(() => ({}))) as ApiErrorResponse;
+        throw new Error(error.error || error.message || 'Error al cancelar CFDI ante el SAT');
+      }
+      return (await res.json()) as {
+        ok: boolean;
+        motive: string;
+        invoice: { alegra_invoice_id: string; uuid: string | null; status: 'void' };
+      };
     },
   },
 };

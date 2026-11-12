@@ -99,10 +99,10 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
   },
   {
     id: 'timbrado',
-    nombre: 'Timbrado de Facturas CFDI 4.0 vía Alegra / Quadrum PAC',
+    nombre: 'Timbrado de Facturas CFDI 4.0 vía Facturapi PAC',
     categoria: 'Cobros y Facturación Fiscal B2B',
     descripcion:
-      'Emisión y timbrado legal de CFDI 4.0 ante el SAT sin salir de ARK LEDGER. Encriptación AES-GCM en reposo de API keys por despacho, soporte multi-cuenta y descarga de XML y PDF timbrados.',
+      'Emisión, timbrado y cancelación legal de CFDI 4.0 ante el SAT sin salir de ARK LEDGER mediante Facturapi (Sandbox SAT EKU9003173C9 y Producción). Encriptación AES-GCM en reposo de API keys por despacho, soporte multi-organización y descarga instantánea de XML y PDF timbrados.',
   },
   {
     id: 'spei',

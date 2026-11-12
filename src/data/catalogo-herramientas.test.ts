@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { CATALOGO_HERRAMIENTAS, TOTAL_HERRAMIENTAS } from './catalogo-herramientas';
 
@@ -56,5 +56,23 @@ describe('Catálogo Canónico de Herramientas', () => {
     expect(ids).toContain('monitor-lfpiorpi');
     expect(ids).toContain('recargos');
     expect(ids).toContain('modalidad40');
+    expect(ids).toContain('auditor-cfdi-atipico');
+  });
+
+  it('cuenta con un instructivo individual (.md) e índice en docs/instructivos/README.md para las 20 herramientas', () => {
+    const readmePath = resolve(process.cwd(), 'docs/instructivos/README.md');
+    const readmeContent = readFileSync(readmePath, 'utf-8');
+
+    for (const herramienta of CATALOGO_HERRAMIENTAS) {
+      const instructivoFile = resolve(process.cwd(), `docs/instructivos/${herramienta.id}.md`);
+      expect(
+        existsSync(instructivoFile),
+        `Falta el archivo de instructivo para ${herramienta.id}: docs/instructivos/${herramienta.id}.md`
+      ).toBe(true);
+      expect(
+        readmeContent.includes(`(${herramienta.id}.md)`),
+        `Falta enlazar (${herramienta.id}.md) en docs/instructivos/README.md`
+      ).toBe(true);
+    }
   });
 });

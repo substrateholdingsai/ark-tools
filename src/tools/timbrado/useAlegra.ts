@@ -118,9 +118,9 @@ export function useAlegra() {
     return accounts.filter((a) => a.status !== 'active' || !a.csd_configured);
   }, [accounts]);
 
-  // Conectar nueva cuenta
+  // Conectar nueva cuenta (Facturapi Secret Key sk_test_... / sk_live_...)
   const connectAccount = useCallback(
-    async (params: { alegra_email: string; alegra_token: string; is_default?: boolean }) => {
+    async (params: { alegra_email?: string; alegra_token: string; is_default?: boolean }) => {
       if (!tenantId) throw new Error('No hay un despacho activo.');
       setSubmitting(true);
       setError(null);
@@ -133,7 +133,7 @@ export function useAlegra() {
         setSelectedAccountId(res.account.alegra_account_id);
         return res.account;
       } catch (err: any) {
-        setError(err?.message || 'Error al conectar cuenta.');
+        setError(err?.message || 'Error al conectar cuenta de Facturapi.');
         throw err;
       } finally {
         setSubmitting(false);
@@ -214,6 +214,31 @@ export function useAlegra() {
     [tenantId, selectedAccountId, refreshInvoices]
   );
 
+  // Cancelar factura CFDI 4.0 ante el SAT
+  const cancelInvoice = useCallback(
+    async (invoiceId: string, motive: '01' | '02' | '03' | '04' = '02', substitution?: string) => {
+      if (!tenantId) throw new Error('No hay un despacho activo.');
+      setSubmitting(true);
+      setError(null);
+      try {
+        const res = await apiClient.alegra.cancelInvoice({
+          tenant_id: tenantId,
+          invoice_id: invoiceId,
+          motive,
+          substitution,
+        });
+        await refreshInvoices();
+        return res;
+      } catch (err: any) {
+        setError(err?.message || 'Error al cancelar CFDI ante el SAT.');
+        throw err;
+      } finally {
+        setSubmitting(false);
+      }
+    },
+    [tenantId, refreshInvoices]
+  );
+
   return {
     accounts: accounts || [],
     invoices: invoices || [],
@@ -233,6 +258,7 @@ export function useAlegra() {
     disconnectAccount,
     refreshAccountStatus,
     createInvoice,
+    cancelInvoice,
     hasConnectedAccount: (accounts || []).length > 0,
   };
 }
