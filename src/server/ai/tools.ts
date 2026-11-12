@@ -19,6 +19,7 @@ import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import type { ParametrosNomina } from '../../tools/nomina/types';
 import { listStoredRegulatoryEvents } from '../sentinela/sentinelaWebhook';
+import { buildWhatsAppDeepLink } from '../../lib/whatsappStudio';
 
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
@@ -335,6 +336,11 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           description:
             'Filtro opcional por especialidad (ej. "Crypto", "General", "Cobranza", "Abogados").',
         },
+        con_whatsapp: {
+          type: 'boolean',
+          description:
+            'Si es true, filtra únicamente prospectos que cuentan con número de WhatsApp válido.',
+        },
         limit: {
           type: 'number',
           description: 'Límite máximo de prospectos en el desglose (por defecto 10, máximo 50).',
@@ -616,6 +622,7 @@ export async function executeAiTool(
         const status = typeof args.status === 'string' ? args.status.trim() : null;
         const especialidad =
           typeof args.especialidad === 'string' ? args.especialidad.trim() : null;
+        const conWhatsapp = args.con_whatsapp === true || args.con_whatsapp === 'true';
         const limit = Math.min(Math.max(Number(args.limit) || 10, 1), 50);
 
         const statsRow = await db
@@ -652,13 +659,24 @@ export async function executeAiTool(
           listQuery += ' AND especialidad = ?';
           binds.push(especialidad);
         }
+        if (conWhatsapp) {
+          listQuery += " AND whatsapp IS NOT NULL AND TRIM(whatsapp) != ''";
+        }
         listQuery += ' ORDER BY created_at DESC LIMIT ?';
         binds.push(limit);
 
         const listResult = await db
           .prepare(listQuery)
           .bind(...binds)
-          .all();
+          .all<Record<string, unknown>>();
+
+        const prospectos = (listResult.results || []).map((row) => {
+          const wa = row.whatsapp == null ? null : String(row.whatsapp).trim();
+          return {
+            ...row,
+            whatsapp_link: wa ? buildWhatsAppDeepLink(wa) : null,
+          };
+        });
 
         return {
           success: true,
@@ -666,8 +684,8 @@ export async function executeAiTool(
             total_leads: statsRow?.total || 0,
             por_status: statusGroup.results || [],
             por_ciudad: ciudadGroup.results || [],
-            filtros_aplicados: { ciudad, status, especialidad, limit },
-            prospectos: listResult.results || [],
+            filtros_aplicados: { ciudad, status, especialidad, con_whatsapp: conWhatsapp, limit },
+            prospectos,
           },
         };
       }

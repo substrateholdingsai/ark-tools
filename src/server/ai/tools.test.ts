@@ -162,6 +162,7 @@ describe('Workers AI — Tools Catalog & Executor', () => {
                 {
                   id: 'lead-101',
                   web: 'https://despachomerida.mx',
+                  whatsapp: '9991234567',
                   contacto_nombre: 'CP Garcia',
                   ciudad: 'Merida',
                   status: 'Nuevo',
@@ -178,7 +179,7 @@ describe('Workers AI — Tools Catalog & Executor', () => {
 
     const res = await executeAiTool(
       'consultar_leads_crm',
-      { ciudad: 'Merida', status: 'Nuevo', limit: 5 },
+      { ciudad: 'Merida', status: 'Nuevo', con_whatsapp: true, limit: 5 },
       mockEnv,
       'ark'
     );
@@ -191,7 +192,9 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     expect(data.por_ciudad).toHaveLength(2);
     expect(data.prospectos).toHaveLength(1);
     expect(data.prospectos[0].id).toBe('lead-101');
+    expect(data.prospectos[0].whatsapp_link).toBe('https://wa.me/529991234567');
     expect(data.filtros_aplicados.ciudad).toBe('Merida');
+    expect(data.filtros_aplicados.con_whatsapp).toBe(true);
   });
 
   it('ejecuta consultar_alertas_regulatorias consultando sentinela_events en D1', async () => {

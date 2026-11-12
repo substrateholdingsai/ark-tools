@@ -976,8 +976,15 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
         ok: boolean;
         answer: string;
         toolsCalled: Array<{
+          tool: string;
           toolId: string;
           inputs: Record<string, unknown>;
+          result: {
+            baseGravable: number;
+            tasa: number;
+            isn: number;
+            estado: { id: string; tasa: number; articulo: string };
+          };
           previewResult: unknown;
           lawCited: string[];
         }>;
@@ -992,6 +999,10 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
 
       expect(askBody.ok).toBe(true);
       expect(askBody.answer).toContain('ISN');
+      // Must use the tool's returned 2.5% / $6,250 result, never 3.0% / $7,500
+      expect(askBody.answer).toContain('6,250');
+      expect(askBody.answer).toContain('2.5%');
+      expect(askBody.answer).not.toContain('7,500');
       expect(askBody.writes).toBe(0);
       expect(askBody.sealed).toBe(false);
       expect(askBody.stamped).toBe(false);
@@ -1000,7 +1011,12 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(askBody.durationMs).toBeGreaterThan(0);
       expect(askBody.toolsCalled).toHaveLength(1);
       expect(askBody.toolsCalled[0]?.toolId).toBe('isn');
+      expect(askBody.toolsCalled[0]?.result).toBeDefined();
+      expect(askBody.toolsCalled[0]?.result.baseGravable).toBe(250000);
+      expect(askBody.toolsCalled[0]?.result.tasa).toBe(2.5);
+      expect(askBody.toolsCalled[0]?.result.isn).toBe(6250);
       expect(askBody.toolsCalled[0]?.lawCited.length).toBeGreaterThan(0);
+      expect(askBody.toolsCalled[0]?.lawCited.join(' ')).toContain('2.5%');
       expect(store.expedienteInserts).toBe(0);
 
       // Verify metrics reflect the call and tool breakdown
@@ -1232,6 +1248,158 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       const unboundBody = (await unboundRes.json()) as { ok: boolean; answer?: string };
       expect(unboundBody.ok).toBe(false);
       expect(unboundBody.answer).toBeUndefined();
+    });
+
+    it('locks in ISN Yucatán 2.5% ($6,250 on $250,000), per-call neurons (89.69) in status/metrics/ask, and 12 vs 20 walkthrough breakdown', async () => {
+      const { env } = createIsolatedMockEnv(true);
+
+      // 1. Direct preview POST /api/internal/tools/isn/preview for YUC $250,000, 15 employees
+      const previewRes = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/isn/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+          },
+          body: JSON.stringify({
+            estadoId: 'YUC',
+            nominaBruta: 250000,
+            numEmpleados: 15,
+          }),
+        }),
+        env,
+        mockCtx
+      );
+      expect(previewRes.status).toBe(200);
+      const previewBody = (await previewRes.json()) as {
+        ok: boolean;
+        law_cited: string[];
+        result: {
+          tasa: number;
+          isn: number;
+          baseGravable: number;
+          estado: { id: string; tasa: number; articulo: string };
+        };
+      };
+      expect(previewBody.ok).toBe(true);
+      expect(previewBody.result.tasa).toBe(2.5);
+      expect(previewBody.result.isn).toBe(6250);
+      expect(previewBody.result.estado.articulo).toBe('Art. 21 al 27 LGHY');
+      expect(previewBody.law_cited.join(' ')).toContain('Tasa ISN 2.5%');
+
+      // 2. Simulate Workers AI returning usage.neurons = 89.69
+      env.AI = {
+        run: vi.fn(async (_model: string, input: { messages?: Array<{ role: string }> }) => {
+          const msgs = input.messages ?? [];
+          const hasToolResult = msgs.some((m) => m.role === 'tool');
+          if (!hasToolResult) {
+            return {
+              response: '',
+              tool_calls: [
+                {
+                  name: 'isn',
+                  arguments: { estadoId: 'YUC', baseGravable: 250000, numEmpleados: 15 },
+                },
+              ],
+              usage: { prompt_tokens: 120, completion_tokens: 45, total_tokens: 165 },
+            };
+          }
+          return {
+            response: 'El ISN en Yucatán al 3.0% sobre $250,000 es $7,500.',
+            usage: {
+              prompt_tokens: 180,
+              completion_tokens: 60,
+              total_tokens: 240,
+              neurons: 89.69,
+            },
+          };
+        }),
+      } as unknown as Ai;
+
+      const askRes = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/ai/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+          },
+          body: JSON.stringify({
+            prompt: 'Calcula el ISN de Yucatán para $250,000 con 15 empleados',
+            tenantId: 'tenant-alpha',
+            tools: ['isn'],
+          }),
+        }),
+        env,
+        mockCtx
+      );
+      expect(askRes.status).toBe(200);
+      const askBody = (await askRes.json()) as {
+        ok: boolean;
+        answer: string;
+        neuronsUsed: number;
+        neuronsAvailable: boolean;
+        toolsCalled: Array<{
+          toolId: string;
+          result: { isn: number; tasa: number };
+        }>;
+      };
+      expect(askBody.ok).toBe(true);
+      expect(askBody.answer).toContain('6,250');
+      expect(askBody.answer).not.toContain('7,500');
+      expect(askBody.toolsCalled[0]?.result.isn).toBe(6250);
+      expect(askBody.toolsCalled[0]?.result.tasa).toBe(2.5);
+      expect(askBody.neuronsAvailable).toBe(true);
+      expect(askBody.neuronsUsed).toBe(89.69);
+
+      // 3. Verify status and metrics agree on neuronsAvailable: true
+      const statusRes = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/status', {
+          headers: { 'X-StayPuft-Key': TEST_STAYPUFT_KEY },
+        }),
+        env,
+        mockCtx
+      );
+      const statusBody = (await statusRes.json()) as {
+        ai: { neuronsAvailable: boolean; per_call_neurons_supported: boolean };
+      };
+      expect(statusBody.ai.neuronsAvailable).toBe(true);
+      expect(statusBody.ai.per_call_neurons_supported).toBe(true);
+
+      const metricsRes = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/metrics?tenantId=tenant-alpha', {
+          headers: { 'X-StayPuft-Key': TEST_STAYPUFT_KEY },
+        }),
+        env,
+        mockCtx
+      );
+      const metricsBody = (await metricsRes.json()) as {
+        ai: { neuronsAvailable: boolean; neurons: { available: boolean; total: number } };
+      };
+      expect(metricsBody.ai.neuronsAvailable).toBe(true);
+      expect(metricsBody.ai.neurons.available).toBe(true);
+      expect(metricsBody.ai.neurons.total).toBeCloseTo(89.69, 2);
+
+      // 4. Verify CANACO walkthrough exposes timbrado preview_only policy and 12 vs 8 suite breakdown
+      const walkRes = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/walkthrough/canaco', {
+          headers: { 'X-StayPuft-Key': TEST_STAYPUFT_KEY },
+        }),
+        env,
+        mockCtx
+      );
+      const walkBody = (await walkRes.json()) as {
+        stamping_policy: { status: string; live_stamping_on_monday: boolean };
+        suite_breakdown: {
+          total_tools: number;
+          canaco_pyme_core_count: number;
+          specialized_corporate_pld_count: number;
+        };
+      };
+      expect(walkBody.stamping_policy.status).toBe('preview_only');
+      expect(walkBody.stamping_policy.live_stamping_on_monday).toBe(false);
+      expect(walkBody.suite_breakdown.total_tools).toBe(20);
+      expect(walkBody.suite_breakdown.canaco_pyme_core_count).toBe(12);
+      expect(walkBody.suite_breakdown.specialized_corporate_pld_count).toBe(8);
     });
   });
 });

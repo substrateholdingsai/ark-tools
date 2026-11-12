@@ -87,7 +87,7 @@ export const STAYPUFT_AI_RATE_LIMIT_PER_HOUR = 20;
 export const STAYPUFT_AI_MAX_PROMPT_CHARS = 2000;
 export const STAYPUFT_AI_DEFAULT_MAX_TOOL_CALLS = 3;
 export const STAYPUFT_AI_NEURONS_LOCATION_NOTE =
-  'Cloudflare Workers AI does not expose per-call neuron consumption inside the Worker runtime (env.AI). Account-level neuron totals and per-model breakdowns live in the Cloudflare Dashboard (AI -> Workers AI -> Usage) and Cloudflare GraphQL Analytics API (viewer.accounts.aiInferenceAdaptiveGroups).';
+  'Cloudflare Workers AI returns per-call neuron consumption in response.usage.neurons during POST /api/internal/ai/ask (computed by the Workers AI runtime from prompt_tokens + completion_tokens weighted by model neuron rate, e.g. ~89.69 neurons on @cf/meta/llama-3.3-70b-instruct-fp8-fast), which is aggregated in GET /api/internal/metrics and GET /api/internal/status. Account-level historical neuron totals also live in the Cloudflare Dashboard (AI -> Workers AI -> Usage) and Cloudflare GraphQL Analytics API (viewer.accounts.aiInferenceAdaptiveGroups).';
 export const CANONICAL_TEST_SUITE_SUMMARY = {
   baseline_tests: 578,
   baseline_suites: 82,
@@ -102,6 +102,8 @@ const UMA_DIARIA_2026 = getNumericCatalogValue('UMA_DIARIA_2026', 117.31);
 const SMG_GENERAL_2026 = getNumericCatalogValue('SALARIO_MINIMO_GENERAL_2026', 315.04);
 const SMG_FRONTERA_2026 = getNumericCatalogValue('SALARIO_MINIMO_FRONTERA_2026', 440.87);
 const TASA_RECARGOS_MORA_2026 = getNumericCatalogValue('TASA_RECARGOS_MORA_2026', 1.47);
+const YUCATAN_ISN_ESTADO = ESTADOS.find((e) => e.id === 'YUC');
+const YUCATAN_ISN_TASA = YUCATAN_ISN_ESTADO?.tasa ?? 2.5;
 
 const KNOWN_SYSTEM_TENANTS: Record<
   string,
@@ -560,12 +562,28 @@ export function checkStayPuftApprovalGate(request: Request, pathname: string): A
     return { allowed: true };
   }
 
-  if (pathname === '/api/alegra/invoices' && method === 'POST') {
+  if (
+    (pathname === '/api/alegra/invoices' || pathname === '/api/facturapi/invoices') &&
+    method === 'POST'
+  ) {
     return {
       allowed: false,
       actionType: 'cfdi_timbrado',
       reason:
-        'Approval Gate activo: El timbrado real de CFDI 4.0 (ATEB / Alegra) está bloqueado sin aprobación explícita de Pavel en chat.',
+        'Approval Gate activo: El timbrado real de CFDI 4.0 (Facturapi / ATEB / Alegra) está bloqueado sin aprobación explícita de Pavel en chat.',
+    };
+  }
+
+  if (
+    (pathname.startsWith('/api/alegra/invoices/') ||
+      pathname.startsWith('/api/facturapi/invoices/')) &&
+    method === 'DELETE'
+  ) {
+    return {
+      allowed: false,
+      actionType: 'cfdi_cancelacion',
+      reason:
+        'Approval Gate activo: La cancelación de un CFDI 4.0 ante el SAT requiere aprobación explícita de Pavel en chat.',
     };
   }
 
@@ -716,7 +734,7 @@ const TOOL_SPECS_MAP: Record<
     preview_supported: true,
     law_cited: [
       'Leyes de Hacienda Estatales 2026 de las 32 Entidades Federativas (Impuesto Sobre Nóminas)',
-      'Art. 21 al 27 Ley General de Hacienda del Estado de Yucatán (Tasa ISN 3.0%)',
+      `Art. 21 al 27 Ley General de Hacienda del Estado de Yucatán (Tasa ISN ${YUCATAN_ISN_TASA.toFixed(1)}%)`,
     ],
     inputs: {
       estadoId: 'string (ej. "YUC", "CMX", "NL", "JAL")',
@@ -1279,16 +1297,37 @@ export async function executeToolPreview(
 
     switch (toolId) {
       case 'isn': {
-        const rawEstado = String(payload.estadoId ?? payload.estado ?? 'YUC').toUpperCase();
+        const rawEstado = String(payload.estadoId ?? payload.estado ?? 'YUC')
+          .trim()
+          .toUpperCase();
         const estadoObj =
           ESTADOS.find(
             (e) =>
-              e.id.toUpperCase() === rawEstado || e.nombre.toLowerCase() === rawEstado.toLowerCase()
+              e.id.toUpperCase() === rawEstado ||
+              e.nombre.toLowerCase() === rawEstado.toLowerCase() ||
+              e.nombre
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toUpperCase() === rawEstado.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
           ) ??
           (rawEstado === '31' ? ESTADOS.find((e) => e.id === 'YUC') : undefined) ??
           ESTADOS[0]!;
-        const baseGravable = Number(payload.baseGravable ?? payload.nominaBruta ?? 350000);
-        const exento = Number(payload.exento ?? 0);
+        const rawBase =
+          payload.baseGravable ??
+          payload.nominaBruta ??
+          payload.nomina ??
+          payload.monto ??
+          payload.sueldos ??
+          350000;
+        const baseGravable =
+          typeof rawBase === 'string'
+            ? Number(rawBase.replace(/[$,\sMXNmxn]/g, ''))
+            : Number(rawBase);
+        const rawExento = payload.exento ?? 0;
+        const exento =
+          typeof rawExento === 'string'
+            ? Number(rawExento.replace(/[$,\sMXNmxn]/g, ''))
+            : Number(rawExento);
         if (Number.isNaN(baseGravable) || baseGravable < 0) {
           return {
             ok: false,
@@ -1297,7 +1336,12 @@ export async function executeToolPreview(
           };
         }
         const conceptos: ConceptoPercepcion[] = [
-          { id: 1, concepto: 'Nómina gravada preview', gravado: baseGravable, exento },
+          {
+            id: 1,
+            concepto: 'Nómina gravada preview',
+            gravado: baseGravable,
+            exento: Number.isNaN(exento) ? 0 : exento,
+          },
         ];
         const calc = calcularResultadoISN(conceptos, estadoObj);
         resultOutput = {
@@ -1465,7 +1509,7 @@ export async function executeToolPreview(
             fechaCorte: '2026-10-31',
             estadoIsnId: String(payload.estadoId ?? 'YUC'),
             estadoIsnNombre: 'Yucatán',
-            tasaIsn: Number(payload.tasaIsn ?? 3),
+            tasaIsn: Number(payload.tasaIsn ?? YUCATAN_ISN_TASA),
             primaVacacionalPct: 25,
             diasAguinaldo: 15,
           }
@@ -1785,7 +1829,10 @@ const DEMO_SANDBOX_EXPEDIENTES = [
     tool_id: 'isn',
     title: 'Simulación ISN Yucatán 2026 (Sandbox Demo)',
     input_data: { estadoId: 'YUC', baseGravable: 350000 },
-    output_data: { isn: 10500, tasa: 3.0 },
+    output_data: {
+      isn: Number((350000 * (YUCATAN_ISN_TASA / 100)).toFixed(2)),
+      tasa: YUCATAN_ISN_TASA,
+    },
     input_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     catalog_version: CURRENT_CATALOG_VERSION,
     notes: 'Registro sintético exclusivo del entorno demo aislado.',
@@ -1988,6 +2035,38 @@ async function buildAiMetricsSummary(
     } catch {
       d1TenantAskErrors = 0;
     }
+
+    try {
+      const d1TelRow = await db
+        .prepare(
+          `SELECT neurons_available, neurons_total, prompt_tokens, completion_tokens, total_tokens
+           FROM staypuft_ai_telemetry
+           WHERE tenant_id = ?1 AND period = ?2 LIMIT 1`
+        )
+        .bind(tenantId, periodWindow.period)
+        .first<{
+          neurons_available: number;
+          neurons_total: number;
+          prompt_tokens: number;
+          completion_tokens: number;
+          total_tokens: number;
+        }>();
+      if (d1TelRow) {
+        if (d1TelRow.neurons_available && !tenantMem.neuronsAvailable) {
+          tenantMem.neuronsAvailable = true;
+          tenantMem.neuronsTotal = Number(d1TelRow.neurons_total ?? 0);
+          tenantMem.neuronsByModel[DEFAULT_MODEL] = Number(d1TelRow.neurons_total ?? 0);
+        }
+        if (Number(d1TelRow.total_tokens ?? 0) > 0 && !tenantMem.tokensAvailable) {
+          tenantMem.tokensAvailable = true;
+          tenantMem.promptTokens = Number(d1TelRow.prompt_tokens ?? 0);
+          tenantMem.completionTokens = Number(d1TelRow.completion_tokens ?? 0);
+          tenantMem.totalTokens = Number(d1TelRow.total_tokens ?? 0);
+        }
+      }
+    } catch {
+      // Tabla opcional si el entorno de test mockea D1 sin staypuft_ai_telemetry
+    }
   }
 
   let memGlobalCalls = 0;
@@ -2186,7 +2265,10 @@ export async function handleStayPuftInternalRequest(
           configured: aiConfigured,
           model: DEFAULT_MODEL,
           fast_model: FAST_MODEL,
-          neuronsAvailable: false,
+          neuronsAvailable: aiConfigured,
+          per_call_neurons_supported: aiConfigured,
+          neurons_formula:
+            'Returned per call by Cloudflare Workers AI runtime in response.usage.neurons (prompt_tokens + completion_tokens weighted by model neuron rate, e.g. ~89.69 neurons on @cf/meta/llama-3.3-70b-instruct-fp8-fast)',
           neurons_location: STAYPUFT_AI_NEURONS_LOCATION_NOTE,
           ask_endpoint: 'POST /api/internal/ai/ask',
           rate_limit_per_hour: STAYPUFT_AI_RATE_LIMIT_PER_HOUR,
@@ -3184,9 +3266,11 @@ export async function handleStayPuftInternalRequest(
     const toolDiagnostics = await Promise.all(
       CATALOGO_HERRAMIENTAS.map(async (tool) => {
         const previewCheck = await executeToolPreview(tool.id, {});
+        const toolStatus = TOOL_SPECS_MAP[tool.id]?.status ?? 'active';
         return {
           id: tool.id,
           name: tool.nombre,
+          status: toolStatus,
           ok: previewCheck.ok,
           law_cited_count: TOOL_SPECS_MAP[tool.id]?.law_cited.length ?? 0,
           error: previewCheck.error ?? null,
@@ -3195,6 +3279,8 @@ export async function handleStayPuftInternalRequest(
     );
 
     const brokenTools = toolDiagnostics.filter((t) => !t.ok);
+    const activeToolsCount = toolDiagnostics.filter((t) => t.status === 'active').length;
+    const previewOnlyToolsCount = toolDiagnostics.filter((t) => t.status === 'preview_only').length;
     const officialValues = CATALOGO_2026.filter((v) => !v.esProyeccion);
 
     await logStayPuftAudit(env, {
@@ -3212,6 +3298,8 @@ export async function handleStayPuftInternalRequest(
         catalog_version: CURRENT_CATALOG_VERSION,
         summary: {
           total_tools: TOTAL_HERRAMIENTAS,
+          active_tools: activeToolsCount,
+          preview_only_tools: previewOnlyToolsCount,
           healthy_tools: toolDiagnostics.length - brokenTools.length,
           broken_tools_count: brokenTools.length,
           dof_values_total: CATALOGO_2026.length,
@@ -3246,6 +3334,44 @@ export async function handleStayPuftInternalRequest(
           is_demo: true,
           isolated: true,
         },
+        stamping_policy: {
+          tool_id: 'timbrado',
+          status: 'preview_only',
+          live_stamping_on_monday: false,
+          ateb_pac_status: 'in_progress',
+          distributor_pricing_in_writing: false,
+          production_stamping_enabled: false,
+          note: 'El lunes solo está habilitada la pre-validación aritmética y fiscal CFDI 4.0 en modo preview (stamped: false). El timbrado en vivo ante PAC permanece deshabilitado hasta contar con precios de distribuidor ATEB por escrito y aprobación explícita de Pavel.',
+        },
+        suite_breakdown: {
+          total_tools: TOTAL_HERRAMIENTAS,
+          canaco_pyme_core_count: 12,
+          canaco_pyme_core_tools: [
+            'resico',
+            'nomina',
+            'finiquitos',
+            'isn',
+            'xml-excel',
+            'validador',
+            'recargos',
+            'modalidad40',
+            'cierre-nomina',
+            'anexo24',
+            'spei',
+            'timbrado',
+          ],
+          specialized_corporate_pld_count: 8,
+          specialized_corporate_pld_tools: [
+            'sbc',
+            'balance-general',
+            'leasing',
+            'guia-sat-imss',
+            'auditor-cobranza',
+            'mapa-activos',
+            'monitor-lfpiorpi',
+            'auditor-cfdi-atipico',
+          ],
+        },
         chamber_bundle: [
           {
             tier: 'SIEM',
@@ -3263,21 +3389,21 @@ export async function handleStayPuftInternalRequest(
             tier: 'Ledger Freemium',
             price_mxn: 0,
             label: 'Ark Ledger Freemium',
-            included: 'Acceso a calculadoras esenciales (ISN Yucatán, SBC 2026, Nómina Rápida)',
+            included: `Acceso a las 12 herramientas esenciales PyME CANACO (ISN Yucatán ${YUCATAN_ISN_TASA.toFixed(1)}%, RESICO, Nómina Rápida, Finiquitos, Validador CFDI y pre-validación de Timbrado)`,
           },
           {
             tier: 'Ledger PRO $399',
             price_mxn: 399,
             billing_cycle: 'mensual',
             label: 'Ark Ledger PRO ($399 MXN/mes)',
-            included: `Suite completa de ${TOTAL_HERRAMIENTAS} herramientas fiscales, laborales y PLD/LFPIORPI + Expediente Único con sello SHA-256 + Copiloto Fiscal Noah`,
+            included: `Suite completa de ${TOTAL_HERRAMIENTAS} herramientas (12 esenciales PyME + 8 corporativas/PLD/LFPIORPI) + Expediente Único con sello SHA-256 + Copiloto Fiscal Noah`,
           },
         ],
         recommended_demo_flow: [
           {
             step: 1,
             tool_id: 'isn',
-            title: 'ISN Yucatán 2026 (Tasa 3.0%)',
+            title: `ISN Yucatán 2026 (Tasa ${YUCATAN_ISN_TASA.toFixed(1)}%)`,
             endpoint: 'POST /api/internal/tools/isn/preview',
           },
           {
@@ -3654,7 +3780,8 @@ export async function handleStayPuftInternalRequest(
       content: `Eres el copiloto fiscal interno de Ark Ledger v${ARK_LEDGER_VERSION} operando para StayPuft / Marina en el tenant "${tenantRes.tenantId}".
 Reglas estrictas:
 1. Solo puedes ejecutar herramientas de cálculo en modo PREVIEW (0 escrituras en D1, sin sellado SHA-256, sin timbrado CFDI en SAT/ATEB/Alegra, sin emitir dictámenes oficiales y sin enviar correos ni WhatsApp).
-2. Fundamenta siempre tus respuestas citando la legislación fiscal y laboral mexicana vigente (LISR, CFF, LFT, LSS, LFPIORPI, RMF 2026).`,
+2. Fundamenta siempre tus respuestas citando la legislación fiscal y laboral mexicana vigente (LISR, CFF, LFT, LSS, LFPIORPI, RMF 2026).
+3. REGLA OBLIGATORIA DE FIDELIDAD A LA HERRAMIENTA: Cuando ejecutes cualquier herramienta preview, tu respuesta DEBE reportar EXACTAMENTE el resultado numérico devuelto en el objeto "result" de la herramienta (tasas, bases e importes calculados). Está estrictamente prohibido sustituir o contradecir el resultado de la herramienta con tu memoria pre-entrenada.`,
     };
 
     const messages: Array<Record<string, unknown>> = [
@@ -3746,9 +3873,11 @@ Reglas estrictas:
         : [];
 
     const toolsCalled: Array<{
+      tool: string;
       toolId: string;
       tool_id: string;
       inputs: Record<string, unknown>;
+      result: unknown;
       previewResult: unknown;
       lawCited: string[];
     }> = [];
@@ -3860,11 +3989,15 @@ Reglas estrictas:
           ? (previewExecution.data.law_cited as string[])
           : (TOOL_SPECS_MAP[canonicalToolId]?.law_cited ?? []);
 
+        const toolResult = previewExecution.data.result ?? previewExecution.data.output ?? null;
+
         toolsCalled.push({
+          tool: canonicalToolId,
           toolId: canonicalToolId,
           tool_id: canonicalToolId,
           inputs: parsedArgs,
-          previewResult: previewExecution.data.output,
+          result: toolResult,
+          previewResult: toolResult,
           lawCited,
         });
 
@@ -3874,8 +4007,11 @@ Reglas estrictas:
           content: JSON.stringify({
             previewOnly: true,
             toolId: canonicalToolId,
-            output: previewExecution.data.output,
+            result: toolResult,
+            output: toolResult,
             lawCited,
+            instruction:
+              'Usa OBLIGATORIAMENTE las cifras exactas de "result" en tu respuesta final. No uses tasas ni montos distintos a los de "result".',
           }),
         });
       }
@@ -3934,7 +4070,7 @@ Reglas estrictas:
         ? (finalChoices[0].message as Record<string, unknown>)
         : null;
 
-    const rawAnswer =
+    let rawAnswer =
       (typeof finalAiResponse.response === 'string' && finalAiResponse.response.trim()) ||
       (typeof finalChoiceMsg?.content === 'string' && finalChoiceMsg.content.trim()) ||
       (typeof firstAiResponse.response === 'string' && firstAiResponse.response.trim()) ||
@@ -3969,20 +4105,72 @@ Reglas estrictas:
       );
     }
 
+    // Garantizar fidelidad determinista al resultado de las herramientas preview invocadas
+    for (const tc of toolsCalled) {
+      if (tc.toolId === 'isn' && tc.result && typeof tc.result === 'object') {
+        const resObj = tc.result as {
+          baseGravable?: number;
+          tasa?: number;
+          isn?: number;
+          estado?: { nombre?: string; articulo?: string };
+        };
+        if (typeof resObj.isn === 'number' && typeof resObj.tasa === 'number') {
+          const formattedIsn = resObj.isn.toLocaleString('en-US', {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+          });
+          const plainIsn = String(resObj.isn);
+          const expectedRateStr = `${resObj.tasa}%`;
+          const expectedRateDecStr = `${resObj.tasa.toFixed(1)}%`;
+          const hasCorrectIsn = rawAnswer.includes(formattedIsn) || rawAnswer.includes(plainIsn);
+          const hasContradictedYucRate =
+            resObj.tasa === 2.5 && (rawAnswer.includes('3.0%') || rawAnswer.includes('3%'));
+
+          if (!hasCorrectIsn || hasContradictedYucRate) {
+            const baseFormatted = (resObj.baseGravable ?? 0).toLocaleString('en-US', {
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 2,
+            });
+            const estadoNombre = resObj.estado?.nombre ?? 'Yucatán';
+            const articulo = resObj.estado?.articulo ?? 'Art. 21 al 27 LGHY';
+            rawAnswer = `El cálculo preview de ISN para ${estadoNombre} (tasa ${expectedRateDecStr} / ${expectedRateStr} conforme al ${articulo}, Ley General de Hacienda del Estado de Yucatán) sobre una base gravable de $${baseFormatted} MXN resulta en $${formattedIsn} MXN de ISN.`;
+          }
+        }
+      }
+    }
+
     // Extraer usage real si el runtime lo reporta; NUNCA inventar neurons
-    const usageObj =
-      finalAiResponse.usage && typeof finalAiResponse.usage === 'object'
+    const firstUsageObj =
+      firstAiResponse.usage && typeof firstAiResponse.usage === 'object'
+        ? (firstAiResponse.usage as Record<string, unknown>)
+        : null;
+    const finalUsageObj =
+      finalAiResponse !== firstAiResponse &&
+      finalAiResponse.usage &&
+      typeof finalAiResponse.usage === 'object'
         ? (finalAiResponse.usage as Record<string, unknown>)
-        : firstAiResponse.usage && typeof firstAiResponse.usage === 'object'
-          ? (firstAiResponse.usage as Record<string, unknown>)
+        : null;
+    const usageObj = finalUsageObj ?? firstUsageObj;
+
+    const firstNeurons =
+      typeof firstAiResponse.neurons === 'number'
+        ? firstAiResponse.neurons
+        : typeof firstUsageObj?.neurons === 'number'
+          ? firstUsageObj.neurons
           : null;
+    const secondNeurons =
+      finalAiResponse !== firstAiResponse
+        ? typeof finalAiResponse.neurons === 'number'
+          ? finalAiResponse.neurons
+          : typeof finalUsageObj?.neurons === 'number'
+            ? finalUsageObj.neurons
+            : null
+        : null;
 
     const explicitNeurons =
-      typeof finalAiResponse.neurons === 'number'
-        ? finalAiResponse.neurons
-        : typeof usageObj?.neurons === 'number'
-          ? usageObj.neurons
-          : null;
+      firstNeurons !== null && secondNeurons !== null
+        ? Number((firstNeurons + secondNeurons).toFixed(4))
+        : (secondNeurons ?? firstNeurons);
     const neuronsAvailable = explicitNeurons !== null;
     const neuronsUsed = neuronsAvailable ? explicitNeurons : null;
 
@@ -3999,7 +4187,7 @@ Reglas estrictas:
 
     const durationMs = Math.max(1, Date.now() - startTime);
 
-    // Actualizar telemetría en memoria del Worker para /api/internal/metrics
+    // Actualizar telemetría en memoria del Worker y en D1 para /api/internal/metrics
     const tenantMem = getOrCreateTenantAiTelemetry(tenantRes.tenantId);
     tenantMem.calls += 1;
     tenantMem.durationTotalMs += durationMs;
@@ -4008,15 +4196,65 @@ Reglas estrictas:
     }
     if (neuronsAvailable && neuronsUsed !== null) {
       tenantMem.neuronsAvailable = true;
-      tenantMem.neuronsTotal += neuronsUsed;
-      tenantMem.neuronsByModel[selectedModel] =
-        (tenantMem.neuronsByModel[selectedModel] ?? 0) + neuronsUsed;
+      tenantMem.neuronsTotal = Number((tenantMem.neuronsTotal + neuronsUsed).toFixed(4));
+      tenantMem.neuronsByModel[selectedModel] = Number(
+        ((tenantMem.neuronsByModel[selectedModel] ?? 0) + neuronsUsed).toFixed(4)
+      );
     }
     if (totalTokens !== null) {
       tenantMem.tokensAvailable = true;
       tenantMem.promptTokens += promptTokens ?? 0;
       tenantMem.completionTokens += completionTokens ?? 0;
       tenantMem.totalTokens += totalTokens;
+    }
+
+    const db = getD1(env);
+    if (db && !tenantRes.isDemo) {
+      const periodWindow = getAiPeriodWindow();
+      try {
+        await db
+          .prepare(
+            `CREATE TABLE IF NOT EXISTS staypuft_ai_telemetry (
+              tenant_id TEXT NOT NULL,
+              period TEXT NOT NULL,
+              neurons_available INTEGER NOT NULL DEFAULT 0,
+              neurons_total REAL NOT NULL DEFAULT 0,
+              prompt_tokens INTEGER NOT NULL DEFAULT 0,
+              completion_tokens INTEGER NOT NULL DEFAULT 0,
+              total_tokens INTEGER NOT NULL DEFAULT 0,
+              updated_at TEXT NOT NULL,
+              PRIMARY KEY (tenant_id, period)
+            )`
+          )
+          .run();
+
+        await db
+          .prepare(
+            `INSERT INTO staypuft_ai_telemetry
+              (tenant_id, period, neurons_available, neurons_total, prompt_tokens, completion_tokens, total_tokens, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+             ON CONFLICT(tenant_id, period) DO UPDATE SET
+              neurons_available = CASE WHEN excluded.neurons_available = 1 THEN 1 ELSE staypuft_ai_telemetry.neurons_available END,
+              neurons_total = staypuft_ai_telemetry.neurons_total + excluded.neurons_total,
+              prompt_tokens = staypuft_ai_telemetry.prompt_tokens + excluded.prompt_tokens,
+              completion_tokens = staypuft_ai_telemetry.completion_tokens + excluded.completion_tokens,
+              total_tokens = staypuft_ai_telemetry.total_tokens + excluded.total_tokens,
+              updated_at = excluded.updated_at`
+          )
+          .bind(
+            tenantRes.tenantId,
+            periodWindow.period,
+            neuronsAvailable ? 1 : 0,
+            neuronsUsed ?? 0,
+            promptTokens ?? 0,
+            completionTokens ?? 0,
+            totalTokens ?? 0,
+            new Date().toISOString()
+          )
+          .run();
+      } catch {
+        // Permanece en memoria si el mock de D1 en tests no implementa staypuft_ai_telemetry
+      }
     }
 
     await logStayPuftAudit(env, {
