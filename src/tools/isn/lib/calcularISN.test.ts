@@ -14,6 +14,7 @@ import {
   formatearNumero,
 } from './calcularISN';
 import type { ConceptoPercepcion, Estado } from '../types';
+import { getEstadoById } from '../data/estados';
 
 // ─────────────────────────────────────────────────────────────────────
 // FIXTURES
@@ -153,6 +154,22 @@ describe('calcularResultadoISN', () => {
     expect(resultado.baseGravable).toBe(50600);
     expect(resultado.tasa).toBe(2.0);
     expect(resultado.isn).toBe(1012);
+  });
+
+  it('calcula ISN para Yucatán (YUC) 2026 al 2.5% ($250,000 -> $6,250)', () => {
+    const yucatan = getEstadoById('YUC');
+    expect(yucatan).toBeDefined();
+    expect(yucatan?.tasa).toBe(2.5);
+    expect(yucatan?.articulo).toBe('Art. 21 al 27 LGHY');
+
+    const resultado = calcularResultadoISN(
+      [{ id: 1, concepto: 'Nómina gravada Yucatán (15 empleados)', gravado: 250000, exento: 0 }],
+      yucatan!
+    );
+
+    expect(resultado.baseGravable).toBe(250000);
+    expect(resultado.tasa).toBe(2.5);
+    expect(resultado.isn).toBe(6250);
   });
 
   it('maneja conceptos vacíos', () => {

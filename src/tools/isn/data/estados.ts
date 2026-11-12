@@ -270,7 +270,7 @@ export const ESTADOS: Estado[] = [
     corto: 'Yuc',
     tasa: 2.5,
     vigencia: '2026',
-    articulo: 'Art. 22 LHE',
+    articulo: 'Art. 21 al 27 LGHY',
   },
   {
     id: 'ZAC',
