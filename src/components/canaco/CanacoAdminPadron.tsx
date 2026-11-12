@@ -29,6 +29,9 @@ import {
   PhoneCall,
   X,
   Inbox,
+  Compass,
+  Calculator,
+  Sparkles,
 } from 'lucide-react';
 import { useOptionalAuth } from '@/context/AuthContext';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
@@ -50,7 +53,11 @@ interface LeadRow {
   notas: string | null;
 }
 
-export function CanacoAdminPadron() {
+interface CanacoAdminPadronProps {
+  onNavigateToSuite?: () => void;
+}
+
+export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps = {}) {
   const auth = useOptionalAuth();
   const isSuperAdmin = auth?.platformRole === 'super_admin';
   const [leads, setLeads] = useState<LeadRow[]>([]);
@@ -64,6 +71,14 @@ export function CanacoAdminPadron() {
   const [modalRecordatorioMasivoOpen, setModalRecordatorioMasivoOpen] = useState(false);
   const [recordandoIndividualId, setRecordandoIndividualId] = useState<string | null>(null);
   const [syncingArkangel, setSyncingArkangel] = useState(false);
+  const [showWelcomeGuide, setShowWelcomeGuide] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    try {
+      return window.localStorage.getItem('canaco_admin_guide_dismissed') !== 'true';
+    } catch {
+      return true;
+    }
+  });
   const [syncFeedback, setSyncFeedback] = useState<{
     tipo: 'success' | 'error';
     mensaje: string;
@@ -329,6 +344,131 @@ export function CanacoAdminPadron() {
 
   return (
     <div className="space-y-6 font-inter text-henequen-grafito">
+      {/* ═══ BARRA DE UBICACIÓN Y CONMUTADOR DE SECCIÓN CAMERAL ═══ */}
+      <div
+        aria-label="Ubicación en Consola CANACO"
+        className="flex flex-col gap-3 rounded-2xl border border-henequen-arena bg-henequen-muro/90 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div className="flex flex-wrap items-center gap-1.5 text-xs">
+          <Compass size={14} className="text-henequen-terra" />
+          <span className="font-medium text-henequen-piedra">CANACO SERVYTUR Mérida</span>
+          <span className="text-henequen-arena">›</span>
+          <span className="font-medium text-henequen-piedra">Dirección de Afiliaciones</span>
+          <span className="text-henequen-arena">›</span>
+          <span className="rounded-md bg-henequen-anil px-2 py-0.5 font-mono text-[11px] font-bold text-white">
+            Padrón SIEM & Oficialía de Partes
+          </span>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex rounded-xl border border-henequen-arena bg-white p-0.5 text-[11px] font-semibold">
+            <button
+              type="button"
+              onClick={() => setFiltroEstatus('todos')}
+              className={`rounded-lg px-2.5 py-1 transition ${
+                filtroEstatus === 'todos'
+                  ? 'bg-henequen-anil text-white'
+                  : 'text-henequen-piedra hover:text-henequen-anil'
+              }`}
+            >
+              Padrón ({kpis.total})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroEstatus('pendientes')}
+              className={`rounded-lg px-2.5 py-1 transition ${
+                filtroEstatus === 'pendientes'
+                  ? 'bg-henequen-terra text-white'
+                  : 'text-henequen-piedra hover:text-henequen-anil'
+              }`}
+            >
+              Por Cobrar ({kpis.pendientes})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroEstatus('activos')}
+              className={`rounded-lg px-2.5 py-1 transition ${
+                filtroEstatus === 'activos'
+                  ? 'bg-emerald-700 text-white'
+                  : 'text-henequen-piedra hover:text-henequen-anil'
+              }`}
+            >
+              Activos ({kpis.activos})
+            </button>
+          </div>
+
+          {onNavigateToSuite && (
+            <button
+              type="button"
+              onClick={onNavigateToSuite}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-henequen-anil/30 bg-white px-3 py-1.5 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/50"
+            >
+              <Calculator size={13} className="text-henequen-terra" />
+              <span>Ir a Suite Fiscal (12 Herramientas)</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* ═══ PANTALLA DE BIENVENIDA Y GUÍA RÁPIDA OPERATIVA ═══ */}
+      {showWelcomeGuide && (
+        <div className="rounded-2xl border border-henequen-terra/30 bg-gradient-to-r from-henequen-cal via-white to-henequen-sisal/30 p-4 shadow-sm sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-henequen-terra" />
+              <h2 className="font-fraunces text-sm font-bold text-henequen-anil sm:text-base">
+                Bienvenida a la Consola Cameral · ¿Qué puedes hacer en esta sección?
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowWelcomeGuide(false);
+                try {
+                  window.localStorage.setItem('canaco_admin_guide_dismissed', 'true');
+                } catch {
+                  // ignore
+                }
+              }}
+              className="rounded-lg px-2 py-0.5 text-[11px] font-semibold text-henequen-piedra hover:bg-henequen-sisal/50 hover:text-henequen-anil"
+            >
+              Ocultar guía
+            </button>
+          </div>
+
+          <div className="mt-3 grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
+            <div className="rounded-xl border border-henequen-arena/80 bg-white p-3">
+              <div className="font-mono text-[10px] font-bold uppercase text-henequen-terra">
+                1. Oficialía de Partes
+              </div>
+              <p className="mt-1 text-[11px] text-henequen-piedra">
+                Pulsa <strong>Expediente</strong> en cualquier fila para revisar, aprobar o rechazar
+                los 7 documentos depositados por el socio en el Buzón Digital.
+              </p>
+            </div>
+            <div className="rounded-xl border border-henequen-arena/80 bg-white p-3">
+              <div className="font-mono text-[10px] font-bold uppercase text-henequen-anil">
+                2. Cobranza IA (&ldquo;Modo Sarita&rdquo;)
+              </div>
+              <p className="mt-1 text-[11px] text-henequen-piedra">
+                Usa <strong>Recordar con María</strong> (individual) o{' '}
+                <strong>Recordatorio Masivo</strong> para enviar llamadas de voz IA + WhatsApp con
+                referencia SPEI.
+              </p>
+            </div>
+            <div className="rounded-xl border border-henequen-arena/80 bg-white p-3">
+              <div className="font-mono text-[10px] font-bold uppercase text-emerald-800">
+                3. Cédula Oficial QR
+              </div>
+              <p className="mt-1 text-[11px] text-henequen-piedra">
+                Pulsa <strong>Cédula</strong> para generar la constancia tamaño Carta con Sello
+                SHA-256 verificable ante la Secretaría de Economía.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ═══ CABECERA INSTITUCIONAL ═══ */}
       <div className="flex flex-col gap-4 border-b border-henequen-arena pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">

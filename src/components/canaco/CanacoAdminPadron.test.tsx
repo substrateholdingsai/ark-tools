@@ -166,4 +166,18 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
       expect(screen.getByText(/¡Listo Sarita! 'María'/i)).toBeInTheDocument();
     });
   });
+
+  it('muestra la barra de ubicación cameral y la guía rápida de bienvenida ocultable', async () => {
+    await renderAdmin();
+
+    expect(screen.getByLabelText(/Ubicación en Consola CANACO/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Bienvenida a la Consola Cameral · ¿Qué puedes hacer en esta sección\?/i)
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Ocultar guía/i }));
+    expect(
+      screen.queryByText(/Bienvenida a la Consola Cameral · ¿Qué puedes hacer en esta sección\?/i)
+    ).toBeNull();
+  });
 });

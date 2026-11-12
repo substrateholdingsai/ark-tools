@@ -12,6 +12,11 @@ describe('CANACO SERVYTUR Mérida — Componentes de Ventanilla & Banner HENEQU�
       screen.getByText(/Impulsa tu Negocio con el Respaldo de CANACO SERVYTUR Mérida/i)
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Afiliarse \/ Refrendo SIEM/i })).toBeInTheDocument();
+    expect(screen.getByText(/Tu Ruta de Cumplimiento Cameral y Fiscal/i)).toBeInTheDocument();
+    expect(screen.getByText('1. Registro SIEM')).toBeInTheDocument();
+    expect(screen.getByText('2. Buzón Oficialía')).toBeInTheDocument();
+    expect(screen.getByText('3. Cédula QR')).toBeInTheDocument();
+    expect(screen.getByText('4. Suite Fiscal')).toBeInTheDocument();
   });
 
   it('abre la Ventanilla Digital de Afiliación al pulsar el botón principal', () => {

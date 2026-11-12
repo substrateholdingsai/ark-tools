@@ -32,6 +32,9 @@ import {
   X,
   AlertCircle,
   Mail,
+  FlaskConical,
+  Zap,
+  EyeOff,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
@@ -39,6 +42,7 @@ import { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
 import { ConstanciaSocioModal } from './ConstanciaSocioModal';
 import { BuzonDocumentalModal } from './BuzonDocumentalModal';
 import { SimmpleReferralButton } from '../SimmpleReferralButton';
+import { CANACO_WALKTHROUGH_SOCIO_DEMO, useCanacoDemoMode } from './canacoDemoMode';
 import type { SocioCanacoRegistro } from './types';
 
 interface CanacoLandingPageProps {
@@ -47,6 +51,7 @@ interface CanacoLandingPageProps {
 
 export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
   const { signIn } = useAuth();
+  const { isDemoMode, disableDemoMode, toggleDemoMode } = useCanacoDemoMode();
 
   // Modales
   const [modalAfiliacionOpen, setModalAfiliacionOpen] = useState(false);
@@ -67,6 +72,16 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
     setAdminLoading(true);
     setAdminError('');
     try {
+      if (typeof window !== 'undefined') {
+        try {
+          window.sessionStorage.setItem('canaco_admin_welcome', 'true');
+          const url = new URL(window.location.href);
+          url.searchParams.set('tool', 'admin');
+          window.history.replaceState({}, '', url.toString());
+        } catch {
+          // ignore storage errors
+        }
+      }
       if (onOpenAuth) {
         onOpenAuth('login');
       } else {
@@ -117,8 +132,12 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
         });
       }
     } catch {
-      // Fallback demo local si corre sin backend D1
-      if (rfcLimpio.includes('MAYAB') || rfcLimpio.includes('FPE')) {
+      // Fallback demo local si corre sin backend D1 o si se consulta el RFC de Walkthrough
+      if (
+        rfcLimpio.includes('MAYAB') ||
+        rfcLimpio.includes('FPE') ||
+        rfcLimpio === CANACO_WALKTHROUGH_SOCIO_DEMO.rfc
+      ) {
         const socioDemo: SocioCanacoRegistro = {
           folioSiem: 'SIEM-MID-2026-AMA2-MIC-4819',
           razonSocial: 'Abarrotes y Comercializadora Mayab S.A. de C.V.',
@@ -244,11 +263,28 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
             <SimmpleReferralButton className="hidden md:inline-flex" />
 
             <a
+              href="#ruta-socio"
+              className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-henequen-piedra transition hover:text-henequen-anil lg:inline-block"
+            >
+              ¿Cómo funciona?
+            </a>
+
+            <a
               href="#consulta-socio"
-              className="hidden rounded-lg px-3 py-1.5 text-xs font-semibold text-henequen-piedra transition hover:text-henequen-anil md:inline-block"
+              className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-henequen-piedra transition hover:text-henequen-anil md:inline-block"
             >
               Consultar Socio SIEM
             </a>
+
+            <button
+              type="button"
+              onClick={() => setBuzonOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-henequen-anil/30 bg-henequen-cal px-3 py-1.5 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/50"
+              title="Subir documentos a la Oficialía de Partes Digital"
+            >
+              <Inbox size={13} className="text-henequen-terra" />
+              <span className="hidden sm:inline">Buzón Oficialía</span>
+            </button>
 
             <button
               type="button"
@@ -360,6 +396,119 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
               <div className="text-[11px] font-medium text-henequen-piedra">
                 Cédula Digital Criptográfica
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 2.5 GUÍA VISUAL DE 3 PASOS ("¿DÓNDE ESTOY Y CÓMO AVANZO?")          */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <section
+        id="ruta-socio"
+        aria-label="Guía de 3 pasos para el Socio CANACO"
+        className="border-b border-henequen-arena bg-henequen-muro/80 py-10"
+      >
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-6 flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
+            <div>
+              <span className="font-mono text-[10px] font-bold uppercase tracking-widest text-henequen-terra">
+                Mapa de Navegación · Sin Filas ni Trámites Presenciales
+              </span>
+              <h2 className="mt-0.5 font-serif text-xl font-bold text-henequen-anil sm:text-2xl">
+                Tu Recorrido en 3 Pasos dentro del Portal CANACO
+              </h2>
+            </div>
+            <span className="rounded-full border border-henequen-anil/20 bg-white px-3 py-1 font-mono text-[11px] font-semibold text-henequen-anil">
+              Ubicación actual: Portal Público del Afiliado
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* Paso 1 */}
+            <div className="flex flex-col justify-between rounded-2xl border border-henequen-arena bg-white p-5 shadow-sm">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-henequen-terra font-mono text-xs font-bold text-white">
+                    1
+                  </span>
+                  <span className="rounded-full bg-henequen-terra/10 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-henequen-terra-dark">
+                    Alta o Renovación
+                  </span>
+                </div>
+                <h3 className="mt-3 font-serif text-base font-bold text-henequen-anil">
+                  Registra tu Empresa y Cuota SIEM
+                </h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-henequen-piedra">
+                  Captura tu RFC y número de empleados. El sistema calcula tu cuota oficial, emite
+                  tu folio SIEM al instante y te entrega acceso a la Suite Fiscal.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalAfiliacionOpen(true)}
+                className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-henequen-terra/10 px-3 py-2 text-xs font-bold text-henequen-terra-dark transition hover:bg-henequen-terra hover:text-white"
+              >
+                <UserPlus size={13} />
+                <span>Ir al Paso 1: Ventanilla Digital</span>
+              </button>
+            </div>
+
+            {/* Paso 2 */}
+            <div className="flex flex-col justify-between rounded-2xl border border-henequen-arena bg-white p-5 shadow-sm">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-henequen-anil font-mono text-xs font-bold text-white">
+                    2
+                  </span>
+                  <span className="rounded-full bg-henequen-anil/10 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-henequen-anil">
+                    Oficialía de Partes
+                  </span>
+                </div>
+                <h3 className="mt-3 font-serif text-base font-bold text-henequen-anil">
+                  Deposita tu Expediente en el Buzón
+                </h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-henequen-piedra">
+                  Sube tu Constancia de Situación Fiscal, INE y anexos en los 7 casilleros
+                  digitales. Puedes subir un documento hoy y continuar después con tu RFC.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setBuzonOpen(true)}
+                className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-henequen-anil/10 px-3 py-2 text-xs font-bold text-henequen-anil transition hover:bg-henequen-anil hover:text-white"
+              >
+                <Inbox size={13} />
+                <span>Ir al Paso 2: Abrir Buzón Digital</span>
+              </button>
+            </div>
+
+            {/* Paso 3 */}
+            <div className="flex flex-col justify-between rounded-2xl border border-henequen-arena bg-white p-5 shadow-sm">
+              <div>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-700 font-mono text-xs font-bold text-white">
+                    3
+                  </span>
+                  <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-emerald-800">
+                    Cédula QR + Suite
+                  </span>
+                </div>
+                <h3 className="mt-3 font-serif text-base font-bold text-henequen-anil">
+                  Descarga tu Cédula y Usa las Calculadoras
+                </h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-henequen-piedra">
+                  Verifica tu estatus por RFC para imprimir tu Cédula Oficial tamaño Carta con Sello
+                  SHA-256 + QR y operar las 12 herramientas fiscales de socio.
+                </p>
+              </div>
+              <a
+                href="#consulta-socio"
+                className="mt-4 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 transition hover:bg-emerald-700 hover:text-white"
+              >
+                <Search size={13} />
+                <span>Ir al Paso 3: Consultar por RFC</span>
+              </a>
             </div>
           </div>
         </div>
@@ -663,12 +812,79 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
             </div>
           </div>
 
-          <div className="mt-6 border-t border-henequen-arena/60 pt-4 text-center text-[10px] text-henequen-piedra/80">
+          <div
+            onDoubleClick={toggleDemoMode}
+            title="Doble clic o Ctrl+Shift+D para alternar Modo Walkthrough"
+            className="mt-6 cursor-default select-none border-t border-henequen-arena/60 pt-4 text-center text-[10px] text-henequen-piedra/80"
+          >
             © {new Date().getFullYear()} CANACO SERVYTUR Mérida. Todos los derechos reservados.
             Desarrollado con tecnología de Ark Systems (Substrate Holdings LLC).
           </div>
         </div>
       </footer>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* BARRA FLOTANTE DE WALKTHROUGH DIRECTIVO (Solo visible con ?demo=1) */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {isDemoMode && (
+        <div className="fixed bottom-4 left-4 z-40 max-w-md rounded-2xl border-2 border-amber-400 bg-henequen-anil p-3.5 text-white shadow-2xl">
+          <div className="flex items-center justify-between gap-3 border-b border-white/15 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-amber-400 text-henequen-anil">
+                <FlaskConical size={14} />
+              </span>
+              <div>
+                <div className="text-[11px] font-bold uppercase tracking-wider text-amber-300">
+                  Modo Walkthrough CANACO Activo
+                </div>
+                <div className="text-[10px] text-henequen-sisal">
+                  Atajos de demostración para directivos (Ctrl + Shift + D)
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={disableDemoMode}
+              className="inline-flex items-center gap-1 rounded-lg bg-rose-600/90 px-2.5 py-1 text-[10px] font-bold text-white transition hover:bg-rose-600"
+              title="Ocultar todos los módulos de demostración"
+            >
+              <EyeOff size={11} />
+              <span>Ocultar Demo</span>
+            </button>
+          </div>
+
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setModalAfiliacionOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-amber-400 px-3 py-1.5 text-[11px] font-bold text-henequen-anil transition hover:bg-amber-300"
+            >
+              <Zap size={12} />
+              <span>1. Ventanilla + Pago Simulado</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setRfcBusqueda(CANACO_WALKTHROUGH_SOCIO_DEMO.rfc);
+                const el = document.getElementById('consulta-rfc');
+                el?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-1 rounded-lg border border-white/25 bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
+            >
+              <Search size={11} />
+              <span>2. Cargar RFC Demo</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setModalAdminOpen(true)}
+              className="inline-flex items-center gap-1 rounded-lg border border-white/25 bg-white/10 px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-white/20"
+            >
+              <Lock size={11} />
+              <span>3. Padrón Directivo</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* MODALES CONECTADOS                                                 */}

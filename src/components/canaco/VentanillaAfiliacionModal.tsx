@@ -14,13 +14,22 @@ import {
   CreditCard,
   QrCode,
   ArrowRight,
+  ExternalLink,
   FileCheck2,
+  FlaskConical,
   Sparkles,
   Inbox,
+  Zap,
 } from 'lucide-react';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
 import { calcularCuotaAfiliacion, determinarEstrato, generarFolioSiem } from './calculoCuota';
 import { BuzonDocumentalModal } from './BuzonDocumentalModal';
+import {
+  CANACO_WALKTHROUGH_SOCIO_DEMO,
+  getDemoClipPaymentUrl,
+  setDemoClipPaymentUrl,
+  useCanacoDemoMode,
+} from './canacoDemoMode';
 import type { SectorEconomico, SocioCanacoRegistro } from './types';
 
 interface VentanillaAfiliacionModalProps {
@@ -69,9 +78,31 @@ export function VentanillaAfiliacionModal({
   const [metodoPago, setMetodoPago] = useState<'tarjeta' | 'spei' | 'clip'>('tarjeta');
   const [cfdiRequerido, setCfdiRequerido] = useState(true);
 
+  // Modo Demo / Walkthrough
+  const { isDemoMode } = useCanacoDemoMode();
+  const [simularPagoInstantaneo, setSimularPagoInstantaneo] = useState(true);
+  const [clipDemoUrl, setClipDemoUrl] = useState<string>(() => getDemoClipPaymentUrl());
+
   if (!isOpen) return null;
 
   const cotizacion = calcularCuotaAfiliacion(numEmpleados, sector);
+
+  const handleAutollenarWalkthrough = (saltarAPago = false) => {
+    setRazonSocial(CANACO_WALKTHROUGH_SOCIO_DEMO.razonSocial);
+    setNombreComercial(CANACO_WALKTHROUGH_SOCIO_DEMO.nombreComercial);
+    setRfc(CANACO_WALKTHROUGH_SOCIO_DEMO.rfc);
+    setSector(CANACO_WALKTHROUGH_SOCIO_DEMO.sector);
+    setNumEmpleados(CANACO_WALKTHROUGH_SOCIO_DEMO.numEmpleados);
+    setMunicipio(CANACO_WALKTHROUGH_SOCIO_DEMO.municipio);
+    setCalle(CANACO_WALKTHROUGH_SOCIO_DEMO.calle);
+    setCodigoPostal(CANACO_WALKTHROUGH_SOCIO_DEMO.codigoPostal);
+    setContactoNombre(CANACO_WALKTHROUGH_SOCIO_DEMO.contactoNombre);
+    setEmail(CANACO_WALKTHROUGH_SOCIO_DEMO.email);
+    setTelefono(CANACO_WALKTHROUGH_SOCIO_DEMO.telefono);
+    if (saltarAPago) {
+      setPaso(3);
+    }
+  };
 
   const registrarEnCrm = async (estatus: 'pendiente_pago' | 'activo') => {
     try {
@@ -115,11 +146,13 @@ export function VentanillaAfiliacionModal({
     void registrarEnCrm('pendiente_pago');
   };
 
-  const handleCompletarPago = async () => {
+  const handleCompletarPago = async (forceSimulated = false) => {
     setIsProcessing(true);
 
-    // Si se selecciona tarjeta o SPEI, intentamos enrutar por Conekta
-    if (metodoPago === 'tarjeta' || metodoPago === 'spei') {
+    const shouldBypassExternalRedirect = forceSimulated || (isDemoMode && simularPagoInstantaneo);
+
+    // Si se selecciona tarjeta o SPEI y NO estamos forzando simulación en vivo, intentamos enrutar por Conekta
+    if (!shouldBypassExternalRedirect && (metodoPago === 'tarjeta' || metodoPago === 'spei')) {
       try {
         const estratoActual = determinarEstrato(numEmpleados);
         const folioSiemCalculado = generarFolioSiem(rfc, estratoActual);
@@ -497,6 +530,40 @@ export function VentanillaAfiliacionModal({
             {/* PASO 1: DATOS */}
             {paso === 1 && (
               <div className="space-y-4 text-xs">
+                {isDemoMode && (
+                  <div className="flex flex-col gap-2.5 rounded-xl border border-amber-300 bg-amber-50/90 p-3.5 text-amber-950 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-2.5">
+                      <FlaskConical size={16} className="mt-0.5 shrink-0 text-amber-700" />
+                      <div>
+                        <span className="block text-[11px] font-bold uppercase tracking-wider text-amber-900">
+                          Modo Walkthrough Directivo Activo
+                        </span>
+                        <span className="text-[11px] text-amber-800">
+                          Autollena en 1 clic el caso de 15 empleados (Comercializadora del Mayab ·
+                          Mérida).
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleAutollenarWalkthrough(false)}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-sm transition hover:bg-amber-700"
+                      >
+                        <Zap size={12} />
+                        <span>Autollenar Socio Demo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleAutollenarWalkthrough(true)}
+                        className="inline-flex items-center gap-1 rounded-lg border border-amber-400 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-amber-900 transition hover:bg-amber-100"
+                      >
+                        <span>Ir directo a Pago (Paso 3) →</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <label
@@ -834,6 +901,125 @@ export function VentanillaAfiliacionModal({
                   </div>
                 </div>
 
+                {/* Simulador Interactivo de Pasarela (Visible solo en Modo Walkthrough / Demo) */}
+                {isDemoMode && (
+                  <div className="space-y-3 rounded-xl border border-amber-300 bg-amber-50/80 p-4 text-amber-950">
+                    <div className="flex items-center justify-between border-b border-amber-200/80 pb-2">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-amber-900">
+                        <FlaskConical size={14} className="text-amber-700" />
+                        Simulador de Pasarela (Modo Walkthrough)
+                      </span>
+                      <span className="rounded-full bg-amber-200/80 px-2 py-0.5 font-mono text-[9px] font-bold text-amber-900">
+                        Visible solo con ?demo=1
+                      </span>
+                    </div>
+
+                    {metodoPago === 'tarjeta' && (
+                      <div className="space-y-2.5">
+                        <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-white p-3">
+                          <div className="flex items-center gap-2.5">
+                            <CreditCard size={18} className="text-henequen-anil" />
+                            <div>
+                              <div className="font-mono text-xs font-bold text-henequen-grafito">
+                                VISA CORPORATIVA •••• •••• •••• 4242
+                              </div>
+                              <div className="text-[10px] text-henequen-piedra">
+                                Tarjeta Sandbox Conekta · Vigencia 12/28 · CVC 999 · Aprobación
+                                Inmediata
+                              </div>
+                            </div>
+                          </div>
+                          <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
+                            Lista para prueba
+                          </span>
+                        </div>
+                        <label className="flex cursor-pointer items-center gap-2 text-[11px] text-amber-900">
+                          <input
+                            type="checkbox"
+                            checked={simularPagoInstantaneo}
+                            onChange={(e) => setSimularPagoInstantaneo(e.target.checked)}
+                            className="rounded border-amber-400 text-amber-700 focus:ring-amber-600"
+                          />
+                          <span>
+                            <strong>Simular aprobación bancaria en vivo</strong> (acredita al socio
+                            y emite Cédula SIEM sin salir a pasarela externa)
+                          </span>
+                        </label>
+                      </div>
+                    )}
+
+                    {metodoPago === 'spei' && (
+                      <div className="space-y-2.5">
+                        <div className="rounded-lg border border-amber-200 bg-white p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-bold uppercase text-henequen-terra">
+                              Ficha SPEI Referenciada STP (CANACO Mérida)
+                            </span>
+                            <span className="font-mono text-[10px] font-semibold text-emerald-700">
+                              Conciliación Automática
+                            </span>
+                          </div>
+                          <div className="mt-1 font-mono text-xs font-bold tracking-wider text-henequen-anil">
+                            CLABE: 6461 8015 7042 8910 42
+                          </div>
+                          <div className="mt-0.5 text-[10px] text-henequen-piedra">
+                            Beneficiario: CANACO SERVYTUR MÉRIDA · Concepto: SIEM-2026-
+                            {(rfc || 'DEMO').slice(0, 6)}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isProcessing}
+                          onClick={() => void handleCompletarPago(true)}
+                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                        >
+                          <Zap size={13} />
+                          <span>Simular Recepción de Webhook SPEI y Activar Socio Ahora</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {metodoPago === 'clip' && (
+                      <div className="space-y-2.5">
+                        <p className="text-[11px] text-amber-900">
+                          Puedes abrir un <strong>Link de Pago Real de Clip</strong> en otra pestaña
+                          para mostrar la pasarela bancaria, y luego acreditar el socio aquí mismo:
+                        </p>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            type="url"
+                            value={clipDemoUrl}
+                            onChange={(e) => {
+                              setClipDemoUrl(e.target.value);
+                              setDemoClipPaymentUrl(e.target.value);
+                            }}
+                            placeholder="https://pago.clip.mx/..."
+                            className="flex-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 font-mono text-[11px] text-henequen-grafito focus:border-henequen-anil focus:outline-none"
+                          />
+                          <a
+                            href={clipDemoUrl || 'https://pago.clip.mx/'}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-henequen-anil px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-henequen-anil/90"
+                          >
+                            <span>Abrir Link Clip Real</span>
+                            <ExternalLink size={12} />
+                          </a>
+                        </div>
+                        <button
+                          type="button"
+                          disabled={isProcessing}
+                          onClick={() => void handleCompletarPago(true)}
+                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                        >
+                          <CheckCircle2 size={13} />
+                          <span>Simular Pago Clip Acreditado y Emitir Cédula SIEM</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Checkbox de Facturación CFDI */}
                 <div className="space-y-2 rounded-xl border border-henequen-arena bg-henequen-muro p-4">
                   <label className="flex cursor-pointer items-center gap-2">
@@ -880,7 +1066,7 @@ export function VentanillaAfiliacionModal({
                   </button>
                   <button
                     type="button"
-                    onClick={handleCompletarPago}
+                    onClick={() => void handleCompletarPago(false)}
                     disabled={isProcessing}
                     className="inline-flex items-center gap-2 rounded-lg bg-henequen-terra px-6 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-henequen-terra-dark disabled:opacity-50"
                   >

@@ -5,7 +5,7 @@
  * Fase D: Compliance — Auditoría de Cobranza + Guía SAT/IMSS.
  */
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import {
   Calculator,
   FileSpreadsheet,
@@ -23,6 +23,8 @@ import {
   BarChart3,
   Layers,
   TrendingUp,
+  Compass,
+  ArrowLeft,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -206,6 +208,17 @@ export function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Si horus.i2d@gmail.com inicia sesión desde "Acceso Directivo & Padrón" en CANACO, abrir directamente el Padrón SIEM
+  useEffect(() => {
+    if (typeof window === 'undefined' || !user) return;
+    const isCanacoAdmin = user.email?.toLowerCase() === 'horus.i2d@gmail.com';
+    const requestedAdminWelcome = window.sessionStorage?.getItem('canaco_admin_welcome') === 'true';
+    if (isCanacoAdmin && requestedAdminWelcome) {
+      window.sessionStorage.removeItem('canaco_admin_welcome');
+      setActiveTool('admin');
+    }
+  }, [user]);
+
   const goToDashboard = () => navigateTo('dashboard');
   const handleNavigate = (id: string) => {
     if (id === 'back') {
@@ -265,7 +278,7 @@ export function App() {
         ) {
           return (
             <div className="mx-auto max-w-[1280px] px-6 py-8 md:px-10">
-              <CanacoAdminPadron />
+              <CanacoAdminPadron onNavigateToSuite={goToDashboard} />
             </div>
           );
         }
@@ -388,25 +401,97 @@ export function App() {
             </div>
           )}
 
-          {/* Banner de Bienvenida y Activación Post-SIEM */}
-          {showSiemWelcome && (
+          {/* Barra de Orientación Contextual (Breadcrumb) dentro de cualquier Herramienta */}
+          {activeTool !== 'dashboard' && activeTool !== 'admin' && (
             <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
-              <div className="shadow-xs flex items-center justify-between gap-3 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-xs text-emerald-950">
-                <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="shrink-0 text-emerald-600" />
-                  <span>
-                    <strong>¡Bienvenido a ARK LEDGER!</strong> Tu empresa ha sido importada
-                    exitosamente desde el Registro SIEM. El Expediente Único está activo y listo
-                    para tu primer cálculo y sellado criptográfico.
+              <div
+                aria-label="Ubicación actual en la suite"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-white/90 px-4 py-2 text-xs shadow-sm"
+              >
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Compass size={13} className="text-gold-dark" />
+                  <button
+                    type="button"
+                    onClick={goToDashboard}
+                    className="font-semibold text-muted transition hover:text-navy hover:underline"
+                  >
+                    {currentBrand.brandName}
+                  </button>
+                  <span className="text-line">›</span>
+                  <button
+                    type="button"
+                    onClick={goToDashboard}
+                    className="font-medium text-muted transition hover:text-navy hover:underline"
+                  >
+                    Catálogo de Herramientas
+                  </button>
+                  <span className="text-line">›</span>
+                  <span className="rounded-md bg-navy/10 px-2 py-0.5 font-orbitron text-[10px] font-bold text-navy">
+                    {toolLabels[activeTool] || activeTool}
                   </span>
                 </div>
+
                 <button
                   type="button"
-                  onClick={() => setShowSiemWelcome(false)}
-                  className="rounded px-2 py-1 font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                  onClick={goToDashboard}
+                  className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-navy transition hover:bg-cream/50"
                 >
-                  Entendido
+                  <ArrowLeft size={12} />
+                  <span>Volver al Catálogo Principal</span>
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Pantalla/Tarjeta de Bienvenida Guiada Post-SIEM */}
+          {showSiemWelcome && (
+            <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
+              <div className="rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/60 p-4 text-xs text-emerald-950 shadow-sm sm:p-5">
+                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                  <div className="flex items-start gap-2.5">
+                    <Sparkles size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                    <div>
+                      <div className="font-orbitron text-xs font-bold uppercase tracking-wider text-emerald-900">
+                        ¡Bienvenido a tu Suite Fiscal Acreditada desde SIEM CANACO!
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-emerald-800">
+                        <strong>¡Bienvenido a ARK LEDGER!</strong> Tu empresa ha sido importada
+                        exitosamente desde el Registro SIEM. El Expediente Único está activo y listo
+                        para tu primer cálculo y sellado criptográfico.
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={goToDashboard}
+                          className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-900 transition hover:bg-emerald-100"
+                        >
+                          Ver Portal del Afiliado y 20 Herramientas
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigateTo('isn')}
+                          className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
+                        >
+                          Abrir ISN Yucatán (2.5%)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => navigateTo('resico')}
+                          className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
+                        >
+                          Abrir Calculadora RESICO
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSiemWelcome(false)}
+                    className="shrink-0 self-end rounded-lg border border-emerald-200 bg-white px-3 py-1.5 font-semibold text-emerald-700 transition hover:bg-emerald-100 sm:self-start"
+                  >
+                    Entendido
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -736,8 +821,8 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
           <ToolCard
             icon={FileCode}
             title="Timbrado de Facturas"
-            description="Emite CFDI 4.0 ante el SAT vía PAC Quadrum. Descarga XML y PDF."
-            badge="PRO"
+            description="Pre-validación CFDI 4.0 Anexo 20 y conector PAC (Timbrado ATEB en modo preview)."
+            badge="PREVIEW"
             badgeVariant="gold"
             onSelect={() => onSelectTool('timbrado')}
           />

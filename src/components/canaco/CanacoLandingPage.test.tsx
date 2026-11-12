@@ -164,4 +164,20 @@ describe('CANACO SERVYTUR Mérida — Landing Page Institucional (HENEQUÉN)', (
     ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(/pavel@arksystems\.site/i)).toBeInTheDocument();
   });
+
+  it('muestra la Guía Visual de 3 pasos y permite abrir el Buzón Digital directamente', async () => {
+    renderLanding();
+
+    expect(
+      screen.getByRole('heading', {
+        name: /Tu Recorrido en 3 Pasos dentro del Portal CANACO/i,
+      })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Ubicación actual: Portal Público del Afiliado/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /Ir al Paso 2: Abrir Buzón Digital/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('dialog', { name: /Buzón Documental CANACO/i })).toBeInTheDocument();
+    });
+  });
 });
