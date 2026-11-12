@@ -461,4 +461,60 @@ describe('LeadsApp (src/components/admin/LeadsApp.tsx)', () => {
     expect(anclasDescargadas).toHaveLength(1);
     expect(anclasDescargadas[0]!.download).toMatch(/^leads-ark-tools-\d{4}-\d{2}-\d{2}\.csv$/);
   });
+
+  it('abre WhatsApp Studio, compila plantillas por especialidad y registra actividad en D1', async () => {
+    const windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    await renderApp();
+    fetchMock.mockClear();
+
+    // Abrir WhatsApp Studio para Bufete Ramírez (especialidad Crypto -> sugiere LFPIORPI)
+    const filaCrypto = screen.getByText('Bufete Ramírez').closest('tr') as HTMLElement;
+    fireEvent.click(within(filaCrypto).getByRole('button', { name: /WhatsApp Studio/i }));
+
+    expect(screen.getByRole('heading', { name: /WhatsApp Studio/i })).toBeInTheDocument();
+
+    const selectorPlantilla = screen.getByLabelText(/Plantilla Comercial WhatsApp/i);
+    expect(selectorPlantilla).toHaveValue('ark_crypto_lfpiorpi');
+
+    // Cambiar de tenant a CANACO Mérida actualiza plantillas y remitente automáticamente
+    const selectorTenant = screen.getByLabelText(/Identidad Emisor WhatsApp/i);
+    fireEvent.change(selectorTenant, { target: { value: 'canaco_merida' } });
+    expect(selectorPlantilla).toHaveValue('canaco_boveda_fiscal');
+
+    // Regresar a Ark y disparar envío
+    fireEvent.change(selectorTenant, { target: { value: 'ark' } });
+
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        ok: true,
+        message:
+          'WhatsApp registrado en expediente (Cumplimiento LFPIORPI (#17) & Activos Virtuales).',
+        lead: lead({
+          id: 'lead-2',
+          contacto_nombre: 'Bufete Ramírez',
+          whatsapp: '5219988887777',
+          status: 'WhatsApp_enviado',
+          notas: '💬 WhatsApp enviado vía wa.me',
+        }),
+      })
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /Abrir en WhatsApp y Registrar Actividad/i })
+    );
+
+    await waitFor(() => {
+      expect(windowOpenSpy).toHaveBeenCalledTimes(1);
+      expect(String(windowOpenSpy.mock.calls[0]?.[0])).toMatch(
+        /^https:\/\/wa\.me\/5219988887777\?text=/
+      );
+      const llamada = fetchMock.mock.calls.find((c) => String(c[0]).includes('/log-whatsapp'));
+      expect(llamada).toBeDefined();
+      expect(String(llamada?.[0])).toBe('/api/admin/leads/lead-2/log-whatsapp');
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/WhatsApp registrado en expediente/i)).toBeInTheDocument();
+    });
+  });
 });

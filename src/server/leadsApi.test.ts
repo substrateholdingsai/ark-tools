@@ -282,4 +282,31 @@ describe('handleLeadsApiRequest', () => {
       globalThis.fetch = originalFetch;
     }
   });
+
+  it('registra actividad de WhatsApp Studio y retorna whatsapp_url en POST /api/admin/leads/:id/log-whatsapp', async () => {
+    const env = createEnv();
+    const req = new Request('https://ledger.arksystems.site/api/admin/leads/lead-1/log-whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tenant_profile: 'ark',
+        template_id: 'ark_marca_blanca',
+        template_name: 'Plan Corporate Firm (Marca Blanca + IA)',
+        message: 'Hola Lic. Perez, le escribimos de Ark Systems.',
+      }),
+    });
+    const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
+    expect(res?.status).toBe(200);
+
+    const json = (await res?.json()) as {
+      ok: boolean;
+      whatsapp_url: string;
+      lead: { status: string; notas: string; whatsapp_link: string };
+    };
+    expect(json.ok).toBe(true);
+    expect(json.whatsapp_url).toContain('https://wa.me/5219991234567?text=');
+    expect(json.lead.status).toBe('WhatsApp_enviado');
+    expect(json.lead.notas).toContain('💬 WhatsApp enviado vía wa.me [Ark Systems');
+    expect(json.lead.whatsapp_link).toBe('https://wa.me/5219991234567');
+  });
 });

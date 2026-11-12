@@ -8,8 +8,14 @@ import csv
 import io
 import os
 import re
+import sys
 import uuid
 import urllib.request
+
+WA_DEEP_LINK_REGEX = re.compile(
+    r"(?:wa\.me/|api\.whatsapp\.com/send\?[^\"'>\s]*phone=)\+?(\d{10,13})",
+    re.IGNORECASE,
+)
 
 SHEET_ID = "1st8LqEiO1RsJNDlBnZ0MyRCJnUSQGrvDbEESrFtcXsg"
 TABS = {
@@ -49,7 +55,11 @@ def normalize_whatsapp(raw):
     raw = clean(raw)
     if raw is None:
         return None
-    # Soporta varios numeros separados por / o coma: nos quedamos con el primero valido.
+    # 1. Deteccion inversa de deep links wa.me/ o api.whatsapp.com/send?phone=
+    dl_match = WA_DEEP_LINK_REGEX.search(raw)
+    if dl_match:
+        raw = dl_match.group(1)
+    # 2. Soporta varios numeros separados por / o coma: nos quedamos con el primero valido.
     candidates = re.split(r"[,/;]", raw)
     for cand in candidates:
         digits = re.sub(r"\D", "", cand)
@@ -66,6 +76,35 @@ def normalize_whatsapp(raw):
         if len(digits) >= 10:
             return digits
     return None
+
+
+def extract_whatsapp_from_html(html):
+    """Extrae enlaces flotantes wa.me/ o api.whatsapp.com/send?phone= del HTML oficial."""
+    if not html:
+        return None
+    match = WA_DEEP_LINK_REGEX.search(html)
+    if not match:
+        return None
+    return normalize_whatsapp(match.group(1))
+
+
+def enrich_lead_whatsapp_from_web(web_url, timeout=6):
+    """Visita el sitio oficial del prospecto para cosechar su WhatsApp corporativo directo."""
+    if not web_url:
+        return None
+    target = web_url if web_url.startswith("http") else f"https://{web_url}"
+    req = urllib.request.Request(
+        target,
+        headers={
+            "User-Agent": "Mozilla/5.0 (compatible; ArkLedgerLeadHarvester/1.0)"
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+            return extract_whatsapp_from_html(html)
+    except Exception:
+        return None
 
 
 def parse_date(day, month, year):
@@ -234,6 +273,17 @@ def main():
                     continue
                 seen.add(key)
                 rows_out.append((None, phone, None, ciudad, "General", "Nuevo", None, name, tab_name))
+
+    enrich_web = "--enrich-web" in sys.argv
+    if enrich_web:
+        enriched_Rows = []
+        for web, wa, email, ciudad, esp, status, last, contacto, tab in rows_out:
+            if not wa and web:
+                harvested_wa = enrich_lead_whatsapp_from_web(web)
+                if harvested_wa:
+                    wa = harvested_wa
+            enriched_Rows.append((web, wa, email, ciudad, esp, status, last, contacto, tab))
+        rows_out = enriched_Rows
 
     out_path = os.path.join("scripts", "sql", "seed_leads.sql")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)

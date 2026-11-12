@@ -24,7 +24,19 @@ import {
   UserPlus,
   Trash2,
   AlertTriangle,
+  BookOpen,
 } from 'lucide-react';
+import {
+  WS_TEMPLATES,
+  WS_TENANT_CONFIGS,
+  buildWhatsAppDeepLink,
+  buildWhatsAppVariables,
+  compileWhatsAppMessage,
+  inferDefaultTemplateId,
+  inferWhatsAppTenant,
+  normalizeMexicanPhone,
+  type WhatsAppTenantKey,
+} from '../../lib/whatsappStudio';
 
 interface Lead {
   id: string;
@@ -137,6 +149,23 @@ export default function LeadsApp() {
   const [leadToDelete, setLeadToDelete] = useState<Lead | null>(null);
   const [deletingLead, setDeletingLead] = useState(false);
 
+  // Modal de WhatsApp Studio ("Cero Costo" Outbound Deep-Linking)
+  const [selectedLeadForWa, setSelectedLeadForWa] = useState<Lead | null>(null);
+  const [waTenant, setWaTenant] = useState<WhatsAppTenantKey>('ark');
+  const [waTemplateId, setWaTemplateId] = useState<string>('ark_marca_blanca');
+  const [waRecipientName, setWaRecipientName] = useState<string>('');
+  const [waSenderName, setWaSenderName] = useState<string>(WS_TENANT_CONFIGS.ark.defaultSender);
+  const [waSenderPhone, setWaSenderPhone] = useState<string>(
+    WS_TENANT_CONFIGS.ark.defaultSenderPhone
+  );
+  const [waCustomMessage, setWaCustomMessage] = useState<string>('');
+  const [waIsCustomEdited, setWaIsCustomEdited] = useState<boolean>(false);
+  const [sendingWa, setSendingWa] = useState<boolean>(false);
+  const [waFeedback, setWaFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+
   const load = async () => {
     setLoading(true);
     setError(null);
@@ -208,6 +237,189 @@ export default function LeadsApp() {
   const closeEmailModal = () => {
     setSelectedLeadForEmail(null);
     setEmailFeedback(null);
+  };
+
+  const recompileWaTemplate = (
+    lead: Lead,
+    tenantKey: WhatsAppTenantKey,
+    templateId: string,
+    recipientName: string,
+    senderName: string,
+    senderPhone: string
+  ) => {
+    const tpl =
+      WS_TEMPLATES.find((t) => t.id === templateId) ||
+      WS_TEMPLATES.find((t) => t.tenant === tenantKey) ||
+      WS_TEMPLATES[0]!;
+    const vars = buildWhatsAppVariables(lead, {
+      tenant: tenantKey,
+      recipientName,
+      senderName,
+      senderPhone,
+    });
+    return compileWhatsAppMessage(tpl.body, vars);
+  };
+
+  const openWhatsAppStudioModal = (lead: Lead) => {
+    const inferredTenant = inferWhatsAppTenant(lead);
+    const defaultTplId = inferDefaultTemplateId(lead, inferredTenant);
+    const defaultRecipient = lead.contacto_nombre?.trim() || 'Socio(a) Director(a)';
+    const defaultSender = WS_TENANT_CONFIGS[inferredTenant].defaultSender;
+    const defaultPhone = WS_TENANT_CONFIGS[inferredTenant].defaultSenderPhone;
+
+    setSelectedLeadForWa(lead);
+    setWaTenant(inferredTenant);
+    setWaTemplateId(defaultTplId);
+    setWaRecipientName(defaultRecipient);
+    setWaSenderName(defaultSender);
+    setWaSenderPhone(defaultPhone);
+    setWaIsCustomEdited(false);
+    setWaFeedback(null);
+    setWaCustomMessage(
+      recompileWaTemplate(
+        lead,
+        inferredTenant,
+        defaultTplId,
+        defaultRecipient,
+        defaultSender,
+        defaultPhone
+      )
+    );
+  };
+
+  const closeWhatsAppStudioModal = () => {
+    setSelectedLeadForWa(null);
+    setWaFeedback(null);
+  };
+
+  const handleChangeWaTenant = (newTenant: WhatsAppTenantKey) => {
+    if (!selectedLeadForWa) return;
+    const newTplId = inferDefaultTemplateId(selectedLeadForWa, newTenant);
+    const newSender = WS_TENANT_CONFIGS[newTenant].defaultSender;
+    const newPhone = WS_TENANT_CONFIGS[newTenant].defaultSenderPhone;
+
+    setWaTenant(newTenant);
+    setWaTemplateId(newTplId);
+    setWaSenderName(newSender);
+    setWaSenderPhone(newPhone);
+    setWaIsCustomEdited(false);
+    setWaCustomMessage(
+      recompileWaTemplate(
+        selectedLeadForWa,
+        newTenant,
+        newTplId,
+        waRecipientName,
+        newSender,
+        newPhone
+      )
+    );
+  };
+
+  const handleChangeWaTemplate = (newTplId: string) => {
+    if (!selectedLeadForWa) return;
+    setWaTemplateId(newTplId);
+    setWaIsCustomEdited(false);
+    setWaCustomMessage(
+      recompileWaTemplate(
+        selectedLeadForWa,
+        waTenant,
+        newTplId,
+        waRecipientName,
+        waSenderName,
+        waSenderPhone
+      )
+    );
+  };
+
+  const handleUpdateWaVars = (
+    nextRecipient: string,
+    nextSender: string,
+    nextSenderPhone: string
+  ) => {
+    setWaRecipientName(nextRecipient);
+    setWaSenderName(nextSender);
+    setWaSenderPhone(nextSenderPhone);
+    if (selectedLeadForWa && !waIsCustomEdited) {
+      setWaCustomMessage(
+        recompileWaTemplate(
+          selectedLeadForWa,
+          waTenant,
+          waTemplateId,
+          nextRecipient,
+          nextSender,
+          nextSenderPhone
+        )
+      );
+    }
+  };
+
+  const handleDispatchWhatsApp = async () => {
+    if (!selectedLeadForWa) return;
+    const deepLink = buildWhatsAppDeepLink(selectedLeadForWa.whatsapp, waCustomMessage);
+    if (!deepLink) {
+      setWaFeedback({
+        type: 'error',
+        message: 'Número de WhatsApp inválido para construir el enlace wa.me.',
+      });
+      return;
+    }
+
+    setSendingWa(true);
+    setWaFeedback(null);
+
+    const activeTpl = WS_TEMPLATES.find((t) => t.id === waTemplateId);
+
+    try {
+      // Abrir ventana de WhatsApp con mensaje pre-compilado (Cero costo de API)
+      if (typeof window !== 'undefined' && typeof window.open === 'function') {
+        window.open(deepLink, '_blank', 'noopener,noreferrer');
+      }
+
+      // Registrar actividad comercial y actualizar estatus en D1
+      const res = await fetch(
+        `/api/admin/leads/${encodeURIComponent(selectedLeadForWa.id)}/log-whatsapp`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            tenant_profile: waTenant,
+            template_id: waTemplateId,
+            template_name: activeTpl?.name || 'Mensaje personalizado',
+            message: waCustomMessage,
+          }),
+        }
+      );
+
+      const data = (await res.json()) as {
+        ok?: boolean;
+        error?: string;
+        message?: string;
+        lead?: Lead;
+      };
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || 'Error al registrar actividad de WhatsApp');
+      }
+
+      if (data.lead) {
+        const updated = data.lead;
+        setLeads((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
+        setSelectedLeadForWa(updated);
+      }
+
+      setWaFeedback({
+        type: 'success',
+        message:
+          data.message || 'WhatsApp abierto y actividad registrada en el expediente del prospecto.',
+      });
+    } catch (e) {
+      setWaFeedback({
+        type: 'error',
+        message: e instanceof Error ? e.message : 'Error al registrar actividad en el CRM',
+      });
+    } finally {
+      setSendingWa(false);
+    }
   };
 
   const handleSendProposalEmail = async () => {
@@ -383,6 +595,17 @@ export default function LeadsApp() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <a
+            href="https://notebook.google.com/notebook/e61dfb18-d19d-4424-b29e-1d74e63046ee"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Abrir Manual de Usuario del Ecosistema en Google NotebookLM"
+            className="flex items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50/80 px-3.5 py-2 font-orbitron text-xs font-bold uppercase tracking-wider text-blue-800 shadow-sm transition hover:bg-blue-100 hover:text-blue-900 active:scale-95"
+          >
+            <BookOpen size={14} className="text-blue-600" />
+            <span>Manual del Ecosistema</span>
+            <ExternalLink size={12} className="opacity-70" />
+          </a>
           <button
             onClick={() => {
               setCreateError(null);
@@ -721,6 +944,16 @@ export default function LeadsApp() {
                       {/* Acción Comercial & Eliminación */}
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {l.whatsapp && (
+                            <button
+                              onClick={() => openWhatsAppStudioModal(l)}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-2.5 py-1.5 font-orbitron text-[11px] font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-600 hover:text-white active:scale-95"
+                              title={`Abrir WhatsApp Studio para ${l.whatsapp}`}
+                            >
+                              <MessageSquare size={11} />
+                              WhatsApp Studio
+                            </button>
+                          )}
                           {l.email ? (
                             <button
                               onClick={() => openEmailModal(l)}
@@ -1167,6 +1400,232 @@ export default function LeadsApp() {
                     {emailTestTarget.trim()
                       ? 'Enviar Correo de Prueba'
                       : 'Confirmar y Enviar al Prospecto'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL WHATSAPP STUDIO (ENVÍO OUTBOUND CERO COSTO + AUDITORÍA D1) */}
+      {selectedLeadForWa && (
+        <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
+            {/* Header del modal */}
+            <div className="flex items-center justify-between border-b border-line pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                  <MessageSquare size={20} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-orbitron text-base font-bold text-navy">WhatsApp Studio</h3>
+                    <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-700">
+                      Cero Costo API · wa.me
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted">
+                    Compilación de plantillas dinámicas y registro automático en expediente D1
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeWhatsAppStudioModal}
+                disabled={sendingWa}
+                className="rounded-lg p-1.5 text-muted transition hover:bg-slate-100 hover:text-ink"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              {/* Selector de Tenant / Remitente y Teléfono Destino */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    Identidad / Tenant Emisor
+                  </label>
+                  <select
+                    aria-label="Identidad Emisor WhatsApp"
+                    value={waTenant}
+                    onChange={(e) => handleChangeWaTenant(e.target.value as WhatsAppTenantKey)}
+                    className="w-full rounded-xl border border-line bg-white px-3 py-2 text-xs font-semibold text-navy focus:border-navy focus:outline-none"
+                  >
+                    <option value="ark">Ark Financial Technologies (Marca Blanca)</option>
+                    <option value="canaco_merida">CANACO SERVYTUR Mérida (Institucional)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    WhatsApp Destino Normalizado (E.164)
+                  </label>
+                  <div className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2 font-mono text-xs font-semibold text-emerald-900">
+                    <span>+{normalizeMexicanPhone(selectedLeadForWa.whatsapp)}</span>
+                    <span className="text-[10px] font-normal text-emerald-700">
+                      {selectedLeadForWa.ciudad || 'México'} ·{' '}
+                      {selectedLeadForWa.especialidad || 'General'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selector de Plantilla Dinámica */}
+              <div>
+                <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
+                  Plantilla Comercial ({WS_TENANT_CONFIGS[waTenant].badge})
+                </label>
+                <select
+                  aria-label="Plantilla Comercial WhatsApp"
+                  value={waTemplateId}
+                  onChange={(e) => handleChangeWaTemplate(e.target.value)}
+                  className="w-full rounded-xl border border-line bg-slate-50/70 px-3 py-2 text-xs font-medium text-ink focus:border-navy focus:bg-white focus:outline-none"
+                >
+                  {WS_TEMPLATES.filter((t) => t.tenant === waTenant).map((tpl) => (
+                    <option key={tpl.id} value={tpl.id}>
+                      [{tpl.category}] {tpl.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-muted">
+                  {WS_TEMPLATES.find((t) => t.id === waTemplateId)?.description}
+                </p>
+              </div>
+
+              {/* Variables en tiempo real */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <label className="mb-1 block font-orbitron text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    Destinatario (&#123;NOMBRE&#125;)
+                  </label>
+                  <input
+                    value={waRecipientName}
+                    onChange={(e) =>
+                      handleUpdateWaVars(e.target.value, waSenderName, waSenderPhone)
+                    }
+                    placeholder="Socio(a) Director(a)"
+                    className="w-full rounded-xl border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block font-orbitron text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    Ejecutivo (&#123;REMITENTE&#125;)
+                  </label>
+                  <input
+                    value={waSenderName}
+                    onChange={(e) =>
+                      handleUpdateWaVars(waRecipientName, e.target.value, waSenderPhone)
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3 py-1.5 text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1 block font-orbitron text-[10px] font-semibold uppercase tracking-wider text-muted">
+                    Teléfono Firma (&#123;TEL_REMITENTE&#125;)
+                  </label>
+                  <input
+                    value={waSenderPhone}
+                    onChange={(e) =>
+                      handleUpdateWaVars(waRecipientName, waSenderName, e.target.value)
+                    }
+                    className="w-full rounded-xl border border-line bg-white px-3 py-1.5 font-mono text-xs font-medium text-ink focus:border-navy focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Editor de mensaje en vivo */}
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
+                    Mensaje Compilado (Editable antes de abrir WhatsApp)
+                  </label>
+                  {waIsCustomEdited && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setWaIsCustomEdited(false);
+                        setWaCustomMessage(
+                          recompileWaTemplate(
+                            selectedLeadForWa,
+                            waTenant,
+                            waTemplateId,
+                            waRecipientName,
+                            waSenderName,
+                            waSenderPhone
+                          )
+                        );
+                      }}
+                      className="text-[11px] font-semibold text-navy hover:underline"
+                    >
+                      Restaurar plantilla original
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  rows={8}
+                  value={waCustomMessage}
+                  onChange={(e) => {
+                    setWaIsCustomEdited(true);
+                    setWaCustomMessage(e.target.value);
+                  }}
+                  className="w-full rounded-2xl border border-emerald-200 bg-emerald-50/20 p-3.5 font-sans text-xs leading-relaxed text-ink focus:border-emerald-600 focus:bg-white focus:outline-none"
+                />
+                <div className="mt-1 flex items-center justify-between text-[11px] text-muted">
+                  <span>
+                    Al disparar el envío se marcará como <strong>WhatsApp Enviado</strong> y se
+                    anexará nota de auditoría.
+                  </span>
+                  <span className="font-mono">{waCustomMessage.length} caracteres</span>
+                </div>
+              </div>
+
+              {/* Feedback de resultado */}
+              {waFeedback && (
+                <div
+                  className={`flex items-center gap-2 rounded-2xl border p-3.5 text-xs font-medium ${
+                    waFeedback.type === 'success'
+                      ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                      : 'border-rose-200 bg-rose-50 text-rose-800'
+                  }`}
+                >
+                  {waFeedback.type === 'success' ? (
+                    <CheckCircle2 size={16} className="shrink-0 text-emerald-600" />
+                  ) : (
+                    <AlertCircle size={16} className="shrink-0 text-rose-600" />
+                  )}
+                  <span>{waFeedback.message}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Footer con acciones */}
+            <div className="mt-6 flex items-center justify-end gap-3 border-t border-line pt-4">
+              <button
+                type="button"
+                onClick={closeWhatsAppStudioModal}
+                disabled={sendingWa}
+                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink active:scale-95"
+              >
+                Cerrar
+              </button>
+              <button
+                type="button"
+                onClick={handleDispatchWhatsApp}
+                disabled={sendingWa || !waCustomMessage.trim()}
+                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 font-orbitron text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-emerald-700 active:scale-95 disabled:opacity-50"
+              >
+                {sendingWa ? (
+                  <>
+                    <RefreshCw size={14} className="animate-spin" />
+                    Registrando y Abriendo...
+                  </>
+                ) : (
+                  <>
+                    <MessageSquare size={14} />
+                    Abrir en WhatsApp y Registrar Actividad
                   </>
                 )}
               </button>

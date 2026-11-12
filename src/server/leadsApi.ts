@@ -1,11 +1,13 @@
 import type { Env } from '../index';
 import { requireTenantMembership, type AuthPrincipal } from './auth';
 import { escapeHtml } from './canacoEmailService';
+import { buildWhatsAppDeepLink, normalizeMexicanPhone } from '../lib/whatsappStudio';
 
 interface Lead {
   id: string;
   web: string | null;
   whatsapp: string | null;
+  whatsapp_link?: string | null;
   email: string | null;
   ciudad: string | null;
   especialidad: string | null;
@@ -160,10 +162,12 @@ Este mensaje fue enviado por Ark Systems. Si no deseas recibir más comunicacion
 }
 
 function rowToLead(row: Record<string, unknown>): Lead {
+  const whatsapp = row.whatsapp == null ? null : String(row.whatsapp);
   return {
     id: String(row.id),
     web: row.web == null ? null : String(row.web),
-    whatsapp: row.whatsapp == null ? null : String(row.whatsapp),
+    whatsapp,
+    whatsapp_link: whatsapp ? buildWhatsAppDeepLink(whatsapp) : null,
     email: row.email == null ? null : String(row.email),
     ciudad: row.ciudad == null ? null : String(row.ciudad),
     especialidad: row.especialidad == null ? null : String(row.especialidad),
@@ -289,6 +293,9 @@ export async function handleLeadsApiRequest(
       const ciudad = url.searchParams.get('ciudad');
       const status = url.searchParams.get('status');
       const especialidad = url.searchParams.get('especialidad');
+      const conWhatsapp =
+        url.searchParams.get('con_whatsapp') === 'true' ||
+        url.searchParams.get('con_whatsapp') === '1';
       const q = (url.searchParams.get('q') || '').trim();
       const rawLimit = Number.parseInt(url.searchParams.get('limit') || '20', 10);
       const rawOffset = Number.parseInt(url.searchParams.get('offset') || '0', 10);
@@ -309,6 +316,9 @@ export async function handleLeadsApiRequest(
       if (especialidad) {
         query += ' AND especialidad = ?';
         binds.push(especialidad);
+      }
+      if (conWhatsapp) {
+        query += " AND whatsapp IS NOT NULL AND TRIM(whatsapp) != ''";
       }
       if (q) {
         query +=
@@ -368,7 +378,8 @@ export async function handleLeadsApiRequest(
       const id =
         typeof body.id === 'string' && body.id.trim() ? body.id.trim() : crypto.randomUUID();
       const web = body.web == null ? null : String(body.web).trim() || null;
-      const whatsapp = body.whatsapp == null ? null : String(body.whatsapp).trim() || null;
+      const rawWa = body.whatsapp == null ? null : String(body.whatsapp).trim() || null;
+      const whatsapp = rawWa ? normalizeMexicanPhone(rawWa) || rawWa : null;
       const email = body.email == null ? null : String(body.email).trim() || null;
       const ciudad = body.ciudad == null ? null : String(body.ciudad).trim() || null;
       const especialidad =
@@ -455,12 +466,16 @@ export async function handleLeadsApiRequest(
           : body.web == null
             ? null
             : String(body.web).trim() || null;
-      const whatsapp =
+      const rawUpdateWa =
         body.whatsapp === undefined
           ? existing.whatsapp
           : body.whatsapp == null
             ? null
             : String(body.whatsapp).trim() || null;
+      const whatsapp =
+        typeof rawUpdateWa === 'string' && rawUpdateWa
+          ? normalizeMexicanPhone(rawUpdateWa) || rawUpdateWa
+          : null;
       const email =
         body.email === undefined
           ? existing.email
@@ -682,6 +697,91 @@ export async function handleLeadsApiRequest(
             ? `Correo de prueba enviado con éxito a ${targetEmail}`
             : `Propuesta enviada con éxito a ${targetEmail}`,
           resend_id: resendData.id,
+          lead: updatedLead,
+          data: updatedLead,
+        },
+        { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    // LOG WHATSAPP STUDIO ACTIVITY /api/admin/leads/:id/log-whatsapp
+    const logWaMatch = path.match(/^\/api\/admin\/leads\/([^/]+)\/log-whatsapp$/);
+    if (logWaMatch && request.method === 'POST') {
+      const id = logWaMatch[1] ? decodeURIComponent(logWaMatch[1]) : '';
+      if (!id) return null;
+
+      const row = await db
+        .prepare('SELECT * FROM leads_ark_tools WHERE id = ? AND tenant_id = ? LIMIT 1')
+        .bind(id, tenantId)
+        .first<Record<string, unknown>>();
+
+      if (!row) {
+        return Response.json(
+          { error: 'Lead no encontrado.' },
+          { status: 404, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const lead = rowToLead(row);
+      const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+      const rawPhone =
+        typeof body.phone === 'string' && body.phone.trim() ? body.phone.trim() : lead.whatsapp;
+      const normalizedPhone = normalizeMexicanPhone(rawPhone);
+
+      if (!normalizedPhone) {
+        return Response.json(
+          { error: 'El prospecto no cuenta con un número de WhatsApp válido.' },
+          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const tenantProfile =
+        typeof body.tenant_profile === 'string' && body.tenant_profile === 'canaco_merida'
+          ? 'CANACO Mérida'
+          : 'Ark Systems';
+      const templateName =
+        typeof body.template_name === 'string' && body.template_name.trim()
+          ? body.template_name.trim()
+          : 'Mensaje directo';
+      const messageText =
+        typeof body.message === 'string' && body.message.trim() ? body.message.trim() : '';
+
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const newStatus =
+        typeof body.status === 'string' && body.status.trim()
+          ? body.status.trim()
+          : lead.status === 'Respondio_2_whats'
+            ? 'Respondio_2_whats'
+            : 'WhatsApp_enviado';
+
+      const auditEntry = `💬 WhatsApp enviado vía wa.me [${tenantProfile} · ${todayIso}]: ${templateName}`;
+      const updatedNotas = lead.notas ? `${lead.notas} | ${auditEntry}` : auditEntry;
+
+      await db
+        .prepare(
+          `UPDATE leads_ark_tools
+           SET status = ?, last_contact = ?, notas = ?, whatsapp = ?, updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND tenant_id = ?`
+        )
+        .bind(newStatus, todayIso, updatedNotas, normalizedPhone, id, tenantId)
+        .run();
+
+      const updatedLead = rowToLead({
+        ...row,
+        whatsapp: normalizedPhone,
+        status: newStatus,
+        last_contact: todayIso,
+        notas: updatedNotas,
+      });
+
+      const whatsappUrl = buildWhatsAppDeepLink(normalizedPhone, messageText);
+
+      return Response.json(
+        {
+          success: true,
+          ok: true,
+          message: `WhatsApp registrado en expediente (${templateName}).`,
+          whatsapp_url: whatsappUrl,
           lead: updatedLead,
           data: updatedLead,
         },
