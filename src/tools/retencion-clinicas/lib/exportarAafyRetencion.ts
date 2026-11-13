@@ -1,12 +1,12 @@
 /**
  * ARK LEDGER — Exportaciones Oficiales AAFY-30, AAFY-31 y Cotejo CSV
- * Reutiliza helpers CSV + BOM UTF-8 + Sello SHA-256 de exportarCedulaAafy.ts
+ * Reutiliza helpers CSV + BOM UTF-8 + Folio de Integridad de exportarCedulaAafy.ts
  */
 
 import {
   descargarArchivoCsvBom,
   escaparCSV,
-  generarSelloDigitalAafy,
+  generarFolioIntegridadAafy,
 } from '../../isn/lib/exportarCedulaAafy';
 import type { RetencionClinicasInput, RetencionClinicasResultado } from '../types';
 
@@ -58,7 +58,7 @@ export function generarContenidoAafy30(
     '4. FIRMAS Y SELLO DE INTEGRIDAD',
     'Firma del Retenedor,______________________________',
     'Firma de Recibido (Prestador),______________________________',
-    `Sello Digital ARK LEDGER,${generarSelloDigitalAafy('AAFY-30')}`,
+    `Folio de Integridad Digital ARK LEDGER,${generarFolioIntegridadAafy('AAFY-30')}`,
   ];
 
   return lineas.join('\r\n');
@@ -90,7 +90,7 @@ export function generarContenidoAafy31(
     `${escaparCSV(input.prestador.rfc)},${escaparCSV(input.prestador.nombre)},${escaparCSV(input.prestador.tipoPersona)},${escaparCSV(input.prestador.rec || input.prestador.domicilioFiscal || 'N/D')},${escaparCSV(input.fechaPago)},${resultado.base.toFixed(2)},${resultado.retencion2Pct.toFixed(2)}`,
     '',
     `Nota Normativa,${escaparCSV(resultado.notaAcuerdoAafy2026)}`,
-    `Sello Digital ARK LEDGER,${generarSelloDigitalAafy('AAFY-31')}`,
+    `Folio de Integridad Digital ARK LEDGER,${generarFolioIntegridadAafy('AAFY-31')}`,
   ];
 
   return lineas.join('\r\n');
@@ -102,7 +102,7 @@ export function generarContenidoCotejoAafy(
 ): string {
   const lineas: string[] = [
     'Portal,Concepto,RFC Retenedor,REC Retenedor,RFC Prestador,Fecha Pago,Base,Retencion 2%,Neto Pagado,Limite Entero,Sello',
-    `AAFY Yucatán,Retención 2% Clínicas Art. 20-Bis LGHY,${escaparCSV(input.retenedor.rfc)},${escaparCSV(input.retenedor.rec || 'N/D')},${escaparCSV(input.prestador.rfc)},${escaparCSV(input.fechaPago)},${resultado.base.toFixed(2)},${resultado.retencion2Pct.toFixed(2)},${resultado.netoPagar.toFixed(2)},${escaparCSV(resultado.fechaLimiteEntero)},${generarSelloDigitalAafy('AAFY-COTEJO')}`,
+    `AAFY Yucatán,Retención 2% Clínicas Art. 20-Bis LGHY,${escaparCSV(input.retenedor.rfc)},${escaparCSV(input.retenedor.rec || 'N/D')},${escaparCSV(input.prestador.rfc)},${escaparCSV(input.fechaPago)},${resultado.base.toFixed(2)},${resultado.retencion2Pct.toFixed(2)},${resultado.netoPagar.toFixed(2)},${escaparCSV(resultado.fechaLimiteEntero)},${generarFolioIntegridadAafy('AAFY-COTEJO')}`,
   ];
   return lineas.join('\r\n');
 }

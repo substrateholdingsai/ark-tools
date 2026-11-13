@@ -58,7 +58,7 @@ describe('calcularRetencionClinicas (Tool 21 — Art. 20-Bis LGHY)', () => {
     ).toThrow(MENSAJE_SOLO_YUCATAN);
   });
 
-  it('genera formatos AAFY-30, AAFY-31 y CSV de cotejo con domicilio/REC, CIEE y sello SHA-256', () => {
+  it('genera formatos AAFY-30, AAFY-31 y CSV de cotejo con domicilio/REC, CIEE y folio de integridad', () => {
     const res = calcularRetencionClinicas(baseInput);
     const aafy30 = generarContenidoAafy30(baseInput, res);
     const aafy31 = generarContenidoAafy31(baseInput, res);
@@ -69,15 +69,15 @@ describe('calcularRetencionClinicas (Tool 21 — Art. 20-Bis LGHY)', () => {
     expect(aafy30).toContain('Calle 60 #320');
     expect(aafy30).toContain('10000.00');
     expect(aafy30).toContain('200.00');
-    expect(aafy30).toContain('SHA256:AAFY-30-');
+    expect(aafy30).toContain('Folio de Integridad Digital ARK LEDGER,AAFY-ISN-AAFY-30-');
 
     expect(aafy31).toContain('FORMATO AAFY-31');
     expect(aafy31).toContain('ANEXO 31.1');
     expect(aafy31).toContain('2026-04-10');
-    expect(aafy31).toContain('SHA256:AAFY-31-');
+    expect(aafy31).toContain('Folio de Integridad Digital ARK LEDGER,AAFY-ISN-AAFY-31-');
 
     expect(cotejo).toContain('CMM200101AB1');
     expect(cotejo).toContain('200.00');
-    expect(cotejo).toContain('SHA256:AAFY-COTEJO-');
+    expect(cotejo).toContain('AAFY-ISN-AAFY-COTEJO-');
   });
 });

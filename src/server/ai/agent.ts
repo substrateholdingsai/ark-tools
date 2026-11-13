@@ -30,7 +30,7 @@ export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
   calcular_recargos_fiscales:
     'Si te piden calcular actualización por inflación, INPC, recargos fiscales o adeudos tributarios en mora (CFF Arts. 17-A y 21), invoca "calcular_recargos_fiscales".',
   calcular_isn:
-    'Si te piden calcular el Impuesto Sobre Nómina (ISN) estatal, invoca "calcular_isn" con la base gravable y la tasa del estado.',
+    'Si te piden calcular el Impuesto Sobre Nómina (ISN) estatal, invoca "calcular_isn" con baseGravable, tasa, estadoId, ejercicio (2025 o 2026), numEmpleados, esMicroPequena2026, esGobiernoEstatal y aplica27A. Para Yucatán 2026 micro/pequeña (1-50 empleados): tasa bruta 3.75%, estímulo Decreto 147/2025 -0.75%, neto 3.0%. Vector demo: $250,000, 15 empleados, 2026 → $9,375 − $1,875 = $7,500 neto (tasa efectiva 3.0%). Gobierno estatal +1% = 4.75% bruto.',
   calcular_retencion_clinicas:
     'Si te piden calcular la retención del 2% para clínicas y hospitales en Yucatán (Art. 20-Bis LGHY, AAFY-30, AAFY-31), invoca "calcular_retencion_clinicas".',
   calcular_sbc:

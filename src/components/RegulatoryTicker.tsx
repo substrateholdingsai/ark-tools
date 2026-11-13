@@ -3,7 +3,7 @@
  *
  * Cinta horizontal compacta de alta densidad en el tope de la interfaz.
  * Comunica en tiempo real que la suite está conectada al radar de Sentinela
- * RegTech y que las 20 herramientas fiscales/laborales están sincronizadas con el DOF.
+ * RegTech y que las 21 herramientas fiscales/laborales están sincronizadas con el DOF.
  */
 
 import { useState, useEffect } from 'react';
@@ -312,7 +312,7 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
         {/* Pin derecho: Conteo de herramientas blindadas */}
         <div className="z-10 hidden h-full shrink-0 items-center gap-1.5 border-l border-slate-800 bg-[#070b16] px-3 font-mono text-[9.5px] tracking-wider text-slate-300 shadow-[-4px_0_12px_rgba(0,0,0,0.5)] lg:flex">
           <ShieldCheck size={12} className="text-emerald-400" />
-          <span className="font-bold text-emerald-400">20/20</span>
+          <span className="font-bold text-emerald-400">21/21</span>
           <span className="uppercase text-slate-400">HERRAMIENTAS VIGENTES</span>
         </div>
       </div>

@@ -69,8 +69,6 @@ export interface OpcionesISN {
   esGobiernoEstatal?: boolean;
   /** Si aplica exención de primer año Art. 27-A LGHY (no acumulable con Decreto 147/2025) */
   aplica27A?: boolean;
-  /** Si aplica estímulo por nuevos empleos Art. 27-C LGHY */
-  aplica27C?: boolean;
 }
 
 /**

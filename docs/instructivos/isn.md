@@ -26,10 +26,12 @@ Ejemplo canónico 2026 Pequeña Empresa ($250,000, 15 empleados): **$9,375.00** 
    - Suma total de percepciones gravables y exentas.
    - Aplica tasa legal de la entidad federativa (`ISN = base × tasa / 100`, redondeo a 2 decimales).
    - Genera el objeto `ResultadoISN` (`baseGravable`, `totalExento`, `totalPercepciones`, `tasa`, `isn`).
+   - **Importante**: los montos `exento` son entrada manual del usuario. Ledger NO clasifica automáticamente exenciones del Art. 27 LGHY (indemnizaciones, PTU, pensiones, gastos funerarios, etc.); el contador debe asignar cada concepto a gravado o exento según su criterio.
 4. **Cédula Oficial AAFY (Yucatán — LGHY + Decreto 147/2025)**:
    - Al seleccionar Yucatán (`YUC`), se habilita la exportación especializada conforme a los **Artículos 21 al 27 de la Ley General de Hacienda del Estado de Yucatán** y **Decreto 147/2025** (tasa bruta 3.75%, estímulo −0.75%, tasa efectiva 3.0% MIPyME, plazo día 10).
-   - Desglosa sueldos, jornales, comisiones, gratificaciones, bonos y premios gravables contra conceptos no objeto o exentos (indemnizaciones por cese, viáticos devengados con comprobante).
-   - Emite archivo CSV oficial estructurado con BOM UTF-8 y metadatos de auditoría (periodo, fecha/hora, RFC emisor y número de trabajadores), listo para cotejo en el portal digital de la AAFY.
+   - Incluye número de trabajadores, trabajadores subordinados y asimilados (Decreto 147/2025 Art. 4), régimen ISN aplicado y artículo aplicado.
+   - Desglosa sueldos, jornales, comisiones, gratificaciones, bonos y premios gravables contra conceptos exentos (captura manual).
+   - Emite archivo CSV oficial estructurado con BOM UTF-8, folio de integridad (NO hash criptográfico SHA-256) y metadatos de auditoría, listo para cotejo en el portal digital de la AAFY.
 5. **Exportación general**:
    - Papel de trabajo universal en CSV con BOM UTF-8 para cualquier entidad federativa.
 

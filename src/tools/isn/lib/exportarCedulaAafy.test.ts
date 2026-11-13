@@ -50,7 +50,7 @@ describe('exportarCedulaAafy', () => {
     });
 
     expect(csv).toContain('AGENCIA DE ADMINISTRACIÓN FISCAL DE YUCATÁN (AAFY)');
-    expect(csv).toContain('Art. 21 al 27 LGHY');
+    expect(csv).toContain('Art. 24 LGHY y Decreto 147/2025');
     expect(csv).toContain('CMA200101AB1');
     expect(csv).toContain('REC-MID-98765');
     expect(csv).toContain('Y1234567101');
@@ -61,6 +61,32 @@ describe('exportarCedulaAafy', () => {
     expect(csv).toContain('3.75%');
     expect(csv).toContain('3.0%');
     expect(csv).toContain('aafy.yucatan.gob.mx');
+  });
+
+  it('incluye número de trabajadores, régimen y artículo aplicado (Decreto 147/2025 Art. 4)', () => {
+    const csv = generarContenidoCedulaAafy({
+      estado: estadoYuc,
+      conceptos,
+      resultado: {
+        ...resultado,
+        regimen: 'micro_pequena',
+        ejercicio: 2026,
+      },
+      razonSocial: 'Comercializadora Mayab S.A. de C.V.',
+      rfc: 'CMA200101AB1',
+      numEmpleados: 15,
+      ejercicio: 2026,
+      mes: 'Octubre',
+    });
+
+    expect(csv).toContain('Número de Trabajadores (Decreto 147/2025 Art. 4),15');
+    expect(csv).toContain('Régimen ISN,Micro/Pequeña Empresa (1–50 empleados) — Decreto 147/2025');
+    expect(csv).toContain('Artículo Aplicado,Art. 24 LGHY y Decreto 147/2025');
+    expect(csv).toContain('1875.00'); // Estímulo
+    expect(csv).toContain('7500.00'); // ISN neto
+    expect(csv).toContain('3.0%'); // Tasa efectiva
+    expect(csv).not.toContain('SHA256:'); // No false SHA-256 label
+    expect(csv).toContain('Folio de Integridad Digital ARK LEDGER');
   });
 
   it('maneja valores por defecto si no se proporcionan datos adicionales', () => {

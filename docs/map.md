@@ -118,11 +118,11 @@ ark-tools/
 ├── tsconfig.json & vite.config.ts   ✅ Configuración estricta y aliases de ruta
 ├── vitest.config.ts                 ✅ Cobertura V8 y configuración de testing
 ├── .eslintrc.cjs                    ✅ ESLint + TypeScript + React Hooks + Prettier
-├── index.html                       ✅ Meta OG/Twitter, og:description "Suite de 20 herramientas"
+├── index.html                       ✅ Meta OG/Twitter, og:description "Suite de 21 herramientas"
 ├── src/
 │   ├── index.ts                     ✅ Worker Entry Point: /health, /api/*, /llms.txt, /llms-full.txt, /robots.txt, SPA fallback, cabeceras de seguridad
 │   ├── index.tsx                    ✅ React DOM Root (AuthProvider + ExpedienteProvider)
-│   ├── App.tsx                      ✅ Router principal, gating Landing/Dashboard, 20 herramientas lazy, ToolId union (20 ids)
+│   ├── App.tsx                      ✅ Router principal, gating Landing/Dashboard, 21 herramientas lazy, ToolId union (21 ids)
 │   ├── test-setup.ts                ✅ Setup global Vitest (jest-dom)
 │   ├── config/
 │   │   ├── billing.ts               ✅ Configuración de paywall / billing
@@ -196,7 +196,7 @@ ark-tools/
 │   │   │   ├── AlertasVigencia.tsx  ✅ Banner global de valores próximos a vencer
 │   │   │   └── index.ts             ✅ Barrel export
 │   │   ├── estados.ts               ✅ Re-export ESTADOS desde isn/data/estados.ts (fuente única)
-│   │   ├── catalogo-herramientas.ts ✅ Catálogo canónico 20 herramientas; TOTAL_HERRAMIENTAS = .length
+│   │   ├── catalogo-herramientas.ts ✅ Catálogo canónico 21 herramientas; TOTAL_HERRAMIENTAS = .length
 │   │   ├── catalogo-herramientas.test.ts ✅ Sincronía con ToolId de App.tsx (20)
 │   │   ├── actos.ts                 ✅ Guía SAT/IMSS (8 pasos, 8 actos, 3 plazos)
 │   │   ├── conductas.ts             ✅ Activos Virtuales (12 conductas, 5 autoridades, umbrales)
@@ -204,7 +204,7 @@ ark-tools/
 │   │   ├── comparadores-contrato-crm.ts ✅ 12 comparadores Contrato vs CRM
 │   │   └── demo-onboarding.ts       ✅ Entidades canónicas de demo (DEMO_EMPRESA, DEMO_TRABAJADOR)
 │   └── tools/                       ✅ 20 módulos de herramientas
-│       ├── isn/                     ✅ Calculadora ISN 32 estados + Cédula Oficial AAFY (Yucatán 2.5% LGHY, CSV UTF-8 BOM)
+│       ├── isn/                     ✅ Calculadora ISN 32 estados + Cédula Oficial AAFY (Yucatán 3.75% bruto / 3.0% neto MIPyME 2026, Decreto 138/2025 + 147/2025, CSV UTF-8 BOM)
 │       ├── sbc/                     ✅ Calculadora SBC IMSS
 │       ├── nomina/                  ✅ Nómina Rápida 2026 (ISR + IMSS obrero)
 │       ├── finiquitos/              ✅ Finiquitos y Liquidaciones LFT
@@ -394,4 +394,4 @@ El detalle cronológico de **Sprints 1-34** (incluyendo el evolución de conteos
 
 ---
 
-**Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 20 herramientas (12 PyME + 8 corporativo/forense/PLD), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 2.5% + Cédula Oficial AAFY, Cierre de Nómina + Layout IDSE/DISPMAG (175 chars), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 8/8, pruebas 88 suites / 714 tests (100%).
+**Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 21 herramientas (12 PyME + 8 corporativo/forense/PLD + 1 retención clínicas), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 + Cédula Oficial AAFY, Cierre de Nómina + Layout IDSE/DISPMAG (175 chars), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 8/8, pruebas 88 suites / 714 tests (100%).

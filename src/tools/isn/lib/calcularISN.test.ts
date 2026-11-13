@@ -13,7 +13,7 @@ import {
   formatearPorcentaje,
   formatearNumero,
 } from './calcularISN';
-import type { ConceptoPercepcion, Estado } from '../types';
+import type { ConceptoPercepcion, EjercicioISN, Estado } from '../types';
 import { getEstadoById } from '../data/estados';
 
 // ─────────────────────────────────────────────────────────────────────
@@ -220,6 +220,83 @@ describe('calcularResultadoISN', () => {
     });
     expect(r27A.estimulo).toBe(0);
     expect(r27A.isnNeto).toBe(9375);
+  });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Boundary tests: 1-50 employee rule (Decreto 147/2025)
+  // ─────────────────────────────────────────────────────────────────────
+  describe('calcularResultadoISN — boundary employee counts (YUC 2026)', () => {
+    const yucatan = getEstadoById('YUC')!;
+    const nomina250k = [{ id: 1, concepto: 'Nómina', gravado: 250000, exento: 0 }];
+
+    it('0 empleados -> no MIPyME, general 3.75%', () => {
+      const r = calcularResultadoISN(nomina250k, yucatan, {
+        ejercicio: 2026,
+        numEmpleados: 0,
+        esMicroPequena2026: true,
+      });
+      expect(r.regimen).toBe('general');
+      expect(r.tasaBruta).toBe(3.75);
+      expect(r.estimulo).toBe(0);
+      expect(r.isnNeto).toBe(9375);
+    });
+
+    it('10 empleados -> MIPyME, 3.0% net', () => {
+      const r = calcularResultadoISN(nomina250k, yucatan, {
+        ejercicio: 2026,
+        numEmpleados: 10,
+        esMicroPequena2026: true,
+      });
+      expect(r.regimen).toBe('micro_pequena');
+      expect(r.tasaBruta).toBe(3.75);
+      expect(r.estimulo).toBe(1875);
+      expect(r.isnNeto).toBe(7500);
+      expect(r.tasaEfectiva).toBe(3.0);
+    });
+
+    it('11 empleados -> MIPyME, 3.0% net', () => {
+      const r = calcularResultadoISN(nomina250k, yucatan, {
+        ejercicio: 2026,
+        numEmpleados: 11,
+        esMicroPequena2026: true,
+      });
+      expect(r.regimen).toBe('micro_pequena');
+      expect(r.tasaBruta).toBe(3.75);
+      expect(r.estimulo).toBe(1875);
+      expect(r.isnNeto).toBe(7500);
+    });
+
+    it('50 empleados -> MIPyME, 3.0% net', () => {
+      const r = calcularResultadoISN(nomina250k, yucatan, {
+        ejercicio: 2026,
+        numEmpleados: 50,
+        esMicroPequena2026: true,
+      });
+      expect(r.regimen).toBe('micro_pequena');
+      expect(r.tasaBruta).toBe(3.75);
+      expect(r.estimulo).toBe(1875);
+      expect(r.isnNeto).toBe(7500);
+    });
+
+    it('51 empleados -> no MIPyME, general 3.75%', () => {
+      const r = calcularResultadoISN(nomina250k, yucatan, {
+        ejercicio: 2026,
+        numEmpleados: 51,
+        esMicroPequena2026: true,
+      });
+      expect(r.regimen).toBe('general');
+      expect(r.tasaBruta).toBe(3.75);
+      expect(r.estimulo).toBe(0);
+      expect(r.isnNeto).toBe(9375);
+    });
+
+    it('ejercicio 2027 -> fail-closed throws (rate not published)', () => {
+      expect(() =>
+        calcularResultadoISN(nomina250k, yucatan, {
+          ejercicio: 2027 as EjercicioISN,
+        })
+      ).toThrow(/no publicada/);
+    });
   });
 
   it('maneja conceptos vacíos', () => {

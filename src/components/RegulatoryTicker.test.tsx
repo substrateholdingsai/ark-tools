@@ -14,7 +14,7 @@ describe('RegulatoryTicker Component (Wall Street Tape)', () => {
     globalThis.fetch = originalFetch;
   });
 
-  it('renderiza la cinta, el pin de Radar RegTech y el estatus 20/20', async () => {
+  it('renderiza la cinta, el pin de Radar RegTech y el estatus 21/21', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ ok: true, events: [] }),
@@ -26,7 +26,7 @@ describe('RegulatoryTicker Component (Wall Street Tape)', () => {
 
     expect(screen.getByText('RADAR REGTECH')).toBeInTheDocument();
     expect(screen.getByText('DOF · SAT EN VIVO')).toBeInTheDocument();
-    expect(screen.getByText('20/20')).toBeInTheDocument();
+    expect(screen.getByText('21/21')).toBeInTheDocument();
     expect(screen.getByText('HERRAMIENTAS VIGENTES')).toBeInTheDocument();
   });
 

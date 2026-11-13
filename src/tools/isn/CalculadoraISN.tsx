@@ -183,6 +183,15 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
    * Exporta la Cédula Oficial AAFY (Yucatán 3.75% bruto / 3.0% neto MIPyME 2026).
    */
   const handleExportAafy = useCallback(() => {
+    // Worker count REQUIRED for Decreto 147/2025 stimulus claim in 2026 micro/pequeña
+    if (
+      ejercicio === 2026 &&
+      resultado.regimen === 'micro_pequena' &&
+      (!numEmpleados || numEmpleados <= 0)
+    ) {
+      mostrarToast('Worker count is required for Decreto 147 stimulus — enter number of employees');
+      return;
+    }
     descargarCedulaAafy({
       estado,
       conceptos,
@@ -190,11 +199,14 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
       ejercicio,
       razonSocial: activeClient?.nombre || undefined,
       rfc: activeClient?.rfc || undefined,
+      numEmpleados,
+      numEmpleadosSubordinados: undefined,
+      numEmpleadosAsimilados: undefined,
     });
     mostrarToast(
       `✓ Cédula AAFY generada: Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 (${formatearMXN(resultado.isnNeto)})`
     );
-  }, [estado, conceptos, resultado, ejercicio, activeClient, mostrarToast]);
+  }, [estado, conceptos, resultado, ejercicio, activeClient, numEmpleados, mostrarToast]);
 
   const handleCargarDemoYucatan = useCallback(() => {
     setEstado(getEstadoById('YUC'));

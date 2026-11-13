@@ -750,6 +750,11 @@ const TOOL_SPECS_MAP: Record<
       estadoId: 'string (ej. "YUC", "CMX", "NL", "JAL")',
       baseGravable: 'number (MXN)',
       exento: 'number (MXN, opcional)',
+      ejercicio: 'number (2025 | 2026, default 2026)',
+      numEmpleados: 'number (0-999)',
+      esMicroPequena2026: 'boolean (estímulo Decreto 147/2025, 1-50 empleados)',
+      esGobiernoEstatal: 'boolean (+1% Art. 24 LGHY, gobierno estatal)',
+      aplica27A: 'boolean (exención 1er año, no acumulable con Decreto 147/2025)',
     },
     outputs: {
       estado: 'Estado (id, nombre, tasa, vigencia, articulo)',
@@ -3689,7 +3694,7 @@ export async function handleStayPuftInternalRequest(
       );
     }
 
-    // Validar lista de tools solicitadas (solo las 20 herramientas preview están permitidas)
+    // Validar lista de tools solicitadas (solo las 21 herramientas preview están permitidas)
     let allowedToolIds = new Set<string>(VALID_PREVIEW_TOOL_IDS);
     if (body.tools !== undefined) {
       if (!Array.isArray(body.tools)) {
@@ -3736,7 +3741,7 @@ export async function handleStayPuftInternalRequest(
             ok: false,
             blocked: true,
             status: 'blocked',
-            error: `Acción bloqueada: Solo se permiten las 20 herramientas preview de Ark Ledger. Herramientas no autorizadas: ${nonPreviewTools.join(', ')}.`,
+            error: `Acción bloqueada: Solo se permiten las 21 herramientas preview de Ark Ledger. Herramientas no autorizadas: ${nonPreviewTools.join(', ')}.`,
             answer: null,
             toolsCalled: [],
             writes: 0,

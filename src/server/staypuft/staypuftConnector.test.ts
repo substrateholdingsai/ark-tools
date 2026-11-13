@@ -404,8 +404,8 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
   // ==========================================================================
   // 3. Status & Live 20-Tool Catalog Inspection
   // ==========================================================================
-  describe('Status and 20 Tools Live Metadata', () => {
-    it('returns live status with version 3.1, 20 tools, 32 ISN states, and ATEB in_progress gate', async () => {
+  describe('Status and 21 Tools Live Metadata', () => {
+    it('returns live status with version 3.1, 21 tools, 32 ISN states, and ATEB in_progress gate', async () => {
       const { env } = createIsolatedMockEnv(true);
       const res = await worker.fetch(
         new Request('https://ledger.arksystems.site/api/internal/status', {
@@ -485,8 +485,8 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
   // ==========================================================================
   // 4. Preview Calculation Mode (Writes nothing, seals nothing, stamps nothing)
   // ==========================================================================
-  describe('Preview Mode across all 20 tools', () => {
-    it('executes preview calculation for every single one of the 20 tools without writing, sealing, or stamping', async () => {
+  describe('Preview Mode across all 21 tools', () => {
+    it('executes preview calculation for every single one of the 21 tools without writing, sealing, or stamping', async () => {
       const { env, store } = createIsolatedMockEnv(true);
 
       for (const tool of CATALOGO_HERRAMIENTAS) {

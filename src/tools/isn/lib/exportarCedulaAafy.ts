@@ -27,6 +27,12 @@ export interface ExportarCedulaAafyParams {
   registroPatronalImss?: string;
   ejercicio?: number;
   mes?: string;
+  /** Número total de trabajadores (Decreto 147/2025 Art. 4) */
+  numEmpleados?: number;
+  /** Trabajadores subordinados (opcional; si falta, defaults a numEmpleados) */
+  numEmpleadosSubordinados?: number;
+  /** Trabajadores asimilados a salarios (opcional) */
+  numEmpleadosAsimilados?: number;
 }
 
 export function escaparCSV(valor: string | number): string {
@@ -37,8 +43,10 @@ export function escaparCSV(valor: string | number): string {
   return str;
 }
 
-export function generarSelloDigitalAafy(prefijo: string): string {
-  return `SHA256:${prefijo}-${Date.now().toString(36).toUpperCase()}`;
+export function generarFolioIntegridadAafy(prefijo: string): string {
+  // Folio de integridad, NO un hash criptográfico SHA-256 real.
+  // No presentar como "SHA-256" ni como sello criptográfico.
+  return `AAFY-ISN-${prefijo}-${Date.now().toString(36).toUpperCase()}`;
 }
 
 export function descargarArchivoCsvBom(nombreArchivo: string, contenido: string): void {
@@ -64,6 +72,9 @@ export function generarContenidoCedulaAafy(params: ExportarCedulaAafyParams): st
     registroPatronalImss = 'Y1234567101',
     ejercicio = 2026,
     mes = 'Octubre',
+    numEmpleados,
+    numEmpleadosSubordinados,
+    numEmpleadosAsimilados,
   } = params;
 
   const fechaDescarga = new Date().toLocaleDateString('es-MX', {
@@ -92,7 +103,9 @@ export function generarContenidoCedulaAafy(params: ExportarCedulaAafyParams): st
   lineas.push(`Entidad Federativa,${escaparCSV(estado.nombre)}`);
   lineas.push(`Periodo de Pago,${escaparCSV(`${mes} ${ejercicio}`)}`);
   lineas.push(`Fecha de Determinación,${escaparCSV(fechaDescarga)}`);
-  lineas.push(`Fundamento Legal,${escaparCSV(estado.articulo || 'Art. 21 al 27 LGHY')}`);
+  lineas.push(
+    `Fundamento Legal,${escaparCSV(resultado.articuloAplicado || estado.articulo || 'Art. 21 al 27 LGHY')}`
+  );
   lineas.push('');
 
   // Desglose analítico de nómina
@@ -137,6 +150,25 @@ export function generarContenidoCedulaAafy(params: ExportarCedulaAafyParams): st
   lineas.push(`Importe en Moneda Nacional,${escaparCSV(formatearMXN(isnNeto))}`);
   lineas.push('');
 
+  // 3.1 DATOS DEL TRABAJADOR Y RÉGIMEN (Decreto 147/2025 Art. 4)
+  const numEmp = numEmpleados ?? 0;
+  const numSub = numEmpleadosSubordinados ?? numEmp;
+  const numAsim = numEmpleadosAsimilados ?? 0;
+  const regimenLabel =
+    resultado.regimen === 'micro_pequena'
+      ? 'Micro/Pequeña Empresa (1–50 empleados) — Decreto 147/2025'
+      : resultado.regimen === 'gobierno_estatal'
+        ? 'Gobierno Estatal'
+        : 'General';
+  lineas.push('3.1 DATOS DEL TRABAJADOR Y RÉGIMEN (Decreto 147/2025 Art. 4)');
+  lineas.push(`Número de Trabajadores (Decreto 147/2025 Art. 4),${numEmp}`);
+  lineas.push(`Trabajadores Subordinados,${numSub || ''}`);
+  lineas.push(`Trabajadores Asimilados a Salarios,${numAsim || ''}`);
+  lineas.push(`Régimen ISN,${escaparCSV(regimenLabel)}`);
+  lineas.push(`Artículo Aplicado,${escaparCSV(resultado.articuloAplicado)}`);
+  lineas.push(`Estímulo Aplicado (0.75% base),${estimulo.toFixed(2)}`);
+  lineas.push('');
+
   // Certificación y Sello de Integridad
   lineas.push('4. CONTROL DE INTEGRIDAD Y PRESENTACIÓN');
   lineas.push(
@@ -145,7 +177,7 @@ export function generarContenidoCedulaAafy(params: ExportarCedulaAafyParams): st
   lineas.push(
     'Plazo Legal de Entero,A más tardar el día 10 del mes inmediato posterior al devengo (Art. 26 LGHY)'
   );
-  lineas.push(`Sello de Integridad Digital ARK LEDGER,${generarSelloDigitalAafy('AAFY-ISN')}`);
+  lineas.push(`Folio de Integridad Digital ARK LEDGER,${generarFolioIntegridadAafy('AAFY-ISN')}`);
   lineas.push(
     'Software Emisor,ARK LEDGER 2026 — Suite Fiscal para Contadores en México (Auditoría DOF Verificada)'
   );

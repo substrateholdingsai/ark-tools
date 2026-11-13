@@ -117,6 +117,15 @@ export function resolverConfigTasaISN(
     };
   }
 
+  // Fallback solo para estados SIN versionado por ejercicio (tasas planas).
+  // Para estados versionados (ej. Yucatán) con ejercicio no publicado, fail-closed:
+  // no calcular silenciosamente con la tasa plana.
+  if (estado.tasasPorEjercicio && !configEjercicio) {
+    throw new Error(
+      `Tasa ISN no publicada para ${estado.id} ejercicio ${ejercicio}. Ejercicios soportados: ${Object.keys(estado.tasasPorEjercicio).join(', ')}.`
+    );
+  }
+
   return {
     ejercicio,
     regimen: esGobierno ? 'gobierno_estatal' : 'general',

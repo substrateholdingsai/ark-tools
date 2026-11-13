@@ -242,4 +242,25 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     expect(data.alertas[0].leyes_afectadas).toEqual(['CFF Art. 29-A']);
     expect(data.alertas[0].titulo).toBe('Reforma Fiscal DOF 2026');
   });
+
+  it('calcular_isn publicado en AI_TOOLS_CATALOG declara los 8 inputs (estadoId, baseGravable, exento, ejercicio, numEmpleados, esMicroPequena2026, esGobiernoEstatal, aplica27A)', () => {
+    const isn = AI_TOOLS_CATALOG.find((t) => t.name === 'calcular_isn');
+    expect(isn).toBeDefined();
+    const props = isn!.parameters.properties as Record<string, unknown>;
+    const expected = [
+      'baseGravable',
+      'tasa',
+      'estadoId',
+      'ejercicio',
+      'numEmpleados',
+      'esMicroPequena2026',
+      'esGobiernoEstatal',
+      'aplica27A',
+    ];
+    for (const key of expected) {
+      expect(props).toHaveProperty(key);
+    }
+    expect(isn!.parameters.required).toContain('baseGravable');
+    expect(isn!.parameters.required).toContain('tasa');
+  });
 });
