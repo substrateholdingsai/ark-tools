@@ -362,10 +362,11 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
             Timbrado de Facturas CFDI 4.0
           </h1>
           <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-400">
-            Emite tus facturas fiscales con Certificado de Sello Digital en tiempo real sin salir de
-            ARK LEDGER. Timbrado directo con Facturapi (en modo Sandbox SAT{' '}
-            <code className="font-mono text-xs">EKU9003173C9</code> o Producción Live) con descarga
-            inmediata de XML y PDF.
+            Emite tus facturas fiscales con Certificado de Sello Digital en modo preview / Sandbox
+            SAT sin salir de ARK LEDGER. Timbrado directo con Facturapi (Sandbox SAT{' '}
+            <code className="font-mono text-xs">EKU9003173C9</code>). El timbrado en vivo está
+            deshabilitado hasta que los precios de distribuidor ATEB/Facturapi se firmen por
+            escrito.
           </p>
         </div>
 
@@ -455,10 +456,10 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               Emite Facturas CFDI 4.0 directamente desde tu despacho
             </h2>
             <p className="mb-8 max-w-2xl text-sm leading-relaxed text-slate-300">
-              Conecta tu cuenta de Facturapi (en modo Sandbox{' '}
-              <code className="font-mono">sk_test_...</code> o Producción{' '}
-              <code className="font-mono">sk_live_...</code>) para emitir y cancelar facturas
-              timbradas ante el SAT en segundos.
+              Conecta tu cuenta de Facturapi en modo Sandbox{' '}
+              <code className="font-mono">sk_test_...</code> para timbrar CFDI de prueba ante el
+              SAT. El modo Producción <code className="font-mono">sk_live_...</code> está
+              deshabilitado (preview_only).
             </p>
 
             <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -634,6 +635,9 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       })}{' '}
                       MXN
                     </p>
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                      SANDBOX SAT • PRUEBA • NO VÁLIDO FISCALMENTE • CSD EKU9003173C9
+                    </span>
                   </div>
                 </div>
                 <button
@@ -1107,8 +1111,8 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                     )}
                   </button>
                   <p className="text-center text-[10px] text-slate-400">
-                    Al confirmar, Facturapi generará el XML CFDI 4.0 y lo timbrará ante el SAT en
-                    tiempo real.
+                    Facturapi generará el XML CFDI 4.0 de prueba y lo timbrará en el Sandbox SAT
+                    (CSD EKU9003173C9).
                   </p>
                 </div>
               </div>
@@ -1206,9 +1210,14 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                                 Cancelada SAT
                               </span>
                             ) : (
-                              <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
-                                Timbrada
-                              </span>
+                              <>
+                                <span className="inline-flex items-center rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                  Timbrada
+                                </span>
+                                <span className="ml-1 inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+                                  SANDBOX SAT
+                                </span>
+                              </>
                             )}
                           </td>
                           <td className="whitespace-nowrap px-3 py-3 text-right">

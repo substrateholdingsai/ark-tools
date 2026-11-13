@@ -144,8 +144,11 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
    - Procesamiento por lote para despachos con múltiples centros de trabajo, resumen patronal, retenciones y costo laboral total.
 8. Generador de Links de Pago SPEI ('spei'):
    - Cobranza digital con transferencias SPEI y CLABE en tiempo real para honorarios contables.
-9. Timbrado de Facturas CFDI 4.0 ('timbrado'):
-   - Emisión, timbrado y cancelación legal de CFDI 4.0 ante el SAT mediante Facturapi PAC (Sandbox SAT EKU9003173C9 y Producción).
+   9. Timbrado de Facturas CFDI 4.0 ('timbrado'):
+      - SOLO pre-validación y modo preview / Sandbox SAT (CSD EKU9003173C9). Noah NO timbra
+      CFDI, NO cancela CFDI, NO llama a PAC externo. El timbrado en vivo está deshabilitado
+      (preview_only) hasta que los precios de distribuidor ATEB/Facturapi se firmen por escrito
+      y Pavel lo apruebe en chat.
 10. Calculadora Leasing ('leasing'):
     - Comparador financiero-fiscal entre arrendamiento puro, financiero y crédito tradicional con topes de deducción Art. 28 LISR.
 11. Guía SAT/IMSS ('guia-sat-imss'):

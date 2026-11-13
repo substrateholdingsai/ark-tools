@@ -178,12 +178,13 @@ export const AlegraConnectModal: React.FC<AlegraConnectModalProps> = ({
           )}
 
           {isLiveKey && (
-            <div className="flex items-start gap-2.5 rounded-lg border border-emerald-200 bg-emerald-50/80 p-3 text-xs text-emerald-900 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-200">
-              <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-start gap-2.5 rounded-lg border border-rose-200 bg-rose-50/80 p-3 text-xs text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/30 dark:text-rose-200">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
               <div>
-                <strong>Modo Producción SAT Detectado (`sk_live_`):</strong> Las facturas emitidas
-                tendrán validez fiscal real ante el SAT usando el CSD cargado en tu organización de
-                Facturapi.
+                <strong>Modo Producción detectado (`sk_live_`) — BLOQUEADO:</strong> timbrado en
+                vivo deshabilitado (preview_only). No se emitirá ningún CFDI con validez fiscal
+                real. Usa una llave <code className="font-mono">sk_test_...</code> de Sandbox para
+                pruebas.
               </div>
             </div>
           )}

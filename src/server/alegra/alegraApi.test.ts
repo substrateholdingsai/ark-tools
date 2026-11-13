@@ -593,6 +593,293 @@ describe('Alegra CFDI 4.0 Integration — Backend Suite', () => {
       );
       expect(runMock).toHaveBeenCalled();
     });
+
+    // ─────────────────────────────────────────────────────────────────
+    // 5. PRODUCTION STAMPING GATE (preview_only enforcement)
+    // ─────────────────────────────────────────────────────────────────
+    describe('Production Stamping Gate (preview_only)', () => {
+      const secret = 'test-secret-key-32-bytes-long!!';
+
+      it('POST /api/alegra/invoices with Live key (sk_live_) → 403, no Facturapi call, no D1 row', async () => {
+        const encLiveToken = await encryptToken('sk_live_fake_prod_key_12345', secret);
+
+        globalThis.fetch = vi.fn();
+
+        const mockDb = {
+          prepare: vi.fn((query: string) => ({
+            bind: vi.fn().mockReturnThis(),
+            first: vi.fn(async () => {
+              if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
+                return { id: 't-123', name: 'Despacho Pinos', role: 'owner' };
+              }
+              if (query.includes('FROM tenant_alegra_accounts')) {
+                return {
+                  tenant_id: 't-123',
+                  alegra_account_id: 'acc-live',
+                  alegra_email: 'live@facturapi.io',
+                  alegra_token_enc: encLiveToken,
+                  alegra_company_name: 'Pinos Live',
+                  status: 'active',
+                  csd_configured: 1,
+                };
+              }
+              return null;
+            }),
+            run: vi.fn(async () => ({ success: true })),
+          })),
+        } as unknown as D1Database;
+        const env = createMockEnv(mockDb);
+
+        const req = new Request('https://ledger.arksystems.site/api/alegra/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: 't-123',
+            alegra_account_id: 'acc-live',
+            invoice: {
+              date: '2026-10-16',
+              client: {
+                name: 'Cliente Live',
+                identification: 'CLI010101AAA',
+                cfdiUse: 'G03',
+                regime: '601',
+                address: { zipCode: '06600' },
+              },
+              items: [{ name: 'Servicio', price: 1000, quantity: 1, tax: [{ percentage: 16 }] }],
+            },
+          }),
+        });
+
+        const res = await handleAlegraApiRequest(req, env, corsHeaders, mockUser);
+        expect(res?.status).toBe(403);
+        const data = (await res?.json()) as any;
+        expect(data.ok).toBeUndefined();
+        expect(data.preview_only).toBe(true);
+        expect(data.error).toContain('Timbrado en vivo deshabilitado');
+        // No Facturapi call should be made
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+      });
+
+      it('DELETE /api/facturapi/invoices/:id with Live key → 403, no Facturapi call', async () => {
+        const encLiveToken = await encryptToken('sk_live_fake_prod_key_12345', secret);
+
+        globalThis.fetch = vi.fn();
+
+        const runMock = vi.fn(async () => ({ success: true }));
+        const mockDb = {
+          prepare: vi.fn((query: string) => ({
+            bind: vi.fn().mockReturnThis(),
+            first: vi.fn(async () => {
+              if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
+                return { id: 't-123', name: 'Despacho Pinos', role: 'owner' };
+              }
+              if (query.includes('FROM alegra_invoices')) {
+                return {
+                  id: 'rec-1',
+                  tenant_id: 't-123',
+                  alegra_account_id: 'acc-live',
+                  alegra_invoice_id: 'inv_live_99',
+                  uuid: '8B765432-1234-5678-ABCD-0987654321AB',
+                };
+              }
+              if (query.includes('FROM tenant_alegra_accounts')) {
+                return {
+                  tenant_id: 't-123',
+                  alegra_account_id: 'acc-live',
+                  alegra_email: 'live@facturapi.io',
+                  alegra_token_enc: encLiveToken,
+                  status: 'active',
+                };
+              }
+              return null;
+            }),
+            run: runMock,
+          })),
+        } as unknown as D1Database;
+        const env = createMockEnv(mockDb);
+
+        const req = new Request(
+          'https://ledger.arksystems.site/api/facturapi/invoices/inv_live_99?tenant_id=t-123&motive=02',
+          { method: 'DELETE' }
+        );
+        const res = await handleAlegraApiRequest(req, env, corsHeaders, mockUser);
+        expect(res?.status).toBe(403);
+        const data = (await res?.json()) as any;
+        expect(data.preview_only).toBe(true);
+        expect(data.error).toContain('Timbrado en vivo deshabilitado');
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+        expect(runMock).not.toHaveBeenCalled();
+      });
+
+      it('POST /api/alegra/invoices with env.FACTURAPI_API_KEY = sk_live_ (no account) → 403', async () => {
+        globalThis.fetch = vi.fn();
+
+        const mockDb = {
+          prepare: vi.fn((query: string) => ({
+            bind: vi.fn().mockReturnThis(),
+            first: vi.fn(async () => {
+              if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
+                return { id: 't-123', name: 'Despacho Pinos', role: 'owner' };
+              }
+              if (query.includes('FROM tenant_alegra_accounts')) {
+                return null; // no account connected
+              }
+              return null;
+            }),
+            run: vi.fn(async () => ({ success: true })),
+          })),
+        } as unknown as D1Database;
+        const env = createMockEnv(mockDb);
+        (env as any).FACTURAPI_API_KEY = 'sk_live_platform_key_12345';
+
+        const req = new Request('https://ledger.arksystems.site/api/alegra/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: 't-123',
+            invoice: {
+              date: '2026-10-16',
+              client: {
+                name: 'Cliente Plataforma',
+                identification: 'CLI010101AAA',
+                cfdiUse: 'G03',
+                regime: '601',
+                address: { zipCode: '06600' },
+              },
+              items: [{ name: 'Servicio', price: 1000, quantity: 1, tax: [{ percentage: 16 }] }],
+            },
+          }),
+        });
+
+        const res = await handleAlegraApiRequest(req, env, corsHeaders, mockUser);
+        expect(res?.status).toBe(403);
+        const data = (await res?.json()) as any;
+        expect(data.preview_only).toBe(true);
+        expect(data.error).toContain('Timbrado en vivo deshabilitado');
+        expect(globalThis.fetch).not.toHaveBeenCalled();
+      });
+
+      it('POST /api/alegra/invoices with env.FACTURAPI_API_KEY = sk_test_ (no account) → 200 Sandbox', async () => {
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 201,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({
+            id: 9001,
+            numberTemplate: { prefix: 'F', number: '303' },
+            date: '2026-10-16',
+            total: 1160,
+            status: 'open',
+            client: { name: 'Cliente Sandbox', identification: 'CLI010101AAA' },
+            stamp: {
+              uuid: '9A8B7C6D-1234-5678-ABCD-0987654321EF',
+              date: '2026-10-16T15:30:00Z',
+            },
+          }),
+        });
+
+        const mockDb = {
+          prepare: vi.fn((query: string) => ({
+            bind: vi.fn().mockReturnThis(),
+            first: vi.fn(async () => {
+              if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
+                return { id: 't-123', name: 'Despacho Pinos', role: 'owner' };
+              }
+              if (query.includes('FROM tenant_alegra_accounts')) {
+                return null; // no account connected
+              }
+              return null;
+            }),
+            run: vi.fn(async () => ({ success: true })),
+          })),
+        } as unknown as D1Database;
+        const env = createMockEnv(mockDb);
+        (env as any).FACTURAPI_API_KEY = 'sk_test_platform_key_12345';
+
+        const req = new Request('https://ledger.arksystems.site/api/alegra/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: 't-123',
+            invoice: {
+              date: '2026-10-16',
+              client: {
+                name: 'Cliente Sandbox',
+                identification: 'CLI010101AAA',
+                cfdiUse: 'G03',
+                regime: '601',
+                address: { zipCode: '06600' },
+              },
+              items: [{ name: 'Servicio', price: 1000, quantity: 1, tax: [{ percentage: 16 }] }],
+            },
+          }),
+        });
+
+        const res = await handleAlegraApiRequest(req, env, corsHeaders, mockUser);
+        expect(res?.status).toBe(201);
+        const data = (await res?.json()) as any;
+        expect(data.ok).toBe(true);
+        expect(data.invoice.environment).toBe('sandbox');
+        expect(data.invoice.uuid).toBe('9A8B7C6D-1234-5678-ABCD-0987654321EF');
+        expect(globalThis.fetch).toHaveBeenCalledWith(
+          'https://www.facturapi.io/v2/invoices',
+          expect.objectContaining({ method: 'POST' })
+        );
+      });
+
+      it('GET /api/facturapi/invoices/:id/xml with Sandbox key → filename starts with SANDBOX-', async () => {
+        const encToken = await encryptToken('sk_test_facturapi_999', secret);
+        const xmlBytes = new TextEncoder().encode('<cfdi:Comprobante Version="4.0"/>');
+
+        globalThis.fetch = vi.fn().mockResolvedValue({
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/xml; charset=utf-8' }),
+          arrayBuffer: async () => xmlBytes.buffer,
+        });
+
+        const mockDb = {
+          prepare: vi.fn((query: string) => ({
+            bind: vi.fn().mockReturnThis(),
+            first: vi.fn(async () => {
+              if (query.includes('FROM tenant_memberships m JOIN tenants t')) {
+                return { id: 't-123', name: 'Despacho Pinos', role: 'owner' };
+              }
+              if (query.includes('FROM alegra_invoices')) {
+                return {
+                  id: 'rec-1',
+                  tenant_id: 't-123',
+                  alegra_account_id: 'acc-1',
+                  alegra_invoice_id: 'inv_fapi_77',
+                  uuid: '8B765432-1234-5678-ABCD-0987654321AB',
+                };
+              }
+              if (query.includes('FROM tenant_alegra_accounts')) {
+                return {
+                  tenant_id: 't-123',
+                  alegra_account_id: 'acc-1',
+                  alegra_email: 'sandbox@facturapi.io',
+                  alegra_token_enc: encToken,
+                  status: 'active',
+                };
+              }
+              return null;
+            }),
+          })),
+        } as unknown as D1Database;
+        const env = createMockEnv(mockDb);
+
+        const req = new Request(
+          'https://ledger.arksystems.site/api/facturapi/invoices/inv_fapi_77/xml?tenant_id=t-123',
+          { method: 'GET' }
+        );
+        const res = await handleAlegraApiRequest(req, env, corsHeaders, mockUser);
+        expect(res?.status).toBe(200);
+        const disposition = res?.headers.get('Content-Disposition') || '';
+        expect(disposition).toContain('SANDBOX-CFDI-');
+        expect(disposition).toContain('.xml');
+      });
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────

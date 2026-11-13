@@ -32,6 +32,26 @@ function jsonResponse(
   });
 }
 
+const LIVE_STAMPING_BLOCKED_MESSAGE =
+  'Timbrado en vivo deshabilitado — preview_only / Sandbox SAT. El timbrado en producción está deshabilitado hasta que los precios de distribuidor ATEB/Facturapi se firmen por escrito y Pavel lo apruebe en chat.';
+
+function blockLiveStamping(corsHeaders: Record<string, string>): Response {
+  return jsonResponse(
+    {
+      error: LIVE_STAMPING_BLOCKED_MESSAGE,
+      preview_only: true,
+      sandbox_required: true,
+      blocked_reason: 'cfdi_live_stamping_disabled',
+    },
+    corsHeaders,
+    403
+  );
+}
+
+function isLiveKey(token: string | undefined | null): boolean {
+  return typeof token === 'string' && token.trim().startsWith('sk_live_');
+}
+
 async function verifyTenantAccess(
   env: Env,
   principal: AuthPrincipal | null,
@@ -57,6 +77,7 @@ async function resolveTenantFacturapiClient(
 ): Promise<{
   client: FacturapiClient;
   accountId: string;
+  environment: 'sandbox' | 'live';
 } | null> {
   let accountRow: any = null;
   if (accountId) {
@@ -85,14 +106,19 @@ async function resolveTenantFacturapiClient(
     return {
       client: new FacturapiClient(accountRow.alegra_email || '', rawToken),
       accountId: String(accountRow.alegra_account_id),
+      environment: isLiveKey(rawToken) ? 'live' : 'sandbox',
     };
   }
 
   if (env.FACTURAPI_API_KEY && env.FACTURAPI_API_KEY.trim().length > 0) {
     const platformKey = env.FACTURAPI_API_KEY.trim();
+    if (platformKey.startsWith('sk_live_')) {
+      return null;
+    }
     return {
       client: new FacturapiClient(platformKey),
       accountId: 'acc_platform_facturapi',
+      environment: 'sandbox',
     };
   }
 
@@ -589,10 +615,17 @@ export async function handleAlegraApiRequest(
         );
       }
       const rawToken = await decryptToken(accountRow.alegra_token_enc, encryptionSecret);
+      if (isLiveKey(rawToken)) {
+        return blockLiveStamping(corsHeaders);
+      }
       client = new FacturapiClient(accountRow.alegra_email, rawToken);
       resolvedAccountId = accountRow.alegra_account_id;
     } else if (env.FACTURAPI_API_KEY && env.FACTURAPI_API_KEY.trim().length > 0) {
-      client = new FacturapiClient(env.FACTURAPI_API_KEY.trim());
+      const platformKey = env.FACTURAPI_API_KEY.trim();
+      if (platformKey.startsWith('sk_live_')) {
+        return blockLiveStamping(corsHeaders);
+      }
+      client = new FacturapiClient(platformKey);
       resolvedAccountId = 'acc_platform_facturapi';
     } else {
       return jsonResponse(
@@ -685,6 +718,7 @@ export async function handleAlegraApiRequest(
           total: invoiceRes.total,
           currency: 'MXN',
           status: invoiceRes.status,
+          environment: 'sandbox',
           pdf_url: pdfUrl,
           xml_url: xmlUrl,
           verification_url:
@@ -788,10 +822,11 @@ export async function handleAlegraApiRequest(
         format
       );
       const filenameLabel = invoiceRow?.uuid || invoiceRow?.folio || facturapiInvoiceId;
+      const sandboxPrefix = resolved.environment === 'sandbox' ? 'SANDBOX-' : '';
       const disposition =
         format === 'pdf'
-          ? `inline; filename="CFDI-${filenameLabel}.pdf"`
-          : `attachment; filename="CFDI-${filenameLabel}.${format}"`;
+          ? `inline; filename="${sandboxPrefix}CFDI-${filenameLabel}.pdf"`
+          : `attachment; filename="${sandboxPrefix}CFDI-${filenameLabel}.${format}"`;
 
       return new Response(buffer, {
         status: 200,
@@ -858,6 +893,10 @@ export async function handleAlegraApiRequest(
         corsHeaders,
         404
       );
+    }
+
+    if (resolved.environment === 'live') {
+      return blockLiveStamping(corsHeaders);
     }
 
     try {
