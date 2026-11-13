@@ -21,6 +21,7 @@ import type { ParametrosSBC } from '../../tools/sbc/types';
 import type { ParametrosNomina } from '../../tools/nomina/types';
 import { listStoredRegulatoryEvents } from '../sentinela/sentinelaWebhook';
 import { buildWhatsAppDeepLink } from '../../lib/whatsappStudio';
+import { parseStrictBoolean } from '../../lib/parseBoolean';
 
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
@@ -484,12 +485,17 @@ export async function executeAiTool(
         vigencia: '2026',
         articulo: 'N/A',
       };
+      const rawNumEmpleados =
+        args.numEmpleados !== undefined ? Number(args.numEmpleados) : undefined;
       const resultado = calcularResultadoISN(conceptos, estado, {
         ejercicio: Number(args.ejercicio) === 2025 ? 2025 : 2026,
-        numEmpleados: args.numEmpleados !== undefined ? Number(args.numEmpleados) : undefined,
-        esMicroPequena2026: Boolean(args.esMicroPequena2026),
-        esGobiernoEstatal: Boolean(args.esGobiernoEstatal),
-        aplica27A: Boolean(args.aplica27A),
+        numEmpleados:
+          rawNumEmpleados !== undefined && Number.isFinite(rawNumEmpleados)
+            ? Math.max(0, Math.floor(rawNumEmpleados))
+            : undefined,
+        esMicroPequena2026: parseStrictBoolean(args.esMicroPequena2026) ?? false,
+        esGobiernoEstatal: parseStrictBoolean(args.esGobiernoEstatal) ?? false,
+        aplica27A: parseStrictBoolean(args.aplica27A) ?? false,
       });
       return { success: true, data: resultado };
     }
@@ -543,9 +549,10 @@ export async function executeAiTool(
         vacacionesPendientes: Number(args.vacacionesPendientes || 0),
         aguinaldoPendiente: Number(args.aguinaldoPendiente || 0),
         primaVacacionalPct: Number(args.primaVacacionalPct ?? 25),
-        incluirPrimaAntiguedad: Boolean(args.incluirPrimaAntiguedad ?? false),
-        incluirIndem90Dias: Boolean(args.incluirIndem90Dias ?? args.tipoBaja === 'liquidacion'),
-        incluir20DiasAnio: Boolean(args.incluir20DiasAnio ?? false),
+        incluirPrimaAntiguedad: parseStrictBoolean(args.incluirPrimaAntiguedad) ?? false,
+        incluirIndem90Dias:
+          parseStrictBoolean(args.incluirIndem90Dias) ?? args.tipoBaja === 'liquidacion',
+        incluir20DiasAnio: parseStrictBoolean(args.incluir20DiasAnio) ?? false,
       });
 
       if (!resultado.ok) {

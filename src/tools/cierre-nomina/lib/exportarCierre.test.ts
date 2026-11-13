@@ -65,11 +65,18 @@ describe('exportarCierre — Sprint 11', () => {
       totalDeducciones: 950,
       totalNetoDispersar: 9050,
       totalISNEstatal: 300,
+      isnBaseGravable: 10000,
+      isnTasaBruta: 3,
+      isnBruto: 300,
+      isnEstimulo: 0,
+      isnTasaEfectiva: 3,
+      isnRegimen: 'general',
       importeNetoEnLetras: '(NUEVE MIL CINCUENTA PESOS 00/100 M.N.)',
       fechaEmision: '2026-10-16T08:00:00.000Z',
       catalogVersion: 'DOF-2026-UMA117.31-SMG315.04-TOPESBC2932.75',
       hashLote: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
     },
+    advertencias: [],
   };
 
   describe('escaparCSV', () => {

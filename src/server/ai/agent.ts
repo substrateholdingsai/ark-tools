@@ -154,7 +154,7 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
 11. Guía SAT/IMSS ('guia-sat-imss'):
     - Protocolo de 8 pasos para atención de requerimientos, auditorías y cartas invitación con control de plazos legales (CFF).
 12. Auditoría Legal de Cobranza ('auditor-cobranza'):
-    - Evaluación de conductas prohibidas bajo el Art. 284 Bis del Código Penal Federal y normas CONDUSEF/PROFECO con sello SHA-256 en D1.
+    - Evaluación de conductas prohibidas bajo el Art. 284 Bis del Código Penal Federal y normas CONDUSEF/PROFECO con Folio de Integridad (hash SHA-256 local) archivado en D1.
 13. Mapa de Activos Virtuales ('mapa-activos'):
     - Matriz regulatoria fiscal y antilavado (LFPIORPI / Ley Fintech) para operaciones con criptoactivos en México.
 14. Calculadora y Cédula RESICO 2026 ('resico'):
@@ -166,7 +166,7 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
 17. Monitor de Actividades Vulnerables LFPIORPI ('monitor-lfpiorpi'):
     - Detección de umbrales en UMA 2026 (Identificación 1,605 UMA / Aviso SAT-UIF 3,210 UMA) con regla de acumulación de 6 meses.
 18. Calculadora de Actualización y Recargos Fiscales ('recargos'):
-    - Actualización inflacionaria (INPC Art. 17-A CFF) y recargos por mora (1.47% mensual Art. 21 CFF) con cédula oficial y sello SHA-256.
+    - Actualización inflacionaria (INPC Art. 17-A CFF) y recargos por mora (1.47% mensual Art. 21 CFF) con cédula oficial y Folio de Integridad (hash SHA-256 local).
 19. Simulador de Modalidad 40 ('modalidad40'):
     - Proyección actuarial Ley 73 auditando el tope del Acuerdo DOF 21/10/2026 (salario previo + 1 UMA), ROI y pensión neta mensual.
 20. Detector Forense de Comportamientos Atípicos en CFDI ('auditor-cfdi-atipico'):

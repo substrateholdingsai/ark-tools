@@ -6,7 +6,8 @@
  * - 5 Tarjetas ejecutivas con totales consolidados (Bruto, ISR, IMSS, ISN, Neto).
  * - Total en letras con validez conforme al Art. 28 del CFF.
  * - Tabla analítica completa con desglose colaborador por colaborador.
- * - Sello digital criptográfico SHA-256 del lote y versión DOF.
+ * - Folio de Integridad (hash determinista calculado en el navegador; no constituye sellado fiscal)
+ *   del lote y versión DOF.
  * - Código QR de validación pública oficial.
  * - Bloque de 3 firmas autógrafas para auditoría contable.
  */
@@ -228,7 +229,8 @@ export function CedulaConcentradoraModal({
                 Entidad Federativa (ISN):
               </span>
               <span className="font-medium text-ink">
-                {parametros.estadoIsnNombre} (Tasa: {parametros.tasaIsn}%)
+                {parametros.estadoIsnNombre} (bruta: {resumen.isnTasaBruta.toFixed(2)}% · efectiva:{' '}
+                {resumen.isnTasaEfectiva.toFixed(2)}%)
               </span>
             </div>
           </div>
@@ -279,7 +281,9 @@ export function CedulaConcentradoraModal({
               ${resumen.totalISNEstatal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
             </div>
             <span className="mt-0.5 block text-[10px] text-amber-700">
-              {parametros.tasaIsn}% {parametros.estadoIsnNombre}
+              Bruto ${resumen.isnBruto.toLocaleString('es-MX', { minimumFractionDigits: 2 })} −
+              estímulo ${resumen.isnEstimulo.toLocaleString('es-MX', { minimumFractionDigits: 2 })}{' '}
+              ({resumen.isnRegimen.replace('_', ' ')})
             </span>
           </div>
 
@@ -398,12 +402,12 @@ export function CedulaConcentradoraModal({
           </table>
         </div>
 
-        {/* ═══ SELLO CRIPTOGRÁFICO Y QR DE VERIFICACIÓN ═══ */}
+        {/* ═══ FOLIO DE INTEGRIDAD Y QR DE VERIFICACIÓN ═══ */}
         <div className="mb-6 grid grid-cols-1 items-center gap-4 border-t border-line pt-4 md:grid-cols-4">
           <div className="space-y-1.5 text-xs md:col-span-3">
             <div className="flex items-center gap-2">
               <span className="font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy">
-                Sello Digital de Integridad SHA-256 (Lote Inmutable)
+                Folio de Integridad SHA-256 (hash local, no sellado fiscal)
               </span>
               <button
                 type="button"

@@ -16,6 +16,7 @@ import type {
   RegimenISN,
   ResultadoISN,
 } from '../types';
+import { parseStrictBoolean } from '../../../lib/parseBoolean';
 
 /**
  * Calcula la suma de percepciones gravadas.
@@ -63,13 +64,13 @@ export function resolverConfigTasaISN(
 } {
   const ejercicio: EjercicioISN = opciones?.ejercicio ?? 2026;
   const configEjercicio = estado.tasasPorEjercicio?.[ejercicio];
-  const esGobierno = Boolean(opciones?.esGobiernoEstatal);
+  const esGobierno = parseStrictBoolean(opciones?.esGobiernoEstatal) ?? false;
   const numEmpleados = opciones?.numEmpleados;
-  const aplica27A = Boolean(opciones?.aplica27A);
+  const aplica27A = parseStrictBoolean(opciones?.aplica27A) ?? false;
   const esMicroPequenaElegible =
     ejercicio === 2026 &&
     !esGobierno &&
-    Boolean(opciones?.esMicroPequena2026) &&
+    (parseStrictBoolean(opciones?.esMicroPequena2026) ?? false) &&
     numEmpleados !== undefined &&
     numEmpleados >= 1 &&
     numEmpleados <= 50 &&

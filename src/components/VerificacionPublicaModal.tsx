@@ -2,8 +2,9 @@
  * ARK LEDGER — Modal / Vista Pública de Verificación de Autenticidad (Sprint 10)
  *
  * Pantalla que se abre al escanear el Código QR del Papel de Trabajo
- * o al consultar un hash SHA-256 en la plataforma.
- * Valida de forma matemática e inalterable la legitimidad del dictamen ante SAT, IMSS o Tribunales.
+ * o al consultar un Folio de Integridad (hash SHA-256) en la plataforma.
+ * Verifica que el hash coincida con un expediente efectivamente archivado en D1;
+ * no acredita sellado fiscal ante SAT, IMSS o Tribunales.
  */
 
 import { useState, useEffect } from 'react';
@@ -98,7 +99,9 @@ export function VerificacionPublicaModal({ hash, isOpen, onClose }: Props) {
         {loading ? (
           <div className="space-y-3 py-16 text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-navy border-t-transparent" />
-            <p className="text-xs text-muted">Validando sello SHA-256 en Cloudflare D1...</p>
+            <p className="text-xs text-muted">
+              Consultando Folio de Integridad en Cloudflare D1...
+            </p>
           </div>
         ) : errorMsg || !certificado ? (
           <div className="space-y-4 py-8 text-center">
@@ -130,8 +133,8 @@ export function VerificacionPublicaModal({ hash, isOpen, onClose }: Props) {
                   Dictamen Auténtico e Inalterado
                 </span>
                 <p className="mt-0.5 text-xs text-emerald-800">
-                  Este cálculo fue emitido oficialmente y sellado de forma inmutable con tecnología
-                  SHA-256.
+                  Este cálculo fue archivado y su Folio de Integridad coincide con el hash
+                  registrado en D1.
                 </p>
               </div>
             </div>
@@ -179,12 +182,10 @@ export function VerificacionPublicaModal({ hash, isOpen, onClose }: Props) {
               </div>
             </div>
 
-            {/* Hash SHA-256 inmutable */}
+            {/* Folio de Integridad registrado en D1 */}
             <div className="space-y-1 rounded-xl border border-line bg-white p-3">
               <div className="flex items-center justify-between text-[11px]">
-                <span className="font-semibold text-ink">
-                  Sello Criptográfico Inmutable (SHA-256):
-                </span>
+                <span className="font-semibold text-ink">Folio de Integridad (SHA-256):</span>
                 <button
                   type="button"
                   onClick={copyHash}
@@ -204,7 +205,7 @@ export function VerificacionPublicaModal({ hash, isOpen, onClose }: Props) {
         {/* Footer */}
         <div className="flex items-center justify-between border-t border-line pt-3">
           <span className="font-mono text-[10px] text-muted">
-            ARK SOVEREIGN VERIFICATION · SHA-256 D1
+            ARK SOVEREIGN VERIFICATION · FOLIO D1
           </span>
           <div className="flex items-center gap-2">
             {certificado && (

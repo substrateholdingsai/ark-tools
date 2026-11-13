@@ -12,6 +12,7 @@
  */
 
 import type { Periodo } from '../nomina/types';
+import type { RegimenISN } from '../isn/types';
 
 /**
  * Fila de entrada de trabajador importada desde CSV / Excel o cargada manualmente.
@@ -102,6 +103,18 @@ export interface ResumenCierreNomina {
   totalDeducciones: number;
   totalNetoDispersar: number;
   totalISNEstatal: number;
+  /** Base gravable acumulada del ISN del lote. */
+  isnBaseGravable: number;
+  /** Tasa bruta del ISN aplicada (porcentaje). */
+  isnTasaBruta: number;
+  /** ISN bruto antes de estímulos. */
+  isnBruto: number;
+  /** Estímulo fiscal aplicado (Decreto 147/2025 u otro). */
+  isnEstimulo: number;
+  /** Tasa efectiva neta del ISN (porcentaje). */
+  isnTasaEfectiva: number;
+  /** Régimen aplicado al ISN. */
+  isnRegimen: RegimenISN;
   importeNetoEnLetras: string;
   fechaEmision: string;
   catalogVersion: string;
@@ -115,6 +128,8 @@ export interface CierreNominaCompleto {
   parametros: ParametrosCierreNomina;
   trabajadores: ResultadoTrabajadorNomina[];
   resumen: ResumenCierreNomina;
+  /** Advertencias no bloqueantes (p. ej. opcionesIsn ausentes). */
+  advertencias: string[];
 }
 
 /**

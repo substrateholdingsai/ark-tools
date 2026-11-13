@@ -460,10 +460,31 @@ function evaluarDiscrepancia(
 }
 
 /**
- * Calcula el Hash SHA-256 criptográfico para el dictamen del cruce.
+ * Normaliza recursivamente un objeto para obtener una forma canónica
+ * determinista (llaves ordenadas). Sin esto, JSON.stringify serializa las
+ * llaves en el orden de inserción, por lo que dos objetos equivalentes
+ * producen hashes distintos.
+ */
+function normalizarCanonico(obj: unknown): unknown {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(normalizarCanonico);
+  }
+  const sortedKeys = Object.keys(obj as Record<string, unknown>).sort();
+  const result: Record<string, unknown> = {};
+  for (const key of sortedKeys) {
+    result[key] = normalizarCanonico((obj as Record<string, unknown>)[key]);
+  }
+  return result;
+}
+
+/**
+ * Calcula el hash SHA-256 canónico determinista para el dictamen del cruce.
  */
 async function generarHashSha256(data: object): Promise<string> {
-  const canonicalJson = JSON.stringify(data, Object.keys(data).sort());
+  const canonicalJson = JSON.stringify(normalizarCanonico(data));
   const encoder = new TextEncoder();
   const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(canonicalJson));
   const hashArray = Array.from(new Uint8Array(hashBuffer));

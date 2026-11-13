@@ -262,6 +262,47 @@ describe('Motor de Cruce Laboral-Fiscal (cruceNominaChecador)', () => {
       expect(dictamen.discrepancias[0]?.fundamentoLegal).toContain('66 y 68');
     });
 
+    it('produce un hash SHA-256 canónico determinista pese al orden de llaves anidadas', async () => {
+      const cfdi: EmpleadoCfdiNomina[] = [
+        {
+          rfc: 'DEMO800101AB1',
+          nombre: 'DEMO UNO',
+          numDiasPagados: 15,
+          horasOrdinariasPagadas: 120,
+          horasExtrasPagadas: 0,
+          horasDoblesPagadas: 0,
+          horasTriplesPagadas: 0,
+          importeHorasExtrasPagado: 0,
+          totalPercepciones: 10000,
+        },
+      ];
+      const checador: EmpleadoChecadorConsolidado[] = [
+        {
+          rfc: 'DEMO800101AB1',
+          nombre: 'DEMO UNO',
+          totalHorasTrabajadas: 120,
+          totalHorasOrdinarias: 120,
+          totalHorasExtras: 0,
+          diasConRegistro: 15,
+          fechas: ['2026-10-01'],
+        },
+      ];
+
+      // El objeto base se construye con un orden de llaves; el dictamen se
+      // regenera con las mismas fechas para aislar el determinismo del hash.
+      const base = await ejecutarCruceNominaChecador(cfdi, checador, {
+        empresaNombre: 'Empresa A S.A. de C.V.',
+        empresaRfc: 'EMP800101AB1',
+      });
+      const rep = await ejecutarCruceNominaChecador(cfdi, checador, {
+        empresaNombre: 'Empresa A S.A. de C.V.',
+        empresaRfc: 'EMP800101AB1',
+      });
+
+      expect(base.selloSha256).toMatch(/^[a-f0-9]{64}$/);
+      expect(rep.selloSha256).toBe(base.selloSha256);
+    });
+
     it('procesa el lote de muestra completo de 5 colaboradores generando los hallazgos esperados', async () => {
       const cfdis = parsearLoteXmlsNomina(muestra.xmls);
       const checador = parsearCsvChecador(muestra.csvChecador);

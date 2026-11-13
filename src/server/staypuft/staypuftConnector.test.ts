@@ -1425,4 +1425,235 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(walkBody.suite_breakdown.specialized_corporate_pld_count).toBe(9);
     });
   });
+
+  describe('AI ask — coerción estricta de booleanos (string vs boolean)', () => {
+    const askIsWithArgs = async (args: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      env.AI = {
+        run: vi.fn(async (_model: string, input: { messages?: Array<{ role: string }> }) => {
+          const msgs = input.messages ?? [];
+          if (!msgs.some((m) => m.role === 'tool')) {
+            return { response: '', tool_calls: [{ name: 'isn', arguments: args }] };
+          }
+          return {
+            response: 'Cálculo preview de ISN de Yucatán.',
+            usage: { prompt_tokens: 10, completion_tokens: 10, total_tokens: 20 },
+          };
+        }),
+      } as unknown as Ai;
+
+      const res = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/ai/ask', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+          },
+          body: JSON.stringify({
+            prompt: 'Calcula el ISN de Yucatán para $250,000 con 15 empleados',
+            tenantId: 'tenant-alpha',
+            tools: ['isn'],
+            maxToolCalls: 1,
+          }),
+        }),
+        env,
+        mockCtx
+      );
+      expect(res.status).toBe(200);
+      return (await res.json()) as {
+        ok: boolean;
+        answer: string;
+        toolsCalled: Array<{
+          result: {
+            tasa: number;
+            tasaBruta: number;
+            tasaEfectiva: number;
+            isnBruto: number;
+            estimulo: number;
+            isnNeto: number;
+            regimen: string;
+          };
+        }>;
+      };
+    };
+
+    it('string "true"/"false" produce el mismo resultado que booleanos reales (micro/pequeña)', async () => {
+      const body = await askIsWithArgs({
+        estadoId: 'YUC',
+        baseGravable: 250000,
+        numEmpleados: 15,
+        esMicroPequena2026: 'true',
+        esGobiernoEstatal: 'false',
+      });
+
+      expect(body.toolsCalled[0]?.result.regimen).toBe('micro_pequena');
+      expect(body.toolsCalled[0]?.result.tasaBruta).toBe(3.75);
+      expect(body.toolsCalled[0]?.result.isnBruto).toBe(9375);
+      expect(body.toolsCalled[0]?.result.estimulo).toBe(1875);
+      expect(body.toolsCalled[0]?.result.isnNeto).toBe(7500);
+      expect(body.toolsCalled[0]?.result.tasaEfectiva).toBe(3);
+      expect(body.answer).toContain('7,500');
+    });
+
+    it('string "false"/"true" no se convierten en truthy: gobierno estatal aplica 4.75%', async () => {
+      const body = await askIsWithArgs({
+        estadoId: 'YUC',
+        baseGravable: 250000,
+        numEmpleados: 15,
+        esMicroPequena2026: 'false',
+        esGobiernoEstatal: 'true',
+      });
+
+      expect(body.toolsCalled[0]?.result.regimen).toBe('gobierno_estatal');
+      expect(body.toolsCalled[0]?.result.tasaBruta).toBe(4.75);
+      expect(body.toolsCalled[0]?.result.estimulo).toBe(0);
+      expect(body.toolsCalled[0]?.result.isnNeto).toBe(11875);
+    });
+
+    it('51 empleados con micro="true" cae a general 3.75%', async () => {
+      const body = await askIsWithArgs({
+        estadoId: 'YUC',
+        baseGravable: 250000,
+        numEmpleados: 51,
+        esMicroPequena2026: 'true',
+        esGobiernoEstatal: 'false',
+      });
+
+      expect(body.toolsCalled[0]?.result.regimen).toBe('general');
+      expect(body.toolsCalled[0]?.result.tasaBruta).toBe(3.75);
+      expect(body.toolsCalled[0]?.result.estimulo).toBe(0);
+      expect(body.toolsCalled[0]?.result.isnNeto).toBe(9375);
+    });
+  });
+
+  describe('Preview cierre-nomina — trabajadores reales e ISN versionado', () => {
+    const trabajadores = (n: number): Array<Record<string, unknown>> =>
+      Array.from({ length: n }, (_, i) => ({
+        id: `w-${i + 1}`,
+        nombre: `Trabajador ${i + 1}`,
+        rfc: 'XAXX010101000',
+        nss: '12345678901',
+        salarioDiario: 1111.11,
+        fechaIngreso: '2024-01-01',
+        diasTrabajados: 15,
+      }));
+
+    const previewCierre = async (body: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      const res = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/cierre-nomina/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+          },
+          body: JSON.stringify(body),
+        }),
+        env,
+        mockCtx
+      );
+      return { status: res.status, body: (await res.json()) as Record<string, unknown> };
+    };
+
+    it('usa los trabajadores del payload (no un empleado demo) y aplica micro/pequeña', async () => {
+      const { status, body } = await previewCierre({
+        empresaNombre: 'Demo YUC',
+        periodo: 'quincenal',
+        diasPeriodo: 15,
+        estadoId: 'YUC',
+        ejercicio: 2026,
+        numEmpleados: 15,
+        esMicroPequena2026: true,
+        esGobiernoEstatal: false,
+        aplica27A: false,
+        trabajadores: trabajadores(15),
+      });
+
+      expect(status).toBe(200);
+      const result = body.result as {
+        resumen: {
+          totalTrabajadores: number;
+          totalPercepcionesBrutas: number;
+          isnRegimen: string;
+          totalISNEstatal: number;
+        };
+      };
+      expect(result.resumen.totalTrabajadores).toBe(15);
+      expect(result.resumen.totalPercepcionesBrutas).toBe(249999.75);
+      expect(result.resumen.isnRegimen).toBe('micro_pequena');
+      expect(result.resumen.totalISNEstatal).toBeCloseTo(7500, 0);
+    });
+
+    it('51 trabajadores aplican general 3.75% aunque micro=true', async () => {
+      const { status, body } = await previewCierre({
+        periodo: 'quincenal',
+        diasPeriodo: 15,
+        estadoId: 'YUC',
+        numEmpleados: 51,
+        esMicroPequena2026: true,
+        esGobiernoEstatal: false,
+        trabajadores: trabajadores(51),
+      });
+
+      expect(status).toBe(200);
+      const result = body.result as {
+        resumen: { isnRegimen: string; totalISNEstatal: number };
+      };
+      expect(result.resumen.isnRegimen).toBe('general');
+      expect(result.resumen.totalISNEstatal).toBeCloseTo(31875, 0);
+    });
+
+    it('gobierno estatal aplica 4.75% y sin estímulo', async () => {
+      const { status, body } = await previewCierre({
+        periodo: 'quincenal',
+        diasPeriodo: 15,
+        estadoId: 'YUC',
+        numEmpleados: 15,
+        esMicroPequena2026: false,
+        esGobiernoEstatal: true,
+        trabajadores: trabajadores(15),
+      });
+
+      expect(status).toBe(200);
+      const result = body.result as {
+        resumen: { isnRegimen: string; isnEstimulo: number; totalISNEstatal: number };
+      };
+      expect(result.resumen.isnRegimen).toBe('gobierno_estatal');
+      expect(result.resumen.isnEstimulo).toBe(0);
+      expect(result.resumen.totalISNEstatal).toBeCloseTo(11875, 0);
+    });
+
+    it('acepta booleanos como string dentro de opcionesIsn', async () => {
+      const { status, body } = await previewCierre({
+        periodo: 'quincenal',
+        diasPeriodo: 15,
+        estadoId: 'YUC',
+        opcionesIsn: {
+          ejercicio: '2026',
+          numEmpleados: '15',
+          esMicroPequena2026: 'true',
+          esGobiernoEstatal: 'false',
+          aplica27A: 'false',
+        },
+        trabajadores: trabajadores(15),
+      });
+
+      expect(status).toBe(200);
+      const result = body.result as {
+        resumen: { isnRegimen: string; totalISNEstatal: number };
+      };
+      expect(result.resumen.isnRegimen).toBe('micro_pequena');
+      expect(result.resumen.totalISNEstatal).toBeCloseTo(7500, 0);
+    });
+
+    it('falla fail-closed 400 si falta trabajadores', async () => {
+      const { status, body } = await previewCierre({
+        periodo: 'quincenal',
+        estadoId: 'YUC',
+      });
+
+      expect(status).toBe(400);
+      expect(String(body.error)).toContain('trabajadores required');
+    });
+  });
 });

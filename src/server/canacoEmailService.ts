@@ -2,7 +2,7 @@
  * CANACO SERVYTUR MÉRIDA — Servicio de Notificaciones Transaccionales (Resend)
  *
  * Emite correos institucionales de confirmación de pago, bienvenida de socio activo,
- * entrega de Cédula Oficial Carta con Sello SHA-256 y credenciales de acceso al portal.
+ * entrega de Cédula Oficial Carta con Folio de Integridad (hash SHA-256 local) y credenciales de acceso al portal.
  * Diseñado con los tokens patrimoniales del Design System HENEQUÉN.
  */
 

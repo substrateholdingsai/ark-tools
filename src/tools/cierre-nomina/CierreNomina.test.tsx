@@ -72,9 +72,35 @@ describe('CierreNomina Component — Sprint 11', () => {
     fireEvent.click(btnProcesar);
 
     await waitFor(() => {
-      expect(screen.getByText('Cierre Procesado & Sellado con Éxito')).toBeDefined();
+      expect(screen.getByText('Cierre Procesado & Folio de Integridad Generado')).toBeDefined();
       expect(screen.getByText('Ver Cédula Oficial (PDF & Sello)')).toBeDefined();
     });
+  }, 30_000);
+
+  it('incluye opcionesIsn en los parámetros y muestra el desglose ISN (YUC micro/pequeña)', async () => {
+    render(
+      <ExpedienteProvider>
+        <CierreNomina onBack={() => {}} />
+      </ExpedienteProvider>
+    );
+
+    fireEvent.click(screen.getByText('Cargar 5 de Muestra'));
+    await waitFor(() => {
+      expect(screen.getByText('Colaboradores Listos (5)')).toBeDefined();
+    });
+
+    fireEvent.change(screen.getByLabelText('Estado ISN'), { target: { value: 'YUC' } });
+    fireEvent.click(screen.getByText('Procesar Cierre y Generar Cédula'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Desglose ISN/i)).toBeDefined();
+    });
+
+    // Con opcionesIsn, YUC 2026 micro/pequeña aplica 3.0% efectivo (no 3.75%).
+    // La tasa bruta sigue mostrándose como 3.75%, pero la efectiva es 3.00%.
+    expect(screen.getByText('3.00%')).toBeDefined();
+    expect(screen.getAllByText(/micro peque/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/\$1,750\.67/).length).toBeGreaterThan(0);
   }, 30_000);
 
   it('permite alternar a la pestaña de Cruce Laboral-Fiscal y renderiza las zonas de carga', () => {

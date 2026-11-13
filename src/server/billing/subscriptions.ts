@@ -235,7 +235,7 @@ export async function activateProSubscription(
               <li><strong>Vigencia:</strong> Hasta ${periodEnd.toLocaleDateString('es-MX')}</li>
               <li><strong>Folio de Pago:</strong> ${safeExtId}</li>
             </ul>
-            <p>Ya puedes descargar todas las Cédulas Oficiales Carta con Sello SHA-256 + QR y consultar a Noah AI sin límite de mensajes.</p>
+            <p>Ya puedes descargar todas las Cédulas Oficiales Carta con Folio de Integridad (hash SHA-256 local) + QR y consultar a Noah AI sin límite de mensajes.</p>
             <p><a href="${env.APP_URL}" style="display: inline-block; background-color: #002b7f; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none;">Ir al Portal</a></p>
           </div>`,
       }).catch((e) => console.warn('[Subscription Email Warning]:', e));

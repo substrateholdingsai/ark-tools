@@ -91,6 +91,14 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
   const [estadoIsnNombre, setEstadoIsnNombre] = useState<string>('Ciudad de México');
   const [tasaIsn, setTasaIsn] = useState<number>(3.0);
 
+  // Opciones de ISN versionado (Decreto 147/2025, Art. 27-A, gobierno estatal)
+  const [ejercicioIsn, setEjercicioIsn] = useState<2025 | 2026>(2026);
+  const [numEmpleadosIsn, setNumEmpleadosIsn] = useState<number>(15);
+  const [esMicroPequena2026, setEsMicroPequena2026] = useState<boolean>(true);
+  const [esGobiernoEstatal, setEsGobiernoEstatal] = useState<boolean>(false);
+  const [aplica27A, setAplica27A] = useState<boolean>(false);
+  const [advertenciasIsn, setAdvertenciasIsn] = useState<string[]>([]);
+
   // Trabajadores y estado del lote
   const [trabajadores, setTrabajadores] = useState<TrabajadorFilaInput[]>([]);
   const [cierreCalculado, setCierreCalculado] = useState<CierreNominaCompleto | null>(null);
@@ -132,10 +140,12 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
     const csv = generarPlantillaEjemploCSV();
     const resultado = parsearPlantillaNomina(csv);
     setTrabajadores(resultado.trabajadoresValidos);
+    setNumEmpleadosIsn(resultado.trabajadoresValidos.length);
     setAdvertenciasImport(resultado.advertencias);
     setErroresImport(resultado.errores);
     setCierreCalculado(null);
     setArchivedHash(null);
+    setAdvertenciasIsn([]);
   };
 
   // Descargar plantilla vacía
@@ -155,10 +165,12 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
       const validacion = parsearPlantillaNomina(contenido);
 
       setTrabajadores(validacion.trabajadoresValidos);
+      setNumEmpleadosIsn(validacion.trabajadoresValidos.length);
       setAdvertenciasImport(validacion.advertencias);
       setErroresImport(validacion.errores);
       setCierreCalculado(null);
       setArchivedHash(null);
+      setAdvertenciasIsn([]);
     };
     reader.readAsText(file, 'UTF-8');
   };
@@ -179,6 +191,13 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
       estadoIsnId,
       estadoIsnNombre,
       tasaIsn,
+      opcionesIsn: {
+        ejercicio: ejercicioIsn,
+        numEmpleados: numEmpleadosIsn,
+        esMicroPequena2026,
+        esGobiernoEstatal,
+        aplica27A,
+      },
       diasAguinaldo: 15,
       primaVacacionalPct: 25,
     };
@@ -186,6 +205,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
     try {
       const resultado = await procesarCierreNomina(trabajadores, parametros);
       setCierreCalculado(resultado);
+      setAdvertenciasIsn(resultado.advertencias);
       setShowCedulaModal(true);
     } catch (err) {
       console.error('Error calculando nómina:', err);
@@ -568,6 +588,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                 <select
                   value={estadoIsnId}
                   onChange={(e) => handleEstadoChange(e.target.value)}
+                  aria-label="Estado ISN"
                   className="w-full cursor-pointer rounded-xl border border-line bg-surface-2 px-3 py-2 font-semibold text-ink focus:border-navy focus:outline-none"
                 >
                   {ESTADOS.map((est) => (
@@ -577,6 +598,74 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                   ))}
                 </select>
               </div>
+
+              {/* Ejercicio ISN */}
+              <div>
+                <label className="mb-1 block font-semibold text-muted">Ejercicio ISN</label>
+                <select
+                  value={ejercicioIsn}
+                  onChange={(e) => setEjercicioIsn(Number(e.target.value) === 2025 ? 2025 : 2026)}
+                  aria-label="Ejercicio ISN"
+                  className="w-full cursor-pointer rounded-xl border border-line bg-surface-2 px-3 py-2 font-semibold text-ink focus:border-navy focus:outline-none"
+                >
+                  <option value={2026}>2026</option>
+                  <option value={2025}>2025</option>
+                </select>
+              </div>
+
+              {/* Número de empleados ISN */}
+              <div>
+                <label className="mb-1 block font-semibold text-muted">
+                  Número de Empleados (ISN)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={999}
+                  value={numEmpleadosIsn}
+                  onChange={(e) =>
+                    setNumEmpleadosIsn(
+                      Math.max(0, Math.min(999, Math.floor(Number(e.target.value) || 0)))
+                    )
+                  }
+                  aria-label="Número de empleados ISN"
+                  className="w-full rounded-xl border border-line bg-surface-2 px-3 py-2 font-mono text-ink focus:border-navy focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Banderas de régimen ISN */}
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-line/60 pt-3 text-xs">
+              <label className="flex cursor-pointer items-center gap-2 font-semibold text-muted">
+                <input
+                  type="checkbox"
+                  checked={esMicroPequena2026}
+                  onChange={(e) => setEsMicroPequena2026(e.target.checked)}
+                  aria-label="Micro o pequeña empresa 2026"
+                  className="h-4 w-4 accent-navy"
+                />
+                Micro/Pequeña 2026 (Decreto 147/2025, 1-50 emp.)
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 font-semibold text-muted">
+                <input
+                  type="checkbox"
+                  checked={esGobiernoEstatal}
+                  onChange={(e) => setEsGobiernoEstatal(e.target.checked)}
+                  aria-label="Gobierno estatal"
+                  className="h-4 w-4 accent-navy"
+                />
+                Gobierno Estatal (+1%)
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 font-semibold text-muted">
+                <input
+                  type="checkbox"
+                  checked={aplica27A}
+                  onChange={(e) => setAplica27A(e.target.checked)}
+                  aria-label="Artículo 27-A"
+                  className="h-4 w-4 accent-navy"
+                />
+                Art. 27-A (exención 1er año)
+              </label>
             </div>
 
             {/* Fechas de corte */}
@@ -814,7 +903,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
                 <div>
                   <div className="font-orbitron text-xs font-bold uppercase tracking-wider text-gold">
-                    Cierre Procesado & Sellado con Éxito
+                    Cierre Procesado & Folio de Integridad Generado
                   </div>
                   <h2 className="mt-0.5 font-playfair text-xl font-black text-ink sm:text-2xl">
                     Resumen Ejecutivo — {empresaNombre}
@@ -895,6 +984,10 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                       minimumFractionDigits: 2,
                     })}
                   </div>
+                  <div className="mt-0.5 text-[10px] font-medium text-amber-800">
+                    {cierreCalculado.resumen.isnTasaEfectiva.toFixed(2)}% efectiva ·{' '}
+                    {cierreCalculado.resumen.isnRegimen.replace('_', ' ')}
+                  </div>
                 </div>
 
                 <div className="col-span-2 rounded-xl border-2 border-emerald-400 bg-emerald-50 p-4 sm:col-span-1">
@@ -910,12 +1003,98 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                 </div>
               </div>
 
-              {/* Sello y Guardado en Expediente */}
+              {/* Desglose ISN (base, tasa bruta, bruto, estímulo, efectiva, neto) */}
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-900">
+                    Desglose ISN — {estadoIsnNombre} ({ejercicioIsn})
+                  </span>
+                  <span className="rounded-full bg-amber-200/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-950">
+                    Régimen: {cierreCalculado.resumen.isnRegimen.replace('_', ' ')}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3 lg:grid-cols-6">
+                  <div className="rounded-lg bg-surface/80 p-2">
+                    <span className="block text-[9px] font-bold uppercase text-muted">
+                      Base gravable
+                    </span>
+                    <span className="font-mono font-semibold tabular-nums text-ink">
+                      $
+                      {cierreCalculado.resumen.isnBaseGravable.toLocaleString('es-MX', {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                  <div className="rounded-lg bg-surface/80 p-2">
+                    <span className="block text-[9px] font-bold uppercase text-muted">
+                      Tasa bruta
+                    </span>
+                    <span className="font-mono font-semibold tabular-nums text-ink">
+                      {cierreCalculado.resumen.isnTasaBruta.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="rounded-lg bg-surface/80 p-2">
+                    <span className="block text-[9px] font-bold uppercase text-muted">
+                      ISN bruto
+                    </span>
+                    <span className="font-mono font-semibold tabular-nums text-ink">
+                      $
+                      {cierreCalculado.resumen.isnBruto.toLocaleString('es-MX', {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                  <div className="rounded-lg bg-surface/80 p-2">
+                    <span className="block text-[9px] font-bold uppercase text-muted">
+                      Estímulo
+                    </span>
+                    <span className="font-mono font-semibold tabular-nums text-emerald-800">
+                      −$
+                      {cierreCalculado.resumen.isnEstimulo.toLocaleString('es-MX', {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                  <div className="rounded-lg bg-surface/80 p-2">
+                    <span className="block text-[9px] font-bold uppercase text-muted">
+                      Tasa efectiva
+                    </span>
+                    <span className="font-mono font-semibold tabular-nums text-ink">
+                      {cierreCalculado.resumen.isnTasaEfectiva.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="rounded-lg border border-amber-300 bg-amber-100/80 p-2">
+                    <span className="block text-[9px] font-bold uppercase text-amber-900">
+                      ISN neto a pagar
+                    </span>
+                    <span className="font-mono font-bold tabular-nums text-amber-950">
+                      $
+                      {cierreCalculado.resumen.totalISNEstatal.toLocaleString('es-MX', {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                </div>
+                {advertenciasIsn.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-[10px] font-medium text-amber-900">
+                    {advertenciasIsn.map((w) => (
+                      <li key={w} className="flex items-start gap-1.5">
+                        <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                        <span>{w}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {/* Folio de Integridad y Guardado en Expediente */}
               <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-navy/15 bg-navy/5 p-4 text-xs">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-navy">
                     <ShieldCheck size={14} className="text-gold" />
-                    <span>Sello SHA-256: {cierreCalculado.resumen.hashLote.slice(0, 32)}...</span>
+                    <span>
+                      Folio de Integridad: {cierreCalculado.resumen.hashLote.slice(0, 32)}...
+                    </span>
                   </div>
                   <div className="font-mono text-[10px] text-muted">
                     {cierreCalculado.resumen.importeNetoEnLetras}
@@ -1183,7 +1362,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
               <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4">
                 <div>
                   <div className="font-orbitron text-xs font-bold uppercase tracking-wider text-gold">
-                    Dictamen de Consistencia Generado &bull; Sello SHA-256
+                    Dictamen de Consistencia Generado &bull; Folio de Integridad
                   </div>
                   <h2 className="mt-0.5 font-playfair text-xl font-black text-ink sm:text-2xl">
                     Auditoría de Jornada — {dictamenCruce.empresaNombre}
@@ -1408,7 +1587,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5 font-mono text-[11px] font-semibold text-navy">
                     <ShieldCheck size={14} className="text-gold" />
-                    <span>Sello SHA-256: {dictamenCruce.selloSha256.slice(0, 32)}...</span>
+                    <span>Folio de Integridad: {dictamenCruce.selloSha256.slice(0, 32)}...</span>
                   </div>
                   <div className="text-[10px] text-muted">
                     Score {dictamenCruce.scoreConsistencia}/100 &bull; Nivel de Riesgo:{' '}

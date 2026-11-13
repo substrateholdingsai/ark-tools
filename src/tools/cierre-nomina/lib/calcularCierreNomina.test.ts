@@ -82,7 +82,7 @@ describe('calcularCierreNomina — Sprint 11', () => {
     expect(resultado.resumen.importeNetoEnLetras).toContain('PESOS');
     expect(resultado.resumen.importeNetoEnLetras).toContain('M.N.');
 
-    // Sello digital criptográfico SHA-256
+    // Folio de Integridad (hash SHA-256 determinista calculado en el navegador)
     expect(resultado.resumen.hashLote).toMatch(/^[a-f0-9]{64}$/);
     expect(resultado.resumen.catalogVersion).toContain('DOF-2026');
   });
@@ -118,5 +118,108 @@ describe('calcularCierreNomina — Sprint 11', () => {
 
     expect(hash1).toBe(hash2);
     expect(hash1).toMatch(/^[a-f0-9]{64}$/);
+  });
+});
+
+describe('calcularCierreNomina — ISN versionado YUC 2026', () => {
+  const baseParams = (overrides: Partial<ParametrosCierreNomina>): ParametrosCierreNomina => ({
+    periodo: 'quincenal',
+    diasPeriodo: 15,
+    fechaInicio: '2026-10-16',
+    fechaFin: '2026-10-31',
+    fechaCorte: '2026-10-31',
+    empresaNombre: 'Demo YUC',
+    estadoIsnId: 'YUC',
+    estadoIsnNombre: 'Yucatán',
+    tasaIsn: 3.75,
+    diasAguinaldo: 15,
+    primaVacacionalPct: 25,
+    ...overrides,
+  });
+
+  const trabajadores = (n: number, salarioDiario = 1111.11): TrabajadorFilaInput[] =>
+    Array.from({ length: n }, (_, i) => ({
+      id: `w-${i + 1}`,
+      nombre: `Trabajador ${i + 1}`,
+      salarioDiario,
+      fechaIngreso: '2024-01-01',
+      diasTrabajados: 15,
+    }));
+
+  it('aplica micro/pequeña 2026 (3.0% neto) y desglosa bruto, estímulo y tasa efectiva', async () => {
+    const resultado = await procesarCierreNomina(
+      trabajadores(15),
+      baseParams({
+        opcionesIsn: {
+          ejercicio: 2026,
+          numEmpleados: 15,
+          esMicroPequena2026: true,
+          esGobiernoEstatal: false,
+          aplica27A: false,
+        },
+      })
+    );
+
+    expect(resultado.resumen.totalPercepcionesBrutas).toBe(249999.75);
+    expect(resultado.resumen.isnRegimen).toBe('micro_pequena');
+    expect(resultado.resumen.isnTasaBruta).toBe(3.75);
+    expect(resultado.resumen.isnBruto).toBeCloseTo(9374.99, 2);
+    expect(resultado.resumen.isnEstimulo).toBeCloseTo(1875, 2);
+    expect(resultado.resumen.totalISNEstatal).toBeCloseTo(7500, 0);
+    expect(resultado.resumen.isnTasaEfectiva).toBeCloseTo(3, 4);
+    expect(resultado.trabajadores.reduce((acc, t) => acc + t.isnEstatal, 0)).toBeCloseTo(
+      resultado.resumen.totalISNEstatal,
+      2
+    );
+    expect(resultado.advertencias).toHaveLength(0);
+  });
+
+  it('aplica gobierno estatal (4.75%) cuando esGobiernoEstatal=true', async () => {
+    const resultado = await procesarCierreNomina(
+      trabajadores(15),
+      baseParams({
+        opcionesIsn: {
+          ejercicio: 2026,
+          numEmpleados: 15,
+          esMicroPequena2026: false,
+          esGobiernoEstatal: true,
+          aplica27A: false,
+        },
+      })
+    );
+
+    expect(resultado.resumen.isnRegimen).toBe('gobierno_estatal');
+    expect(resultado.resumen.isnTasaBruta).toBe(4.75);
+    expect(resultado.resumen.isnEstimulo).toBe(0);
+    expect(resultado.resumen.totalISNEstatal).toBeCloseTo(11875, 0);
+  });
+
+  it('aplica general (3.75%) con 51 empleados aunque micro=true', async () => {
+    const resultado = await procesarCierreNomina(
+      trabajadores(51),
+      baseParams({
+        opcionesIsn: {
+          ejercicio: 2026,
+          numEmpleados: 51,
+          esMicroPequena2026: true,
+          esGobiernoEstatal: false,
+          aplica27A: false,
+        },
+      })
+    );
+
+    expect(resultado.resumen.isnRegimen).toBe('general');
+    expect(resultado.resumen.isnTasaBruta).toBe(3.75);
+    expect(resultado.resumen.isnTasaEfectiva).toBeCloseTo(3.75, 4);
+    expect(resultado.resumen.totalISNEstatal).toBeCloseTo(31875, 0);
+  });
+
+  it('advierte y aplica defaults si falta opcionesIsn en un estado versionado', async () => {
+    const resultado = await procesarCierreNomina(trabajadores(15), baseParams({}));
+
+    expect(resultado.advertencias.length).toBeGreaterThan(0);
+    expect(resultado.advertencias[0]).toContain('opcionesIsn');
+    expect(resultado.resumen.isnRegimen).toBe('micro_pequena');
+    expect(resultado.resumen.totalISNEstatal).toBeCloseTo(7500, 0);
   });
 });

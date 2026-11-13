@@ -6,7 +6,7 @@
  * - Soporte de materialidad de la nómina conforme al Art. 27 Fracc. V LISR y Art. 28 CFF
  * - Semáforo de riesgo y score de consistencia laboral-fiscal (0 a 100)
  * - Desglose de horas reales de asistencia vs horas amparadas en CFDI
- * - Sello criptográfico SHA-256 inmutable + Código QR de verificación pública
+ * - Folio de Integridad (hash determinista en navegador; no es sellado fiscal) + Código QR de verificación pública
  * - Bloque institucional de firmas de responsabilidad contable y laboral
  */
 
@@ -146,7 +146,8 @@ export function CedulaCruceJornadaModal({
                 </span>
               </div>
               <p className="text-[11px] text-muted">
-                Papel de trabajo con Sello SHA-256 conforme a Arts. 132 LFT, 27 LISR y 28 CFF
+                Papel de trabajo con Folio de Integridad (hash determinista en navegador) conforme a
+                Arts. 132 LFT, 27 LISR y 28 CFF
               </p>
             </div>
           </div>
@@ -408,17 +409,17 @@ export function CedulaCruceJornadaModal({
             </div>
           </div>
 
-          {/* SELLO DIGITAL CRIPTOGRÁFICO Y QR */}
+          {/* FOLIO DE INTEGRIDAD Y QR */}
           <div className="flex flex-wrap items-center justify-between gap-6 rounded-2xl border-2 border-navy/20 bg-surface-2/40 p-5">
             <div className="space-y-2">
               <div className="flex items-center gap-2 font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
                 <ShieldCheck size={16} className="text-gold" />
-                <span>Cadena Digital & Sello SHA-256 Inmutable</span>
+                <span>Folio de Integridad SHA-256 (hash local, no sellado fiscal)</span>
               </div>
               <p className="max-w-xl text-[10px] text-muted">
-                Este dictamen fue sellado criptográficamente mediante algoritmo SHA-256 conforme al
-                Art. 28 del Código Fiscal de la Federación. Cualquier modificación en los archivos
-                origen invalida la autenticidad del papel de trabajo.
+                Folio de Integridad: hash determinista calculado en el navegador sobre los archivos
+                origen (Art. 28 CFF). No es un sellado criptográfico ante una autoridad y no se
+                registra en D1. Cualquier modificación en los archivos origen altera el folio.
               </p>
               <div className="flex items-center gap-2">
                 <div className="rounded-lg border border-line bg-surface px-3 py-1.5 font-mono text-[10px] font-bold text-navy">

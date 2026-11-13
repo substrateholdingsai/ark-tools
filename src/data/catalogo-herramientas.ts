@@ -40,7 +40,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Cierre de Nómina Masivo (Batch DOF)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Ingesta de plantillas CSV/Excel y módulo de Cruce Laboral-Fiscal (CFDI Nómina vs. Reloj Checador Art. 132 LFT). Determina simultáneamente por colaborador ISR Art. 96, Subsidio al Empleo, factor de integración, cuotas IMSS obrero e ISN estatal de las 32 entidades. Audita discrepancias de jornada y horas extras, emitiendo Cédula Concentradora y Cédula de Cruce con Sello SHA-256 + QR descargable en PDF y Layout de Dispersión Bancaria.',
+      'Ingesta de plantillas CSV/Excel y módulo de Cruce Laboral-Fiscal (CFDI Nómina vs. Reloj Checador Art. 132 LFT). Determina simultáneamente por colaborador ISR Art. 96, Subsidio al Empleo, factor de integración, cuotas IMSS obrero e ISN estatal de las 32 entidades. Audita discrepancias de jornada y horas extras, emitiendo Cédula Concentradora y Cédula de Cruce con Folio de Integridad (hash determinista en navegador, no sellado fiscal) + QR descargable en PDF y Layout de Dispersión Bancaria.',
   },
   {
     id: 'nomina',
@@ -102,7 +102,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Timbrado de Facturas CFDI 4.0 vía Facturapi PAC',
     categoria: 'Cobros y Facturación Fiscal B2B',
     descripcion:
-      'Emisión, timbrado y cancelación legal de CFDI 4.0 ante el SAT sin salir de ARK LEDGER mediante Facturapi (Sandbox SAT EKU9003173C9 y Producción). Encriptación AES-GCM en reposo de API keys por despacho, soporte multi-organización y descarga instantánea de XML y PDF timbrados.',
+      'SOLO pre-validación y modo preview / Sandbox SAT (CSD EKU9003173C9). El timbrado en vivo está deshabilitado (preview_only) hasta que los precios de distribuidor ATEB/Facturapi se firmen por escrito y Pavel lo apruebe en chat. Noah NO timbra, NO cancela, NO llama a PAC externo. Encriptación AES-GCM en reposo de API keys por despacho y soporte multi-organización.',
   },
   {
     id: 'spei',

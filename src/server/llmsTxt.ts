@@ -52,7 +52,7 @@ function renderCatalogoHerramientas(): string {
 export function generateLlmsTxt(): string {
   return `# ARK LEDGER — Suite Fiscal, Laboral y de Compliance MX (DOF 2026)
 
-> Plataforma B2B determinista y auditable para despachos contables, auditores y áreas de nómina en México. Ejecuta cierres de nómina masivos, cálculos laborales (LFT/LSS/LISR), timbrado y validación CFDI 4.0, y emite Papeles de Trabajo Oficiales tamaño Carta con Sello Criptográfico SHA-256 y verificación pública vía QR (Art. 28 CFF). Procesamiento Zero-Trust en navegador sin solicitar CIEC ni e.firma.
+> Plataforma B2B determinista y auditable para despachos contables, auditores y áreas de nómina en México. Ejecuta cierres de nómina masivos, cálculos laborales (LFT/LSS/LISR), pre-validación y modo preview de CFDI 4.0 (el timbrado en vivo está deshabilitado hasta aprobación escrita de Pavel), y emite Papeles de Trabajo Oficiales tamaño Carta con Folio de Integridad (hash determinista calculado en el navegador; no constituye sellado fiscal) y verificación pública vía QR (Art. 28 CFF). Procesamiento Zero-Trust en navegador sin solicitar CIEC ni e.firma.
 
 - **URL de Producción:** https://ledger.arksystems.site
 - **Mantenedor:** Ark Systems / Substrate Holdings LLC
@@ -206,7 +206,7 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 ### Fundamento y Deslinde de Competencias
 - **STPS (Ámbito Laboral):** El Artículo 132 Fracción VIII Bis de la Ley Federal del Trabajo obliga al patrón a contar con un sistema fehaciente de registro de jornada (reloj checador electrónico). La STPS sanciona el incumplimiento de jornada y la falta de pago de tiempo extraordinario (Arts. 66 a 68 LFT: primeras 9 horas semanales dobles al 200%, excedente triples al 300%).
 - **SAT e IMSS (Ámbito Tributario y de Seguridad Social):** Conforme al Art. 27 Fracción V de la LISR y Art. 28 del CFF, las deducciones de nómina requieren estricta materialidad. Si el patrón timbra horas extras no amparadas en el reloj checador, o timbra recibos a colaboradores sin registro de asistencia, el SAT presume simulación de nómina o trabajadores inexistentes, desconociendo la deducibilidad del gasto y el acreditamiento.
-- **Cruce en ARK LEDGER:** Auditoría automatizada dentro de Cierre de Nómina (#12) que coteja los XMLs de CFDI Nómina 1.2 contra el archivo de asistencia del checador, determinando horas extras no pagadas, horas extras sin respaldo, colaboradores sin checador y excesos legales de jornada, emitiendo Cédula con Sello SHA-256 + QR de verificación pública.
+- **Cruce en ARK LEDGER:** Auditoría automatizada dentro de Cierre de Nómina (#12) que coteja los XMLs de CFDI Nómina 1.2 contra el archivo de asistencia del checador, determinando horas extras no pagadas, horas extras sin respaldo, colaboradores sin checador y excesos legales de jornada, emitiendo Cédula con Folio de Integridad + QR de verificación pública.
 
 ---
 
@@ -226,10 +226,12 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 
 ## 9. Estándar de Integridad SHA-256 y Verificación Pública
 
-Cada cálculo procesado en ARK LEDGER genera un hash SHA-256 canónico determinista:
+Cada Papel de Trabajo y cédula procesada en ARK LEDGER genera un Folio de Integridad mediante un hash SHA-256 canónico determinista:
 \`\`\`
-Hash = SHA-256(CanonicalJson({ inputs, outputs, catalogVersion: '${CURRENT_CATALOG_VERSION}' }))
+Folio = SHA-256(CanonicalJson({ inputs, outputs, catalogVersion: '${CURRENT_CATALOG_VERSION}' }))
 \`\`\`
+
+**Alcance y límites:** el Folio de Integridad es un hash determinista calculado en el navegador para Papeles de Trabajo y cédulas (incluidas las de ISN y AAFY). No es un sello criptográfico ante una autoridad: ISN y AAFY no se sellan en D1 y el timbrado CFDI está en 'preview_only'. El endpoint \`/api/expedientes/verify?hash={hash}\` solo responde para expedientes efectivamente archivados; en modo preview/demo no existe sello verificable.
 
 La API pública \`/api/expedientes/verify?hash={hash}\` responde:
 \`\`\`json

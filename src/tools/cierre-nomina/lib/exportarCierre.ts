@@ -44,7 +44,7 @@ export function exportarConcentradoCSV(cierre: CierreNominaCompleto): string {
   lineas.push(
     `Fecha de Emisión,${escaparCSV(new Date(resumen.fechaEmision).toLocaleString('es-MX'))}`
   );
-  lineas.push(`Sello Digital SHA-256,${escaparCSV(resumen.hashLote)}`);
+  lineas.push(`Folio de Integridad (SHA-256, sin sellar en D1),${escaparCSV(resumen.hashLote)}`);
   lineas.push(`Versión Tablas Oficiales,${escaparCSV(resumen.catalogVersion)}`);
   lineas.push('');
 

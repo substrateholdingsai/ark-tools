@@ -77,7 +77,7 @@ export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): st
                                         <ul style="margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.6; color: #475569;">
                                             <li style="margin-bottom: 8px;"><strong>Branding Total:</strong> Despliegue en su propio subdominio (ej. <em>tools.sudespacho.com</em>) con su logotipo.</li>
                                             <li style="margin-bottom: 8px;"><strong>Aislamiento Estricto:</strong> Base de datos dedicada. Sus cuentas corporativas no comparten entorno con terceros.</li>
-                                            <li style="margin-bottom: 8px;"><strong>Papeles de Trabajo Oficiales:</strong> Cédulas PDF con Sello SHA-256 y QR a nombre de su firma.</li>
+                                            <li style="margin-bottom: 8px;"><strong>Papeles de Trabajo Oficiales:</strong> Cédulas PDF con Folio de Integridad (hash SHA-256 local) y QR a nombre de su firma.</li>
                                             <li style="margin-bottom: 8px;"><strong>Noah (AI Privado):</strong> Inteligencia Artificial operando dentro de su entorno con cero filtraciones.</li>
                                         </ul>
                                     </td>
@@ -147,7 +147,7 @@ En lugar de vender licencias, instalamos y mantenemos este motor en un entorno p
 Plan Corporate Firm (Marca Blanca) - Arrendamiento de Infraestructura Fiscal + IA (100% deducible):
 - Branding Total: Despliegue en su propio subdominio con su logotipo.
 - Aislamiento Estricto: Base de datos dedicada. Sus cuentas corporativas no comparten entorno con terceros.
-- Papeles de Trabajo Oficiales: Cédulas PDF con Sello SHA-256 y QR a nombre de su firma.
+- Papeles de Trabajo Oficiales: Cédulas PDF con Folio de Integridad (hash SHA-256 local) y QR a nombre de su firma.
 - Noah (AI Privado): Inteligencia Artificial operando dentro de su entorno con cero filtraciones.
 
 ¿Tienen 15 minutos la próxima semana para mostrarles cómo se vería su propia plataforma operando en vivo?

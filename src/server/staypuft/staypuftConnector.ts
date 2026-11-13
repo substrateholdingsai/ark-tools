@@ -35,7 +35,7 @@ import { COMPARADORES_CONTRATO_CRM } from '../../data/comparadores-contrato-crm'
 import { AUTORIDADES_AV, CONDUCTAS_AV, UMBRALES_REPORTE_AV } from '../../data/conductas';
 import { ESTADOS } from '../../tools/isn/data/estados';
 import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
-import type { ConceptoPercepcion } from '../../tools/isn/types';
+import type { ConceptoPercepcion, OpcionesISN } from '../../tools/isn/types';
 import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
@@ -45,6 +45,7 @@ import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/
 import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
 import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
 import { procesarCierreNomina } from '../../tools/cierre-nomina/lib/calcularCierreNomina';
+import type { TrabajadorFilaInput } from '../../tools/cierre-nomina/types';
 import { analizarBalance, calcularTotales } from '../../tools/balance-general/lib/calcularBalance';
 import type { JerarquiaBalance } from '../../tools/balance-general/types';
 import { parsearCFDI } from '../../tools/xml-excel/lib/parserCFDI';
@@ -75,6 +76,7 @@ import {
 import { DEFAULT_MODEL, FAST_MODEL } from '../ai/agent';
 import { timingSafeEqual } from '../canacoConektaService';
 import { CURRENT_CATALOG_VERSION } from '../d1Api.expediente';
+import { parseStrictBoolean } from '../../lib/parseBoolean';
 import type { Env } from '../../index';
 
 // ============================================================================
@@ -178,6 +180,12 @@ interface ToolInternalSpec {
   approval_gate_notes?: string;
   law_cited: string[];
   inputs: Record<string, string>;
+  /**
+   * Tipo JSON Schema real por input. Sin esto, el generador de herramientas
+   * declara todo como string y los modelos envían "false" (string), que
+   * `Boolean("false")` convierte en `true`.
+   */
+  inputTypes?: Record<string, 'string' | 'number' | 'boolean' | 'array' | 'object'>;
   outputs: Record<string, string>;
   sample_preview_payload: Record<string, unknown>;
 }
@@ -602,7 +610,7 @@ export function checkStayPuftApprovalGate(request: Request, pathname: string): A
       allowed: false,
       actionType: 'expediente_sealing',
       reason:
-        'Approval Gate activo: El sellado inmutable en el Expediente Único requiere aprobación explícita de Pavel en chat. Usa POST /api/internal/tools/:id/preview para cálculos sin sellado.',
+        'Approval Gate activo: Archivar en el Expediente Único (persistencia en D1) requiere aprobación explícita de Pavel en chat. Usa POST /api/internal/tools/:id/preview para cálculos sin escrituras.',
     };
   }
 
@@ -662,12 +670,26 @@ const TOOL_SPECS_MAP: Record<
       periodo: '"mensual" | "quincenal" | "semanal" | "diario"',
       diasPeriodo: 'number',
       estadoId: 'string (ej. "YUC")',
-      trabajadores: 'TrabajadorFilaInput[]',
+      ejercicio: 'number (2025 | 2026, default 2026)',
+      numEmpleados: 'number (0-999, default: número de trabajadores)',
+      esMicroPequena2026: 'boolean (default true si 1-50 empleados)',
+      esGobiernoEstatal: 'boolean (default false)',
+      aplica27A: 'boolean (default false)',
+      trabajadores: 'TrabajadorFilaInput[] (obligatorio; nombre y salarioDiario)',
+    },
+    inputTypes: {
+      diasPeriodo: 'number',
+      ejercicio: 'number',
+      numEmpleados: 'number',
+      esMicroPequena2026: 'boolean',
+      esGobiernoEstatal: 'boolean',
+      aplica27A: 'boolean',
+      trabajadores: 'array',
     },
     outputs: {
       trabajadores: 'ResultadoTrabajadorNomina[]',
       resumen: 'ResumenCierreNomina (totalPercepciones, totalISR, totalIMSS, totalISN, totalNeto)',
-      hashBatch: 'string (SHA-256 en memoria, sin sellar en D1)',
+      hashBatch: 'string (Folio de Integridad: SHA-256 en memoria, sin sellar en D1)',
     },
     sample_preview_payload: {
       empresaNombre: 'Despacho Demo Preview S.C.',
@@ -675,6 +697,23 @@ const TOOL_SPECS_MAP: Record<
       periodo: 'mensual',
       diasPeriodo: 30,
       estadoId: 'YUC',
+      ejercicio: 2026,
+      numEmpleados: 1,
+      esMicroPequena2026: true,
+      esGobiernoEstatal: false,
+      aplica27A: false,
+      trabajadores: [
+        {
+          id: 'T-01',
+          nombre: 'Colaborador Preview',
+          rfc: 'XAXX010101000',
+          nss: '11223344556',
+          salarioDiario: 650,
+          fechaIngreso: '2023-01-15',
+          diasTrabajados: 30,
+          bonos: 1500,
+        },
+      ],
     },
   },
   nomina: {
@@ -756,6 +795,15 @@ const TOOL_SPECS_MAP: Record<
       esGobiernoEstatal: 'boolean (+1% Art. 24 LGHY, gobierno estatal)',
       aplica27A: 'boolean (exención 1er año, no acumulable con Decreto 147/2025)',
     },
+    inputTypes: {
+      baseGravable: 'number',
+      exento: 'number',
+      ejercicio: 'number',
+      numEmpleados: 'number',
+      esMicroPequena2026: 'boolean',
+      esGobiernoEstatal: 'boolean',
+      aplica27A: 'boolean',
+    },
     outputs: {
       estado: 'Estado (id, nombre, tasa, vigencia, articulo)',
       baseGravable: 'number',
@@ -788,6 +836,16 @@ const TOOL_SPECS_MAP: Record<
       vacacionesPendientes: 'number',
       aguinaldoPendiente: 'number',
       primaVacacionalPct: 'number (default 25)',
+      incluirPrimaAntiguedad: 'boolean',
+      incluirIndem90Dias: 'boolean',
+      incluir20DiasAnio: 'boolean',
+    },
+    inputTypes: {
+      salarioDiario: 'number',
+      sdi: 'number',
+      vacacionesPendientes: 'number',
+      aguinaldoPendiente: 'number',
+      primaVacacionalPct: 'number',
       incluirPrimaAntiguedad: 'boolean',
       incluirIndem90Dias: 'boolean',
       incluir20DiasAnio: 'boolean',
@@ -1218,6 +1276,14 @@ const TOOL_SPECS_MAP: Record<
       edadJubilacion: 'number (60 a 65)',
       asignacionFamiliar: 'boolean',
     },
+    inputTypes: {
+      ultimoSbc: 'number',
+      sbcDeseado: 'number',
+      semanasPrevias: 'number',
+      mesesAportacion: 'number',
+      edadJubilacion: 'number',
+      asignacionFamiliar: 'boolean',
+    },
     outputs: {
       pensionSinM40: 'number',
       pensionConM40: 'number',
@@ -1387,14 +1453,17 @@ export async function executeToolPreview(
         ];
         const rawEjercicio = payload.ejercicio !== undefined ? Number(payload.ejercicio) : 2026;
         const ejercicio = rawEjercicio === 2025 ? 2025 : 2026;
-        const numEmpleados =
+        const rawNumEmpleados =
           payload.numEmpleados !== undefined ? Number(payload.numEmpleados) : undefined;
-        const esGobiernoEstatal = Boolean(payload.esGobiernoEstatal);
-        const aplica27A = Boolean(payload.aplica27A);
+        const numEmpleados =
+          rawNumEmpleados !== undefined && Number.isFinite(rawNumEmpleados)
+            ? Math.max(0, Math.floor(rawNumEmpleados))
+            : undefined;
+        const esGobiernoEstatal = parseStrictBoolean(payload.esGobiernoEstatal) ?? false;
+        const aplica27A = parseStrictBoolean(payload.aplica27A) ?? false;
         const esMicroPequena2026 =
-          payload.esMicroPequena2026 !== undefined
-            ? Boolean(payload.esMicroPequena2026)
-            : numEmpleados !== undefined && numEmpleados >= 1 && numEmpleados <= 50;
+          parseStrictBoolean(payload.esMicroPequena2026) ??
+          (numEmpleados !== undefined && numEmpleados >= 1 && numEmpleados <= 50);
         const calc = calcularResultadoISN(conceptos, estadoObj, {
           ejercicio,
           numEmpleados,
@@ -1460,9 +1529,10 @@ export async function executeToolPreview(
           ),
           aguinaldoPendiente: Number(payload.aguinaldoPendiente ?? 0),
           primaVacacionalPct: Number(payload.primaVacacionalPct ?? 25),
-          incluirPrimaAntiguedad: Boolean(payload.incluirPrimaAntiguedad ?? true),
-          incluirIndem90Dias: Boolean(payload.incluirIndem90Dias ?? tipoBaja === 'liquidacion'),
-          incluir20DiasAnio: Boolean(payload.incluir20DiasAnio ?? false),
+          incluirPrimaAntiguedad: parseStrictBoolean(payload.incluirPrimaAntiguedad) ?? true,
+          incluirIndem90Dias:
+            parseStrictBoolean(payload.incluirIndem90Dias) ?? tipoBaja === 'liquidacion',
+          incluir20DiasAnio: parseStrictBoolean(payload.incluir20DiasAnio) ?? false,
         });
         if (!resFin.ok) {
           return {
@@ -1534,47 +1604,143 @@ export async function executeToolPreview(
           semanasPrevias: Number(payload.semanasPrevias ?? payload.semanasActuales ?? 1250),
           mesesAportacion: Number(payload.mesesAportacion ?? payload.mesesModalidad40 ?? 24),
           edadJubilacion: Number(payload.edadJubilacion ?? payload.edadRetiro ?? 65),
-          asignacionFamiliar: Boolean(payload.asignacionFamiliar ?? payload.tieneEsposa ?? true),
+          asignacionFamiliar:
+            parseStrictBoolean(payload.asignacionFamiliar) ??
+            parseStrictBoolean(payload.tieneEsposa) ??
+            true,
         });
         break;
       }
 
       case 'cierre-nomina': {
-        const cierre = await procesarCierreNomina(
-          [
-            {
-              id: 'T-01',
-              nombre: 'Colaborador Demo 1',
-              rfc: 'XAXX010101000',
-              nss: '11223344556',
-              salarioDiario: 650,
-              fechaIngreso: '2023-01-15',
-              diasTrabajados: 30,
-              horasExtras: 0,
-              bonos: 1500,
-              otrasPercepciones: 0,
-              otrasDeducciones: 0,
-            },
-          ],
-          {
-            empresaNombre: String(payload.empresaNombre ?? 'Despacho Demo Preview S.C.'),
-            empresaRfc: 'AAA010101AAA',
-            periodo:
-              (payload.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual') ?? 'mensual',
-            diasPeriodo: Number(payload.diasPeriodo ?? 30),
-            fechaInicio: '2026-10-01',
-            fechaFin: '2026-10-31',
-            fechaCorte: '2026-10-31',
-            estadoIsnId: String(payload.estadoId ?? 'YUC'),
-            estadoIsnNombre: 'Yucatán',
-            tasaIsn: Number(payload.tasaIsn ?? YUCATAN_ISN_TASA),
-            primaVacacionalPct: 25,
-            diasAguinaldo: 15,
+        const rawTrabajadores = payload.trabajadores;
+        let trabajadoresPayload: unknown = rawTrabajadores;
+        if (typeof rawTrabajadores === 'string') {
+          try {
+            trabajadoresPayload = JSON.parse(rawTrabajadores);
+          } catch {
+            trabajadoresPayload = undefined;
           }
+        }
+
+        if (!Array.isArray(trabajadoresPayload) || trabajadoresPayload.length === 0) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              'trabajadores required: arreglo no vacío de TrabajadorFilaInput (nombre, salarioDiario).',
+          };
+        }
+
+        const trabajadores: TrabajadorFilaInput[] = [];
+        for (let idx = 0; idx < trabajadoresPayload.length; idx++) {
+          const row = trabajadoresPayload[idx];
+          if (!row || typeof row !== 'object' || Array.isArray(row)) {
+            return {
+              ok: false,
+              statusCode: 400,
+              error: `trabajador[${idx}] no es un objeto válido.`,
+            };
+          }
+
+          const r = row as Record<string, unknown>;
+          const salarioDiario = Number(r.salarioDiario ?? r.salario ?? r.sueldoDiario);
+          if (!Number.isFinite(salarioDiario) || salarioDiario <= 0) {
+            return {
+              ok: false,
+              statusCode: 400,
+              error: `trabajador[${idx}].salarioDiario debe ser un número mayor a 0.`,
+            };
+          }
+
+          const toOptionalNumber = (v: unknown): number | undefined => {
+            if (v === undefined || v === null || v === '') return undefined;
+            const n = Number(v);
+            return Number.isFinite(n) ? n : undefined;
+          };
+          const toOptionalString = (v: unknown): string | undefined =>
+            v === undefined || v === null ? undefined : String(v);
+
+          trabajadores.push({
+            id: toOptionalString(r.id) ?? `T-${String(idx + 1).padStart(2, '0')}`,
+            nombre: toOptionalString(r.nombre) ?? `Trabajador ${idx + 1}`,
+            rfc: toOptionalString(r.rfc),
+            curp: toOptionalString(r.curp),
+            nss: toOptionalString(r.nss),
+            salarioDiario,
+            fechaIngreso: toOptionalString(r.fechaIngreso),
+            diasTrabajados: toOptionalNumber(r.diasTrabajados),
+            horasExtras: toOptionalNumber(r.horasExtras) ?? 0,
+            bonos: toOptionalNumber(r.bonos) ?? 0,
+            otrasPercepciones: toOptionalNumber(r.otrasPercepciones) ?? 0,
+            otrasDeducciones: toOptionalNumber(r.otrasDeducciones) ?? 0,
+          });
+        }
+
+        const rawPeriodo = String(payload.periodo ?? 'mensual').toLowerCase();
+        const periodo: 'diario' | 'semanal' | 'quincenal' | 'mensual' =
+          rawPeriodo === 'diario' || rawPeriodo === 'semanal' || rawPeriodo === 'quincenal'
+            ? rawPeriodo
+            : 'mensual';
+        const diasDefault =
+          periodo === 'quincenal' ? 15 : periodo === 'semanal' ? 7 : periodo === 'diario' ? 1 : 30;
+        const rawDiasPeriodo = Number(payload.diasPeriodo ?? diasDefault);
+        const diasPeriodo =
+          Number.isFinite(rawDiasPeriodo) && rawDiasPeriodo > 0 ? rawDiasPeriodo : diasDefault;
+
+        const rawEstado = String(payload.estadoId ?? 'YUC')
+          .trim()
+          .toUpperCase();
+        const estadoObj =
+          ESTADOS.find((e) => e.id.toUpperCase() === rawEstado) ??
+          (rawEstado === '31' ? ESTADOS.find((e) => e.id === 'YUC') : undefined) ??
+          ESTADOS.find((e) => e.id === 'YUC') ??
+          ESTADOS[0]!;
+        const fechaFin = String(payload.fechaFin ?? '2026-10-31');
+
+        const opcionesRaw =
+          payload.opcionesIsn &&
+          typeof payload.opcionesIsn === 'object' &&
+          !Array.isArray(payload.opcionesIsn)
+            ? (payload.opcionesIsn as Record<string, unknown>)
+            : {};
+        const rawNumEmpleados = Number(
+          opcionesRaw.numEmpleados ?? payload.numEmpleados ?? trabajadores.length
         );
+        const opcionesIsn: OpcionesISN = {
+          ejercicio:
+            Number(opcionesRaw.ejercicio ?? payload.ejercicio ?? 2026) === 2025 ? 2025 : 2026,
+          numEmpleados: Number.isFinite(rawNumEmpleados)
+            ? Math.max(0, Math.floor(rawNumEmpleados))
+            : trabajadores.length,
+          esMicroPequena2026:
+            parseStrictBoolean(opcionesRaw.esMicroPequena2026 ?? payload.esMicroPequena2026) ??
+            (trabajadores.length >= 1 && trabajadores.length <= 50),
+          esGobiernoEstatal:
+            parseStrictBoolean(opcionesRaw.esGobiernoEstatal ?? payload.esGobiernoEstatal) ?? false,
+          aplica27A: parseStrictBoolean(opcionesRaw.aplica27A ?? payload.aplica27A) ?? false,
+        };
+
+        const cierre = await procesarCierreNomina(trabajadores, {
+          empresaNombre: String(payload.empresaNombre ?? 'Despacho Demo Preview S.C.'),
+          empresaRfc: payload.empresaRfc !== undefined ? String(payload.empresaRfc) : undefined,
+          periodo,
+          diasPeriodo,
+          fechaInicio: String(payload.fechaInicio ?? '2026-10-01'),
+          fechaFin,
+          fechaCorte: String(payload.fechaCorte ?? fechaFin),
+          estadoIsnId: estadoObj.id,
+          estadoIsnNombre: estadoObj.nombre,
+          tasaIsn: Number(payload.tasaIsn ?? estadoObj.tasa),
+          opcionesIsn,
+          primaVacacionalPct: 25,
+          diasAguinaldo: 15,
+        });
         resultOutput = {
           resumen: cierre.resumen,
+          trabajadores: cierre.trabajadores,
           trabajadoresProcesados: cierre.trabajadores.length,
+          advertencias: cierre.advertencias,
         };
         break;
       }
@@ -2015,7 +2181,7 @@ function detectForbiddenPromptIntent(prompt: string): { blocked: boolean; reason
     return {
       blocked: true,
       reason:
-        'Approval Gate activo: El modelo no puede sellar ni persistir en el Expediente Único. Solo modo preview (writes: 0).',
+        'Approval Gate activo: El modelo no puede archivar en el Expediente Único (escribir en D1). Solo modo preview (writes: 0).',
     };
   }
 
@@ -3480,7 +3646,7 @@ export async function handleStayPuftInternalRequest(
             price_mxn: 399,
             billing_cycle: 'mensual',
             label: 'Ark Ledger PRO ($399 MXN/mes)',
-            included: `Suite completa de ${TOTAL_HERRAMIENTAS} herramientas (12 esenciales PyME + 8 corporativas/PLD/LFPIORPI) + Expediente Único con sello SHA-256 + Copiloto Fiscal Noah`,
+            included: `Suite completa de ${TOTAL_HERRAMIENTAS} herramientas (12 esenciales PyME + 8 corporativas/PLD/LFPIORPI) + Expediente Único con Folio de Integridad (hash SHA-256 calculado en el navegador, no es sellado fiscal) + Copiloto Fiscal Noah`,
           },
         ],
         recommended_demo_flow: [
@@ -3843,7 +4009,10 @@ export async function handleStayPuftInternalRequest(
       const properties: Record<string, { type: string; description: string }> = {};
       if (spec) {
         for (const [key, desc] of Object.entries(spec.inputs)) {
-          properties[key] = { type: 'string', description: desc };
+          properties[key] = {
+            type: spec.inputTypes?.[key] ?? 'string',
+            description: desc,
+          };
         }
       }
       return {
@@ -3863,7 +4032,7 @@ export async function handleStayPuftInternalRequest(
       role: 'system',
       content: `Eres el copiloto fiscal interno de Ark Ledger v${ARK_LEDGER_VERSION} operando para StayPuft / Marina en el tenant "${tenantRes.tenantId}".
 Reglas estrictas:
-1. Solo puedes ejecutar herramientas de cálculo en modo PREVIEW (0 escrituras en D1, sin sellado SHA-256, sin timbrado CFDI en SAT/ATEB/Alegra, sin emitir dictámenes oficiales y sin enviar correos ni WhatsApp).
+1. Solo puedes ejecutar herramientas de cálculo en modo PREVIEW (0 escrituras en D1, sin archivar en el Expediente Único, sin timbrado CFDI en SAT/ATEB/Alegra, sin emitir dictámenes oficiales y sin enviar correos ni WhatsApp).
 2. Fundamenta siempre tus respuestas citando la legislación fiscal y laboral mexicana vigente (LISR, CFF, LFT, LSS, LFPIORPI, RMF 2026).
 3. REGLA OBLIGATORIA DE FIDELIDAD A LA HERRAMIENTA: Cuando ejecutes cualquier herramienta preview, tu respuesta DEBE reportar EXACTAMENTE el resultado numérico devuelto en el objeto "result" de la herramienta (tasas, bases e importes calculados). Está estrictamente prohibido sustituir o contradecir el resultado de la herramienta con tu memoria pre-entrenada.`,
     };
@@ -4202,9 +4371,20 @@ Reglas estrictas:
           estimulo?: number;
           isnNeto?: number;
           ejercicio?: number;
+          regimen?: string;
           estimuloConfirmado?: boolean;
           estado?: { nombre?: string; articulo?: string };
         };
+        const inputObj = tc.inputs;
+        const inputGobierno = parseStrictBoolean(inputObj.esGobiernoEstatal) ?? false;
+        const inputMicro = parseStrictBoolean(inputObj.esMicroPequena2026);
+        const rawInputNumEmpleados =
+          inputObj.numEmpleados !== undefined ? Number(inputObj.numEmpleados) : undefined;
+        const inputNumEmpleados =
+          rawInputNumEmpleados !== undefined && Number.isFinite(rawInputNumEmpleados)
+            ? rawInputNumEmpleados
+            : undefined;
+        const regimen = resObj.regimen;
         const isnPayable = resObj.isnNeto ?? resObj.isn;
         if (typeof isnPayable === 'number' && typeof resObj.tasa === 'number') {
           const fmt = (n: number) =>
@@ -4221,13 +4401,38 @@ Reglas estrictas:
           const isnBruto = resObj.isnBruto ?? isnPayable;
           const tasaBruta = resObj.tasaBruta ?? resObj.tasa;
           const tasaEfectiva = resObj.tasaEfectiva ?? resObj.tasa;
+
+          // El resultado debe ser verificable contra sus propios componentes.
+          const canVerify =
+            typeof resObj.isnBruto === 'number' &&
+            typeof resObj.estimulo === 'number' &&
+            typeof regimen === 'string' &&
+            regimen.length > 0;
+          const arithmeticMismatch =
+            canVerify &&
+            Math.abs((resObj.isnBruto ?? 0) - (resObj.estimulo ?? 0) - isnPayable) > 0.011;
+          const regimeContradiction =
+            (regimen === 'gobierno_estatal' && inputGobierno === false) ||
+            (regimen === 'general' && inputGobierno === true) ||
+            (regimen === 'micro_pequena' && inputMicro === false) ||
+            (regimen === 'micro_pequena' &&
+              inputNumEmpleados !== undefined &&
+              (inputNumEmpleados < 1 || inputNumEmpleados > 50));
+
           const missingStimulusBreakdown =
             estimulo > 0 &&
             (!rawAnswer.includes(fmt(isnBruto)) ||
               !rawAnswer.includes(fmt(estimulo)) ||
               !rawAnswer.includes(`${tasaEfectiva.toFixed(1)}%`));
 
-          if (!hasCorrectIsn || hasLegacyWrongRate || missingStimulusBreakdown) {
+          if (
+            !canVerify ||
+            arithmeticMismatch ||
+            regimeContradiction ||
+            !hasCorrectIsn ||
+            hasLegacyWrongRate ||
+            missingStimulusBreakdown
+          ) {
             const baseFormatted = fmt(resObj.baseGravable ?? 0);
             const estadoNombre = resObj.estado?.nombre ?? 'Yucatán';
             const articulo = resObj.estado?.articulo ?? 'Art. 21 al 27 LGHY';

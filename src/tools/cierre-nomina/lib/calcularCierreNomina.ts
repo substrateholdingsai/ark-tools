@@ -7,7 +7,8 @@
  * 3. Cuotas IMSS Obrero (LSS Art. 25, 106, 107, 147, 168).
  * 4. ISN Estatal por Entidad Federativa.
  * 5. Determinación del Sueldo Neto a dispersar y totales en letra (CFF Art. 28).
- * 6. Generación del Sello Digital Criptográfico SHA-256 inmutable del lote.
+ * 6. Folio de Integridad (hash SHA-256 determinista calculado en el navegador)
+ *    del lote. No constituye sellado fiscal ni consta en D1.
  */
 
 import type {
@@ -22,13 +23,15 @@ import { calcularISR } from '../../nomina/lib/calcularISR';
 import { calcularIMSS } from '../../nomina/lib/calcularIMSS';
 import { calcularISN, calcularResultadoISN } from '../../isn/lib/calcularISN';
 import { ESTADOS } from '../../isn/data/estados';
+import type { OpcionesISN, RegimenISN, ResultadoISN } from '../../isn/types';
 import { numeroALetras } from '../../../lib/numeroALetras';
 import { calcularAntiguedadAnios, calcularDiasVacacionesPorLey } from './parserPlantilla';
 
 export const CATALOG_VERSION_CIERRE = 'DOF-2026-UMA117.31-SMG315.04-TOPESBC2932.75';
 
 /**
- * Genera un hash SHA-256 canónico determinista para sellar el lote completo.
+ * Genera el Folio de Integridad (hash SHA-256 canónico determinista calculado
+ * en el navegador) para el lote completo. No es un sellado fiscal.
  */
 export async function computeBatchHash(data: unknown): Promise<string> {
   const normalize = (obj: unknown): unknown => {
@@ -61,6 +64,32 @@ function r2(num: number): number {
 }
 
 /**
+ * Reparte un total en pesos entre pesos relativos sin perder centavos
+ * (método del mayor residuo). Evita que la suma por trabajador difiera
+ * del total del lote por redondeo.
+ */
+function repartirCents(totalPesos: number, pesos: number[]): number[] {
+  const totalCents = Math.round(totalPesos * 100);
+  const sumaPesos = pesos.reduce((a, b) => a + b, 0);
+  if (sumaPesos <= 0 || pesos.length === 0) {
+    return pesos.map(() => 0);
+  }
+  const exactos = pesos.map((p) => (p / sumaPesos) * totalCents);
+  const asignados = exactos.map((v) => Math.floor(v));
+  let faltante = totalCents - asignados.reduce((a, b) => a + b, 0);
+  const orden = exactos
+    .map((v, i) => ({ i, residuo: v - Math.floor(v) }))
+    .sort((a, b) => b.residuo - a.residuo);
+  let k = 0;
+  while (faltante > 0 && orden.length > 0) {
+    asignados[orden[k % orden.length]!.i]! += 1;
+    faltante -= 1;
+    k += 1;
+  }
+  return asignados.map((c) => c / 100);
+}
+
+/**
  * Procesa el lote de trabajadores y genera la Cédula Concentradora completa.
  */
 export async function procesarCierreNomina(
@@ -77,6 +106,32 @@ export async function procesarCierreNomina(
   let acumDeducciones = 0;
   let acumNeto = 0;
   let acumISN = 0;
+
+  const advertencias: string[] = [];
+  const estadoCatalogo = ESTADOS.find(
+    (e) => e.id.toUpperCase() === (parametros.estadoIsnId || '').toUpperCase()
+  );
+  const usaISNVersionado = Boolean(estadoCatalogo?.tasasPorEjercicio);
+
+  // Para estados con tasas versionadas el ISN se calcula sobre la base agregada
+  // del lote (ver bloque posterior) para evitar desviaciones por redondeo.
+  // Si el llamador no envía opcionesIsn, se aplican defaults y se advierte;
+  // nunca se cae silenciosamente a la tasa plana del estado.
+  let opcionesIsResolved: OpcionesISN | undefined;
+  if (estadoCatalogo && usaISNVersionado) {
+    opcionesIsResolved = parametros.opcionesIsn ?? {
+      ejercicio: 2026,
+      numEmpleados: trabajadoresInput.length,
+      esMicroPequena2026: trabajadoresInput.length >= 1 && trabajadoresInput.length <= 50,
+      esGobiernoEstatal: false,
+      aplica27A: false,
+    };
+    if (!parametros.opcionesIsn) {
+      advertencias.push(
+        `ISN ${estadoCatalogo.nombre}: no se recibieron opcionesIsn; se aplicaron valores por defecto (ejercicio 2026, ${trabajadoresInput.length} empleados, micro/pequeña ${opcionesIsResolved.esMicroPequena2026 ? 'sí' : 'no'}).`
+      );
+    }
+  }
 
   for (let i = 0; i < trabajadoresInput.length; i++) {
     const t = trabajadoresInput[i]!;
@@ -122,21 +177,9 @@ export async function procesarCierreNomina(
     const totalDeducciones = r2(isrRetenido + imssObrero + otrasDeducciones);
     const sueldoNeto = r2(Math.max(0, totalPercepciones - totalDeducciones));
 
-    // 7. Impuesto Sobre Nómina Estatal (versionado desde ESTADOS cuando aplica opcionesIsn)
-    const estadoCatalogo = ESTADOS.find(
-      (e) => e.id.toUpperCase() === (parametros.estadoIsnId || '').toUpperCase()
-    );
-    const isnEstatal =
-      estadoCatalogo && parametros.opcionesIsn
-        ? calcularResultadoISN(
-            [{ id: 1, concepto: 'Nómina período', gravado: totalPercepciones, exento: 0 }],
-            estadoCatalogo,
-            {
-              ...parametros.opcionesIsn,
-              numEmpleados: parametros.opcionesIsn.numEmpleados ?? trabajadoresInput.length,
-            }
-          ).isnNeto
-        : calcularISN(totalPercepciones, parametros.tasaIsn);
+    // 7. Impuesto Sobre Nómina Estatal
+    // Con tasas versionadas se calcula sobre la base agregada al final del lote.
+    const isnEstatal = usaISNVersionado ? 0 : calcularISN(totalPercepciones, parametros.tasaIsn);
 
     // Acumuladores
     acumBruto += totalPercepciones;
@@ -180,6 +223,42 @@ export async function procesarCierreNomina(
   const totalBrutoRedondeado = r2(acumBruto);
   const totalNetoRedondeado = r2(acumNeto);
 
+  let isnBaseGravable = totalBrutoRedondeado;
+  let isnTasaBruta = parametros.tasaIsn;
+  let isnBruto = r2(acumISN);
+  let isnEstimulo = 0;
+  let isnTasaEfectiva = parametros.tasaIsn;
+  let isnRegimen: RegimenISN = 'general';
+
+  if (estadoCatalogo && usaISNVersionado && opcionesIsResolved) {
+    const resIs: ResultadoISN = calcularResultadoISN(
+      [{ id: 1, concepto: 'Nómina del período', gravado: totalBrutoRedondeado, exento: 0 }],
+      estadoCatalogo,
+      opcionesIsResolved
+    );
+
+    const asignacion = repartirCents(
+      resIs.isnNeto,
+      trabajadores.map((t) => t.totalPercepciones)
+    );
+    trabajadores.forEach((t, idx) => {
+      t.isnEstatal = asignacion[idx] ?? 0;
+    });
+
+    acumISN = r2(asignacion.reduce((a, b) => a + b, 0));
+    isnBaseGravable = r2(resIs.baseGravable);
+    isnTasaBruta = resIs.tasaBruta;
+    isnBruto = r2(resIs.isnBruto);
+    isnEstimulo = r2(resIs.estimulo);
+    isnTasaEfectiva = resIs.tasaEfectiva;
+    isnRegimen = resIs.regimen;
+  } else {
+    isnBruto = r2(acumISN);
+    isnEstimulo = 0;
+    isnTasaEfectiva =
+      totalBrutoRedondeado > 0 ? (acumISN / totalBrutoRedondeado) * 100 : parametros.tasaIsn;
+  }
+
   const resumenPreHash = {
     totalTrabajadores: trabajadores.length,
     totalPercepcionesBrutas: totalBrutoRedondeado,
@@ -190,12 +269,18 @@ export async function procesarCierreNomina(
     totalDeducciones: r2(acumDeducciones),
     totalNetoDispersar: totalNetoRedondeado,
     totalISNEstatal: r2(acumISN),
+    isnBaseGravable,
+    isnTasaBruta,
+    isnBruto,
+    isnEstimulo,
+    isnTasaEfectiva,
+    isnRegimen,
     importeNetoEnLetras: numeroALetras(totalNetoRedondeado),
     fechaEmision: new Date().toISOString(),
     catalogVersion: CATALOG_VERSION_CIERRE,
   };
 
-  // Sello digital inmutable del lote
+  // Folio de Integridad determinista del lote (hash local, sin sellar en D1)
   const hashLote = await computeBatchHash({
     parametros,
     resumen: resumenPreHash,
@@ -217,5 +302,6 @@ export async function procesarCierreNomina(
     parametros,
     trabajadores,
     resumen,
+    advertencias,
   };
 }
