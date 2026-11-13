@@ -84,6 +84,8 @@ export interface ResultadoTrabajadorNomina {
   imssObrero: number;
   /** Cuotas IMSS Patrón (empleador) del trabajador. */
   imssPatronal: number;
+  /** Cuota INFONAVIT patrón del trabajador (línea separada, fuera de totalIMSSPatronal). */
+  infONAVIT: number;
   otrasDeducciones: number;
   totalDeducciones: number;
 
@@ -101,8 +103,12 @@ export interface ResumenCierreNomina {
   totalISRRetenido: number;
   totalSubsidioEntregado: number;
   totalIMSSObrero: number;
-  /** Total cuotas IMSS Patrón (empleador) del lote. */
+  /** Total cuotas IMSS Patrón (empleador) del lote (sin INFONAVIT). */
   totalIMSSPatronal: number;
+  /** Desglose rama por rama del IMSS Patrón (para UI de verificación DOF). */
+  imssPatronalDesglose: Array<{ ramo: string; monto: number }>;
+  /** Total cuota INFONAVIT patrón del lote (línea separada). */
+  totalInfONAVIT: number;
   totalOtrasDeducciones: number;
   totalDeducciones: number;
   totalNetoDispersar: number;

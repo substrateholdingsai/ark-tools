@@ -20,7 +20,8 @@ import type {
 } from '../types';
 import { calcularResultadoSBC } from '../../sbc/lib/calcularSBC';
 import { calcularISR } from '../../nomina/lib/calcularISR';
-import { calcularIMSS, calcularIMSSPatronal } from '../../nomina/lib/calcularIMSS';
+import { calcularIMSS } from '../../nomina/lib/calcularIMSS';
+import { calcularIMSSPatronal, calcularInfONAVITPatronal } from '../../nomina/data/cuotasIMSS';
 import { calcularISN, calcularResultadoISN } from '../../isn/lib/calcularISN';
 import { ESTADOS } from '../../isn/data/estados';
 import type { OpcionesISN, RegimenISN, ResultadoISN } from '../../isn/types';
@@ -103,6 +104,8 @@ export async function procesarCierreNomina(
   let acumSubsidio = 0;
   let acumIMSS = 0;
   let acumIMSSPatronal = 0;
+  const acumIMSSPatronalDesglose = new Map<string, number>();
+  let acumInfONAVIT = 0;
   let acumOtrasDeducciones = 0;
   let acumDeducciones = 0;
   let acumNeto = 0;
@@ -177,6 +180,9 @@ export async function procesarCierreNomina(
     const resIMSSPatronal = calcularIMSSPatronal(sbcDiario, parametros.periodo);
     const imssPatronal = resIMSSPatronal.total;
 
+    // 5c. INFONAVIT patrón (5% sobre SBC × días) — línea separada, fuera de totalIMSSPatronal
+    const infONAVIT = calcularInfONAVITPatronal(sbcDiario, diasTrabajados).monto;
+
     // 6. Deducciones y Neto
     const otrasDeducciones = r2(t.otrasDeducciones || 0);
     const totalDeducciones = r2(isrRetenido + imssObrero + otrasDeducciones);
@@ -192,6 +198,10 @@ export async function procesarCierreNomina(
     acumSubsidio += subsidioEmpleo;
     acumIMSS += imssObrero;
     acumIMSSPatronal += imssPatronal;
+    for (const c of resIMSSPatronal.cuotas) {
+      acumIMSSPatronalDesglose.set(c.ramo, (acumIMSSPatronalDesglose.get(c.ramo) || 0) + c.monto);
+    }
+    acumInfONAVIT += infONAVIT;
     acumOtrasDeducciones += otrasDeducciones;
     acumDeducciones += totalDeducciones;
     acumNeto += sueldoNeto;
@@ -220,6 +230,7 @@ export async function procesarCierreNomina(
       isrRetenido,
       imssObrero,
       imssPatronal,
+      infONAVIT,
       otrasDeducciones,
       totalDeducciones,
       sueldoNeto,
@@ -273,6 +284,11 @@ export async function procesarCierreNomina(
     totalSubsidioEntregado: r2(acumSubsidio),
     totalIMSSObrero: r2(acumIMSS),
     totalIMSSPatronal: r2(acumIMSSPatronal),
+    imssPatronalDesglose: Array.from(acumIMSSPatronalDesglose.entries()).map(([ramo, monto]) => ({
+      ramo,
+      monto: r2(monto),
+    })),
+    totalInfONAVIT: r2(acumInfONAVIT),
     totalOtrasDeducciones: r2(acumOtrasDeducciones),
     totalDeducciones: r2(acumDeducciones),
     totalNetoDispersar: totalNetoRedondeado,

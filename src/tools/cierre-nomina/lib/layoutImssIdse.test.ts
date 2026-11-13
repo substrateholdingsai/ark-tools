@@ -58,13 +58,14 @@ describe('layoutImssIdse', () => {
       isrRetenido: 600,
       imssObrero: 200,
       imssPatronal: 0,
+      infONAVIT: 0,
       otrasDeducciones: 0,
       totalDeducciones: 800,
       sueldoNeto: 6700,
       isnEstatal: 187.5,
     };
 
-    it('genera una línea válida de exactamente 175 caracteres para IDSE', () => {
+    it('genera una línea de 175 caracteres para IDSE (longitud Ledger, no confirmada por manual oficial IMSS)', () => {
       const linea = generarLineaIdse(trabajadorDemo, 'Y1234567101', '07', '2026-10-15');
       expect(linea).toHaveLength(175);
       expect(linea).toContain('Y1234567101');

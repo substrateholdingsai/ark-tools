@@ -444,11 +444,11 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
             <ul className="list-disc space-y-1 pl-4">
               <li>
                 <strong>Entero mensual (Art. 20-Bis):</strong> Día 10 del mes siguiente (Enero 2026
-                prorrogado al <strong>20-feb-2026</strong> por Acuerdo AAFY XX/2026).
+                prorrogado al <strong>20-feb-2026</strong> por Acuerdo AAFY 12/2026 (III.1.5)).
               </li>
               <li>
                 <strong>Constancia AAFY-30 (Art. 20-Ter):</strong> Dentro de los 5 días siguientes
-                al pago o acumulada mensual a más tardar el último día del mes.
+                al pago (Art. 20-Ter LGHY). Acumulación mensual no confirmada en reglas oficiales.
               </li>
               <li>
                 <strong>Informativa trimestral (Art. 20-Quinquies):</strong> 1er y 2do trimestre

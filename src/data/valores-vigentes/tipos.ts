@@ -2,7 +2,8 @@
  * Origen oficial de un valor fiscal.
  * Permite trazabilidad y auditoría.
  */
-export type OrganismoOficial = 'INEGI' | 'CONASAMI' | 'IMSS' | 'SAT' | 'CONGRESO_ESTATAL';
+export type OrganismoOficial =
+  'INEGI' | 'CONASAMI' | 'IMSS' | 'INFONAVIT' | 'SAT' | 'CONGRESO_ESTATAL';
 
 /**
  * Unidad de medida del valor fiscal.

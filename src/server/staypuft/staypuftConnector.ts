@@ -1330,7 +1330,7 @@ const TOOL_SPECS_MAP: Record<
     law_cited: [
       'LGHY Yucatán Arts. 16 al 20 (Impuesto sobre el Ejercicio Profesional 3%)',
       'LGHY Yucatán Arts. 20-Bis a 20-Quinquies (D.O. 26-dic-2025: Retención 2% clínicas, entero día 10, AAFY-30 y AAFY-31)',
-      'Acuerdo AAFY XX/2026 (Prórroga enero 2026 al 20-feb-2026)',
+      'Acuerdo AAFY 12/2026 (III.1.5) (Prórroga enero 2026 al 20-feb-2026)',
     ],
     inputs: {
       estadoId: 'string (exclusivo "YUC")',

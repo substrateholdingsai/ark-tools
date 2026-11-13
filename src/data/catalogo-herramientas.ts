@@ -179,7 +179,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Retención 2% Clínicas y Hospitales (Yucatán)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Determinación exclusiva para Yucatán de la retención del 2% sobre honorarios médicos al momento del pago (Art. 20-Bis a 20-Quinquies LGHY, D.O. 26-dic-2025). Calcula retención 2%, neto a pagar, referencia del Impuesto sobre el Ejercicio Profesional (3% Arts. 16-20), plazos de entero día 10 (prórroga enero 2026 al 20-feb-2026) y emite formatos oficiales AAFY-30 (constancia), AAFY-31 (entero) y CSV de cotejo.',
+      'Determinación exclusiva para Yucatán de la retención del 2% sobre honorarios médicos al momento del pago (Art. 20-Bis a 20-Quinquies LGHY, D.O. 26-dic-2025). Calcula retención 2%, neto a pagar, referencia del Impuesto sobre el Ejercicio Profesional (3% Arts. 16-20), plazos de entero día 10 (prórroga enero 2026 al 20-feb-2026, Acuerdo AAFY 12/2026 III.1.5) y emite formatos oficiales AAFY-30 (constancia), AAFY-31 (entero) y CSV de cotejo.',
   },
 ];
 

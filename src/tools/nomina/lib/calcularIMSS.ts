@@ -9,7 +9,7 @@
  */
 
 import type { CuotaIMSS, Periodo, ResultadoIMSS } from '../types';
-import { CUOTAS_OBRERO, CUOTAS_PATRONAL, TRES_UMAS } from '../data/cuotasIMSS';
+import { CUOTAS_OBRERO, TRES_UMAS } from '../data/cuotasIMSS';
 import { PERIODOS } from '../data/periodos';
 
 // ─────────────────────────────────────────────────────────────────────
@@ -24,7 +24,7 @@ import { PERIODOS } from '../data/periodos';
  *   - uma: porcentaje × UMA × días
  *   - sbc_excedente: porcentaje × max(0, SBC - 3 UMA) × días
  */
-export function calcularCuota(cuota: CuotaIMSS, sbcDiario: number, dias: number): number {
+function calcularCuota(cuota: CuotaIMSS, sbcDiario: number, dias: number): number {
   const porcentajeDecimal = cuota.porcentaje / 100;
 
   switch (cuota.base) {
@@ -91,57 +91,10 @@ export function calcularIMSS(sbcDiario: number, periodo: Periodo): ResultadoIMSS
   };
 }
 
-/**
- * Calcula las cuotas IMSS patrón (empleador) para un período.
- * Reutiliza el mismo motor de cuotas que el obrero, con tasas patrón del catálogo.
- */
-export function calcularIMSSPatronal(sbcDiario: number, periodo: Periodo): ResultadoIMSS {
-  const dias = PERIODOS[periodo].dias;
-
-  if (sbcDiario <= 0) {
-    return {
-      cuotas: CUOTAS_PATRONAL.map((c) => ({ ...c, monto: 0 })),
-      total: 0,
-      sbc: 0,
-      dias,
-    };
-  }
-
-  const cuotasCalculadas: CuotaIMSS[] = CUOTAS_PATRONAL.map((cuota) => ({
-    ...cuota,
-    monto: redondear2(calcularCuota(cuota, sbcDiario, dias)),
-  }));
-
-  const total = redondear2(cuotasCalculadas.reduce((sum, c) => sum + c.monto, 0));
-
-  return {
-    cuotas: cuotasCalculadas,
-    total,
-    sbc: redondear2(sbcDiario),
-    dias,
-  };
-}
-
 // ─────────────────────────────────────────────────────────────────────
 // HELPERS
 // ─────────────────────────────────────────────────────────────────────
 
 function redondear2(valor: number): number {
   return Math.round(valor * 100) / 100;
-}
-
-/**
- * Genera una descripción legible de una base de cálculo.
- */
-export function describirBase(base: CuotaIMSS['base']): string {
-  switch (base) {
-    case 'sbc':
-      return 'SBC';
-    case 'uma':
-      return 'UMA';
-    case 'sbc_excedente':
-      return 'SBC - 3 UMA';
-    default:
-      return '';
-  }
 }

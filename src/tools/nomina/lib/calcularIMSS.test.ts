@@ -3,7 +3,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { calcularCuota, calcularIMSS } from './calcularIMSS';
+import { calcularCuota } from '../data/cuotasIMSS';
+import { calcularIMSS } from './calcularIMSS';
 import type { CuotaIMSS } from '../types';
 
 // ─────────────────────────────────────────────────────────────────────

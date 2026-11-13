@@ -40,7 +40,7 @@ describe('calcularRetencionClinicas (Tool 21 — Art. 20-Bis LGHY)', () => {
     expect(res.fechaLimiteConstancia).toBe('2026-03-20');
   });
 
-  it('aplica prórroga Acuerdo AAFY XX/2026 para enero 2026 -> límite 20 de febrero 2026', () => {
+  it('aplica prórroga Acuerdo AAFY 12/2026 (III.1.5) para enero 2026 -> límite 20 de febrero 2026', () => {
     const res = calcularRetencionClinicas({
       ...baseInput,
       fechaPago: '2026-01-25',

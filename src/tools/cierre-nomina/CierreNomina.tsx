@@ -112,6 +112,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
   const [showCedulaModal, setShowCedulaModal] = useState(false);
   const [advertenciasImport, setAdvertenciasImport] = useState<string[]>([]);
   const [erroresImport, setErroresImport] = useState<string[]>([]);
+  const [idseNssSkipped, setIdseNssSkipped] = useState<string[]>([]);
   const [isArchiving, setIsArchiving] = useState(false);
   const [archivedHash, setArchivedHash] = useState<string | null>(null);
 
@@ -413,6 +414,12 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
     if (!cierreCalculado) return;
     const meta = activeClient?.metadata as Record<string, unknown> | undefined;
     const regPatronal = (meta?.registro_patronal_imss as string) || 'Y1234567101';
+    // Los trabajadores sin NSS se omiten del archivo IDSE (decisión de diseño Ledger,
+    // no regla oficial IMSS). Se listan en advertencia al usuario.
+    const sinNss = cierreCalculado.trabajadores
+      .filter((t) => !t.nss || !t.nss.trim())
+      .map((t) => t.nombre);
+    setIdseNssSkipped(sinNss);
     descargarLayoutIdse({
       registroPatronal: regPatronal,
       movimiento: '07', // Modificación de Salario (SBC)
@@ -623,10 +630,10 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                 </select>
               </div>
 
-              {/* Número de empleados ISN */}
+              {/* Número de trabajadores ISN (Decreto 147/2025 Art. 4, conforme a disposiciones AAFY) */}
               <div>
                 <label className="mb-1 block font-semibold text-muted">
-                  Número de Empleados (ISN)
+                  Número de Trabajadores (Decreto 147/2025 Art. 4, conforme a disposiciones AAFY)
                 </label>
                 <input
                   type="number"
@@ -638,7 +645,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                       Math.max(0, Math.min(999, Math.floor(Number(e.target.value) || 0)))
                     )
                   }
-                  aria-label="Número de empleados ISN"
+                  aria-label="Número de trabajadores ISN (Decreto 147/2025 Art. 4)"
                   className="w-full rounded-xl border border-line bg-surface-2 px-3 py-2 font-mono text-ink focus:border-navy focus:outline-none"
                 />
               </div>
@@ -921,6 +928,19 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  {idseNssSkipped.length > 0 && (
+                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+                      <div className="mb-1 font-bold">⚠ Trabajadores sin NSS omitidos del IDSE</div>
+                      <div className="text-[10px]">
+                        Omitidos del archivo (decisión de diseño Ledger, no regla oficial IMSS):
+                        {idseNssSkipped.join(', ')}
+                      </div>
+                      <div className="mt-1 text-[9px] italic text-amber-600">
+                        Agregar NSS a estos trabajadores y volver a generar el cierre para
+                        incluirlos en el archivo de transmisión IDSE / DISPMAG.
+                      </div>
+                    </div>
+                  )}
                   <GlassButton
                     type="button"
                     variant="default"
@@ -981,6 +1001,46 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                     {cierreCalculado.resumen.totalIMSSObrero.toLocaleString('es-MX', {
                       minimumFractionDigits: 2,
                     })}
+                  </div>
+                </div>
+
+                <div className="rounded-xl border-2 border-amber-500 bg-amber-50 p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                      IMSS Patrón (empleador)
+                    </span>
+                    <span className="inline-flex items-center rounded-md border border-amber-400 bg-amber-100 px-2 py-0.5 text-[9px] font-bold text-amber-800">
+                      en verificación DOF
+                    </span>
+                  </div>
+                  <div className="mt-1 font-orbitron text-lg font-bold tabular-nums text-amber-950">
+                    $
+                    {cierreCalculado.resumen.totalIMSSPatronal.toLocaleString('es-MX', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                  <div className="mt-1 space-y-0.5 text-[10px] text-amber-700">
+                    {cierreCalculado.resumen.imssPatronalDesglose.map((rama) => (
+                      <div key={rama.ramo} className="flex justify-between">
+                        <span>{rama.ramo}</span>
+                        <span>
+                          $ {rama.monto.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+                        </span>
+                      </div>
+                    ))}
+                    {!cierreCalculado.resumen.imssPatronalDesglose.length && (
+                      <div className="italic opacity-70">Sin desglose de ramas disponible</div>
+                    )}
+                  </div>
+                  <div className="mt-1 border-t border-amber-200 pt-1 text-[10px] font-medium text-amber-800">
+                    INFONAVIT (línea separada, no incluida en el total): $
+                    {cierreCalculado.resumen.totalInfONAVIT.toLocaleString('es-MX', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </div>
+                  <div className="mt-0.5 text-[9px] text-amber-600">
+                    Todas las tasas en verificación contra DOF/IMSS oficial — no usar en vivo hasta
+                    confirmación.
                   </div>
                 </div>
 

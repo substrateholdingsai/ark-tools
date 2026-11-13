@@ -110,14 +110,16 @@ export function formatearFechaIdse(fechaStr?: string): string {
 
 /**
  * Genera una línea fija DISPMAG / IDSE para un trabajador.
- * Longitud total: exactamente 175 caracteres estándar IMSS.
+ * Longitud total: 175 caracteres (implementación Ledger; longitud NO confirmada en manual
+ * oficial IMSS — no hacer upload en vivo hasta validación contra IMSS/IDSE).
  *
  * Notas de alcance:
  * - El dígito verificador (posiciones 153-155) es un dígito de control LOCAL
  *   determinista calculado sobre el cuerpo de la línea. No es el DV oficial de
  *   IMSS (ese se genera en el portal IDSE al transmitir el lote).
  * - Las posiciones 156-175 son relleno con espacios para alcanzar 175 chars.
- * - IMSS requiere NSS válido: los trabajadores sin NSS se omiten del lote.
+ * - IMSS requiere NSS válido: los trabajadores sin NSS se omiten del lote (decisión de
+ *   diseño de Ledger, no regla oficial de IMSS).
  */
 export function calcularDigitoVerificadorIdse(lineaBase: string): string {
   let suma = 0;

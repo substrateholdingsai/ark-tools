@@ -3,10 +3,10 @@
  * Ley General de Hacienda del Estado de Yucatán (LGHY):
  * - Arts. 16 al 20: Impuesto sobre el Ejercicio Profesional (3%, pago día 17)
  * - Art. 20-Bis (adicionado D.O. 26-dic-2025): Retención 2% al pago, entero día 10 mes siguiente
- * - Art. 20-Ter: Constancia AAFY-30 dentro de los 5 días siguientes (o acumulada mensual)
+ * - Art. 20-Ter: Constancia AAFY-30 dentro de los 5 días siguientes al pago
  * - Art. 20-Quater: Responsabilidad solidaria
  * - Art. 20-Quinquies: Declaración informativa trimestral (1er y 2do trim. 2026 acumulados en julio 2026)
- * - Acuerdo AAFY XX/2026: Entero de enero 2026 prorrogado al 20 de febrero de 2026
+ * - Acuerdo AAFY 12/2026 (III.1.5): Entero de enero 2026 prorrogado al 20 de febrero de 2026
  */
 
 import type { RetencionClinicasInput, RetencionClinicasResultado } from '../types';
@@ -64,8 +64,8 @@ export function calcularRetencionClinicas(
   const fechaLimiteConstancia = sumarDiasIso(fechaPago, 5);
 
   const notaAcuerdoAafy2026 = esEnero2026
-    ? 'Acuerdo AAFY XX/2026: Entero de enero 2026 prorrogado al 20 de febrero de 2026. Constancia por pago o acumulada mensual a más tardar el último día del mes.'
-    : 'Art. 20-Ter LGHY y Acuerdo AAFY XX/2026: Constancia dentro de los 5 días siguientes al pago o acumulada mensual a más tardar el último día del mes.';
+    ? 'Constancia dentro de los 5 días siguientes al pago (Art. 20-Ter LGHY). Acumulación mensual no confirmada en reglas oficiales.'
+    : 'Constancia dentro de los 5 días siguientes al pago (Art. 20-Ter LGHY). Acumulación mensual no confirmada en reglas oficiales.';
 
   return {
     base,
