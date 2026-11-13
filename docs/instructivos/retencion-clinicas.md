@@ -10,10 +10,10 @@ Herramienta determinista para clínicas, sanatorios y hospitales ubicados en el 
 
 - **Arts. 16 al 20:** Impuesto sobre el Ejercicio Profesional (tasa 3%, pago a más tardar el día 17 del mes siguiente).
 - **Art. 20-Bis (adicionado D.O. 26-dic-2025):** Obligación de retener el **2%** al momento del pago y enterarlo a más tardar el **día 10 del mes siguiente**.
-- **Art. 20-Ter:** Expedición de la constancia **AAFY-30** dentro de los **5 días** siguientes al pago (o acumulada mensual a más tardar el último día del mes, conforme al **Acuerdo AAFY XX/2026**).
+- **Art. 20-Ter:** Expedición de la constancia **AAFY-30** dentro de los **5 días** siguientes al pago (Art. 20-Ter LGHY). Acumulación mensual no confirmada en reglas oficiales.
 - **Art. 20-Quater:** Responsabilidad solidaria del retenedor por las retenciones omitidas.
 - **Art. 20-Quinquies:** Declaración informativa trimestral (1er y 2do trimestre 2026 acumulados en **julio 2026**).
-- **Acuerdo AAFY XX/2026:** Prórroga del entero correspondiente a enero 2026 hasta el **20 de febrero de 2026**.
+- **Acuerdo AAFY 12/2026 (III.1.5):** Prórroga del entero correspondiente a enero 2026 hasta el **20 de febrero de 2026**.
 
 ## Ejemplo de Cálculo
 

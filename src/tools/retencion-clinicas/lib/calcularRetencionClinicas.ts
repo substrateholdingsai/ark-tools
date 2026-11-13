@@ -9,7 +9,11 @@
  * - Acuerdo AAFY 12/2026 (III.1.5): Entero de enero 2026 prorrogado al 20 de febrero de 2026
  */
 
-import type { RetencionClinicasInput, RetencionClinicasResultado } from '../types';
+import type {
+  RetencionClinicasInput,
+  RetencionClinicasResultado,
+  TrimestreInformativo,
+} from '../types';
 
 export const MENSAJE_SOLO_YUCATAN = 'Solo Yucatán, Art. 20-Bis LGHY';
 
@@ -34,14 +38,52 @@ function calcularFechaMesSiguiente(fechaIso: string, dia: number): string {
   return `${nextYear}-${pad2(nextMonth)}-${pad2(dia)}`;
 }
 
-function obtenerTrimestreInformativo(fechaIso: string): string {
+const MESES = [
+  'enero',
+  'febrero',
+  'marzo',
+  'abril',
+  'mayo',
+  'junio',
+  'julio',
+  'agosto',
+  'septiembre',
+  'octubre',
+  'noviembre',
+  'diciembre',
+];
+
+function obtenerTrimestreInformativo(fechaIso: string): TrimestreInformativo {
   const [y, m] = fechaIso.split('-').map(Number);
-  if (!y || !m) return 'Declaración trimestral Art. 20-Quinquies LGHY';
+  if (!y || !m) {
+    return {
+      periodo: 'Sin periodo',
+      mesLimite: 'Indeterminado',
+      label: 'Declaración trimestral Art. 20-Quinquies LGHY',
+    };
+  }
+  // Transitory Fifth (Quinto Transitorio): Q1 + Q2 2026 acumulados y presentados en julio 2026
   if (y === 2026 && m <= 6) {
-    return '1er y 2do trimestre 2026: presentación acumulada en julio 2026 (Art. 20-Quinquies LGHY)';
+    return {
+      periodo: 'Q1+Q2 2026',
+      mesLimite: 'julio 2026',
+      label:
+        '1er y 2do trimestre 2026: presentación acumulada en julio 2026 (Transitory Fifth, Art. 20-Quinquies LGHY)',
+    };
   }
   const trim = Math.ceil(m / 3);
-  return `Trimestre ${trim} de ${y}: presentación en el mes inmediato posterior al cierre del trimestre (Art. 20-Quinquies LGHY)`;
+  const trimEndMonth = trim * 3;
+  let limYear = y;
+  let limMonth = trimEndMonth + 1;
+  if (limMonth > 12) {
+    limMonth = 1;
+    limYear = y + 1;
+  }
+  return {
+    periodo: `Q${trim} ${y}`,
+    mesLimite: `${MESES[limMonth - 1]} ${limYear}`,
+    label: `Trimestre ${trim} de ${y}: presentación en ${MESES[limMonth - 1]} ${limYear} (Art. 20-Quinquies LGHY)`,
+  };
 }
 
 export function calcularRetencionClinicas(
@@ -51,7 +93,14 @@ export function calcularRetencionClinicas(
     throw new Error(MENSAJE_SOLO_YUCATAN);
   }
 
-  const base = Math.max(0, r2(Number(input.montoHonorarios) || 0));
+  const rawBase = Number(input.montoHonorarios);
+  if (Number.isNaN(rawBase)) {
+    throw new Error('Base de honorarios requerida: montoHonorarios debe ser un número válido.');
+  }
+  if (rawBase < 0) {
+    throw new Error('Base de honorarios no puede ser negativa.');
+  }
+  const base = r2(rawBase);
   const retencion2Pct = r2(base * 0.02);
   const netoPagar = r2(base - retencion2Pct);
   const impuestoEjercicioProfesional3Pct = r2(base * 0.03);

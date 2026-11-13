@@ -17,7 +17,12 @@ import {
   TextMagnified,
 } from '@/components/ui';
 import { calcularRetencionClinicas, MENSAJE_SOLO_YUCATAN } from './lib/calcularRetencionClinicas';
-import { descargarAafy30, descargarAafy31, descargarCotejoAafy } from './lib/exportarAafyRetencion';
+import {
+  descargarAafy30,
+  descargarAafy31,
+  descargarCotejoAafy,
+  camposIdentidadFaltantes,
+} from './lib/exportarAafyRetencion';
 import type { RetencionClinicasInput, TipoPersonaRetencion } from './types';
 
 interface RetencionClinicasProps {
@@ -46,6 +51,11 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
     'Calle 60 #450, Centro, Mérida, Yuc.'
   );
   const [prestadorTipo, setPrestadorTipo] = useState<TipoPersonaRetencion>('fisica');
+  const [calcError, setCalcError] = useState<string | null>(null);
+  const [exportGuard, setExportGuard] = useState<{
+    kind: 'aafy30' | 'aafy31' | 'cotejo';
+    missing: string[];
+  } | null>(null);
 
   useEffect(() => {
     if (activeClient) {
@@ -102,20 +112,54 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
 
   const resultado = useMemo(() => {
     if (!esYucatan) return null;
-    return calcularRetencionClinicas(input);
+    setCalcError(null);
+    try {
+      return calcularRetencionClinicas(input);
+    } catch (e) {
+      setCalcError(e instanceof Error ? e.message : 'Error de cálculo');
+      return null;
+    }
   }, [esYucatan, input]);
 
+  const baseCero = resultado ? resultado.base === 0 : false;
+
   const handleExportAafy30 = useCallback(() => {
-    if (resultado) descargarAafy30(input, resultado);
+    if (!resultado) return;
+    const faltantes = camposIdentidadFaltantes(input);
+    if (faltantes.length > 0) {
+      setExportGuard({ kind: 'aafy30', missing: faltantes });
+      return;
+    }
+    descargarAafy30(input, resultado);
   }, [input, resultado]);
 
   const handleExportAafy31 = useCallback(() => {
-    if (resultado) descargarAafy31(input, resultado);
+    if (!resultado) return;
+    const faltantes = camposIdentidadFaltantes(input);
+    if (faltantes.length > 0) {
+      setExportGuard({ kind: 'aafy31', missing: faltantes });
+      return;
+    }
+    descargarAafy31(input, resultado);
   }, [input, resultado]);
 
   const handleExportCotejo = useCallback(() => {
-    if (resultado) descargarCotejoAafy(input, resultado);
+    if (!resultado) return;
+    const faltantes = camposIdentidadFaltantes(input);
+    if (faltantes.length > 0) {
+      setExportGuard({ kind: 'cotejo', missing: faltantes });
+      return;
+    }
+    descargarCotejoAafy(input, resultado);
   }, [input, resultado]);
+
+  const confirmarExportacionGuardada = useCallback(() => {
+    if (!exportGuard || !resultado) return;
+    if (exportGuard.kind === 'aafy30' && !baseCero) descargarAafy30(input, resultado);
+    else if (exportGuard.kind === 'aafy31') descargarAafy31(input, resultado);
+    else if (exportGuard.kind === 'cotejo') descargarCotejoAafy(input, resultado);
+    setExportGuard(null);
+  }, [exportGuard, input, resultado, baseCero]);
 
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-10 md:px-10">
@@ -128,6 +172,43 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
           <ArrowLeft size={14} strokeWidth={2.5} />
           Volver al dashboard
         </button>
+      )}
+
+      {exportGuard && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setExportGuard(null)}
+          />
+          <div className="relative w-full max-w-md rounded-[24px] border border-line bg-surface p-6 shadow-2xl">
+            <div className="mb-3 font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
+              Datos de identidad incompletos
+            </div>
+            <p className="mb-4 text-[13px] leading-[1.5] text-ink">
+              No se puede exportar sin estos campos de identidad:{' '}
+              <strong>{exportGuard.missing.join(', ')}</strong>.{' '}
+              {exportGuard.missing.length > 0
+                ? 'Confirma para exportar con los campos en blanco.'
+                : ''}
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setExportGuard(null)}
+                className="flex-1 rounded-xl border border-line bg-surface-2 px-4 py-2 text-sm font-semibold text-muted hover:bg-amber-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmarExportacionGuardada}
+                className="flex-1 rounded-xl border border-navy bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy/90"
+              >
+                Confirmar exportación
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <header className="mb-6">
@@ -350,8 +431,18 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
 
         {/* Resultado y Alertas */}
         <div className="space-y-4 lg:sticky lg:top-[88px]">
-          {resultado ? (
+          {calcError ? (
+            <div className="rounded-[20px] border border-rose-300 bg-rose-50 p-6 text-center text-sm font-bold text-rose-900">
+              {calcError}
+            </div>
+          ) : resultado ? (
             <LiquidGlassDome padding="lg" radius="dome">
+              {baseCero && (
+                <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-xs font-bold text-amber-900">
+                  <AlertTriangle size={16} className="shrink-0 text-amber-600" />
+                  <span>Base $0 — no hay retención que calcular</span>
+                </div>
+              )}
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
                   <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
@@ -399,6 +490,13 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
                   <span className="text-muted">Límite Pago 3% (Art. 16-20)</span>
                   <span className="font-mono text-muted">{resultado.fechaLimitePagoImpuesto}</span>
                 </div>
+                <div className="flex justify-between">
+                  <span className="text-muted">Declaración trimestral (Art. 20-Quinquies)</span>
+                  <span className="font-mono text-ink">
+                    {resultado.trimestreInformativo.periodo} →{' '}
+                    {resultado.trimestreInformativo.mesLimite}
+                  </span>
+                </div>
               </div>
 
               <GoldDivider spacing="md" />
@@ -415,9 +513,15 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
               <GoldDivider spacing="md" />
 
               <div className="space-y-2.5">
-                <GlassButton variant="primary" size="md" fullWidth onClick={handleExportAafy30}>
+                <GlassButton
+                  variant="primary"
+                  size="md"
+                  fullWidth
+                  onClick={handleExportAafy30}
+                  disabled={baseCero}
+                >
                   <Download size={14} />
-                  DESCARGAR AAFY-30 (CONSTANCIA)
+                  DESCARGAR AAFY-30 (CONSTANCIA){baseCero ? ' — bloqueada (base $0)' : ''}
                 </GlassButton>
                 <GlassButton variant="default" size="md" fullWidth onClick={handleExportAafy31}>
                   <Download size={14} />

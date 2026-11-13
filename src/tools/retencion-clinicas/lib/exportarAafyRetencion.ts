@@ -15,6 +15,20 @@ function obtenerMesAnio(fechaIso: string): { mes: string; anio: string; periodo:
   return { mes, anio, periodo: `${mes}/${anio}` };
 }
 
+/**
+ * Campos de identidad del retenedor/prestador que faltan para exportar.
+ * Cuando alguno falta, la UI debe advertir y requerir confirmación explícita
+ * antes de exportar (no se exporta silenciosamente con 'N/D' como si fuera dato real).
+ */
+export function camposIdentidadFaltantes(input: RetencionClinicasInput): string[] {
+  const faltantes: string[] = [];
+  if (!input.retenedor.rec?.trim()) faltantes.push('REC AAFY del retenedor');
+  if (!input.retenedor.ciee?.trim()) faltantes.push('CIEE del retenedor');
+  if (!input.retenedor.rfc?.trim()) faltantes.push('RFC del retenedor');
+  if (!input.prestador.rfc?.trim()) faltantes.push('RFC del prestador');
+  return faltantes;
+}
+
 export function generarContenidoAafy30(
   input: RetencionClinicasInput,
   resultado: RetencionClinicasResultado
