@@ -17,7 +17,7 @@ describe('GEO Engine — llms.txt & llms-full.txt', () => {
     expect(text).toContain('**Tope Salario Base de Cotización (SBC 25 UMAs):** $2,932.75 MXN');
 
     // El catálogo publicado debe reflejar la suite completa, sin conteos desactualizados
-    expect(TOTAL_HERRAMIENTAS).toBe(21);
+    expect(TOTAL_HERRAMIENTAS).toBe(22);
     expect(text).toContain(`Catálogo de las ${TOTAL_HERRAMIENTAS} Herramientas en Producción`);
     expect(text).not.toContain('Catálogo de las 20 Herramientas');
     expect(text).not.toContain('Catálogo de las 19 Herramientas');

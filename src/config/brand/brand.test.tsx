@@ -20,7 +20,7 @@ describe('Brand Configuration Engine & White-Label Support', () => {
     expect(brand.brandName).toBe('ARK LEDGER');
     expect(brand.legalEntity).toBe('Substrate Holdings LLC');
     expect(brand.colors.primary).toBe('#002B7F');
-    expect(brand.allowedTools).toBeUndefined(); // Sin restricción: 19/19 tools
+    expect(brand.allowedTools).toBeUndefined(); // Sin restricción: 22/22 tools
   });
 
   it('obtiene la configuración de CANACO SERVYTUR MÉRIDA con herramientas curadas y ventanilla activa', () => {

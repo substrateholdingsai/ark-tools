@@ -2,7 +2,7 @@
  * ARK LEDGER — Landing Pública
  *
  * Página de aterrizaje para usuarios no autenticados.
- * Explica las 19 herramientas de la suite y el beneficio de registrarse
+ * Explica las 22 herramientas de la suite y el beneficio de registrarse
  * para acceder a la funcionalidad completa.
  */
 

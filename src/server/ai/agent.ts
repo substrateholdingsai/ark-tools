@@ -173,6 +173,10 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
     - Auditoría pericial 100% local con Ley de Benford, Z-Score, efectivo > $2,000 (Art. 27 LISR), cancelaciones extemporáneas (Art. 29-A CFF) y cruce EFOS (Art. 69-B CFF).
 21. Retención 2% Clínicas y Hospitales ('retencion-clinicas'):
     - Exclusivo Yucatán (Art. 20-Bis a 20-Quinquies LGHY): retención 2% al pago de honorarios médicos, entero día 10 (prórroga enero 2026 al 20-feb-2026) y formatos AAFY-30 / AAFY-31.
+22. Cobro con CoDi — Ark Caja ('caja-codi'):
+    - Enlace externo a caja.arksystems.site. Cobra con CoDi sin terminal, QR en mostrador,
+    $8,000 MXN por operación, SPEI arriba de eso. Noah NO cobra, NO genera QR, NO llama a Pey.
+    Solo comparte el enlace.
 `;
 }
 export async function runAiAgent(env: Env, options: RunAgentOptions): Promise<Response> {

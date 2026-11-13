@@ -3,7 +3,7 @@
  *
  * Cinta horizontal compacta de alta densidad en el tope de la interfaz.
  * Comunica en tiempo real que la suite está conectada al radar de Sentinela
- * RegTech y que las 21 herramientas fiscales/laborales están sincronizadas con el DOF.
+ * RegTech y que las 22 herramientas fiscales/laborales están sincronizadas con el DOF.
  */
 
 import { useState, useEffect } from 'react';
@@ -261,7 +261,7 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
         );
       })}
 
-      {/* 2. Garantías de Blindaje y Actualización de las 20 Herramientas */}
+      {/* 2. Garantías de Blindaje y Actualización de las 22 Herramientas */}
       {STATIC_SUITE_GUARANTEES.map((g) => (
         <button
           key={`${isClone ? 'clone' : 'orig'}-g-${g.id}`}

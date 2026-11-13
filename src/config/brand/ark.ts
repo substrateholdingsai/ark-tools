@@ -28,7 +28,7 @@ export const ARK_BRAND_CONFIG: BrandConfig = {
     textInk: '#0B132B',
   },
   theme: 'dark',
-  allowedTools: undefined, // Todas las 19 herramientas disponibles
+  allowedTools: undefined, // Todas las 22 herramientas disponibles
   features: {
     ventanillaPagos: false,
     superAdminCrm: true,

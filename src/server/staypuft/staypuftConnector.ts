@@ -645,7 +645,7 @@ export function checkStayPuftApprovalGate(request: Request, pathname: string): A
 }
 
 // ============================================================================
-// Especificaciones Vivas de las 20 Herramientas (derivadas de código y catálogos)
+// Especificaciones Vivas de las 22 Herramientas (derivadas de código y catálogos)
 // ============================================================================
 
 const SAMPLE_CFDI_XML =
@@ -1087,6 +1087,37 @@ const TOOL_SPECS_MAP: Record<
       mesesProyectados: 'number',
     },
     sample_preview_payload: { ...LEASING_DEFAULT },
+  },
+  'caja-codi': {
+    route: '/#caja-codi',
+    status: 'active',
+    preview_supported: true,
+    law_cited: [
+      'Banxico CoDi (Sistema de Pagos Electrónicos de Alto Valor — CoDi, UDI-based QR)',
+      'Ley de Ingresos de la Federación (LIF) — SPEI como fallback para montos superiores al límite CoDi',
+      'Tope regulatorio CoDi: 1,500 UDIS (~$12,500–$13,200 MXN), límite seguro por operación $8,000 MXN',
+    ],
+    inputs: {
+      merchant_id: 'string (opcional; ID del tenant/despacho Ledger para pre-fill en Caja)',
+    },
+    outputs: {
+      url: 'string (URL externa a caja.arksystems.site)',
+      safe_limit_mxn: 'number ($8,000 MXN por operación CoDi)',
+      spei_fallback_above: 'number ($8,000 MXN — SPEI a CLABE del merchant)',
+      external_link: 'true (enlace de salida; Ledger NO procesa el pago)',
+      writes: '0 (sin escritura en D1)',
+      stamped: 'false (sin sello SHA-256; no es un cálculo sellado)',
+      sealed: 'false (sin archivar en Expediente Único)',
+    },
+    sample_preview_payload: {
+      url: 'https://caja.arksystems.site/',
+      safe_limit_mxn: 8000,
+      spei_fallback_above: 8000,
+      external_link: true,
+      writes: 0,
+      stamped: false,
+      sealed: false,
+    },
   },
   'guia-sat-imss': {
     route: '/#guia-sat-imss',
@@ -1879,6 +1910,19 @@ export async function executeToolPreview(
         resultOutput = {
           resumen,
           mesesProyectados: proyeccion.length,
+        };
+        break;
+      }
+
+      case 'caja-codi': {
+        resultOutput = {
+          url: 'https://caja.arksystems.site/',
+          safe_limit_mxn: 8000,
+          spei_fallback_above: 8000,
+          external_link: true,
+          writes: 0,
+          stamped: false,
+          sealed: false,
         };
         break;
       }
@@ -3860,7 +3904,7 @@ export async function handleStayPuftInternalRequest(
       );
     }
 
-    // Validar lista de tools solicitadas (solo las 21 herramientas preview están permitidas)
+    // Validar lista de tools solicitadas (solo las 22 herramientas preview están permitidas)
     let allowedToolIds = new Set<string>(VALID_PREVIEW_TOOL_IDS);
     if (body.tools !== undefined) {
       if (!Array.isArray(body.tools)) {
@@ -3907,7 +3951,7 @@ export async function handleStayPuftInternalRequest(
             ok: false,
             blocked: true,
             status: 'blocked',
-            error: `Acción bloqueada: Solo se permiten las 21 herramientas preview de Ark Ledger. Herramientas no autorizadas: ${nonPreviewTools.join(', ')}.`,
+            error: `Acción bloqueada: Solo se permiten las 22 herramientas preview de Ark Ledger. Herramientas no autorizadas: ${nonPreviewTools.join(', ')}.`,
             answer: null,
             toolsCalled: [],
             writes: 0,

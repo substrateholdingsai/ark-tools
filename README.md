@@ -1,11 +1,11 @@
 # ARK LEDGER — El Sistema Operativo de la Defensa y Cumplimiento Fiscal
 
 [![Producción](https://img.shields.io/badge/Producci%C3%B3n-ledger.arksystems.site-0A192F?style=for-the-badge&logo=cloudflare&logoColor=D4AF37)](https://ledger.arksystems.site)
-[![Herramientas](https://img.shields.io/badge/Herramientas_Fiscales-20_de_20_Vigentes-emerald?style=for-the-badge)](src/data/catalogo-herramientas.ts)
+[![Herramientas](https://img.shields.io/badge/Herramientas_Fiscales-22_de_22_Vigentes-emerald?style=for-the-badge)](src/data/catalogo-herramientas.ts)
 [![Valores DOF](https://img.shields.io/badge/Auditor%C3%ADa_DOF_2026-8%2F8_Oficiales-gold?style=for-the-badge)](src/data/valores-vigentes/catalogo.ts)
 [![GEO Engine](https://img.shields.io/badge/GEO_Engine-%2Fllms.txt-blue?style=for-the-badge)](https://ledger.arksystems.site/llms.txt)
 
-Suite integral de **20 herramientas fiscales, laborales, forenses y de compliance** diseñada para contadores públicos, firmas legales y directores de finanzas en México. Construida sobre arquitectura de borde global con **Cloudflare Workers, D1 Database, Workers AI (Llama 3.3 70B), WebCrypto y Bóveda Offline Criptográfica (Art. 30 CFF)**.
+Suite integral de **22 herramientas fiscales, laborales, forenses y de compliance** diseñada para contadores públicos, firmas legales y directores de finanzas en México. Construida sobre arquitectura de borde global con **Cloudflare Workers, D1 Database, Workers AI (Llama 3.3 70B), WebCrypto y Bóveda Offline Criptográfica (Art. 30 CFF)**.
 
 ---
 
@@ -24,7 +24,7 @@ Garantiza la continuidad operativa del despacho sin depender de conexión a inte
 Asistente agentic especializado en derecho tributario mexicano:
 
 - Motor **Llama 3.3 70B Instruct** ejecutado en la red perimetral de Cloudflare Workers AI.
-- **Tool-Calling fiscal:** Capaz de invocar las 20 herramientas de la suite para resolver casos complejos en tiempo real.
+- **Tool-Calling fiscal:** Capaz de invocar las 22 herramientas de la suite para resolver casos complejos en tiempo real.
 - **Conector StayPuft con Approval Gate:** Arquitectura _fail-closed_ que audita y bloquea escrituras y acciones no supervisadas.
 
 ### 3. GEO Engine para Agentes de IA (/llms.txt)
@@ -50,7 +50,7 @@ Implementación en producción para la **Cámara Nacional de Comercio, Servicios
 
 ---
 
-## 🧰 Catálogo Canónico de las 20 Herramientas
+## 🧰 Catálogo Canónico de las 22 Herramientas
 
 Cada herramienta cuenta con cédula de trabajo, validación normativa, exportación de datos (CSV con BOM UTF-8) y su respectivo instructivo en [`docs/instructivos/`](docs/instructivos/README.md):
 

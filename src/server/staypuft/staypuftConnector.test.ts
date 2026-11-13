@@ -404,8 +404,8 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
   // ==========================================================================
   // 3. Status & Live 20-Tool Catalog Inspection
   // ==========================================================================
-  describe('Status and 21 Tools Live Metadata', () => {
-    it('returns live status with version 3.1, 21 tools, 32 ISN states, and ATEB in_progress gate', async () => {
+  describe('Status and 22 Tools Live Metadata', () => {
+    it('returns live status with version 3.1, 22 tools, 32 ISN states, and ATEB in_progress gate', async () => {
       const { env } = createIsolatedMockEnv(true);
       const res = await worker.fetch(
         new Request('https://ledger.arksystems.site/api/internal/status', {
@@ -418,7 +418,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       const data = (await res.json()) as Record<string, unknown>;
       expect(data.ok).toBe(true);
       expect(data.version).toBe('3.1');
-      expect(data.tool_count).toBe(21);
+      expect(data.tool_count).toBe(22);
       expect(data.isn_states_count).toBe(32);
       expect(Number(data.lfpiorpi_fractions_count)).toBeGreaterThanOrEqual(5);
 
@@ -428,7 +428,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(integrations.ateb_pac?.distributor_pricing_in_writing).toBe(false);
     });
 
-    it('lists all 20 canonical tools from CATALOGO_HERRAMIENTAS with law_cited', async () => {
+    it('lists all 22 canonical tools from CATALOGO_HERRAMIENTAS with law_cited', async () => {
       const { env } = createIsolatedMockEnv(true);
       const res = await worker.fetch(
         new Request('https://ledger.arksystems.site/api/internal/tools', {
@@ -445,7 +445,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       };
       expect(data.ok).toBe(true);
       expect(data.total).toBe(TOTAL_HERRAMIENTAS);
-      expect(data.tools).toHaveLength(21);
+      expect(data.tools).toHaveLength(22);
 
       for (const tool of data.tools) {
         expect(tool.law_cited.length).toBeGreaterThan(0);
@@ -485,8 +485,8 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
   // ==========================================================================
   // 4. Preview Calculation Mode (Writes nothing, seals nothing, stamps nothing)
   // ==========================================================================
-  describe('Preview Mode across all 21 tools', () => {
-    it('executes preview calculation for every single one of the 21 tools without writing, sealing, or stamping', async () => {
+  describe('Preview Mode across all 22 tools', () => {
+    it('executes preview calculation for every single one of the 22 tools without writing, sealing, or stamping', async () => {
       const { env, store } = createIsolatedMockEnv(true);
 
       for (const tool of CATALOGO_HERRAMIENTAS) {
@@ -1420,9 +1420,9 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       };
       expect(walkBody.stamping_policy.status).toBe('preview_only');
       expect(walkBody.stamping_policy.live_stamping_on_monday).toBe(false);
-      expect(walkBody.suite_breakdown.total_tools).toBe(21);
+      expect(walkBody.suite_breakdown.total_tools).toBe(22);
       expect(walkBody.suite_breakdown.canaco_pyme_core_count).toBe(12);
-      expect(walkBody.suite_breakdown.specialized_corporate_pld_count).toBe(9);
+      expect(walkBody.suite_breakdown.specialized_corporate_pld_count).toBe(10);
     });
   });
 

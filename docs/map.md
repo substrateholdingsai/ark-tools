@@ -1,6 +1,6 @@
 # ARK LEDGER — Mapa del Proyecto y Estado Actual (map.md)
 
-**Versión:** 3.1 — Suite de 21 Herramientas + Bóveda Offline Criptográfica (Art. 30 CFF) + Motor de Marca Blanca (CANACO SERVYTUR MÉRIDA) + Workers AI / StayPuft + Facturapi v2 (CFDI 4.0) + GEO Engine (/llms.txt)  
+**Versión:** 3.1 — Suite de 22 Herramientas + Bóveda Offline Criptográfica (Art. 30 CFF) + Motor de Marca Blanca (CANACO SERVYTUR MÉRIDA) + Workers AI / StayPuft + Facturapi v2 (CFDI 4.0) + GEO Engine (/llms.txt)  
 **Fecha:** Noviembre 2026  
 **Rama:** `main` @ `009634b` (`feat(canaco-tripartito): implementar afiliacion simultanea AAFY-SAT-IMSS con cedula AAFY y layout IDSE`)  
 **Worker:** `ark-tools-production` en `https://ledger.arksystems.site`  
@@ -15,7 +15,7 @@
 
 | Métrica                        | Estado                                                                                                                                                                                                                                                                                                      |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Herramientas integradas**    | **21 de 21** (100% operativas en código; ver §3 y `src/data/catalogo-herramientas.ts`, incluye Tool 21 `retencion-clinicas`)                                                                                                                                                                                |
+| **Herramientas integradas**    | **22 de 22** (100% operativas en código; ver §3 y `src/data/catalogo-herramientas.ts`, incluye Tool 22 `caja-codi`)                                                                                                                                                                                         |
 | **Catálogo fiscal (DOF 2026)** | **16 valores oficiales vigentes** (UMA diaria/mensual, SMG general/frontera, Tope SBC 25 UMAs, Tarifa ISR mensual, CUOTA_MODALIDAD_40_2026, TASA_RECARGOS_MORA_2026, cuotas IMSS patrón 2026 rama por rama + INFONAVIT línea separada). Auditoría `pnpm verify:catalogo`: **16/16**, 0 proyecciones         |
 | **ISN Yucatán**                | **Versionado 2025/2026** (Art. 21–27 LGHY, Decreto 138/2025 y Decreto 147/2025): 2025 = **3.0%**, 2026 general = **3.75%**, 2026 micro/pequeña (1–50 emp.) = **3.0% neto** (−0.75% estímulo), gobierno estatal = **4.75% bruto** (estímulo no confirmado). Cédula Oficial AAFY exportable en CSV UTF-8 BOM  |
 | **Ventanilla Tripartita**      | **CANACO — AAFY — SAT — IMSS**: Registro simultáneo (NRP IMSS 11 chars + REC Estatal AAFY), sincronización en D1 y distintivo `Tripartito AAFY-IMSS` en Padrón de Socios                                                                                                                                    |
@@ -28,7 +28,7 @@
 | **Formato (Prettier)**         | **100% uniforme** (`pnpm format:check` pasa) — verificado                                                                                                                                                                                                                                                   |
 | **Pruebas (Vitest)**           | **93 suites pasadas / 764 pruebas pasadas (100% de éxito en vitest run)** — verificado en puerta completa                                                                                                                                                                                                   |
 | **Compliance Multi-Tenant**    | **Marco LFPDPPP (DRAFT pendiente de revisión legal):** 3 docs en `docs/compliance/`, fuente parametrizada `src/data/compliance-legal.ts`, `LegalComplianceModal.tsx` conectado a `Footer.tsx` y `CanacoLandingPage.tsx`                                                                                     |
-| **GEO Engine**                 | `/llms.txt`, `/llms-full.txt`, `/robots.txt` generados dinámicamente desde el catálogo canónico (21 herramientas)                                                                                                                                                                                           |
+| **GEO Engine**                 | `/llms.txt`, `/llms-full.txt`, `/robots.txt` generados dinámicamente desde el catálogo canónico (22 herramientas)                                                                                                                                                                                           |
 
 ---
 
@@ -118,17 +118,17 @@ ark-tools/
 ├── tsconfig.json & vite.config.ts   ✅ Configuración estricta y aliases de ruta
 ├── vitest.config.ts                 ✅ Cobertura V8 y configuración de testing
 ├── .eslintrc.cjs                    ✅ ESLint + TypeScript + React Hooks + Prettier
-├── index.html                       ✅ Meta OG/Twitter, og:description "Suite de 21 herramientas"
+├── index.html                       ✅ Meta OG/Twitter, og:description "Suite de 22 herramientas"
 ├── src/
 │   ├── index.ts                     ✅ Worker Entry Point: /health, /api/*, /llms.txt, /llms-full.txt, /robots.txt, SPA fallback, cabeceras de seguridad
 │   ├── index.tsx                    ✅ React DOM Root (AuthProvider + ExpedienteProvider)
-│   ├── App.tsx                      ✅ Router principal, gating Landing/Dashboard, 21 herramientas lazy, ToolId union (21 ids)
+│   ├── App.tsx                      ✅ Router principal, gating Landing/Dashboard, 22 herramientas lazy, ToolId union (22 ids)
 │   ├── test-setup.ts                ✅ Setup global Vitest (jest-dom)
 │   ├── config/
 │   │   ├── billing.ts               ✅ Configuración de paywall / billing
 │   │   └── brand/                   ✅ Motor de marca blanca (Brand Config Engine)
 │   │       ├── types.ts             ✅ Contrato BrandConfig, BrandColors, BrandFeatures, BrandFooter
-│   │       ├── ark.ts               ✅ Config canónica ARK LEDGER (19 herramientas)
+│   │       ├── ark.ts               ✅ Config canónica ARK LEDGER (22 herramientas)
 │   │       ├── canacoMerida.ts      ✅ Config institucional CANACO SERVYTUR MÉRIDA (12 herramientas curadas, ventanillaPagos)
 │   │       └── index.ts             ✅ Selector dinámico por VITE_BRAND / hostname, fallback ARK
 │   ├── context/
@@ -196,7 +196,7 @@ ark-tools/
 │   │   │   ├── AlertasVigencia.tsx  ✅ Banner global de valores próximos a vencer
 │   │   │   └── index.ts             ✅ Barrel export
 │   │   ├── estados.ts               ✅ Re-export ESTADOS desde isn/data/estados.ts (fuente única)
-│   │   ├── catalogo-herramientas.ts ✅ Catálogo canónico 21 herramientas; TOTAL_HERRAMIENTAS = .length
+│   │   ├── catalogo-herramientas.ts ✅ Catálogo canónico 22 herramientas; TOTAL_HERRAMIENTAS = .length
 │   │   ├── catalogo-herramientas.test.ts ✅ Sincronía con ToolId de App.tsx (20)
 │   │   ├── actos.ts                 ✅ Guía SAT/IMSS (8 pasos, 8 actos, 3 plazos)
 │   │   ├── conductas.ts             ✅ Activos Virtuales (12 conductas, 5 autoridades, umbrales)
@@ -261,9 +261,9 @@ ark-tools/
 
 ---
 
-## 3. Catálogo Canónico de las 20 Herramientas
+## 3. Catálogo Canónico de las 22 Herramientas
 
-Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALOGO_HERRAMIENTAS.length` (20). Cada `id` coincide con el `ToolId` del router en `src/App.tsx` (verificado por `catalogo-herramientas.test.ts`).
+Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALOGO_HERRAMIENTAS.length` (22). Cada `id` coincide con el `ToolId` del router en `src/App.tsx` (verificado por `catalogo-herramientas.test.ts`).
 
 ### Grupo A — 12 esenciales PyME / CANACO (comercio y MiPyMEs)
 
@@ -281,19 +281,20 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 | 10  | `spei`            | Generador de Enlaces de Pago Clip / SPEI                  | Cobros y Facturación Fiscal B2B   | active           |
 | 11  | `leasing`         | Simulador Fiscal: Leasing vs Crédito vs Contado           | Cobros y Facturación Fiscal B2B   | active           |
 | 12  | `timbrado`        | Timbrado de Facturas CFDI 4.0 vía Facturapi PAC           | Cobros y Facturación Fiscal B2B   | **preview_only** |
+| 13  | `caja-codi`       | Cobro con CoDi — Ark Caja (enlace externo)                | Cobros y Facturación Fiscal B2B   | active           |
 
 ### Grupo B — 8 corporativo / forense / PLD (Prevención de Lavado de Dinero)
 
 | #   | id                     | Nombre                                                 | Categoría                     | Estado |
 | --- | ---------------------- | ------------------------------------------------------ | ----------------------------- | ------ |
-| 13  | `guia-sat-imss`        | Guía Interactiva SAT / IMSS                            | Compliance y Defensa Jurídica | active |
-| 14  | `auditor-cobranza`     | Auditoría Legal de Cobranza                            | Compliance y Defensa Jurídica | active |
-| 15  | `mapa-activos`         | Mapa de Regulación de Activos Virtuales                | Compliance y Defensa Jurídica | active |
-| 16  | `anexo24`              | Motor de Conciliación Anexo 24                         | SAT y Auditoría CFDI 4.0      | active |
-| 17  | `monitor-lfpiorpi`     | Monitor de Actividades Vulnerables LFPIORPI            | Compliance y Defensa Jurídica | active |
-| 18  | `recargos`             | Calculadora de Actualización y Recargos Fiscales (CFF) | Fiscal y Laboral              | active |
-| 19  | `modalidad40`          | Simulador de Modalidad 40 (Criterio DOF 2026)          | Fiscal y Laboral              | active |
-| 20  | `auditor-cfdi-atipico` | Detector de Comportamientos Atípicos en CFDI           | SAT y Auditoría CFDI 4.0      | active |
+| 14  | `guia-sat-imss`        | Guía Interactiva SAT / IMSS                            | Compliance y Defensa Jurídica | active |
+| 15  | `auditor-cobranza`     | Auditoría Legal de Cobranza                            | Compliance y Defensa Jurídica | active |
+| 16  | `mapa-activos`         | Mapa de Regulación de Activos Virtuales                | Compliance y Defensa Jurídica | active |
+| 17  | `anexo24`              | Motor de Conciliación Anexo 24                         | SAT y Auditoría CFDI 4.0      | active |
+| 18  | `monitor-lfpiorpi`     | Monitor de Actividades Vulnerables LFPIORPI            | Compliance y Defensa Jurídica | active |
+| 19  | `recargos`             | Calculadora de Actualización y Recargos Fiscales (CFF) | Fiscal y Laboral              | active |
+| 20  | `modalidad40`          | Simulador de Modalidad 40 (Criterio DOF 2026)          | Fiscal y Laboral              | active |
+| 21  | `auditor-cfdi-atipico` | Detector de Comportamientos Atípicos en CFDI           | SAT y Auditoría CFDI 4.0      | active |
 
 ---
 
@@ -394,4 +395,4 @@ El detalle cronológico de **Sprints 1-34** (incluyendo el evolución de conteos
 
 ---
 
-**Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 21 herramientas (12 PyME + 8 corporativo/forense/PLD + 1 retención clínicas), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 + Cédula Oficial AAFY, Cierre de Nómina + Layout IDSE/DISPMAG (175 chars, longitud Ledger no confirmada por manual oficial IMSS), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 16/16, pruebas 93 suites / 764 tests (100%).
+**Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 22 herramientas (12 PyME + 8 corporativo/forense/PLD + 1 retención clínicas + 1 enlace externo CoDi), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 + Cédula Oficial AAFY, Cierre de Nómina + Layout IDSE/DISPMAG (175 chars, longitud Ledger no confirmada por manual oficial IMSS), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 16/16, pruebas 93 suites / 764 tests (100%).

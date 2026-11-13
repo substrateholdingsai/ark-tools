@@ -26,6 +26,7 @@ import {
   Compass,
   ArrowLeft,
   Stethoscope,
+  QrCode,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -130,6 +131,7 @@ export type ToolId =
   | 'spei'
   | 'timbrado'
   | 'leasing'
+  | 'caja-codi'
   | 'guia-sat-imss'
   | 'auditor-cobranza'
   | 'mapa-activos'
@@ -156,7 +158,7 @@ const navItems: NavItem[] = [
 // APP
 // ═════════════════════════════════════════════════════════════════
 export function App() {
-  const { isLoaded, platformRole, user } = useAuth();
+  const { isLoaded, platformRole, user, tenantId: activeTenantId } = useAuth();
   const { loadDemoData } = useExpediente();
   const [activeTool, setActiveTool] = useState<ToolId>(() => {
     if (typeof window === 'undefined') return 'dashboard';
@@ -175,6 +177,7 @@ export function App() {
       'spei',
       'timbrado',
       'leasing',
+      'caja-codi',
       'guia-sat-imss',
       'auditor-cobranza',
       'mapa-activos',
@@ -264,6 +267,7 @@ export function App() {
     spei: 'Generador de Links de Pago',
     timbrado: 'Timbrado de Facturas CFDI 4.0',
     leasing: 'Calculadora Leasing',
+    'caja-codi': 'Cobro con CoDi — Ark Caja',
     'guia-sat-imss': 'Guía SAT/IMSS',
     'auditor-cobranza': 'Auditoría Legal de Cobranza',
     'mapa-activos': 'Mapa de Activos Virtuales',
@@ -340,6 +344,16 @@ export function App() {
 
       case 'leasing':
         return <CalculadoraLeasing onBack={goToDashboard} />;
+
+      case 'caja-codi': {
+        const merchantId = activeTenantId ?? undefined;
+        const cajaUrl = merchantId
+          ? `https://caja.arksystems.site/?m=${encodeURIComponent(merchantId)}`
+          : 'https://caja.arksystems.site/';
+        window.open(cajaUrl, '_blank', 'noopener,noreferrer');
+        goToDashboard();
+        return null;
+      }
 
       case 'guia-sat-imss':
         return <GuiaSATIMSS onBack={goToDashboard} />;
@@ -476,7 +490,7 @@ export function App() {
                           onClick={goToDashboard}
                           className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-900 transition hover:bg-emerald-100"
                         >
-                          Ver Portal del Afiliado y 20 Herramientas
+                          Ver Portal del Afiliado y 22 Herramientas
                         </button>
                         <button
                           type="button"
@@ -836,6 +850,14 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
             badge="GRATIS"
             badgeVariant="neutral"
             onSelect={() => onSelectTool('spei')}
+          />
+          <ToolCard
+            icon={QrCode}
+            title="Cobro con CoDi — Ark Caja"
+            description="Enlace externo a Caja. QR en mostrador, $8,000 MXN por operación, SPEI arriba de eso. Motor Pey."
+            badge="ARK CAJA"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('caja-codi')}
           />
           <ToolCard
             icon={FileCode}

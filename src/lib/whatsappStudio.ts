@@ -77,12 +77,12 @@ export const WS_TEMPLATES: WhatsAppTemplate[] = [
     tenant: 'ark',
     name: 'Plan Corporate Firm (Marca Blanca + IA)',
     category: 'Infraestructura',
-    description: 'Despliegue dedicado con las 21 herramientas fiscales, Papeles SHA-256 y Noah IA.',
+    description: 'Despliegue dedicado con las 22 herramientas fiscales, Papeles SHA-256 y Noah IA.',
     body: `Hola *{NOMBRE}*, ¿qué tal? Te saluda *{REMITENTE}* de *Ark Financial Technologies*.
 
 Vimos la trayectoria de *{DESPACHO}* en *{CIUDAD}* ({ESPECIALIDAD}) y quería compartirte cómo estamos instalando infraestructura fiscal propia para firmas líderes.
 
-En lugar de licencias genéricas, desplegamos nuestro motor con *21 herramientas fiscales/laborales*, *Cédulas PDF con Sello SHA-256 + QR* y *Noah (Agente IA fiscal privado)* directamente bajo el dominio y logotipo de tu despacho (100% deducible).
+En lugar de licencias genéricas, desplegamos nuestro motor con *22 herramientas fiscales/laborales*, *Cédulas PDF con Sello SHA-256 + QR* y *Noah (Agente IA fiscal privado)* directamente bajo el dominio y logotipo de tu despacho (100% deducible).
 
 ¿Tienes 10 minutos esta semana para mostrarte una demo en vivo de cómo se vería con la marca de *{DESPACHO}*?
 
@@ -128,7 +128,7 @@ Construimos un motor determinista de cumplimiento *Art. 17 LFPIORPI (Antilavado)
 
 Te escribo rápido por aquí para confirmar si tuviste oportunidad de revisar la propuesta de *Infraestructura Fiscal Marca Blanca + IA* que enviamos al correo de *{DESPACHO}*.
 
-Si te parece bien, podemos agendar una breve sesión de 15 minutos para mostrarte en vivo las 21 herramientas y el sellado criptográfico SHA-256 operando con tu marca.
+Si te parece bien, podemos agendar una breve sesión de 15 minutos para mostrarte en vivo las 22 herramientas y el sellado criptográfico SHA-256 operando con tu marca.
 
 ¿Qué día te queda mejor esta semana?`,
   },
