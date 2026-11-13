@@ -12,7 +12,12 @@ import {
   parsearNumero,
   normalizarRFC,
   normalizarNSS,
+  MAX_FILAS_PLANILLA,
+  MAX_BYTES_PLANILLA,
+  esContenidoXLSX,
+  parsearPlantillaXLSX,
 } from './parserPlantilla';
+import * as XLSX from 'xlsx';
 
 describe('parserPlantilla — Sprint 11', () => {
   describe('detectarDelimitador', () => {
@@ -136,5 +141,50 @@ describe('parserPlantilla — Sprint 11', () => {
       expect(resultado.esValido).toBe(false);
       expect(resultado.errores).toContain('El archivo importado se encuentra vacío.');
     });
+
+    it('rechaza archivos que superan el límite de bytes', () => {
+      const contenidoGrande = 'A'.repeat(MAX_BYTES_PLANILLA + 1);
+      const resultado = parsearPlantillaNomina(contenidoGrande);
+      expect(resultado.esValido).toBe(false);
+      expect(resultado.errores[0]).toContain('supera el tamaño máximo');
+    });
+
+    it('rechaza archivos que superan el límite de filas de datos', () => {
+      const filas = Array.from(
+        { length: MAX_FILAS_PLANILLA + 1 },
+        (_, i) => `Trabajador ${i},XAXX010101000,500`
+      ).join('\n');
+      const contenido = 'Nombre,RFC,Salario_Diario\n' + filas;
+      const resultado = parsearPlantillaNomina(contenido);
+      expect(resultado.esValido).toBe(false);
+      expect(resultado.errores[0]).toContain('supera el máximo');
+    });
+  });
+});
+
+describe('parserPlantilla — XLSX (SheetJS)', () => {
+  it('detecta contenido XLSX por números mágicos', () => {
+    const workbook = XLSX.utils.book_new();
+    const hoja = XLSX.utils.aoa_to_sheet([['Nombre', 'Salario_Diario']]);
+    XLSX.utils.book_append_sheet(workbook, hoja, 'Hoja1');
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    expect(esContenidoXLSX(buffer)).toBe(true);
+    expect(esContenidoXLSX(new TextEncoder().encode('Nombre,RFC'))).toBe(false);
+  });
+
+  it('parsea un archivo Excel (.xlsx) con SheetJS', () => {
+    const workbook = XLSX.utils.book_new();
+    const hoja = XLSX.utils.aoa_to_sheet([
+      ['Nombre', 'Salario_Diario', 'RFC', 'NSS'],
+      ['Juan Perez', '500', 'XAXX010101000', '24058512341'],
+    ]);
+    XLSX.utils.book_append_sheet(workbook, hoja, 'Hoja1');
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }) as ArrayBuffer;
+    const resultado = parsearPlantillaXLSX(buffer);
+    expect(resultado.esValido).toBe(true);
+    expect(resultado.trabajadoresValidos).toHaveLength(1);
+    expect(resultado.trabajadoresValidos[0]!.nombre).toBe('Juan Perez');
+    expect(resultado.trabajadoresValidos[0]!.salarioDiario).toBe(500);
+    expect(resultado.trabajadoresValidos[0]!.nss).toBe('24058512341');
   });
 });

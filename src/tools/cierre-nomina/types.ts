@@ -82,6 +82,8 @@ export interface ResultadoTrabajadorNomina {
   subsidioEmpleo: number;
   isrRetenido: number;
   imssObrero: number;
+  /** Cuotas IMSS Patrón (empleador) del trabajador. */
+  imssPatronal: number;
   otrasDeducciones: number;
   totalDeducciones: number;
 
@@ -99,6 +101,8 @@ export interface ResumenCierreNomina {
   totalISRRetenido: number;
   totalSubsidioEntregado: number;
   totalIMSSObrero: number;
+  /** Total cuotas IMSS Patrón (empleador) del lote. */
+  totalIMSSPatronal: number;
   totalOtrasDeducciones: number;
   totalDeducciones: number;
   totalNetoDispersar: number;

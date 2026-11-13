@@ -38,8 +38,14 @@ import type {
   ParametrosCierreNomina,
   CierreNominaCompleto,
   DictamenCruceJornada,
+  ValidacionImportacion,
 } from './types';
-import { parsearPlantillaNomina, generarPlantillaEjemploCSV } from './lib/parserPlantilla';
+import {
+  parsearPlantillaNomina,
+  generarPlantillaEjemploCSV,
+  esContenidoXLSX,
+  parsearPlantillaXLSX,
+} from './lib/parserPlantilla';
 import { procesarCierreNomina } from './lib/calcularCierreNomina';
 import { descargarArchivo } from './lib/exportarCierre';
 import {
@@ -154,25 +160,29 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
     descargarArchivo(csv, 'Plantilla_Nomina_ARK_TOOLS.csv');
   };
 
-  // Procesar archivo subido
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Procesar archivo subido (CSV/TSV o Excel .xlsx vía SheetJS)
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const contenido = event.target?.result as string;
-      const validacion = parsearPlantillaNomina(contenido);
+    const arrayBuffer = await file.arrayBuffer();
+    let validacion: ValidacionImportacion;
+    const esXlsx = file.name.toLowerCase().endsWith('.xlsx') || esContenidoXLSX(arrayBuffer);
 
-      setTrabajadores(validacion.trabajadoresValidos);
-      setNumEmpleadosIsn(validacion.trabajadoresValidos.length);
-      setAdvertenciasImport(validacion.advertencias);
-      setErroresImport(validacion.errores);
-      setCierreCalculado(null);
-      setArchivedHash(null);
-      setAdvertenciasIsn([]);
-    };
-    reader.readAsText(file, 'UTF-8');
+    if (esXlsx) {
+      validacion = parsearPlantillaXLSX(arrayBuffer);
+    } else {
+      const contenido = new TextDecoder().decode(arrayBuffer);
+      validacion = parsearPlantillaNomina(contenido);
+    }
+
+    setTrabajadores(validacion.trabajadoresValidos);
+    setNumEmpleadosIsn(validacion.trabajadoresValidos.length);
+    setAdvertenciasImport(validacion.advertencias);
+    setErroresImport(validacion.errores);
+    setCierreCalculado(null);
+    setArchivedHash(null);
+    setAdvertenciasIsn([]);
   };
 
   // Ejecutar cálculo
@@ -713,7 +723,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".csv,.txt"
+                accept=".csv,.txt,.xlsx"
                 onChange={handleFileUpload}
                 className="hidden"
               />
@@ -791,7 +801,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".csv,.txt"
+                    accept=".csv,.txt,.xlsx"
                     onChange={handleFileUpload}
                     className="hidden"
                   />
@@ -1258,7 +1268,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
               <input
                 ref={checadorInputRef}
                 type="file"
-                accept=".csv,.txt"
+                accept=".csv,.txt,.xlsx"
                 onChange={handleChecadorCsvUpload}
                 className="hidden"
               />

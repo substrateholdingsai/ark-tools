@@ -25,6 +25,8 @@ const getValor = (id: string): number => {
   return item.valor as number;
 };
 
+const getValorPct = (id: string): number => getValor(id) / 100;
+
 /**
  * Cuotas IMSS obrero mensuales 2026.
  * Los porcentajes se aplican a la base correspondiente.
@@ -62,6 +64,35 @@ export const CUOTAS_OBRERO: CuotaIMSS[] = [
     ramo: 'Guarderías y Prestaciones Sociales',
     fundamento: 'LSS Art. 211',
     porcentaje: 0.0, // No aplica para obrero en 2026
+    base: 'sbc',
+    monto: 0,
+  },
+];
+
+/**
+ * Cuotas IMSS patrón (empleador) mensuales 2026.
+ * Las tasas se importan del catálogo canónico de valores vigentes (no se hardcodean).
+ * Pendiente de confirmación final contra DOF por Pavel (verificadoPor: 'Pendiente confirmación DOF').
+ */
+export const CUOTAS_PATRONAL: CuotaIMSS[] = [
+  {
+    ramo: 'Enfermedades y Maternidad',
+    fundamento: 'LSS Art. 25 Frac. I',
+    porcentaje: getValorPct('CUOTA_IMSS_PATRONAL_ENFERMEDADES_MATERNIDAD_2026'),
+    base: 'sbc',
+    monto: 0,
+  },
+  {
+    ramo: 'Invalidez y Vida',
+    fundamento: 'LSS Art. 147',
+    porcentaje: getValorPct('CUOTA_IMSS_PATRONAL_INVALIDEZ_VIDA_2026'),
+    base: 'sbc',
+    monto: 0,
+  },
+  {
+    ramo: 'Cesantía en Edad Avanzada y Vejez',
+    fundamento: 'LSS Art. 168',
+    porcentaje: getValorPct('CUOTA_IMSS_PATRONAL_CESANTIA_VEJEZ_2026'),
     base: 'sbc',
     monto: 0,
   },

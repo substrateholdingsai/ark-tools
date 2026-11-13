@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  calcularDigitoVerificadorIdse,
   desglosarNombreCompleto,
   formatearFechaIdse,
   generarLineaIdse,
@@ -56,14 +57,16 @@ describe('layoutImssIdse', () => {
       subsidioEmpleo: 0,
       isrRetenido: 600,
       imssObrero: 200,
+      imssPatronal: 0,
       otrasDeducciones: 0,
       totalDeducciones: 800,
       sueldoNeto: 6700,
       isnEstatal: 187.5,
     };
 
-    it('genera una línea válida de 175 caracteres para IDSE', () => {
+    it('genera una línea válida de exactamente 175 caracteres para IDSE', () => {
       const linea = generarLineaIdse(trabajadorDemo, 'Y1234567101', '07', '2026-10-15');
+      expect(linea).toHaveLength(175);
       expect(linea).toContain('Y1234567101');
       expect(linea).toContain('12345678901');
       expect(linea).toContain('HERNANDEZ');
@@ -74,6 +77,24 @@ describe('layoutImssIdse', () => {
       expect(linea).toContain('15102026'); // fecha
       expect(linea).toContain('07'); // Clave movimiento (Modificación de Salario)
       expect(linea).toContain('HEPC850101HMNRRL01'); // CURP
+      // Posiciones 153-155: dígito verificador (3 dígitos numéricos)
+      expect(linea.slice(152, 155)).toMatch(/^\d{3}$/);
+      // Posiciones 156-175: relleno con espacios
+      expect(linea.slice(155)).toBe(' '.repeat(20));
+    });
+
+    it('el dígito verificador es determinista y cambia si el cuerpo cambia', () => {
+      const lineaA = generarLineaIdse(trabajadorDemo, 'Y1234567101', '07', '2026-10-15');
+      const lineaB = generarLineaIdse(trabajadorDemo, 'Y1234567101', '07', '2026-10-15');
+      const lineaC = generarLineaIdse(trabajadorDemo, 'Y1234567102', '07', '2026-10-15');
+      expect(lineaA).toBe(lineaB); // mismo trabajador => mismo DV
+      expect(lineaA.slice(152, 155)).not.toBe(lineaC.slice(152, 155)); // distinto regPat => distinto DV
+    });
+
+    it('calcularDigitoVerificadorIdse devuelve siempre 3 dígitos', () => {
+      expect(calcularDigitoVerificadorIdse('')).toBe('000');
+      expect(calcularDigitoVerificadorIdse('A')).toMatch(/^\d{3}$/);
+      expect(calcularDigitoVerificadorIdse('a').length).toBe(3);
     });
 
     it('genera un layout multilínea filtrando trabajadores sin NSS', () => {

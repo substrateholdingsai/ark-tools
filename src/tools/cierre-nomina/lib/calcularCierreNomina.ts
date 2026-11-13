@@ -20,7 +20,7 @@ import type {
 } from '../types';
 import { calcularResultadoSBC } from '../../sbc/lib/calcularSBC';
 import { calcularISR } from '../../nomina/lib/calcularISR';
-import { calcularIMSS } from '../../nomina/lib/calcularIMSS';
+import { calcularIMSS, calcularIMSSPatronal } from '../../nomina/lib/calcularIMSS';
 import { calcularISN, calcularResultadoISN } from '../../isn/lib/calcularISN';
 import { ESTADOS } from '../../isn/data/estados';
 import type { OpcionesISN, RegimenISN, ResultadoISN } from '../../isn/types';
@@ -102,6 +102,7 @@ export async function procesarCierreNomina(
   let acumISR = 0;
   let acumSubsidio = 0;
   let acumIMSS = 0;
+  let acumIMSSPatronal = 0;
   let acumOtrasDeducciones = 0;
   let acumDeducciones = 0;
   let acumNeto = 0;
@@ -172,6 +173,10 @@ export async function procesarCierreNomina(
     const resIMSS = calcularIMSS(sbcDiario, parametros.periodo);
     const imssObrero = resIMSS.total;
 
+    // 5b. Cuotas IMSS Patrón (empleador)
+    const resIMSSPatronal = calcularIMSSPatronal(sbcDiario, parametros.periodo);
+    const imssPatronal = resIMSSPatronal.total;
+
     // 6. Deducciones y Neto
     const otrasDeducciones = r2(t.otrasDeducciones || 0);
     const totalDeducciones = r2(isrRetenido + imssObrero + otrasDeducciones);
@@ -186,6 +191,7 @@ export async function procesarCierreNomina(
     acumISR += isrRetenido;
     acumSubsidio += subsidioEmpleo;
     acumIMSS += imssObrero;
+    acumIMSSPatronal += imssPatronal;
     acumOtrasDeducciones += otrasDeducciones;
     acumDeducciones += totalDeducciones;
     acumNeto += sueldoNeto;
@@ -213,6 +219,7 @@ export async function procesarCierreNomina(
       subsidioEmpleo,
       isrRetenido,
       imssObrero,
+      imssPatronal,
       otrasDeducciones,
       totalDeducciones,
       sueldoNeto,
@@ -265,6 +272,7 @@ export async function procesarCierreNomina(
     totalISRRetenido: r2(acumISR),
     totalSubsidioEntregado: r2(acumSubsidio),
     totalIMSSObrero: r2(acumIMSS),
+    totalIMSSPatronal: r2(acumIMSSPatronal),
     totalOtrasDeducciones: r2(acumOtrasDeducciones),
     totalDeducciones: r2(acumDeducciones),
     totalNetoDispersar: totalNetoRedondeado,

@@ -9,7 +9,7 @@
  */
 
 import type { CuotaIMSS, Periodo, ResultadoIMSS } from '../types';
-import { CUOTAS_OBRERO, TRES_UMAS } from '../data/cuotasIMSS';
+import { CUOTAS_OBRERO, CUOTAS_PATRONAL, TRES_UMAS } from '../data/cuotasIMSS';
 import { PERIODOS } from '../data/periodos';
 
 // ─────────────────────────────────────────────────────────────────────
@@ -81,6 +81,37 @@ export function calcularIMSS(sbcDiario: number, periodo: Periodo): ResultadoIMSS
   }));
 
   // Sumar
+  const total = redondear2(cuotasCalculadas.reduce((sum, c) => sum + c.monto, 0));
+
+  return {
+    cuotas: cuotasCalculadas,
+    total,
+    sbc: redondear2(sbcDiario),
+    dias,
+  };
+}
+
+/**
+ * Calcula las cuotas IMSS patrón (empleador) para un período.
+ * Reutiliza el mismo motor de cuotas que el obrero, con tasas patrón del catálogo.
+ */
+export function calcularIMSSPatronal(sbcDiario: number, periodo: Periodo): ResultadoIMSS {
+  const dias = PERIODOS[periodo].dias;
+
+  if (sbcDiario <= 0) {
+    return {
+      cuotas: CUOTAS_PATRONAL.map((c) => ({ ...c, monto: 0 })),
+      total: 0,
+      sbc: 0,
+      dias,
+    };
+  }
+
+  const cuotasCalculadas: CuotaIMSS[] = CUOTAS_PATRONAL.map((cuota) => ({
+    ...cuota,
+    monto: redondear2(calcularCuota(cuota, sbcDiario, dias)),
+  }));
+
   const total = redondear2(cuotasCalculadas.reduce((sum, c) => sum + c.monto, 0));
 
   return {

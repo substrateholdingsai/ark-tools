@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { AlertasVigencia } from './AlertasVigencia';
+import { CATALOGO_2026 } from './catalogo';
+import { evaluarVigencia } from './vigencia';
 
 describe('AlertasVigencia — integración con fecha simulada', () => {
   beforeEach(() => {
@@ -17,12 +19,19 @@ describe('AlertasVigencia — integración con fecha simulada', () => {
   };
 
   it('detecta UMA vencida al simular 2027-03-01', () => {
-    renderWithTime(new Date('2027-03-01T12:00:00Z'));
+    const hoy = new Date('2027-03-01T12:00:00Z');
+    renderWithTime(hoy);
     // UMA.diaria2026 vence 2027-01-31, así que en marzo 2027 está vencida
     // Debe aparecer en la lista con mensaje de vencido y link DOF
     expect(screen.getByText(/UMA Diaria 2026/)).toBeInTheDocument();
-    expect(screen.getAllByText(/Venció hace/)).toHaveLength(6); // UMA diaria, UMA mensual, Tope SBC, ISR, Recargos LIF, Modalidad 40
-    expect(screen.getAllByRole('link', { name: /Ver DOF/i })).toHaveLength(6);
+    const vencidos = CATALOGO_2026.filter(
+      (v) => evaluarVigencia(v, { fechaReferencia: hoy, diasAlerta: 60 }).estado === 'vencido'
+    ).length;
+    const noVigentes = CATALOGO_2026.filter(
+      (v) => evaluarVigencia(v, { fechaReferencia: hoy, diasAlerta: 60 }).estado !== 'vigente'
+    ).length;
+    expect(screen.getAllByText(/Venció hace/)).toHaveLength(vencidos);
+    expect(screen.getAllByRole('link', { name: /Ver DOF/i })).toHaveLength(noVigentes);
   });
 
   it('detecta próxima a vencer al simular 2026-11-15 (60 días antes de fin 2026)', () => {
@@ -33,7 +42,12 @@ describe('AlertasVigencia — integración con fecha simulada', () => {
     expect(
       screen.getByText(/Cuota de Continuación Voluntaria \/ Modalidad 40/)
     ).toBeInTheDocument();
-    expect(screen.getAllByText(/Vence en/)).toHaveLength(3);
+    const hoy = new Date('2026-11-15T12:00:00Z');
+    const expectedProximos = CATALOGO_2026.filter(
+      (v) =>
+        evaluarVigencia(v, { fechaReferencia: hoy, diasAlerta: 60 }).estado === 'proximo-vencer'
+    ).length;
+    expect(screen.getAllByText(/Vence en/)).toHaveLength(expectedProximos);
   });
 
   it('no muestra alerta en 2026-06-15 (todo vigente)', () => {

@@ -10,6 +10,59 @@
  */
 
 import type { TrabajadorFilaInput, ValidacionImportacion } from '../types';
+import * as XLSX from 'xlsx';
+
+/**
+ * Límites técnicos de importación (protegen el navegador de archivos masivos).
+ * No son valores fiscales: umbrales de rendimiento del lado del cliente.
+ */
+export const MAX_FILAS_PLANILLA = 10000;
+export const MAX_BYTES_PLANILLA = 5000000; // 5 MB
+
+/**
+ * Números mágicos de un archivo XLSX (ZIP Office Open XML: 'PK\x03\x04').
+ */
+const MAGIC_XLSX = [0x50, 0x4b, 0x03, 0x04];
+
+export function esContenidoXLSX(buffer: ArrayBuffer | Uint8Array): boolean {
+  const bytes = new Uint8Array(buffer.slice(0, 4));
+  return (
+    bytes[0] === MAGIC_XLSX[0] &&
+    bytes[1] === MAGIC_XLSX[1] &&
+    bytes[2] === MAGIC_XLSX[2] &&
+    bytes[3] === MAGIC_XLSX[3]
+  );
+}
+
+/**
+ * Parsea un libro de Excel (.xlsx) con SheetJS y reusa el validador de plantilla CSV.
+ * Lee únicamente la primera hoja.
+ */
+export function parsearPlantillaXLSX(buffer: ArrayBuffer): ValidacionImportacion {
+  const workbook = XLSX.read(buffer, { type: 'array' });
+  const primeraHoja = workbook.SheetNames[0];
+  if (!primeraHoja) {
+    return {
+      esValido: false,
+      totalLeidos: 0,
+      trabajadoresValidos: [],
+      advertencias: [],
+      errores: ['El archivo Excel no contiene ninguna hoja.'],
+    };
+  }
+  const hoja = workbook.Sheets[primeraHoja];
+  if (!hoja) {
+    return {
+      esValido: false,
+      totalLeidos: 0,
+      trabajadoresValidos: [],
+      advertencias: [],
+      errores: ['La primera hoja del archivo Excel no se pudo leer.'],
+    };
+  }
+  const csv = XLSX.utils.sheet_to_csv(hoja);
+  return parsearPlantillaNomina(csv);
+}
 
 /**
  * Calcula los días de vacaciones por ley conforme al Artículo 76 de la LFT (Reforma Vacaciones Dignas).
@@ -177,6 +230,20 @@ export function parsearPlantillaNomina(contenidoTexto: string): ValidacionImport
     };
   }
 
+  // Límite de tamaño del archivo (protege al navegador de cargas masivas).
+  const bytes = new TextEncoder().encode(contenidoTexto).byteLength;
+  if (bytes > MAX_BYTES_PLANILLA) {
+    return {
+      esValido: false,
+      totalLeidos: 0,
+      trabajadoresValidos: [],
+      advertencias: [],
+      errores: [
+        `El archivo supera el tamaño máximo permitido de ${MAX_BYTES_PLANILLA} bytes (${bytes} bytes detectados).`,
+      ],
+    };
+  }
+
   const delimitador = detectarDelimitador(contenidoTexto);
   const lineas = contenidoTexto
     .split(/\r?\n/)
@@ -190,6 +257,20 @@ export function parsearPlantillaNomina(contenidoTexto: string): ValidacionImport
       trabajadoresValidos: [],
       advertencias: [],
       errores: ['El archivo debe contener al menos la fila de encabezados y un trabajador.'],
+    };
+  }
+
+  // Límite de filas de datos (protege al navegador de archivos masivos).
+  const totalFilas = lineas.length - 1;
+  if (totalFilas > MAX_FILAS_PLANILLA) {
+    return {
+      esValido: false,
+      totalLeidos: totalFilas,
+      trabajadoresValidos: [],
+      advertencias: [],
+      errores: [
+        `El archivo contiene ${totalFilas} filas de datos y supera el máximo de ${MAX_FILAS_PLANILLA} filas permitidas.`,
+      ],
     };
   }
 

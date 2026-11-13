@@ -110,7 +110,26 @@ export function formatearFechaIdse(fechaStr?: string): string {
 
 /**
  * Genera una línea fija DISPMAG / IDSE para un trabajador.
- * Longitud total: 175 caracteres estándar IMSS.
+ * Longitud total: exactamente 175 caracteres estándar IMSS.
+ *
+ * Notas de alcance:
+ * - El dígito verificador (posiciones 153-155) es un dígito de control LOCAL
+ *   determinista calculado sobre el cuerpo de la línea. No es el DV oficial de
+ *   IMSS (ese se genera en el portal IDSE al transmitir el lote).
+ * - Las posiciones 156-175 son relleno con espacios para alcanzar 175 chars.
+ * - IMSS requiere NSS válido: los trabajadores sin NSS se omiten del lote.
+ */
+export function calcularDigitoVerificadorIdse(lineaBase: string): string {
+  let suma = 0;
+  for (let i = 0; i < lineaBase.length; i++) {
+    suma += lineaBase.charCodeAt(i) * (i + 1);
+  }
+  return String(suma % 1000).padStart(3, '0');
+}
+
+/**
+ * Genera una línea fija DISPMAG / IDSE para un trabajador.
+ * Longitud total: exactamente 175 caracteres estándar IMSS.
  */
 export function generarLineaIdse(
   t: ResultadoTrabajadorNomina,
@@ -140,8 +159,12 @@ export function generarLineaIdse(
   const curpLimpia = padDerecha(t.curp || t.rfc || '', 18);
   const identificadorFin = '02';
 
-  // Ensamble exacto de columnas IDSE
-  return `${regPat}${nssLimpio}${paternoPad}${maternoPad}${nombresPad}${sbcPad}${tipoTrabajador}${tipoSalario}${tipoJornada}${fechaDdmmaaaa}${claveMov}${umf}${subdelegacionGuia}${curpLimpia}${identificadorFin}`;
+  // Cuerpo de la línea: 152 caracteres
+  const lineaBase = `${regPat}${nssLimpio}${paternoPad}${maternoPad}${nombresPad}${sbcPad}${tipoTrabajador}${tipoSalario}${tipoJornada}${fechaDdmmaaaa}${claveMov}${umf}${subdelegacionGuia}${curpLimpia}${identificadorFin}`;
+  const dv = calcularDigitoVerificadorIdse(lineaBase);
+  const relleno = ' '.repeat(20);
+
+  return `${lineaBase}${dv}${relleno}`;
 }
 
 /**
