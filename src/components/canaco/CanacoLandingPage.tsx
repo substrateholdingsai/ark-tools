@@ -429,8 +429,9 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
               </h2>
               <p className="mt-1 max-w-2xl text-xs leading-relaxed text-henequen-arena/90">
                 Formaliza tu comercio en un solo paso: Registro ante el SAT (CFF / CFDI 4.0), Alta
-                Patronal IMSS (LSS / IDSE) y Padrón Estatal AAFY (Impuesto Sobre Nómina 2.5% — LGHY
-                Art. 21-27). Suite contable ARK LEDGER precargada para todos los socios.
+                Patronal IMSS (LSS / IDSE) y Padrón Estatal AAFY (Impuesto Sobre Nómina 3.75% / 3.0%
+                MIPyME — LGHY Art. 21-27). Suite contable ARK LEDGER precargada para todos los
+                socios.
               </p>
             </div>
           </div>

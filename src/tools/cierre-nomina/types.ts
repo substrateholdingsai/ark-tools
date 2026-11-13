@@ -31,6 +31,8 @@ export interface TrabajadorFilaInput {
   otrasDeducciones?: number;
 }
 
+import type { OpcionesISN } from '../isn/types';
+
 /**
  * Parámetros globales de la corrida de cierre de nómina.
  */
@@ -42,9 +44,10 @@ export interface ParametrosCierreNomina {
   fechaCorte: string; // Fecha de cálculo de antigüedad
   empresaNombre: string;
   empresaRfc?: string;
-  estadoIsnId: string; // e.g. 'cdmx', 'nl', 'jal'
+  estadoIsnId: string; // e.g. 'cdmx', 'nl', 'jal', 'YUC'
   estadoIsnNombre: string;
   tasaIsn: number;
+  opcionesIsn?: OpcionesISN;
   diasAguinaldo?: number; // default 15
   primaVacacionalPct?: number; // default 25
 }

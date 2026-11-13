@@ -31,6 +31,8 @@ export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
     'Si te piden calcular actualización por inflación, INPC, recargos fiscales o adeudos tributarios en mora (CFF Arts. 17-A y 21), invoca "calcular_recargos_fiscales".',
   calcular_isn:
     'Si te piden calcular el Impuesto Sobre Nómina (ISN) estatal, invoca "calcular_isn" con la base gravable y la tasa del estado.',
+  calcular_retencion_clinicas:
+    'Si te piden calcular la retención del 2% para clínicas y hospitales en Yucatán (Art. 20-Bis LGHY, AAFY-30, AAFY-31), invoca "calcular_retencion_clinicas".',
   calcular_sbc:
     'Si te piden calcular el Salario Base de Cotización (SBC) IMSS, invoca "calcular_sbc" con el salario diario y las prestaciones.',
   calcular_nomina_rapida:
@@ -100,7 +102,7 @@ METODOLOGÍA DE RESPUESTA EN 3 PASOS (MANDATORIA):
 PARÁMETROS OFICIALES Y REGLAS PERICIALES VIGENTES:
 - Salario Mínimo General: $297.45 MXN/día (ZLFN: $440.92 MXN/día).
 - UMA (Unidad de Medida y Actualización): $117.31 MXN/día.
-- ISN Yucatán (LGHY Arts. 21 al 27): Tasa oficial 2.5% (ej. nómina de $250,000 genera exactamente $6,250 de ISN).
+- ISN Yucatán (LGHY Arts. 21 al 27, Art. 24, Decreto 138/2025 y Decreto 147/2025): Tasa oficial 2026 3.75% bruto, 3.0% neto MIPyME 1-50 empleados (Decreto 147/2025), ej. nómina $250,000, 15 empleados: $9,375 − $1,875 = $7,500 neto (2025 fue 3.0%; gobierno estatal +1% = 4.75% bruto).
 - Modalidad 40 (Acuerdo DOF 21/10/2026): El nuevo registro queda topado al último salario cotizado más 1 UMA diaria (máx. legal de 25 UMAs). Cuota 2026: 14.438%.
 - Recargos Federales (LIF): Tasa por mora del 1.47% mensual calculada sobre el impuesto histórico actualizado por INPC (Art. 17-A CFF).
 - CFDI 4.0 & Timbrado: Integrado con PAC Facturapi (en Sandbox de prueba con CSD EKU9003173C9 o en Producción con CSD del contribuyente).
@@ -131,7 +133,7 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
 2. Validador de XMLs ('validador'):
    - Auditoría técnica conforme a XSD del SAT, verificación CSD y cruce contra lista negra EFOS del Art. 69-B CFF.
 3. Calculadora ISN 2026 ('isn'):
-   - Determinación del Impuesto Sobre Nóminas para las 32 entidades federativas (incluyendo Yucatán al 2.5% bajo LGHY Arts. 21 al 27).
+   - Determinación del Impuesto Sobre Nóminas para las 32 entidades federativas (incluyendo Yucatán 2026 al 3.75% bruto / 3.0% neto MIPyME bajo LGHY Arts. 21 al 27 y Decreto 147/2025).
 4. Calculadora SBC 2026 ('sbc'):
    - Factor de integración y Salario Base de Cotización conforme al Art. 27 LSS (aguinaldo, vacaciones dignas, prima vacacional y topes de 1 SMG a 25 UMAs).
 5. Nómina Rápida 2026 ('nomina'):
@@ -166,6 +168,8 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
     - Proyección actuarial Ley 73 auditando el tope del Acuerdo DOF 21/10/2026 (salario previo + 1 UMA), ROI y pensión neta mensual.
 20. Detector Forense de Comportamientos Atípicos en CFDI ('auditor-cfdi-atipico'):
     - Auditoría pericial 100% local con Ley de Benford, Z-Score, efectivo > $2,000 (Art. 27 LISR), cancelaciones extemporáneas (Art. 29-A CFF) y cruce EFOS (Art. 69-B CFF).
+21. Retención 2% Clínicas y Hospitales ('retencion-clinicas'):
+    - Exclusivo Yucatán (Art. 20-Bis a 20-Quinquies LGHY): retención 2% al pago de honorarios médicos, entero día 10 (prórroga enero 2026 al 20-feb-2026) y formatos AAFY-30 / AAFY-31.
 `;
 }
 export async function runAiAgent(env: Env, options: RunAgentOptions): Promise<Response> {

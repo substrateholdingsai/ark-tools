@@ -822,8 +822,8 @@ export function VentanillaAfiliacionModal({
                       </span>
                       <span className="block text-[11px] leading-relaxed text-henequen-piedra">
                         Ventanilla Única CANACO Mérida: Vincula tu registro patronal del IMSS y el
-                        Padrón Estatal del Impuesto Sobre Nómina de Yucatán (ISN 2.5% — LGHY) con tu
-                        alta mercantil.
+                        Padrón Estatal del Impuesto Sobre Nómina de Yucatán (ISN 3.75% / 3.0% MIPyME
+                        — LGHY) con tu alta mercantil.
                       </span>
                     </label>
                   </div>
@@ -870,7 +870,7 @@ export function VentanillaAfiliacionModal({
                           htmlFor={recId}
                           className="mb-1 block text-[11px] font-semibold text-henequen-grafito"
                         >
-                          Padrón Estatal AAFY (REC / ISN 2.5%)
+                          Padrón Estatal AAFY (REC / ISN Yucatán)
                         </label>
                         <input
                           id={recId}

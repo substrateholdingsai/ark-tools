@@ -68,6 +68,10 @@ import {
 } from '../../tools/auditor-cfdi-atipico/lib/motorForense';
 import { generarDatosDemostracion } from '../../tools/auditor-cfdi-atipico/lib/generadorDemo';
 import type { CFDIExtraido } from '../../tools/auditor-cfdi-atipico/types';
+import {
+  calcularRetencionClinicas,
+  MENSAJE_SOLO_YUCATAN,
+} from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
 import { DEFAULT_MODEL, FAST_MODEL } from '../ai/agent';
 import { timingSafeEqual } from '../canacoConektaService';
 import { CURRENT_CATALOG_VERSION } from '../d1Api.expediente';
@@ -103,7 +107,13 @@ const SMG_GENERAL_2026 = getNumericCatalogValue('SALARIO_MINIMO_GENERAL_2026', 3
 const SMG_FRONTERA_2026 = getNumericCatalogValue('SALARIO_MINIMO_FRONTERA_2026', 440.87);
 const TASA_RECARGOS_MORA_2026 = getNumericCatalogValue('TASA_RECARGOS_MORA_2026', 1.47);
 const YUCATAN_ISN_ESTADO = ESTADOS.find((e) => e.id === 'YUC');
-const YUCATAN_ISN_TASA = YUCATAN_ISN_ESTADO?.tasa ?? 2.5;
+if (!YUCATAN_ISN_ESTADO) {
+  console.error('[staypuft] YUC missing from ESTADOS; failing back to 2026 general rate 3.75%');
+}
+const YUCATAN_ISN_TASA =
+  YUCATAN_ISN_ESTADO?.tasasPorEjercicio?.[2026]?.general.tasaBruta ??
+  YUCATAN_ISN_ESTADO?.tasa ??
+  3.75; // TODO: fail closed if ESTADOS config is ever missing YUC
 
 const KNOWN_SYSTEM_TENANTS: Record<
   string,
@@ -734,7 +744,7 @@ const TOOL_SPECS_MAP: Record<
     preview_supported: true,
     law_cited: [
       'Leyes de Hacienda Estatales 2026 de las 32 Entidades Federativas (Impuesto Sobre Nóminas)',
-      `Art. 21 al 27 Ley General de Hacienda del Estado de Yucatán (Tasa ISN ${YUCATAN_ISN_TASA.toFixed(1)}%)`,
+      `Art. 21 al 27 LGHY, Art. 24 tasa ${YUCATAN_ISN_TASA.toFixed(2)}% (2026), Decreto 138/2025, Decreto 147/2025`,
     ],
     inputs: {
       estadoId: 'string (ej. "YUC", "CMX", "NL", "JAL")',
@@ -1242,6 +1252,33 @@ const TOOL_SPECS_MAP: Record<
       ejercicio: 2026,
     },
   },
+  'retencion-clinicas': {
+    route: '/#retencion-clinicas',
+    status: 'active',
+    preview_supported: true,
+    law_cited: [
+      'LGHY Yucatán Arts. 16 al 20 (Impuesto sobre el Ejercicio Profesional 3%)',
+      'LGHY Yucatán Arts. 20-Bis a 20-Quinquies (D.O. 26-dic-2025: Retención 2% clínicas, entero día 10, AAFY-30 y AAFY-31)',
+      'Acuerdo AAFY XX/2026 (Prórroga enero 2026 al 20-feb-2026)',
+    ],
+    inputs: {
+      estadoId: 'string (exclusivo "YUC")',
+      montoHonorarios: 'number (MXN)',
+      fechaPago: 'string (YYYY-MM-DD)',
+    },
+    outputs: {
+      base: 'number',
+      retencion2Pct: 'number',
+      netoPagar: 'number',
+      impuestoEjercicioProfesional3Pct: 'number',
+      fechaLimiteEntero: 'string',
+    },
+    sample_preview_payload: {
+      estadoId: 'YUC',
+      montoHonorarios: 10000,
+      fechaPago: '2026-03-15',
+    },
+  },
 };
 
 export function buildLiveToolCatalog(): ToolInternalSpec[] {
@@ -1343,7 +1380,23 @@ export async function executeToolPreview(
             exento: Number.isNaN(exento) ? 0 : exento,
           },
         ];
-        const calc = calcularResultadoISN(conceptos, estadoObj);
+        const rawEjercicio = payload.ejercicio !== undefined ? Number(payload.ejercicio) : 2026;
+        const ejercicio = rawEjercicio === 2025 ? 2025 : 2026;
+        const numEmpleados =
+          payload.numEmpleados !== undefined ? Number(payload.numEmpleados) : undefined;
+        const esGobiernoEstatal = Boolean(payload.esGobiernoEstatal);
+        const aplica27A = Boolean(payload.aplica27A);
+        const esMicroPequena2026 =
+          payload.esMicroPequena2026 !== undefined
+            ? Boolean(payload.esMicroPequena2026)
+            : numEmpleados !== undefined && numEmpleados >= 1 && numEmpleados <= 50;
+        const calc = calcularResultadoISN(conceptos, estadoObj, {
+          ejercicio,
+          numEmpleados,
+          esMicroPequena2026,
+          esGobiernoEstatal,
+          aplica27A,
+        });
         resultOutput = {
           estado: estadoObj,
           ...calc,
@@ -1779,6 +1832,31 @@ export async function executeToolPreview(
           criteriosActivos: CRITERIOS_DEFAULT.filter((c) => c.activo).length,
           hallazgos,
         };
+        break;
+      }
+
+      case 'retencion-clinicas': {
+        const estadoId = String(payload.estadoId ?? 'YUC')
+          .trim()
+          .toUpperCase();
+        if (estadoId !== 'YUC') {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: MENSAJE_SOLO_YUCATAN,
+          };
+        }
+        resultOutput = calcularRetencionClinicas({
+          estadoId,
+          montoHonorarios: Number(payload.montoHonorarios ?? 10000),
+          fechaPago: String(payload.fechaPago ?? '2026-03-15'),
+          retenedor: { nombre: 'Clínica Preview', rfc: 'XAXX010101000' },
+          prestador: {
+            nombre: 'Prestador Preview',
+            rfc: 'XAXX010101000',
+            tipoPersona: 'fisica',
+          },
+        });
         break;
       }
 
@@ -3360,7 +3438,7 @@ export async function handleStayPuftInternalRequest(
             'spei',
             'timbrado',
           ],
-          specialized_corporate_pld_count: 8,
+          specialized_corporate_pld_count: TOTAL_HERRAMIENTAS - 12,
           specialized_corporate_pld_tools: [
             'sbc',
             'balance-general',
@@ -3370,6 +3448,7 @@ export async function handleStayPuftInternalRequest(
             'mapa-activos',
             'monitor-lfpiorpi',
             'auditor-cfdi-atipico',
+            'retencion-clinicas',
           ],
         },
         chamber_bundle: [
@@ -3389,7 +3468,7 @@ export async function handleStayPuftInternalRequest(
             tier: 'Ledger Freemium',
             price_mxn: 0,
             label: 'Ark Ledger Freemium',
-            included: `Acceso a las 12 herramientas esenciales PyME CANACO (ISN Yucatán ${YUCATAN_ISN_TASA.toFixed(1)}%, RESICO, Nómina Rápida, Finiquitos, Validador CFDI y pre-validación de Timbrado)`,
+            included: `Acceso a las 12 herramientas esenciales PyME CANACO (ISN Yucatán ${YUCATAN_ISN_TASA.toFixed(2)}% bruto / 3.0% neto MIPyME, RESICO, Nómina Rápida, Finiquitos, Validador CFDI y pre-validación de Timbrado)`,
           },
           {
             tier: 'Ledger PRO $399',
@@ -4111,29 +4190,48 @@ Reglas estrictas:
         const resObj = tc.result as {
           baseGravable?: number;
           tasa?: number;
+          tasaBruta?: number;
+          tasaEfectiva?: number;
           isn?: number;
+          isnBruto?: number;
+          estimulo?: number;
+          isnNeto?: number;
+          ejercicio?: number;
+          estimuloConfirmado?: boolean;
           estado?: { nombre?: string; articulo?: string };
         };
-        if (typeof resObj.isn === 'number' && typeof resObj.tasa === 'number') {
-          const formattedIsn = resObj.isn.toLocaleString('en-US', {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2,
-          });
-          const plainIsn = String(resObj.isn);
-          const expectedRateStr = `${resObj.tasa}%`;
-          const expectedRateDecStr = `${resObj.tasa.toFixed(1)}%`;
-          const hasCorrectIsn = rawAnswer.includes(formattedIsn) || rawAnswer.includes(plainIsn);
-          const hasContradictedYucRate =
-            resObj.tasa === 2.5 && (rawAnswer.includes('3.0%') || rawAnswer.includes('3%'));
-
-          if (!hasCorrectIsn || hasContradictedYucRate) {
-            const baseFormatted = (resObj.baseGravable ?? 0).toLocaleString('en-US', {
+        const isnPayable = resObj.isnNeto ?? resObj.isn;
+        if (typeof isnPayable === 'number' && typeof resObj.tasa === 'number') {
+          const fmt = (n: number) =>
+            n.toLocaleString('en-US', {
               minimumFractionDigits: 0,
               maximumFractionDigits: 2,
             });
+          const formattedIsn = fmt(isnPayable);
+          const plainIsn = String(isnPayable);
+          const hasCorrectIsn = rawAnswer.includes(formattedIsn) || rawAnswer.includes(plainIsn);
+          const hasLegacyWrongRate =
+            rawAnswer.includes('2.5%') || rawAnswer.includes('6,250') || rawAnswer.includes('6250');
+          const estimulo = resObj.estimulo ?? 0;
+          const isnBruto = resObj.isnBruto ?? isnPayable;
+          const tasaBruta = resObj.tasaBruta ?? resObj.tasa;
+          const tasaEfectiva = resObj.tasaEfectiva ?? resObj.tasa;
+          const missingStimulusBreakdown =
+            estimulo > 0 &&
+            (!rawAnswer.includes(fmt(isnBruto)) ||
+              !rawAnswer.includes(fmt(estimulo)) ||
+              !rawAnswer.includes(`${tasaEfectiva.toFixed(1)}%`));
+
+          if (!hasCorrectIsn || hasLegacyWrongRate || missingStimulusBreakdown) {
+            const baseFormatted = fmt(resObj.baseGravable ?? 0);
             const estadoNombre = resObj.estado?.nombre ?? 'Yucatán';
             const articulo = resObj.estado?.articulo ?? 'Art. 21 al 27 LGHY';
-            rawAnswer = `El cálculo preview de ISN para ${estadoNombre} (tasa ${expectedRateDecStr} / ${expectedRateStr} conforme al ${articulo}, Ley General de Hacienda del Estado de Yucatán) sobre una base gravable de $${baseFormatted} MXN resulta en $${formattedIsn} MXN de ISN.`;
+            const rateBrutaStr = `${tasaBruta.toFixed(Math.round(tasaBruta * 100) % 10 !== 0 ? 2 : 1)}%`;
+            const rateEfStr = `${tasaEfectiva.toFixed(Math.round(tasaEfectiva * 100) % 10 !== 0 ? 2 : 1)}%`;
+            rawAnswer =
+              estimulo > 0
+                ? `El cálculo preview de ISN ${resObj.ejercicio ?? 2026} para ${estadoNombre} (${articulo}) sobre $${baseFormatted} MXN aplica tasa bruta ${rateBrutaStr} ($${fmt(isnBruto)} MXN bruto) menos estímulo Decreto 147/2025 ($${fmt(estimulo)} MXN) = $${formattedIsn} MXN neto (tasa efectiva ${rateEfStr}).`
+                : `El cálculo preview de ISN ${resObj.ejercicio ?? 2026} para ${estadoNombre} (tasa ${rateBrutaStr} conforme al ${articulo}) sobre una base gravable de $${baseFormatted} MXN resulta en $${formattedIsn} MXN de ISN${resObj.estimuloConfirmado === false ? ' (estímulo no confirmado para gobierno estatal)' : ''}.`;
           }
         }
       }

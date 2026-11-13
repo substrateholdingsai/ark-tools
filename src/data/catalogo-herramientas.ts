@@ -174,6 +174,13 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     descripcion:
       'Auditor forense y preventivo de CFDI 4.0 y 3.3. Ingesta masiva ZIP/XML y cruce automático con Metadata del SAT. Algoritmos estadísticos de Ley de Benford, Z-Score mensual, detección de fraccionamiento de pagos en efectivo (Art. 27 LISR), cancelaciones extemporáneas (Art. 29-A CFF) y cruce con lista negra EFOS (Art. 69-B CFF). Malla mensual de calor, Matriz de Riesgo 5×5 y emisión de Dictamen Ejecutivo con exportación Excel multi-hoja.',
   },
+  {
+    id: 'retencion-clinicas',
+    nombre: 'Retención 2% Clínicas y Hospitales (Yucatán)',
+    categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
+    descripcion:
+      'Determinación exclusiva para Yucatán de la retención del 2% sobre honorarios médicos al momento del pago (Art. 20-Bis a 20-Quinquies LGHY, D.O. 26-dic-2025). Calcula retención 2%, neto a pagar, referencia del Impuesto sobre el Ejercicio Profesional (3% Arts. 16-20), plazos de entero día 10 (prórroga enero 2026 al 20-feb-2026) y emite formatos oficiales AAFY-30 (constancia), AAFY-31 (entero) y CSV de cotejo.',
+  },
 ];
 
 /** Total de herramientas de la suite. Se deriva del catálogo: nunca se escribe a mano. */

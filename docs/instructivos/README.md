@@ -12,6 +12,7 @@
 - [Calculadora y Cédula RESICO 2026](resico.md) — disponible
 - [Calculadora de Actualización y Recargos Fiscales (CFF)](recargos.md) — disponible
 - [Simulador de Modalidad 40 (Criterio DOF 2026)](modalidad40.md) — disponible
+- [Retención 2% Clínicas y Hospitales (Yucatán)](retencion-clinicas.md) — disponible
 
 ## Patrimonial y Análisis Financiero
 

@@ -8,10 +8,10 @@
  * Marco Normativo:
  * - Ley General de Hacienda del Estado de Yucatán (LGHY):
  *   - Art. 21: Sujetos obligados (patrones con trabajadores en Yucatán)
- *   - Art. 22: Base gravable (sueldos, salarios, sobresueldos, comisiones, gratificaciones, primas)
- *   - Art. 24: Conceptos exentos (indemnizaciones, jubilaciones, viáticos comprobados)
- *   - Art. 25: Tasa general aplicable (2.50%)
- *   - Art. 26 y 27: Época y ventanilla de pago mensual (a más tardar el día 17 del mes siguiente)
+ *   - Art. 23: Base gravable (total de erogaciones por remuneraciones al trabajo personal)
+ *   - Art. 24: Tasa 2026 (3.75% general; +1% adicional gobierno estatal = 4.75%; 2025 fue 3.0%)
+ *   - Decreto 147/2025 (D.O. 31-dic-2025): Estímulo Ene-Dic 2026 micro/pequeña empresa 1-50 empleados (-0.75% = 3.0% neto)
+ *   - Art. 26 y 27: Época y ventanilla de pago mensual (día 10 del mes siguiente)
  */
 
 import { formatearMXN, formatearPorcentaje } from './calcularISN';
@@ -29,12 +29,28 @@ export interface ExportarCedulaAafyParams {
   mes?: string;
 }
 
-function escaparCSV(valor: string | number): string {
+export function escaparCSV(valor: string | number): string {
   const str = String(valor);
   if (str.includes(',') || str.includes('"') || str.includes('\n')) {
     return `"${str.replace(/"/g, '""')}"`;
   }
   return str;
+}
+
+export function generarSelloDigitalAafy(prefijo: string): string {
+  return `SHA256:${prefijo}-${Date.now().toString(36).toUpperCase()}`;
+}
+
+export function descargarArchivoCsvBom(nombreArchivo: string, contenido: string): void {
+  const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', nombreArchivo);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }
 
 export function generarContenidoCedulaAafy(params: ExportarCedulaAafyParams): string {
@@ -99,17 +115,26 @@ export function generarContenidoCedulaAafy(params: ExportarCedulaAafyParams): st
   lineas.push('');
 
   // Liquidación del Impuesto
+  const tasaBruta = resultado.tasaBruta ?? resultado.tasa;
+  const isnBruto = resultado.isnBruto ?? resultado.isn;
+  const estimulo = resultado.estimulo ?? 0;
+  const isnNeto = resultado.isnNeto ?? resultado.isn;
+  const tasaEfectiva = resultado.tasaEfectiva ?? resultado.tasa;
+
   lineas.push('3. LIQUIDACIÓN DEL IMPUESTO ESTATAL (ISN)');
   lineas.push(
-    `Base Gravable Sujeta a Impuesto (Art. 22 LGHY),${resultado.baseGravable.toFixed(2)}`
+    `Base Gravable Sujeta a Impuesto (Art. 23 LGHY),${resultado.baseGravable.toFixed(2)}`
   );
   lineas.push(
-    `Tasa Impositiva Estatal Vigente (Art. 25 LGHY),${escaparCSV(formatearPorcentaje(estado.tasa))}`
+    `Tasa Bruta Estatal Vigente (${resultado.ejercicio ?? ejercicio}),${escaparCSV(formatearPorcentaje(tasaBruta))}`
   );
-  lineas.push(`Impuesto Sobre Nómina Causado,${resultado.isn.toFixed(2)}`);
-  lineas.push('Menos: Subsidios o Estímulos Fiscales Decretados,0.00');
-  lineas.push(`IMPUESTO NETO A ENTERAR A LA AAFY,${resultado.isn.toFixed(2)}`);
-  lineas.push(`Importe en Moneda Nacional,${escaparCSV(formatearMXN(resultado.isn))}`);
+  lineas.push(`Impuesto Sobre Nómina Causado (Bruto),${isnBruto.toFixed(2)}`);
+  lineas.push(
+    `Menos: Subsidios o Estímulos Fiscales Decretados (${escaparCSV(resultado.decretoAplicado || 'Sin estímulo aplicable')}),${estimulo.toFixed(2)}`
+  );
+  lineas.push(`Tasa Efectiva Neta Aplicada,${escaparCSV(formatearPorcentaje(tasaEfectiva))}`);
+  lineas.push(`IMPUESTO NETO A ENTERAR A LA AAFY,${isnNeto.toFixed(2)}`);
+  lineas.push(`Importe en Moneda Nacional,${escaparCSV(formatearMXN(isnNeto))}`);
   lineas.push('');
 
   // Certificación y Sello de Integridad
@@ -118,11 +143,9 @@ export function generarContenidoCedulaAafy(params: ExportarCedulaAafyParams): st
     'Ventanilla de Declaración,Portal AAFY en Línea (aafy.yucatan.gob.mx) / Ventanilla Digital CANACO'
   );
   lineas.push(
-    'Plazo Legal de Entero,A más tardar el día 17 del mes inmediato posterior al devengo'
+    'Plazo Legal de Entero,A más tardar el día 10 del mes inmediato posterior al devengo (Art. 26 LGHY)'
   );
-  lineas.push(
-    `Sello de Integridad Digital ARK LEDGER,SHA256:AAFY-ISN-${Date.now().toString(36).toUpperCase()}`
-  );
+  lineas.push(`Sello de Integridad Digital ARK LEDGER,${generarSelloDigitalAafy('AAFY-ISN')}`);
   lineas.push(
     'Software Emisor,ARK LEDGER 2026 — Suite Fiscal para Contadores en México (Auditoría DOF Verificada)'
   );
@@ -132,18 +155,9 @@ export function generarContenidoCedulaAafy(params: ExportarCedulaAafyParams): st
 
 export function descargarCedulaAafy(params: ExportarCedulaAafyParams): void {
   const contenido = generarContenidoCedulaAafy(params);
-  const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-
   const fecha = new Date().toISOString().slice(0, 10);
-  link.setAttribute('href', url);
-  link.setAttribute(
-    'download',
-    `Cedula_ISN_AAFY_Yucatan_${params.rfc || 'Contribuyente'}_${fecha}.csv`
+  descargarArchivoCsvBom(
+    `Cedula_ISN_AAFY_Yucatan_${params.rfc || 'Contribuyente'}_${fecha}.csv`,
+    contenido
   );
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }

@@ -16,7 +16,7 @@
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, Building2, AlertTriangle } from 'lucide-react';
 import { EstadoSelector, BaseInput, PercepcionesTable, ResumenISN } from './components';
 import { useExpediente } from '@/context/ExpedienteContext';
 import { ExpedienteToolBanner } from '@/components/ExpedienteToolBanner';
@@ -24,7 +24,7 @@ import { CONCEPTOS_DEFAULT, getEstadoById, ESTADO_DEFAULT_ID } from './data/esta
 import { calcularResultadoISN, formatearMXN } from './lib/calcularISN';
 import { descargarCSV } from './lib/exportarCSV';
 import { descargarCedulaAafy } from './lib/exportarCedulaAafy';
-import type { ConceptoPercepcion, Estado } from './types';
+import type { ConceptoPercepcion, EjercicioISN, Estado, OpcionesISN } from './types';
 
 interface CalculadoraISNProps {
   /** Callback al volver al dashboard (opcional) */
@@ -37,6 +37,11 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
   // ─────────────────────────────────────────────────────────────
   const [estado, setEstado] = useState<Estado>(() => getEstadoById(ESTADO_DEFAULT_ID));
   const [conceptos, setConceptos] = useState<ConceptoPercepcion[]>(CONCEPTOS_DEFAULT);
+  const [ejercicio, setEjercicio] = useState<EjercicioISN>(2026);
+  const [numEmpleados, setNumEmpleados] = useState<number>(15);
+  const [esMicroPequena2026, setEsMicroPequena2026] = useState<boolean>(true);
+  const [esGobiernoEstatal, setEsGobiernoEstatal] = useState<boolean>(false);
+  const [aplica27A, setAplica27A] = useState<boolean>(false);
 
   // Base gravable como string para permitir edición libre
   const [baseGravableStr, setBaseGravableStr] = useState<string>(() => {
@@ -48,8 +53,22 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
+  const opcionesISN: OpcionesISN = useMemo(
+    () => ({
+      ejercicio,
+      numEmpleados,
+      esMicroPequena2026,
+      esGobiernoEstatal,
+      aplica27A,
+    }),
+    [ejercicio, numEmpleados, esMicroPequena2026, esGobiernoEstatal, aplica27A]
+  );
+
   // Cálculo del resultado usando el hook useMemo
-  const resultado = useMemo(() => calcularResultadoISN(conceptos, estado), [conceptos, estado]);
+  const resultado = useMemo(
+    () => calcularResultadoISN(conceptos, estado, opcionesISN),
+    [conceptos, estado, opcionesISN]
+  );
 
   const { activeClient } = useExpediente();
 
@@ -161,18 +180,40 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
   }, [estado, conceptos, resultado, mostrarToast]);
 
   /**
-   * Exporta la Cédula Oficial AAFY (Yucatán 2.5% LGHY).
+   * Exporta la Cédula Oficial AAFY (Yucatán 3.75% bruto / 3.0% neto MIPyME 2026).
    */
   const handleExportAafy = useCallback(() => {
     descargarCedulaAafy({
       estado,
       conceptos,
       resultado,
+      ejercicio,
       razonSocial: activeClient?.nombre || undefined,
       rfc: activeClient?.rfc || undefined,
     });
-    mostrarToast(`✓ Cédula AAFY generada: Yucatán 2.5% (${formatearMXN(resultado.isn)})`);
-  }, [estado, conceptos, resultado, activeClient, mostrarToast]);
+    mostrarToast(
+      `✓ Cédula AAFY generada: Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 (${formatearMXN(resultado.isnNeto)})`
+    );
+  }, [estado, conceptos, resultado, ejercicio, activeClient, mostrarToast]);
+
+  const handleCargarDemoYucatan = useCallback(() => {
+    setEstado(getEstadoById('YUC'));
+    setEjercicio(2026);
+    setNumEmpleados(15);
+    setEsMicroPequena2026(true);
+    setEsGobiernoEstatal(false);
+    setAplica27A(false);
+    setConceptos([
+      {
+        id: 1,
+        concepto: 'Nómina gravada (15 empleados Pequeña Empresa)',
+        gravado: 250000,
+        exento: 0,
+      },
+    ]);
+    setBaseGravableStr('250000');
+    mostrarToast('✓ Demo Yucatán 2026 cargada: 15 empleados, $250,000 → $7,500 neto');
+  }, [mostrarToast]);
 
   // ─────────────────────────────────────────────────────────────
   // RENDER
@@ -217,6 +258,127 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
         {/* COLUMNA IZQUIERDA: Entradas */}
         <div className="min-w-0 space-y-6">
           <EstadoSelector value={estado} onChange={handleEstadoChange} />
+
+          {/* Parámetros de Ejercicio y Estímulos (LGHY / Decreto 147/2025) */}
+          <div className="rounded-[20px] border border-line bg-surface p-5 shadow-sm">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Building2 size={16} className="text-navy" />
+                <span className="font-orbitron text-xs font-bold uppercase tracking-[0.14em] text-navy">
+                  Ejercicio, Plantilla y Estímulos Fiscales
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCargarDemoYucatan}
+                className="rounded-lg border border-gold/40 bg-gold/10 px-2.5 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy transition hover:bg-gold/20"
+              >
+                Demo YUC 15 emp ($250k)
+              </button>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="isn-ejercicio"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted"
+                >
+                  Ejercicio Fiscal
+                </label>
+                <select
+                  id="isn-ejercicio"
+                  value={ejercicio}
+                  onChange={(e) => setEjercicio(Number(e.target.value) as EjercicioISN)}
+                  className="w-full rounded-xl border border-line bg-surface-2 px-3 py-2 text-sm font-semibold text-ink focus:border-navy focus:outline-none"
+                >
+                  <option value={2026}>2026 (Vigente — YUC 3.75%)</option>
+                  <option value={2025}>2025 (Histórico — YUC 3.0%)</option>
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="isn-empleados"
+                  className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-muted"
+                >
+                  Número de empleados (0–999)
+                </label>
+                <input
+                  id="isn-empleados"
+                  type="number"
+                  min={0}
+                  max={999}
+                  value={numEmpleados}
+                  onChange={(e) =>
+                    setNumEmpleados(Math.max(0, Math.min(999, Number(e.target.value) || 0)))
+                  }
+                  className="w-full rounded-xl border border-line bg-surface-2 px-3 py-2 font-orbitron text-sm font-bold text-ink focus:border-navy focus:outline-none"
+                />
+                <div className="mt-1 text-[10px] text-muted">
+                  {numEmpleados >= 1 && numEmpleados <= 10
+                    ? 'Microempresa (1–10 trabajadores)'
+                    : numEmpleados >= 11 && numEmpleados <= 50
+                      ? 'Pequeña empresa (11–50 trabajadores)'
+                      : numEmpleados > 50
+                        ? 'Mediana / Grande (>50 trabajadores — sin estímulo Decreto 147/2025)'
+                        : 'Sin empleados capturados'}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2.5 border-t border-line/60 pt-3.5 text-xs">
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={esMicroPequena2026}
+                  onChange={(e) => setEsMicroPequena2026(e.target.checked)}
+                  disabled={ejercicio !== 2026 || esGobiernoEstatal}
+                  className="mt-0.5 h-4 w-4 rounded border-line text-navy focus:ring-navy"
+                />
+                <span className="text-ink">
+                  <strong>Micro / pequeña empresa 2026</strong> (1–50 empleados, Decreto 147/2025:
+                  estímulo −0.75%, tasa neta 3.0%)
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={esGobiernoEstatal}
+                  onChange={(e) => setEsGobiernoEstatal(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-line text-navy focus:ring-navy"
+                />
+                <span className="text-ink">
+                  <strong>Empleado de gobierno estatal</strong> (+1% adicional Art. 24 párr. 2 LGHY
+                  → 4.75% bruto; estímulo no confirmado)
+                </span>
+              </label>
+
+              <label className="flex cursor-pointer items-start gap-2.5">
+                <input
+                  type="checkbox"
+                  checked={aplica27A}
+                  onChange={(e) => setAplica27A(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 rounded border-line text-navy focus:ring-navy"
+                />
+                <span className="text-ink">
+                  <strong>Exención 1er año Art. 27-A LGHY</strong> (no acumulable con Decreto
+                  147/2025)
+                </span>
+              </label>
+
+              {estado.id === 'YUC' && esGobiernoEstatal && (
+                <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 p-2.5 text-[11px] text-amber-900">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0 text-amber-600" />
+                  <span>
+                    <strong>Estímulo no confirmado para gobierno estatal:</strong> Se aplica la tasa
+                    bruta del 4.75% (3.75% + 1% Art. 24) sin descuento del Decreto 147/2025 hasta
+                    confirmación de la AAFY.
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
 
           <BaseInput
             value={baseGravableStr}

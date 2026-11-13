@@ -418,7 +418,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       const data = (await res.json()) as Record<string, unknown>;
       expect(data.ok).toBe(true);
       expect(data.version).toBe('3.1');
-      expect(data.tool_count).toBe(20);
+      expect(data.tool_count).toBe(21);
       expect(data.isn_states_count).toBe(32);
       expect(Number(data.lfpiorpi_fractions_count)).toBeGreaterThanOrEqual(5);
 
@@ -445,7 +445,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       };
       expect(data.ok).toBe(true);
       expect(data.total).toBe(TOTAL_HERRAMIENTAS);
-      expect(data.tools).toHaveLength(20);
+      expect(data.tools).toHaveLength(21);
 
       for (const tool of data.tools) {
         expect(tool.law_cited.length).toBeGreaterThan(0);
@@ -999,10 +999,13 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
 
       expect(askBody.ok).toBe(true);
       expect(askBody.answer).toContain('ISN');
-      // Must use the tool's returned 2.5% / $6,250 result, never 3.0% / $7,500
-      expect(askBody.answer).toContain('6,250');
-      expect(askBody.answer).toContain('2.5%');
-      expect(askBody.answer).not.toContain('7,500');
+      // Must use the tool's returned 2026 MIPyME breakdown ($9,375 bruto - $1,875 estímulo = $7,500 neto, 3.0% efectiva), never legacy 2.5% / $6,250
+      expect(askBody.answer).toContain('7,500');
+      expect(askBody.answer).toContain('9,375');
+      expect(askBody.answer).toContain('1,875');
+      expect(askBody.answer).toContain('3.0%');
+      expect(askBody.answer).not.toContain('6,250');
+      expect(askBody.answer).not.toContain('2.5%');
       expect(askBody.writes).toBe(0);
       expect(askBody.sealed).toBe(false);
       expect(askBody.stamped).toBe(false);
@@ -1013,10 +1016,10 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(askBody.toolsCalled[0]?.toolId).toBe('isn');
       expect(askBody.toolsCalled[0]?.result).toBeDefined();
       expect(askBody.toolsCalled[0]?.result.baseGravable).toBe(250000);
-      expect(askBody.toolsCalled[0]?.result.tasa).toBe(2.5);
-      expect(askBody.toolsCalled[0]?.result.isn).toBe(6250);
+      expect(askBody.toolsCalled[0]?.result.tasa).toBe(3.75);
+      expect(askBody.toolsCalled[0]?.result.isn).toBe(7500);
       expect(askBody.toolsCalled[0]?.lawCited.length).toBeGreaterThan(0);
-      expect(askBody.toolsCalled[0]?.lawCited.join(' ')).toContain('2.5%');
+      expect(askBody.toolsCalled[0]?.lawCited.join(' ')).toContain('3.75%');
       expect(store.expedienteInserts).toBe(0);
 
       // Verify metrics reflect the call and tool breakdown
@@ -1250,7 +1253,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(unboundBody.answer).toBeUndefined();
     });
 
-    it('locks in ISN Yucatán 2.5% ($6,250 on $250,000), per-call neurons (89.69) in status/metrics/ask, and 12 vs 20 walkthrough breakdown', async () => {
+    it('locks in ISN Yucatán 2026 MIPyME ($9,375 bruto - $1,875 estímulo = $7,500 neto on $250,000, 15 emp), per-call neurons (89.69), and 12 vs 20 walkthrough breakdown', async () => {
       const { env } = createIsolatedMockEnv(true);
 
       // 1. Direct preview POST /api/internal/tools/isn/preview for YUC $250,000, 15 employees
@@ -1276,18 +1279,27 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
         law_cited: string[];
         result: {
           tasa: number;
+          tasaBruta: number;
+          tasaEfectiva: number;
+          isnBruto: number;
+          estimulo: number;
+          isnNeto: number;
           isn: number;
           baseGravable: number;
           estado: { id: string; tasa: number; articulo: string };
         };
       };
       expect(previewBody.ok).toBe(true);
-      expect(previewBody.result.tasa).toBe(2.5);
-      expect(previewBody.result.isn).toBe(6250);
-      expect(previewBody.result.estado.articulo).toBe('Art. 21 al 27 LGHY');
-      expect(previewBody.law_cited.join(' ')).toContain('Tasa ISN 2.5%');
+      expect(previewBody.result.tasaBruta).toBe(3.75);
+      expect(previewBody.result.isnBruto).toBe(9375);
+      expect(previewBody.result.estimulo).toBe(1875);
+      expect(previewBody.result.isnNeto).toBe(7500);
+      expect(previewBody.result.isn).toBe(7500);
+      expect(previewBody.result.tasaEfectiva).toBe(3.0);
+      expect(previewBody.result.estado.articulo).toContain('Art. 21 al 27 LGHY');
+      expect(previewBody.law_cited.join(' ')).toContain('3.75%');
 
-      // 2. Simulate Workers AI returning usage.neurons = 89.69
+      // 2. Simulate Workers AI returning usage.neurons = 89.69 (and hallucinating legacy 2.5% / $6,250 so guard rewrites it)
       env.AI = {
         run: vi.fn(async (_model: string, input: { messages?: Array<{ role: string }> }) => {
           const msgs = input.messages ?? [];
@@ -1305,7 +1317,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
             };
           }
           return {
-            response: 'El ISN en Yucatán al 3.0% sobre $250,000 es $7,500.',
+            response: 'El ISN en Yucatán al 2.5% sobre $250,000 es $6,250.',
             usage: {
               prompt_tokens: 180,
               completion_tokens: 60,
@@ -1340,14 +1352,25 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
         neuronsAvailable: boolean;
         toolsCalled: Array<{
           toolId: string;
-          result: { isn: number; tasa: number };
+          result: {
+            isn: number;
+            isnNeto: number;
+            isnBruto: number;
+            estimulo: number;
+            tasa: number;
+          };
         }>;
       };
       expect(askBody.ok).toBe(true);
-      expect(askBody.answer).toContain('6,250');
-      expect(askBody.answer).not.toContain('7,500');
-      expect(askBody.toolsCalled[0]?.result.isn).toBe(6250);
-      expect(askBody.toolsCalled[0]?.result.tasa).toBe(2.5);
+      expect(askBody.answer).toContain('9,375');
+      expect(askBody.answer).toContain('1,875');
+      expect(askBody.answer).toContain('7,500');
+      expect(askBody.answer).toContain('3.0%');
+      expect(askBody.answer).not.toContain('6,250');
+      expect(askBody.answer).not.toContain('2.5%');
+      expect(askBody.toolsCalled[0]?.result.isn).toBe(7500);
+      expect(askBody.toolsCalled[0]?.result.isnBruto).toBe(9375);
+      expect(askBody.toolsCalled[0]?.result.estimulo).toBe(1875);
       expect(askBody.neuronsAvailable).toBe(true);
       expect(askBody.neuronsUsed).toBe(89.69);
 
@@ -1397,9 +1420,9 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       };
       expect(walkBody.stamping_policy.status).toBe('preview_only');
       expect(walkBody.stamping_policy.live_stamping_on_monday).toBe(false);
-      expect(walkBody.suite_breakdown.total_tools).toBe(20);
+      expect(walkBody.suite_breakdown.total_tools).toBe(21);
       expect(walkBody.suite_breakdown.canaco_pyme_core_count).toBe(12);
-      expect(walkBody.suite_breakdown.specialized_corporate_pld_count).toBe(8);
+      expect(walkBody.suite_breakdown.specialized_corporate_pld_count).toBe(9);
     });
   });
 });

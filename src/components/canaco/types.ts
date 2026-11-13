@@ -51,7 +51,7 @@ export interface SocioCanacoRegistro {
   selloDigitalSha256: string;
   /** Número de Registro Patronal ante el IMSS (NRP - 11 caracteres) */
   registroPatronalImss?: string;
-  /** Registro Estatal de Contribuyentes ante la AAFY (Padrón ISN 2.5%) */
+  /** Registro Estatal de Contribuyentes ante la AAFY (Padrón ISN Yucatán) */
   registroEstatalAafy?: string;
   /** Si el socio participa en el Programa de Afiliación Simultánea AAFY-SAT-IMSS */
   afiliacionSimultanea?: boolean;

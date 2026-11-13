@@ -37,7 +37,7 @@ export interface CanacoWalkthroughDemoData {
 
 /**
  * Caso canónico para el Walkthrough del lunes (coincide con el escenario de 15 empleados
- * e ISN Yucatán 2.5% sobre $250,000 = $6,250 MXN).
+ * e ISN Yucatán 2026 Pequeña Empresa sobre $250,000: $9,375 bruto − $1,875 estímulo = $7,500 MXN neto).
  */
 export const CANACO_WALKTHROUGH_SOCIO_DEMO: CanacoWalkthroughDemoData = {
   razonSocial: 'COMERCIALIZADORA PENINSULAR DEL MAYAB S.A. DE C.V.',

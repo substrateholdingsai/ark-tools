@@ -1,0 +1,82 @@
+/**
+ * ARK LEDGER — Cálculo de Retención 2% Clínicas y Hospitales (Yucatán)
+ * Ley General de Hacienda del Estado de Yucatán (LGHY):
+ * - Arts. 16 al 20: Impuesto sobre el Ejercicio Profesional (3%, pago día 17)
+ * - Art. 20-Bis (adicionado D.O. 26-dic-2025): Retención 2% al pago, entero día 10 mes siguiente
+ * - Art. 20-Ter: Constancia AAFY-30 dentro de los 5 días siguientes (o acumulada mensual)
+ * - Art. 20-Quater: Responsabilidad solidaria
+ * - Art. 20-Quinquies: Declaración informativa trimestral (1er y 2do trim. 2026 acumulados en julio 2026)
+ * - Acuerdo AAFY XX/2026: Entero de enero 2026 prorrogado al 20 de febrero de 2026
+ */
+
+import type { RetencionClinicasInput, RetencionClinicasResultado } from '../types';
+
+export const MENSAJE_SOLO_YUCATAN = 'Solo Yucatán, Art. 20-Bis LGHY';
+
+const r2 = (n: number): number => Math.round(n * 100) / 100;
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+function sumarDiasIso(fechaIso: string, dias: number): string {
+  const [y, m, d] = fechaIso.split('-').map(Number);
+  if (!y || !m || !d) return fechaIso;
+  const dt = new Date(Date.UTC(y, m - 1, d + dias));
+  return `${dt.getUTCFullYear()}-${pad2(dt.getUTCMonth() + 1)}-${pad2(dt.getUTCDate())}`;
+}
+
+function calcularFechaMesSiguiente(fechaIso: string, dia: number): string {
+  const [y, m] = fechaIso.split('-').map(Number);
+  if (!y || !m) return fechaIso;
+  const nextMonth = m === 12 ? 1 : m + 1;
+  const nextYear = m === 12 ? y + 1 : y;
+  return `${nextYear}-${pad2(nextMonth)}-${pad2(dia)}`;
+}
+
+function obtenerTrimestreInformativo(fechaIso: string): string {
+  const [y, m] = fechaIso.split('-').map(Number);
+  if (!y || !m) return 'Declaración trimestral Art. 20-Quinquies LGHY';
+  if (y === 2026 && m <= 6) {
+    return '1er y 2do trimestre 2026: presentación acumulada en julio 2026 (Art. 20-Quinquies LGHY)';
+  }
+  const trim = Math.ceil(m / 3);
+  return `Trimestre ${trim} de ${y}: presentación en el mes inmediato posterior al cierre del trimestre (Art. 20-Quinquies LGHY)`;
+}
+
+export function calcularRetencionClinicas(
+  input: RetencionClinicasInput
+): RetencionClinicasResultado {
+  if ((input.estadoId || '').trim().toUpperCase() !== 'YUC') {
+    throw new Error(MENSAJE_SOLO_YUCATAN);
+  }
+
+  const base = Math.max(0, r2(Number(input.montoHonorarios) || 0));
+  const retencion2Pct = r2(base * 0.02);
+  const netoPagar = r2(base - retencion2Pct);
+  const impuestoEjercicioProfesional3Pct = r2(base * 0.03);
+
+  const fechaPago = /^\d{4}-\d{2}-\d{2}$/.test(input.fechaPago) ? input.fechaPago : '2026-01-15';
+
+  const esEnero2026 = fechaPago.startsWith('2026-01-');
+  const fechaLimiteEntero = esEnero2026 ? '2026-02-20' : calcularFechaMesSiguiente(fechaPago, 10);
+  const fechaLimitePagoImpuesto = calcularFechaMesSiguiente(fechaPago, 17);
+  const fechaLimiteConstancia = sumarDiasIso(fechaPago, 5);
+
+  const notaAcuerdoAafy2026 = esEnero2026
+    ? 'Acuerdo AAFY XX/2026: Entero de enero 2026 prorrogado al 20 de febrero de 2026. Constancia por pago o acumulada mensual a más tardar el último día del mes.'
+    : 'Art. 20-Ter LGHY y Acuerdo AAFY XX/2026: Constancia dentro de los 5 días siguientes al pago o acumulada mensual a más tardar el último día del mes.';
+
+  return {
+    base,
+    tasaRetencion: 2.0,
+    retencion2Pct,
+    netoPagar,
+    impuestoEjercicioProfesional3Pct,
+    fechaLimiteEntero,
+    fechaLimitePagoImpuesto,
+    fechaLimiteConstancia,
+    notaAcuerdoAafy2026,
+    trimestreInformativo: obtenerTrimestreInformativo(fechaPago),
+  };
+}

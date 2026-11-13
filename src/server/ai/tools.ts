@@ -13,6 +13,7 @@ import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/
 import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
 import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
 import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
+import { calcularRetencionClinicas } from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
 import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
 import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
 import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
@@ -61,7 +62,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calcular_isn',
     description:
-      'Calcula el Impuesto Sobre Nómina (ISN) estatal: suma de percepciones gravadas por la tasa del estado. Devuelve base gravable, total exento, total percepciones, tasa y monto de ISN.',
+      'Calcula el Impuesto Sobre Nómina (ISN) estatal: suma de percepciones gravadas por la tasa del estado. Para Yucatán 2026 soporta tasa bruta 3.75%, estímulo Decreto 147/2025 (-0.75% = 3.0% neto para 1-50 empleados) y gobierno estatal (+1% = 4.75% bruto).',
     parameters: {
       type: 'object',
       properties: {
@@ -71,10 +72,57 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
         tasa: {
           type: 'number',
-          description: 'Tasa del ISN del estado en porcentaje (ej. 3 para 3%).',
+          description: 'Tasa del ISN del estado en porcentaje (ej. 3.75 para YUC 2026 general).',
+        },
+        estadoId: {
+          type: 'string',
+          description: 'ID del estado (ej. "YUC", "CDMX", "JAL").',
+        },
+        ejercicio: {
+          type: 'number',
+          description: 'Ejercicio fiscal (2025 o 2026, default 2026).',
+        },
+        numEmpleados: {
+          type: 'number',
+          description: 'Número de trabajadores (1-50 elegible a Decreto 147/2025 en YUC 2026).',
+        },
+        esMicroPequena2026: {
+          type: 'boolean',
+          description: 'Si aplica estímulo Decreto 147/2025 para micro/pequeña empresa 2026.',
+        },
+        esGobiernoEstatal: {
+          type: 'boolean',
+          description: 'Si corresponde a trabajadores de gobierno estatal (+1% Art. 24 LGHY).',
+        },
+        aplica27A: {
+          type: 'boolean',
+          description: 'Si aplica exención 1er año Art. 27-A (no acumulable con Decreto 147/2025).',
         },
       },
       required: ['baseGravable', 'tasa'],
+    },
+  },
+  {
+    name: 'calcular_retencion_clinicas',
+    description:
+      'Calcula la retención del 2% para clínicas y hospitales en Yucatán (Art. 20-Bis LGHY, D.O. 26-dic-2025): base, retención 2%, neto a pagar, impuesto profesional 3% informativo y fechas límite AAFY-30 / AAFY-31.',
+    parameters: {
+      type: 'object',
+      properties: {
+        estadoId: {
+          type: 'string',
+          description: 'Entidad federativa (exclusivo "YUC").',
+        },
+        montoHonorarios: {
+          type: 'number',
+          description: 'Monto bruto de honorarios médicos pagados en MXN.',
+        },
+        fechaPago: {
+          type: 'string',
+          description: 'Fecha de pago en formato YYYY-MM-DD.',
+        },
+      },
+      required: ['montoHonorarios', 'fechaPago'],
     },
   },
   {
@@ -429,14 +477,31 @@ export async function executeAiTool(
         { id: 1, concepto: 'Base gravable', gravado: baseGravable, exento: 0 },
       ];
       const estado: Estado = {
-        id: 'ai',
-        nombre: 'AI',
-        corto: 'AI',
+        id: String(args.estadoId || 'ai').toUpperCase(),
+        nombre: String(args.estadoId || 'AI'),
+        corto: String(args.estadoId || 'AI'),
         tasa,
         vigencia: '2026',
         articulo: 'N/A',
       };
-      const resultado = calcularResultadoISN(conceptos, estado);
+      const resultado = calcularResultadoISN(conceptos, estado, {
+        ejercicio: Number(args.ejercicio) === 2025 ? 2025 : 2026,
+        numEmpleados: args.numEmpleados !== undefined ? Number(args.numEmpleados) : undefined,
+        esMicroPequena2026: Boolean(args.esMicroPequena2026),
+        esGobiernoEstatal: Boolean(args.esGobiernoEstatal),
+        aplica27A: Boolean(args.aplica27A),
+      });
+      return { success: true, data: resultado };
+    }
+
+    if (toolName === 'calcular_retencion_clinicas') {
+      const resultado = calcularRetencionClinicas({
+        estadoId: String(args.estadoId || 'YUC'),
+        montoHonorarios: Number(args.montoHonorarios || 0),
+        fechaPago: String(args.fechaPago || '2026-03-15'),
+        retenedor: { nombre: 'Retenedor', rfc: 'XAXX010101000' },
+        prestador: { nombre: 'Prestador', rfc: 'XAXX010101000', tipoPersona: 'fisica' },
+      });
       return { success: true, data: resultado };
     }
 

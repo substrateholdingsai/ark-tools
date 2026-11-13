@@ -20,7 +20,8 @@ import type {
 import { calcularResultadoSBC } from '../../sbc/lib/calcularSBC';
 import { calcularISR } from '../../nomina/lib/calcularISR';
 import { calcularIMSS } from '../../nomina/lib/calcularIMSS';
-import { calcularISN } from '../../isn/lib/calcularISN';
+import { calcularISN, calcularResultadoISN } from '../../isn/lib/calcularISN';
+import { ESTADOS } from '../../isn/data/estados';
 import { numeroALetras } from '../../../lib/numeroALetras';
 import { calcularAntiguedadAnios, calcularDiasVacacionesPorLey } from './parserPlantilla';
 
@@ -121,8 +122,21 @@ export async function procesarCierreNomina(
     const totalDeducciones = r2(isrRetenido + imssObrero + otrasDeducciones);
     const sueldoNeto = r2(Math.max(0, totalPercepciones - totalDeducciones));
 
-    // 7. Impuesto Sobre Nómina Estatal
-    const isnEstatal = calcularISN(totalPercepciones, parametros.tasaIsn);
+    // 7. Impuesto Sobre Nómina Estatal (versionado desde ESTADOS cuando aplica opcionesIsn)
+    const estadoCatalogo = ESTADOS.find(
+      (e) => e.id.toUpperCase() === (parametros.estadoIsnId || '').toUpperCase()
+    );
+    const isnEstatal =
+      estadoCatalogo && parametros.opcionesIsn
+        ? calcularResultadoISN(
+            [{ id: 1, concepto: 'Nómina período', gravado: totalPercepciones, exento: 0 }],
+            estadoCatalogo,
+            {
+              ...parametros.opcionesIsn,
+              numEmpleados: parametros.opcionesIsn.numEmpleados ?? trabajadoresInput.length,
+            }
+          ).isnNeto
+        : calcularISN(totalPercepciones, parametros.tasaIsn);
 
     // Acumuladores
     acumBruto += totalPercepciones;

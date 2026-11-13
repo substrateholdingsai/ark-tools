@@ -25,6 +25,7 @@ import {
   TrendingUp,
   Compass,
   ArrowLeft,
+  Stethoscope,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -108,6 +109,9 @@ const Modalidad40 = lazyWithRetry(() =>
 const AuditorCFDIAtipico = lazyWithRetry(() =>
   import('./tools/auditor-cfdi-atipico').then((m) => ({ default: m.AuditorCFDIAtipico }))
 );
+const RetencionClinicas = lazyWithRetry(() =>
+  import('./tools/retencion-clinicas').then((m) => ({ default: m.RetencionClinicas }))
+);
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -134,6 +138,7 @@ export type ToolId =
   | 'recargos'
   | 'modalidad40'
   | 'auditor-cfdi-atipico'
+  | 'retencion-clinicas'
   | 'admin';
 
 export type ToolRoute = ToolId;
@@ -177,6 +182,8 @@ export function App() {
       'monitor-lfpiorpi',
       'recargos',
       'modalidad40',
+      'auditor-cfdi-atipico',
+      'retencion-clinicas',
       'admin',
     ];
     if (toolParam && validTools.includes(toolParam)) {
@@ -266,6 +273,7 @@ export function App() {
     recargos: 'Actualización y Recargos CFF',
     modalidad40: 'Simulador Modalidad 40 (DOF 2026)',
     'auditor-cfdi-atipico': 'Detector de Atípicos CFDI',
+    'retencion-clinicas': 'Retención 2% Clínicas (Yucatán)',
     admin: 'Super Admin Console',
   };
 
@@ -356,6 +364,9 @@ export function App() {
 
       case 'auditor-cfdi-atipico':
         return <AuditorCFDIAtipico />;
+
+      case 'retencion-clinicas':
+        return <RetencionClinicas onBack={goToDashboard} />;
 
       case 'dashboard':
       default:
@@ -472,7 +483,7 @@ export function App() {
                           onClick={() => navigateTo('isn')}
                           className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
                         >
-                          Abrir ISN Yucatán (2.5%)
+                          Abrir ISN Yucatán (3.75% / 3.0% MIPyME)
                         </button>
                         <button
                           type="button"
@@ -691,6 +702,14 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
             badge="GRATIS"
             badgeVariant="neutral"
             onSelect={() => onSelectTool('isn')}
+          />
+          <ToolCard
+            icon={Stethoscope}
+            title="Retención 2% Clínicas (YUC)"
+            description="Art. 20-Bis LGHY Yucatán. Retención 2% al pago y formatos AAFY-30 / AAFY-31."
+            badge="YUCATÁN"
+            badgeVariant="gold"
+            onSelect={() => onSelectTool('retencion-clinicas')}
           />
           <ToolCard
             icon={Building2}
