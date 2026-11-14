@@ -8,7 +8,7 @@ Genera tres entregables oficiales:
 
 1. **Cédula Concentradora Oficial** sellada con hash determinista SHA-256 (CFF Art. 28).
 2. **Layout Bancario de Dispersión** (formato SPEI / transferencia masiva).
-3. **Layout Batch IDSE / DISPMAG (IMSS)** en formato plano de **175 caracteres por renglón** para la transmisión directa de avisos afiliatorios al Seguro Social.
+3. **Layout Batch IDSE / DISPMAG (IMSS)** en formato plano de **175 caracteres por renglón** (implementación Ledger; longitud no confirmada en manual oficial IMSS — no hacer upload en vivo hasta validación).
 
 ## ¿Cómo lo hace?
 
@@ -34,13 +34,13 @@ Genera tres entregables oficiales:
    - **Cédula Concentradora CSV**: 23 columnas de cálculo más totales y sello criptográfico con BOM UTF-8.
    - **Layout Bancario SPEI**: Archivo CSV de dispersión bancaria (`No`, `Beneficiario`, `RFC`, `Monto`, `Concepto`).
    - **Layout Batch IDSE / DISPMAG (IMSS)**:
-     - Archivo de texto plano `.txt` con registros de **175 caracteres exactos por renglón**, estructurado conforme al RACERF del IMSS.
+     - Archivo de texto plano `.txt` con registros de **175 caracteres por renglón** (implementación Ledger; longitud no confirmada en manual oficial IMSS).
      - Permite generar avisos masivos de **Reingreso / Alta (`08`)**, **Modificación de Salario Integrado (`07`)** y **Baja (`02`)**.
      - Formatea posicionalmente Registro Patronal (11), NSS (11), Apellido Paterno (27), Materno (27), Nombres (27), Salario Diario Integrado con 6 enteros y 2 decimales sin punto implícito, tipo de trabajador, jornada, fecha `DDMMAAAA` y clínica (UMF).
 7. **Persistencia**: Registro en el **Expediente Único** del cliente activo en base de datos.
 
 Entrada: `TrabajadorFilaInput[]` + `ParametrosCierreNomina`.  
-Salida: Cédula concentradora sellada con SHA-256, Layout SPEI bancario y Layout Batch IDSE / DISPMAG (.txt de 175 caracteres).
+Salida: Cédula concentradora sellada con SHA-256, Layout SPEI bancario y Layout Batch IDSE / DISPMAG (.txt de 175 caracteres, longitud Ledger no confirmada en manual oficial IMSS).
 
 ## ¿Para qué sirve?
 
@@ -55,4 +55,4 @@ Salida: Cédula concentradora sellada con SHA-256, Layout SPEI bancario y Layout
 - **Motor de cálculo y parsing**: `lib/calcularCierreNomina.ts`, `lib/parserPlantilla.ts`, `lib/cruceNominaChecador.ts`.
 - **Exportaciones**:
   - `lib/exportarCierre.ts`: Cédula CSV y Layout SPEI.
-  - `lib/layoutImssIdse.ts`: Generador del layout batch IDSE de 175 caracteres para el IMSS.
+  - `lib/layoutImssIdse.ts`: Generador del layout batch IDSE de 175 caracteres para el IMSS (implementación Ledger; longitud no confirmada en manual oficial IMSS).

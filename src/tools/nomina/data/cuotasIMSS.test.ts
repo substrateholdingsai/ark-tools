@@ -59,9 +59,14 @@ describe('cuotas IMSS patrón 2026 — vector dorado (todas las ramas)', () => {
     const retiro = porRamo.get('Retiro')!;
     expect(retiro.monto).toBeCloseTo(0.02 * sbcTotal, 2); // 699.54
 
-    // 7. Cesantía y Vejez (sbc): tasa catálogo (pendiente confirmación DOF)
+    // 7. Cesantía y Vejez (sbc): tasa progresiva 2026 (7.513% para 9.94 UMA)
     const cesantia = porRamo.get('Cesantía y Vejez (reforma 2020)')!;
-    expect(cesantia.monto).toBeCloseTo((cesantia.porcentaje / 100) * sbcTotal, 2);
+    expect(cesantia.monto).toBeCloseTo(0.07513 * sbcTotal, 2); // 2,627.67
+
+    // 8. Riesgos de Trabajo (prima mínima 0.5%): línea aparte incluida en el total
+    const riesgos = res.cuotas.find((c) => c.ramo.toLowerCase().includes('riesgos'))!;
+    expect(riesgos).toBeDefined();
+    expect(riesgos.monto).toBeCloseTo(0.005 * sbcTotal, 2); // 174.89
 
     // Total patronal SIN INFONAVIT debe superar $2,000
     const totalSinInfONAVIT = res.total;

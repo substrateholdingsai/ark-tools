@@ -261,10 +261,10 @@ export const CATALOGO_2026: ValorFiscal[] = [
       publicacion: 'DOF (LSS Art. 168, reforma 2020 — tabla progresiva 2026)',
       urlDOF: 'https://www.dof.gob.mx/',
       referencia:
-        'LSS Artículo 168 — cuota patrón cesantía y vejez, tabla progresiva 2026 (tasa a confirmar contra DOF)',
+        'LSS Artículo 168 Fracc. II inciso a) + Segundo Transitorio Decreto DOF 16-dic-2020 — cuota PATRÓN Cesantía y Vejez, tabla progresiva 2026 (3.150% a 7.513% según SBC en UMA, truncado a 2 decimales). Tasa mínima 3.150% (≤ 1 SM). Implementación: src/tools/nomina/data/cuotasIMSS.ts (tasaCesantiaVejez2026).',
     },
     esProyeccion: false,
-    verificadoPor: 'Pendiente confirmación DOF — Pavel (tabla progresiva 2026)',
+    verificadoPor: 'DeepSeek 2026-11-13 — tabla progresiva 2026 verificada contra IMSS/DOF',
     criticidad: 'MEDIA',
   },
   {

@@ -47,6 +47,31 @@ export const UMA_DIARIA_2026 = getValor('UMA_DIARIA_2026');
  */
 export const TRES_UMAS = UMA_DIARIA_2026 * 3;
 
+export const SALARIO_MINIMO_GENERAL_2026 = 315.04;
+
+/**
+ * Tabla progresiva 2026 de la cuota PATRÓN de Cesantía en Edad Avanzada y Vejez
+ * (LSS Art. 168 Fracc. II inciso a), + Segundo Transitorio del Decreto DOF 16-dic-2020).
+ * La tasa depende del SBC expresado en UMA (truncado a 2 decimales).
+ * Fuente: IMSS / LSS. Valores verificados contra publicaciones oficiales 2026.
+ */
+export function tasaCesantiaVejez2026(sbcDiario: number, umaDiaria: number): number {
+  // Fila especial: SBC hasta 1 salario mínimo → 3.150%
+  if (sbcDiario <= SALARIO_MINIMO_GENERAL_2026) {
+    return 3.15;
+  }
+  // Truncar a 2 decimales (como lo hace el SUA), no redondear.
+  const ratio = Math.trunc((sbcDiario / umaDiaria) * 100) / 100;
+
+  if (ratio <= 1.5) return 3.676;
+  if (ratio <= 2.0) return 4.851;
+  if (ratio <= 2.5) return 5.556;
+  if (ratio <= 3.0) return 6.026;
+  if (ratio <= 3.5) return 6.361;
+  if (ratio <= 4.0) return 6.613;
+  return 7.513;
+}
+
 /**
  * Cuotas IMSS obrero 2026 (mantenidas para compatibilidad con el módulo obrero).
  * Las tasas se importan del catálogo canónico de valores vigentes.
@@ -196,35 +221,47 @@ export function calcularIMSSPatronal(
   const dias = PERIODOS[periodo].dias;
   const umaDiaria = UMA_DIARIA_2026;
 
+  // Prima de Riesgos de Trabajo: si no se conoce, se usa la prima mínima 0.5% (Clase I).
+  const primaRiesgoEfectiva = primaRiesgo != null ? primaRiesgo : 0.5;
+
   if (sbcDiario <= 0) {
     const cuotasCeros = CUOTAS_PATRONAL.map((c) => ({ ...c, monto: 0 }));
-    if (primaRiesgo != null && primaRiesgo > 0) {
-      cuotasCeros.push({
-        ramo: 'Riesgos de Trabajo',
-        fundamento: 'LSS Art. 73',
-        porcentaje: primaRiesgo / 100,
-        base: 'sbc',
-        monto: 0,
-      });
-    }
+    cuotasCeros.push({
+      ramo: `Riesgos de Trabajo (prima ${primaRiesgoEfectiva}%)`,
+      fundamento: 'LSS Art. 73',
+      porcentaje: primaRiesgoEfectiva,
+      base: 'sbc',
+      monto: 0,
+    });
     return { cuotas: cuotasCeros, total: 0, sbc: 0, dias };
   }
 
-  const cuotasCalculadas: CuotaIMSS[] = CUOTAS_PATRONAL.map((cuota) => ({
-    ...cuota,
-    monto: redondear2(calcularCuota(cuota, sbcDiario, dias, umaDiaria)),
-  }));
+  // Tasa progresiva Cesantía y Vejez 2026 según SBC en UMA.
+  const tasaCesantia = tasaCesantiaVejez2026(sbcDiario, umaDiaria);
+
+  const cuotasCalculadas: CuotaIMSS[] = CUOTAS_PATRONAL.map((cuota) => {
+    if (cuota.ramo === 'Cesantía y Vejez (reforma 2020)') {
+      const cuotaAjustada: CuotaIMSS = {
+        ...cuota,
+        porcentaje: tasaCesantia,
+        monto: redondear2((tasaCesantia / 100) * sbcDiario * dias),
+      };
+      return cuotaAjustada;
+    }
+    return {
+      ...cuota,
+      monto: redondear2(calcularCuota(cuota, sbcDiario, dias, umaDiaria)),
+    };
+  });
 
   // Riesgos de Trabajo: prima variable, línea aparte incluida en el total
-  if (primaRiesgo != null && primaRiesgo > 0) {
-    cuotasCalculadas.push({
-      ramo: 'Riesgos de Trabajo',
-      fundamento: 'LSS Art. 73',
-      porcentaje: primaRiesgo / 100,
-      base: 'sbc',
-      monto: redondear2((primaRiesgo / 100) * sbcDiario * dias),
-    });
-  }
+  cuotasCalculadas.push({
+    ramo: `Riesgos de Trabajo (prima ${primaRiesgoEfectiva}%)`,
+    fundamento: 'LSS Art. 73',
+    porcentaje: primaRiesgoEfectiva,
+    base: 'sbc',
+    monto: redondear2((primaRiesgoEfectiva / 100) * sbcDiario * dias),
+  });
 
   const total = redondear2(cuotasCalculadas.reduce((sum, c) => sum + c.monto, 0));
 
