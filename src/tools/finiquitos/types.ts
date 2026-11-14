@@ -97,6 +97,9 @@ export interface ResultadoFiniquito {
   totalFiniquito: number; // finiquito sin indemnización
   totalLiquidacion: number; // finiquito + indemnización + 20d
 
+  /** Avisos y guardrail legales que acompañan al resultado (leyenda ISR, prima vacacional < 25%, etc.) */
+  advertencias: string[];
+
   /** Desglose completo listo para render */
   desglose: DesgloseConcepto[];
 }

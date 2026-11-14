@@ -207,6 +207,19 @@ export function ResultadoFiniquitoCard({ entrada, resultado }: Props) {
         </div>
       </div>
 
+      {resultado.advertencias.length > 0 && (
+        <div className="mb-4 rounded-[12px] border border-amber-200 bg-amber-50 p-3 sm:p-4">
+          <span className="mb-2 block font-inter text-[11px] font-bold uppercase tracking-[0.12em] text-amber-800">
+            Avisos legales
+          </span>
+          <ul className="mt-0 list-inside list-disc space-y-1 text-[11px] text-amber-800/90">
+            {resultado.advertencias.map((a, i) => (
+              <li key={i}>{a}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Botones de Acción */}
       <div className="mt-6 flex flex-col items-center gap-3 border-t border-line pt-4 sm:flex-row">
         <GlassButton
@@ -271,6 +284,9 @@ function generarResumenTexto(entrada: EntradaFiniquito, resultado: ResultadoFini
     `Antigüedad:       ${resultado.diasAntiguedad.toLocaleString('es-MX')} días (${resultado.aniosExactos.toFixed(2)} años)`,
     `Salario Diario:   $${entrada.salarioDiario.toFixed(2)} MXN`,
     `Salario Integrado (SDI): $${entrada.sdi.toFixed(2)} MXN`,
+    `───────────────────────────────────────────────────────────`,
+    `OBSERVACIONES LEGALES:`,
+    ...resultado.advertencias.map((a) => `• ${a}`),
     `───────────────────────────────────────────────────────────`,
     `CONCEPTOS CALCULADOS:`,
   ];
