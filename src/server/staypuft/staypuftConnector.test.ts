@@ -490,6 +490,17 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       const { env, store } = createIsolatedMockEnv(true);
 
       for (const tool of CATALOGO_HERRAMIENTAS) {
+        const payload =
+          tool.id === 'nomina'
+            ? {
+                periodo: 'mensual',
+                sueldoBruto: 18000,
+                diasTrabajados: 30,
+                diasPeriodo: 30,
+                sbcDiario: 629.58,
+              }
+            : {};
+
         const res = await worker.fetch(
           new Request(`https://ledger.arksystems.site/api/internal/tools/${tool.id}/preview`, {
             method: 'POST',
@@ -497,7 +508,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
               'X-StayPuft-Key': TEST_STAYPUFT_KEY,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({}),
+            body: JSON.stringify(payload),
           }),
           env,
           mockCtx
@@ -513,7 +524,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
           stamped: boolean;
           dictamen_issued: boolean;
           law_cited: string[];
-          result: Record<string, unknown>;
+          result: Record<string, any>;
         };
 
         expect(body.ok).toBe(true);
@@ -525,6 +536,12 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
         expect(body.dictamen_issued).toBe(false);
         expect(body.law_cited.length).toBeGreaterThan(0);
         expect(body.result).toBeDefined();
+
+        if (tool.id === 'nomina') {
+          expect(body.result.isr.isrFinal).toBe(2033.23);
+          expect(body.result.imss.total).toBe(427.73);
+          expect(body.result.neto).toBe(15539.04);
+        }
       }
 
       // Ningún cálculo en preview puede insertar en expedientes
