@@ -6,6 +6,8 @@
 export type TipoPersonaResico = 'fisica' | 'moral';
 
 export type MesFiscal = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+/** Tasa de IVA aplicable (16% general, 8% frontera, 0% tasa cero, exento). */
+export type TasaIVAResico = number | 'exento';
 
 export interface RangoTarifaResicoPF {
   limiteInferior: number;
@@ -39,6 +41,8 @@ export interface EntradaResicoPF {
   /** Retención de IVA efectuada por Personas Morales */
   retencionIVAEfectuadaPM: number;
 
+  /** Tasa de IVA aplicable (default 16%). */
+  tasaIVA?: TasaIVAResico;
   /** Mes a declarar (1 a 12) */
   mes: MesFiscal;
 
@@ -74,6 +78,8 @@ export interface EntradaResicoPM {
   /** Retenciones de IVA del mes */
   retencionIVAMes: number;
 
+  /** Tasa de IVA aplicable (default 16%). */
+  tasaIVA?: TasaIVAResico;
   /** Mes a declarar */
   mes: MesFiscal;
 
@@ -108,6 +114,7 @@ export interface ResultadoResicoPF {
   ivaAcreditable: number;
   retencionIVAAcreditada: number;
   ivaNetoPagar: number; // >0 a cargo, <0 saldo a favor
+  tasaIVAPct: number;
 
   // Totales
   totalImpuestosPagar: number;
@@ -118,6 +125,10 @@ export interface ResultadoResicoPF {
   porcentajeConsumoTope: number; // % del tope consumido
   rebasoTope: boolean;
   alertaTope: 'seguro' | 'preventivo' | 'critico' | 'excedido';
+
+  // Plazos (informativo; verificar RMF 2026)
+  fechaLimitePago: string | null;
+  fechaLimitePagoNota: string;
 
   // Desglose para Cédula y Papel de Trabajo
   desglose: DesgloseImpuesto[];
@@ -147,6 +158,7 @@ export interface ResultadoResicoPM {
   ivaAcreditable: number;
   retencionIVAAcreditada: number;
   ivaNetoPagar: number;
+  tasaIVAPct: number;
 
   // Totales
   totalImpuestosPagar: number;
@@ -155,6 +167,10 @@ export interface ResultadoResicoPM {
   // Control de tope PM 35M
   topeAnualPM: number; // 35,000,000
   rebasoTope: boolean;
+
+  // Plazos (informativo; verificar RMF 2026)
+  fechaLimitePago: string | null;
+  fechaLimitePagoNota: string;
 
   // Desglose
   desglose: DesgloseImpuesto[];

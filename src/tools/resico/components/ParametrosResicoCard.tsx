@@ -253,6 +253,32 @@ export function ParametrosResicoCard({
                 <Calculator className="h-3 w-3" /> Sugerir 16%
               </button>
             </div>
+            <div className="space-y-3 border-t border-line pt-2">
+              <label className="mb-1 block text-[11px] text-muted">
+                Tasa de IVA (sugerencia del contribuyente)
+              </label>
+              <div className="relative">
+                <select
+                  value="{String(entradaPF.tasaIVA ?? 0.16)}"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    onEntradaPFChange({
+                      ...entradaPF,
+                      tasaIVA: v === 'exento' ? 'exento' : (Number(v) as any),
+                    });
+                  }}
+                  className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                >
+                  <option value="0.16">16% (general)</option>
+                  <option value="0.08">8% (frontera)</option>
+                  <option value="0">0% (tasa cero)</option>
+                  <option value="exento">Exento</option>
+                </select>
+              </div>
+              <p className="mt-1 text-[10px] text-muted">
+                Valor sugerido; no es la unica tasa posible (16% general, 8% frontera, 0% o exento).
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
@@ -523,6 +549,51 @@ export function ParametrosResicoCard({
                     placeholder="0.00"
                     className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
                   />
+                  <div>
+                    <label className="mb-1 block text-[11px] text-muted">
+                      Retención de IVA del Mes
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2 text-xs font-bold text-muted">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={entradaPM.retencionIVAMes || ''}
+                        onChange={(e) =>
+                          onEntradaPMChange({
+                            ...entradaPM,
+                            retencionIVAMes: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        placeholder="0.00"
+                        className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-3 border-t border-line pt-2">
+                    <label className="mb-1 block text-[11px] text-muted">
+                      Tasa de IVA (sugerencia del contribuyente)
+                    </label>
+                    <div className="relative">
+                      <select
+                        value="{String(entradaPM.tasaIVA ?? 0.16)}"
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          onEntradaPMChange({
+                            ...entradaPM,
+                            tasaIVA: v === 'exento' ? 'exento' : (Number(v) as any),
+                          });
+                        }}
+                        className="w-full rounded-[12px] border border-line bg-surface py-1.5 pl-7 pr-3 text-xs font-medium text-navy focus:border-gold focus:outline-none"
+                      >
+                        <option value="0.16">16% (general)</option>
+                        <option value="0.08">8% (frontera)</option>
+                        <option value="0">0% (tasa cero)</option>
+                        <option value="exento">Exento</option>
+                      </select>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

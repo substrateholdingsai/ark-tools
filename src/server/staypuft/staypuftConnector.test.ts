@@ -533,6 +533,103 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
   });
 
   // ==========================================================================
+  // RESICO preview input contract (Must-fix 1 & 6)
+  // ==========================================================================
+  describe('RESICO preview input contract', () => {
+    const postPreview = async (body: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      const res = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/resico/preview', {
+          method: 'POST',
+          headers: {
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        }),
+        env,
+        mockCtx
+      );
+      return { env, res };
+    };
+
+    it('correct PF fields return the correct calculation (no silent defaults)', async () => {
+      const { res } = await postPreview({
+        tipoPersona: 'fisica',
+        ingresosCobrados: 75000,
+        ingresosAcumuladosAnio: 600000,
+        retencionISR: 937.5,
+        ivaCobrado: 12000,
+        ivaAcreditable: 4500,
+        mes: 10,
+      });
+      expect(res.status).toBe(200);
+      const json = (await res.json()) as {
+        ok: boolean;
+        statusCode: number;
+        error?: string;
+        result: Record<string, unknown>;
+      };
+      expect(json.ok).toBe(true);
+      const data = json.result;
+      expect(data.tasaISRPct).toBe(1.5);
+      expect(data.isrCausado).toBe(1125);
+      expect(data.isrNetoPagar).toBe(187.5);
+      expect(data.ivaNetoPagar).toBe(7500);
+      expect(data.totalImpuestosPagar).toBe(7687.5);
+      expect(data.ingresosCobradosMes).toBe(75000);
+      expect(data.ingresosAcumuladosTotal).toBe(675000);
+    });
+
+    it("unknown field 'ingresos' is rejected with 'use ingresosCobrados'", async () => {
+      const { res } = await postPreview({ ingresos: 100000 });
+      expect(res.status).toBe(400);
+      const json = (await res.json()) as {
+        ok: boolean;
+        statusCode: number;
+        error?: string;
+        result: Record<string, unknown>;
+      };
+      expect(json.ok).toBe(false);
+      expect(json.error).toContain('ingresosCobrados');
+    });
+
+    it('missing mes returns 400 (not default 10)', async () => {
+      const { res } = await postPreview({
+        tipoPersona: 'fisica',
+        ingresosCobrados: 75000,
+        ingresosAcumuladosAnio: 600000,
+      });
+      expect(res.status).toBe(400);
+      const json = (await res.json()) as {
+        ok: boolean;
+        statusCode: number;
+        error?: string;
+        result: Record<string, unknown>;
+      };
+      expect(json.ok).toBe(false);
+      expect(json.error).toContain('mes');
+    });
+
+    it('missing PF ingresosAcumuladosAnio returns 400 (not default 600,000)', async () => {
+      const { res } = await postPreview({
+        tipoPersona: 'fisica',
+        ingresosCobrados: 75000,
+        mes: 10,
+      });
+      expect(res.status).toBe(400);
+      const json = (await res.json()) as {
+        ok: boolean;
+        statusCode: number;
+        error?: string;
+        result: Record<string, unknown>;
+      };
+      expect(json.ok).toBe(false);
+      expect(json.error).toContain('ingresosAcumulados');
+    });
+  });
+
+  // ==========================================================================
   // 5. Pagination Cap 100 and Default 20
   // ==========================================================================
   describe('Strict Pagination (default 20, cap 100)', () => {

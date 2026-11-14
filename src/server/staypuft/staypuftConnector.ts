@@ -1546,36 +1546,84 @@ export async function executeToolPreview(
       }
 
       case 'resico': {
-        const tipoPersona = String(payload.tipoPersona ?? 'fisica').toLowerCase();
-        const mes = (Math.min(12, Math.max(1, Number(payload.mes ?? 10))) || 10) as MesFiscal;
+        const isDemo = rawPayload && Object.keys(rawPayload).length === 0;
+        const p = isDemo ? (spec?.sample_preview_payload ?? {}) : payload;
+        const tipoPersona = String(p.tipoPersona ?? 'fisica').toLowerCase();
+
+        if (!isDemo) {
+          // (a) 'ingresos' is NOT a valid RESICO field -> reject with correct name
+          if (Object.prototype.hasOwnProperty.call(rawPayload, 'ingresos')) {
+            return {
+              ok: false,
+              statusCode: 400,
+              error:
+                "Campo 'ingresos' no es vÃ¡lido para RESICO. Use 'ingresosCobrados' (mes PF / acumulado PM).",
+            };
+          }
+          // (b) mes missing -> error, not default 10
+          // (c) PF: ingresosAcumuladosAnio missing -> error, not default 600,000
+          const missing: string[] = [];
+          if (p.ingresosCobrados == null && p.ingresosMensuales == null) {
+            missing.push("'ingresosCobrados'");
+          }
+          if (p.mes == null) {
+            missing.push("'mes'");
+          }
+          if (tipoPersona !== 'moral' && tipoPersona !== 'pm') {
+            if (p.ingresosAcumuladosAnio == null) {
+              missing.push("'ingresosAcumuladosAnio' (ingresosAcumuladosPrevios)");
+            }
+          }
+          if (missing.length > 0) {
+            return {
+              ok: false,
+              statusCode: 400,
+              error:
+                'Campos requeridos faltantes para RESICO: ' +
+                missing.join(', ') +
+                '. Use los nombres de campo correctos del catÃ¡logo.',
+            };
+          }
+        }
+
+        let tasaIVA: number | 'exento' = (p.tasaIVA as number | 'exento') ?? 0.16;
+        if (typeof tasaIVA === 'string') {
+          const n = Number(tasaIVA);
+          tasaIVA = Number.isNaN(n) ? tasaIVA : n;
+        }
+
+        const mes = (Math.min(12, Math.max(1, Number(p.mes ?? (isDemo ? 10 : 1)))) ||
+          10) as MesFiscal;
         if (tipoPersona === 'moral' || tipoPersona === 'pm') {
           resultOutput = calcularResicoPM({
             ingresosCobradosAcumulados: Number(
-              payload.ingresosCobrados ?? payload.ingresosAcumulados ?? 1200000
+              p.ingresosCobrados ?? p.ingresosAcumulados ?? (isDemo ? 1200000 : 0)
             ),
             deduccionesAutorizadasAcumuladas: Number(
-              payload.deduccionesCobros ?? payload.deduccionesAutorizadas ?? 750000
+              p.deduccionesCobros ?? p.deduccionesAutorizadas ?? (isDemo ? 750000 : 0)
             ),
-            ptuPagada: Number(payload.ptuPagada ?? 0),
-            perdidasFiscalesPendientes: Number(payload.perdidasFiscales ?? 0),
-            pagosProvisionalesPrevios: Number(payload.pagosProvisionalesPrevios ?? 45000),
-            retencionesISRAcumuladas: Number(payload.retencionISR ?? 0),
-            ivaCobrado: Number(payload.ivaCobrado ?? 192000),
-            ivaAcreditablePagado: Number(payload.ivaAcreditable ?? 120000),
-            retencionIVAMes: 0,
+            ptuPagada: Number(p.ptuPagada ?? 0),
+            perdidasFiscalesPendientes: Number(p.perdidasFiscales ?? 0),
+            pagosProvisionalesPrevios: Number(p.pagosProvisionalesPrevios ?? (isDemo ? 45000 : 0)),
+            retencionesISRAcumuladas: Number(p.retencionISR ?? 0),
+            ivaCobrado: Number(p.ivaCobrado ?? (isDemo ? 192000 : 0)),
+            ivaAcreditablePagado: Number(p.ivaAcreditable ?? (isDemo ? 120000 : 0)),
+            retencionIVAMes: Number(p.retencionIVAMes ?? 0),
+            tasaIVA,
             mes,
             ejercicio: 2026,
           });
         } else {
           resultOutput = calcularResicoPF({
             ingresosCobradosMes: Number(
-              payload.ingresosCobrados ?? payload.ingresosMensuales ?? 75000
+              p.ingresosCobrados ?? p.ingresosMensuales ?? (isDemo ? 75000 : 0)
             ),
-            ingresosAcumuladosPrevios: Number(payload.ingresosAcumuladosAnio ?? 600000),
-            retencionISREfectuadaPM: Number(payload.retencionISR ?? 937.5),
-            ivaCobrado: Number(payload.ivaCobrado ?? 12000),
-            ivaAcreditablePagado: Number(payload.ivaAcreditable ?? 4500),
+            ingresosAcumuladosPrevios: Number(p.ingresosAcumuladosAnio ?? (isDemo ? 600000 : 0)),
+            retencionISREfectuadaPM: Number(p.retencionISR ?? (isDemo ? 937.5 : 0)),
+            ivaCobrado: Number(p.ivaCobrado ?? (isDemo ? 12000 : 0)),
+            ivaAcreditablePagado: Number(p.ivaAcreditable ?? (isDemo ? 4500 : 0)),
             retencionIVAEfectuadaPM: 0,
+            tasaIVA,
             mes,
             ejercicio: 2026,
           });

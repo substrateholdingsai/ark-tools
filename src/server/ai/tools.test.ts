@@ -111,6 +111,7 @@ describe('Workers AI — Tools Catalog & Executor', () => {
       {
         tipoPersona: 'fisica',
         ingresosCobrados: 50000,
+        ingresosAcumuladosPrevios: 0,
         retencionISR: 500,
         ivaCobrado: 8000,
         ivaAcreditable: 3000,

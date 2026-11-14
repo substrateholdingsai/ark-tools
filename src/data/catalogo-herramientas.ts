@@ -74,7 +74,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Calculadora y Cédula RESICO 2026',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Determinador de pagos provisionales mensuales del Régimen Simplificado de Confianza: Persona Física (Arts. 113-E a 113-J LISR, tasas 1.0% a 2.5%, tope $3,500,000 MXN y retención 1.25% de personas morales) y Persona Moral (Arts. 206 a 215 LISR, flujo de efectivo al 30%). Liquida IVA neto con acreditamiento (Art. 5 LIVA) y emite Cédula Oficial Carta con Sello SHA-256 + QR verificable.',
+      'Determinador de pagos provisionales mensuales del Régimen Simplificado de Confianza: Persona Física (Arts. 113-E a 113-J LISR, tasas 1.0% a 2.5%, tope $3,500,000 MXN y retención 1.25% de personas morales) y Persona Moral (Arts. 206 a 215 LISR, flujo de efectivo al 30%). Liquida IVA neto con acreditamiento (Art. 5 LIVA) y emite Cédula Oficial Carta con Folio de Integridad Digital (token determinista, no constituye sellado fiscal) + QR verificable.',
   },
   {
     id: 'balance-general',

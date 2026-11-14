@@ -565,9 +565,33 @@ export async function executeAiTool(
     }
 
     if (toolName === 'calcular_resico') {
+      // (a) reject unknown 'ingresos' field
+      if (Object.prototype.hasOwnProperty.call(args, 'ingresos')) {
+        return {
+          success: false,
+          error: "Campo 'ingresos' no es vÃ¡lido para RESICO. Use 'ingresosCobrados'.",
+        };
+      }
       const tipo = (args.tipoPersona as 'fisica' | 'moral') || 'fisica';
-      const mes = (Number(args.mes) || 1) as MesFiscal;
+      if (!tipo) {
+        return { success: false, error: "tipoPersona requerido ('fisica' | 'moral')." };
+      }
+      const mesRaw = Number(args.mes);
+      if (!args.mes || Number.isNaN(mesRaw) || mesRaw < 1 || mesRaw > 12) {
+        return { success: false, error: 'mes requerido (1 a 12).' };
+      }
+      const mes = mesRaw as MesFiscal;
+
+      let tasaIVA: number | 'exento' = (args.tasaIVA as number | 'exento') ?? 0.16;
+      if (typeof tasaIVA === 'string') {
+        const n = Number(tasaIVA);
+        tasaIVA = Number.isNaN(n) ? tasaIVA : n;
+      }
+
       if (tipo === 'moral') {
+        if (args.ingresosCobrados == null) {
+          return { success: false, error: 'ingresosCobrados requerido (acumulado PM).' };
+        }
         const resultado = calcularResicoPM({
           ingresosCobradosAcumulados: Number(args.ingresosCobrados || 0),
           deduccionesAutorizadasAcumuladas: Number(args.deduccionesCobros || 0),
@@ -577,19 +601,31 @@ export async function executeAiTool(
           retencionesISRAcumuladas: Number(args.retencionISR || 0),
           ivaCobrado: Number(args.ivaCobrado || 0),
           ivaAcreditablePagado: Number(args.ivaAcreditable || 0),
-          retencionIVAMes: 0,
+          retencionIVAMes: Number(args.retencionIVAMes ?? 0),
+          tasaIVA,
           mes,
           ejercicio: 2026,
         });
         return { success: true, data: resultado };
       } else {
+        if (args.ingresosCobrados == null) {
+          return { success: false, error: 'ingresosCobrados requerido (mes PF).' };
+        }
+        if (args.ingresosAcumuladosPrevios == null) {
+          return {
+            success: false,
+            error:
+              'ingresosAcumuladosPrevios requerido para Persona FÃ­sica (control de tope 3.5M).',
+          };
+        }
         const resultado = calcularResicoPF({
           ingresosCobradosMes: Number(args.ingresosCobrados || 0),
-          ingresosAcumuladosPrevios: 0,
+          ingresosAcumuladosPrevios: Number(args.ingresosAcumuladosPrevios || 0),
           retencionISREfectuadaPM: Number(args.retencionISR || 0),
           ivaCobrado: Number(args.ivaCobrado || 0),
           ivaAcreditablePagado: Number(args.ivaAcreditable || 0),
           retencionIVAEfectuadaPM: 0,
+          tasaIVA,
           mes,
           ejercicio: 2026,
         });
