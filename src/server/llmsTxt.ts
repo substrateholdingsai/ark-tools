@@ -117,7 +117,7 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 - Años 31 a 35: 32 días de vacaciones -> Factor = 1.0630
 
 ### Topes de Cotización IMSS (Art. 28 LSS)
-- Límite inferior: Salario Mínimo General de la zona del trabajador ($${fmt(SMG)} MXN o $${fmt(SMZLFN)} MXN).
+- Límite inferior (LSS Art. 28, área geográfica respectiva): Salario Mínimo General de zona general ($${fmt(SMG)} MXN) o ZLFN ($${fmt(SMZLFN)} MXN), según corresponda al trabajador. Se aplica al SBC integrado.
 - Límite superior: 25 veces el valor de la UMA diaria vigente ($25 * $${fmt(UMA_DIARIA)} = $${fmt(TOPE_SBC_25_UMA)} MXN diarios).
 
 ---

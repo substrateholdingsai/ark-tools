@@ -54,7 +54,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Calculadora SBC (Salario Base de Cotización IMSS)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Factor de integración exacto conforme a Arts. 27 y 28 LSS considerando prestaciones de ley y la reforma de Vacaciones Dignas (Art. 76 LFT).',
+      'Factor de integración conforme a Arts. 27 y 28 LSS (tope 25 UMA, límite inferior por zona salarial: SMG general o ZLFN según área geográfica) y Vacaciones Dignas Art. 76 LFT. Herramienta de salario fijo + prestaciones; no calcula SBC variable/mixto ni exclusiones Art. 27/30.',
   },
   {
     id: 'isn',

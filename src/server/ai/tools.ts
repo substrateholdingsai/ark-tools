@@ -140,6 +140,12 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           description: 'Porcentaje de prima vacacional (default 25).',
         },
         diasAguinaldo: { type: 'number', description: 'Días de aguinaldo (default 15).' },
+        zona: {
+          type: 'string',
+          enum: ['general', 'frontera'],
+          description:
+            'Zona salarial para límite inferior LSS Art. 28. Default: general (resto del país). Use frontera solo para ZLFN.',
+        },
       },
       required: ['salarioDiario'],
     },
@@ -512,11 +518,14 @@ export async function executeAiTool(
     }
 
     if (toolName === 'calcular_sbc') {
+      const zonaRaw = args.zona ?? args.zonaSalarial ?? 'general';
+      const zona = zonaRaw === 'frontera' || zonaRaw === 'zlfn' ? 'frontera' : 'general';
       const parametros: ParametrosSBC = {
         salarioDiario: Number(args.salarioDiario || 0),
         diasVacaciones: Number(args.diasVacaciones ?? 12),
         primaVacacional: Number(args.primaVacacional ?? 25),
         diasAguinaldo: Number(args.diasAguinaldo ?? 15),
+        zona,
       } as ParametrosSBC;
       const resultado = calcularResultadoSBC(parametros);
       return { success: true, data: resultado };

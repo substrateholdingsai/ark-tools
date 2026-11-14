@@ -752,7 +752,7 @@ const TOOL_SPECS_MAP: Record<
     preview_supported: true,
     law_cited: [
       'LSS Art. 27 (Integración del Salario Base de Cotización)',
-      'LSS Art. 28 (Límite superior de 25 UMAs e inferior de Salario Mínimo General)',
+      'LSS Art. 28 (Límite superior 25 UMAs e inferior: salario mínimo del área geográfica respectiva — general o ZLFN)',
       'LFT Arts. 76, 80 y 87 (Vacaciones Dignas, Prima Vacacional 25% y Aguinaldo 15 días)',
       `INEGI UMA 2026 ($${UMA_DIARIA_2026.toFixed(2)} diarios) y CONASAMI SMG 2026 ($${SMG_GENERAL_2026.toFixed(2)} diarios)`,
     ],
@@ -761,6 +761,7 @@ const TOOL_SPECS_MAP: Record<
       diasVacaciones: 'number (default 12)',
       primaVacacional: 'number (default 25)',
       diasAguinaldo: 'number (default 15)',
+      zona: "string ('general' | 'frontera', default 'general')",
     },
     outputs: {
       factor: 'number',
@@ -1479,6 +1480,8 @@ export async function executeToolPreview(
       }
 
       case 'sbc': {
+        const zonaRaw = payload.zona ?? payload.zonaSalarial ?? 'general';
+        const zona = zonaRaw === 'frontera' || zonaRaw === 'zlfn' ? 'frontera' : 'general';
         const parametros: ParametrosSBC = {
           salarioDiario: Number(payload.salarioDiario ?? 650),
           diasVacaciones: Number(payload.diasVacaciones ?? 16),
@@ -1486,6 +1489,7 @@ export async function executeToolPreview(
             payload.primaVacacional ?? payload.porcentajePrimaVacacional ?? 25
           ),
           diasAguinaldo: Number(payload.diasAguinaldo ?? 15),
+          zona,
         };
         resultOutput = calcularResultadoSBC(parametros);
         break;

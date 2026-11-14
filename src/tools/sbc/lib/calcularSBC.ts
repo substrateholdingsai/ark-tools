@@ -3,43 +3,39 @@
  * Lógica de cálculo del Salario Base de Cotización
  *
  * Base legal:
- * - LSS Art. 27: Integración del SBC
- * - LSS Art. 28: Tope de 25 UMAs
- * - LFT Art. 76-81: Vacaciones y prima vacacional
- * - LFT Art. 87: Aguinaldo
- *
- * Fórmula:
- *   Factor = 1 + (diasVacaciones × primaVacacional% + diasAguinaldo) / 365
- *   SBC bruto = salarioDiario × Factor
- *   SBC final = clamp(SBC bruto, salarioMinimo, 25 UMAs)
+ * - LSS Art. 27: Integración del SBC.
+ * - LSS Art. 28, párrafo primero (texto vigente, DOF): "Los asegurados se
+ *   inscribirán con el salario base de cotización que perciban en el momento
+ *   de su afiliación, estableciéndose como límite superior el equivalente a
+ *   veinticinco veces el salario mínimo general que rija en el Distrito
+ *   Federal y como límite inferior el salario mínimo general del área
+ *   geográfica respectiva." Interpretación aplicada: el SBC integrado
+ *   (salario diario × factor de integración, sbcBruto) se acota entre el
+ *   tope superior (25 UMA) y el salario mínimo general del área geográfica
+ *   del trabajador (zona general o ZLFN). Se compara y, en su caso, se
+ *   ajusta el SBC integrado al mínimo de zona.
+ * - LFT Art. 76 (reforma DOF 27/12/2022, Vacaciones Dignas).
+ * - LFT Art. 80: prima vacacional mínima 25%.
+ * - LFT Art. 87: aguinaldo mínimo 15 días.
  */
 
-import type { FactorIntegracion, ParametrosSBC, ResultadoSBC, TipoTope } from '../types';
-import { CONSTANTES_IMSS } from '../data/uma';
+import type {
+  FactorIntegracion,
+  ParametrosSBC,
+  ResultadoSBC,
+  TipoTope,
+  ZonaSalarial,
+} from '../types';
+import { CONSTANTES_IMSS, obtenerSalarioMinimo } from '../data/uma';
 
-// ─────────────────────────────────────────────────────────────────────
-// CÁLCULO DEL FACTOR DE INTEGRACIÓN
-// ─────────────────────────────────────────────────────────────────────
-
-/**
- * Calcula el factor de integración y su desglose.
- *
- * Fórmula IMSS:
- *   Factor = 1 + (diasVacaciones × primaVacacional/100 + diasAguinaldo) / 365
- */
-export function calcularFactorIntegracion(parametros: ParametrosSBC): FactorIntegracion {
+export function calcularFactorIntegracion(
+  parametros: Pick<ParametrosSBC, 'diasVacaciones' | 'primaVacacional' | 'diasAguinaldo'>
+): FactorIntegracion {
   const { diasVacaciones, primaVacacional, diasAguinaldo } = parametros;
-
-  // Días de prima vacacional (proporcional)
   const diasPrimaVacacional = diasVacaciones * (primaVacacional / 100);
-
-  // Aporte proporcional diario de cada prestación
   const aporteVacaciones = diasPrimaVacacional / 365;
   const aporteAguinaldo = diasAguinaldo / 365;
-
-  // Factor total
   const factor = 1 + aporteVacaciones + aporteAguinaldo;
-
   return {
     factor,
     aporteVacaciones,
@@ -49,57 +45,34 @@ export function calcularFactorIntegracion(parametros: ParametrosSBC): FactorInte
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// CÁLCULO DEL SBC CON TOPES
-// ─────────────────────────────────────────────────────────────────────
-
-/**
- * Calcula el SBC final aplicando topes de mínimo y máximo.
- */
 export function calcularSBCFinal(
   sbcBruto: number,
-  salarioMinimo: number = CONSTANTES_IMSS.salarioMinimo,
+  zona: ZonaSalarial = 'general',
   topePesos: number = CONSTANTES_IMSS.topePesos
-): { sbcFinal: number; tipoTope: TipoTope } {
-  // Caso 0: sin salario
+): { sbcFinal: number; tipoTope: TipoTope; salarioMinimoAplicado: number } {
+  const salarioMinimoAplicado = obtenerSalarioMinimo(zona);
   if (sbcBruto <= 0) {
-    return { sbcFinal: 0, tipoTope: null };
+    return { sbcFinal: 0, tipoTope: null, salarioMinimoAplicado };
   }
-
-  // Tope máximo: 25 UMAs
   if (sbcBruto > topePesos) {
-    return { sbcFinal: topePesos, tipoTope: 'max' };
+    return { sbcFinal: topePesos, tipoTope: 'max', salarioMinimoAplicado };
   }
-
-  // Tope mínimo: salario mínimo
-  if (sbcBruto < salarioMinimo) {
-    return { sbcFinal: salarioMinimo, tipoTope: 'min' };
+  if (sbcBruto < salarioMinimoAplicado) {
+    return { sbcFinal: salarioMinimoAplicado, tipoTope: 'min', salarioMinimoAplicado };
   }
-
-  // Dentro de rango
-  return { sbcFinal: sbcBruto, tipoTope: null };
+  return { sbcFinal: sbcBruto, tipoTope: null, salarioMinimoAplicado };
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// CÁLCULO COMPLETO
-// ─────────────────────────────────────────────────────────────────────
-
-/**
- * Calcula el resultado completo del SBC.
- * Función principal que agrupa todos los cálculos.
- */
 export function calcularResultadoSBC(parametros: ParametrosSBC): ResultadoSBC {
+  const zona: ZonaSalarial = parametros.zona ?? 'general';
   const desglose = calcularFactorIntegracion(parametros);
-
-  // SBC bruto = salario diario × factor
   const sbcBruto = parametros.salarioDiario * desglose.factor;
-
-  // Aplicar topes
-  const { sbcFinal, tipoTope } = calcularSBCFinal(sbcBruto);
-
-  // Porcentaje del tope (0-100)
+  const { sbcFinal, tipoTope, salarioMinimoAplicado } = calcularSBCFinal(
+    sbcBruto,
+    zona,
+    CONSTANTES_IMSS.topePesos
+  );
   const porcentajeDelTope = Math.min(100, (sbcFinal / CONSTANTES_IMSS.topePesos) * 100);
-
   return {
     factor: desglose.factor,
     sbcBruto,
@@ -107,24 +80,15 @@ export function calcularResultadoSBC(parametros: ParametrosSBC): ResultadoSBC {
     tipoTope,
     desglose,
     porcentajeDelTope,
+    salarioMinimoAplicado,
+    zona,
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────
-// HELPERS DE FORMATEO
-// ─────────────────────────────────────────────────────────────────────
-
-/**
- * Formatea un número con 4 decimales (para el factor).
- * Ej: 1.0452054... → "1.0452"
- */
 export function formatearFactor(valor: number): string {
   return valor.toFixed(4);
 }
 
-/**
- * Formatea un número como moneda MXN.
- */
 export function formatearMXN(valor: number): string {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
@@ -134,9 +98,6 @@ export function formatearMXN(valor: number): string {
   }).format(valor);
 }
 
-/**
- * Formatea un número sin símbolo de moneda, con separadores.
- */
 export function formatearNumero(valor: number): string {
   return new Intl.NumberFormat('es-MX', {
     minimumFractionDigits: 2,
@@ -144,17 +105,15 @@ export function formatearNumero(valor: number): string {
   }).format(valor);
 }
 
-/**
- * Genera el texto de resumen para copiar al portapapeles.
- */
 export function generarResumenTexto(parametros: ParametrosSBC, resultado: ResultadoSBC): string {
-  const partes = [
+  const zonaLabel = (parametros.zona ?? 'general') === 'frontera' ? 'ZLFN' : 'General';
+  return [
     `SBC 2026: ${formatearMXN(resultado.sbcFinal)}`,
     `Factor: ${formatearFactor(resultado.factor)}`,
+    `Zona: ${zonaLabel}`,
     `Salario: $${parametros.salarioDiario}`,
     `Vac: ${parametros.diasVacaciones}d`,
     `Prima: ${parametros.primaVacacional}%`,
     `Aguinaldo: ${parametros.diasAguinaldo}d`,
-  ];
-  return partes.join(' | ');
+  ].join(' | ');
 }
