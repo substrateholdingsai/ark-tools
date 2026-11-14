@@ -40,6 +40,7 @@ import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
 import type { ParametrosNomina } from '../../tools/nomina/types';
+import { PERIODOS } from '../../tools/nomina/data/periodos';
 import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
 import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
@@ -743,7 +744,7 @@ const TOOL_SPECS_MAP: Record<
       sueldoBruto: 18000,
       diasTrabajados: 30,
       diasPeriodo: 30,
-      sbcDiario: 629.52,
+      sbcDiario: 629.58,
     },
   },
   sbc: {
@@ -1496,12 +1497,105 @@ export async function executeToolPreview(
       }
 
       case 'nomina': {
-        const sueldoBruto = Number(payload.sueldoBruto ?? payload.sueldoMensual ?? 18000);
-        const periodo =
-          (payload.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual') ?? 'mensual';
-        const diasPeriodo = Number(payload.diasPeriodo ?? 30);
-        const diasTrabajados = Number(payload.diasTrabajados ?? diasPeriodo);
-        const sbcDiario = Number(payload.sbcDiario ?? sueldoBruto / 30);
+        const NOMINA_CANONICAL_FIELDS = new Set([
+          'periodo',
+          'sueldoBruto',
+          'sbcDiario',
+          'diasTrabajados',
+          'diasPeriodo',
+        ]);
+        const NOMINA_KNOWN_UNKNOWN = new Set(['salarioMensual', 'periodicidad']);
+        const rawKeys = rawPayload ? Object.keys(rawPayload) : [];
+
+        if (rawKeys.length === 0) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              "Payload vacío. Campos requeridos: 'periodo', 'sueldoBruto'. Opcionales: 'sbcDiario', 'diasTrabajados', 'diasPeriodo'. Use nombres canónicos; no se aplican defaults silenciosos.",
+          };
+        }
+
+        const unknownFields = rawKeys.filter((k) => !NOMINA_CANONICAL_FIELDS.has(k));
+        if (unknownFields.length > 0) {
+          const knownBad = unknownFields.filter((k) => NOMINA_KNOWN_UNKNOWN.has(k));
+          const hint =
+            knownBad.length > 0
+              ? " Use nombres canónicos: 'sueldoBruto' (no 'salarioMensual') y 'periodo' (no 'periodicidad')."
+              : '';
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              `Campos no permitidos para Nómina: ${unknownFields.join(', ')}.` +
+              hint +
+              " Campos canónicos: 'periodo', 'sueldoBruto', 'sbcDiario', 'diasTrabajados', 'diasPeriodo'.",
+          };
+        }
+
+        const missing: string[] = [];
+        if (payload.periodo == null) missing.push('periodo');
+        if (payload.sueldoBruto == null) missing.push('sueldoBruto');
+        if (missing.length > 0) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: `Campos requeridos faltantes para Nómina: ${missing.join(', ')}.`,
+          };
+        }
+
+        const periodo = payload.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual';
+        if (!['diario', 'semanal', 'quincenal', 'mensual'].includes(periodo)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              "Campo 'periodo' inválido. Valores permitidos: diario, semanal, quincenal, mensual.",
+          };
+        }
+
+        const sueldoBruto = Number(payload.sueldoBruto);
+        if (!Number.isFinite(sueldoBruto)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: "Campo 'sueldoBruto' debe ser numérico.",
+          };
+        }
+
+        const diasPeriodoRaw = payload.diasPeriodo;
+        const diasPeriodo =
+          diasPeriodoRaw == null ? (PERIODOS[periodo]?.dias ?? 30) : Number(diasPeriodoRaw);
+        if (!Number.isFinite(diasPeriodo) || diasPeriodo <= 0) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: "Campo 'diasPeriodo' debe ser numérico y mayor a 0.",
+          };
+        }
+
+        const diasTrabajadosRaw = payload.diasTrabajados;
+        const diasTrabajados = diasTrabajadosRaw == null ? diasPeriodo : Number(diasTrabajadosRaw);
+        if (!Number.isFinite(diasTrabajados)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: "Campo 'diasTrabajados' debe ser numérico.",
+          };
+        }
+
+        const sbcProporcionado = payload.sbcDiario != null;
+        const sbcDiario = sbcProporcionado
+          ? Number(payload.sbcDiario)
+          : Math.round((sueldoBruto / diasPeriodo) * 1.0493 * 100) / 100;
+        if (!Number.isFinite(sbcDiario)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: "Campo 'sbcDiario' debe ser numérico.",
+          };
+        }
+
         const parametros: ParametrosNomina = {
           periodo,
           sueldoBruto,
@@ -1509,7 +1603,12 @@ export async function executeToolPreview(
           diasPeriodo,
           sbcDiario,
         };
-        resultOutput = calcularNomina(parametros);
+        const nominaResultado = calcularNomina(parametros);
+        resultOutput = {
+          ...nominaResultado,
+          sbcDiarioEfectivo: sbcDiario,
+          sbcDiarioFuente: sbcProporcionado ? 'proporcionado' : 'default_1.0493',
+        };
         break;
       }
 

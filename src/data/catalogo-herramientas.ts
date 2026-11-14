@@ -47,7 +47,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Calculadora de Nómina Rápida 2026',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Cálculo de sueldo bruto a neto (periodicidad diaria, semanal, quincenal, mensual) con desglose de retención de ISR y cuotas obreras IMSS.',
+      'Cálculo de sueldo bruto a neto (diario, semanal, quincenal, mensual) con ISR y cuotas obreras IMSS. Sin cédula, sin folio, sin exportación.',
   },
   {
     id: 'sbc',

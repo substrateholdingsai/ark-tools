@@ -16,6 +16,7 @@ import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
 import { calcularRetencionClinicas } from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
 import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
 import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
+import { PERIODOS } from '../../tools/nomina/data/periodos';
 import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import type { ParametrosNomina } from '../../tools/nomina/types';
@@ -153,7 +154,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calcular_nomina_rapida',
     description:
-      'Calcula nómina rápida: ISR con subsidio al empleo, IMSS obrero por ramo y neto a pagar para un período (diario/semanal/quincenal/mensual).',
+      'Calcula nómina rápida: ISR con subsidio al empleo, cuotas obreras IMSS y neto a pagar por período (diario/semanal/quincenal/mensual). Obrero únicamente; sin cédula, sin folio, sin exportación. SBC diario sin aplicar topes/pisos de Tool 6 salvo que se proporcione.',
     parameters: {
       type: 'object',
       properties: {
@@ -168,7 +169,11 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           type: 'number',
           description: 'Días del período completo (ej. 30 para mensual).',
         },
-        sbcDiario: { type: 'number', description: 'SBC diario para IMSS obrero.' },
+        sbcDiario: {
+          type: 'number',
+          description:
+            'SBC diario para IMSS obrero. Si se omite, default = round((sueldoBruto/diasPeriodo)*1.0493, 2).',
+        },
       },
       required: ['periodo', 'sueldoBruto'],
     },
@@ -532,11 +537,75 @@ export async function executeAiTool(
     }
 
     if (toolName === 'calcular_nomina_rapida') {
-      const periodo = (args.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual') || 'mensual';
-      const sueldoBruto = Number(args.sueldoBruto || 0);
-      const diasTrabajados = Number(args.diasTrabajados ?? 30);
-      const diasPeriodo = Number(args.diasPeriodo ?? 30);
-      const sbcDiario = Number(args.sbcDiario ?? sueldoBruto / 30);
+      const NOMINA_CANONICAL_FIELDS = new Set([
+        'periodo',
+        'sueldoBruto',
+        'sbcDiario',
+        'diasTrabajados',
+        'diasPeriodo',
+      ]);
+      const NOMINA_KNOWN_UNKNOWN = new Set(['salarioMensual', 'periodicidad']);
+      const argKeys = Object.keys(args);
+      const unknownFields = argKeys.filter((k) => !NOMINA_CANONICAL_FIELDS.has(k));
+      if (unknownFields.length > 0) {
+        const knownBad = unknownFields.filter((k) => NOMINA_KNOWN_UNKNOWN.has(k));
+        const hint =
+          knownBad.length > 0
+            ? " Use nombres canónicos: 'sueldoBruto' (no 'salarioMensual') y 'periodo' (no 'periodicidad')."
+            : '';
+        return {
+          success: false,
+          error:
+            `Campos no permitidos para Nómina: ${unknownFields.join(', ')}.` +
+            hint +
+            " Campos canónicos: 'periodo', 'sueldoBruto', 'sbcDiario', 'diasTrabajados', 'diasPeriodo'.",
+        };
+      }
+
+      if (args.periodo == null || args.sueldoBruto == null) {
+        const missing: string[] = [];
+        if (args.periodo == null) missing.push('periodo');
+        if (args.sueldoBruto == null) missing.push('sueldoBruto');
+        return {
+          success: false,
+          error: `Campos requeridos faltantes para Nómina: ${missing.join(', ')}.`,
+        };
+      }
+
+      const periodo = args.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual';
+      if (!['diario', 'semanal', 'quincenal', 'mensual'].includes(periodo)) {
+        return {
+          success: false,
+          error:
+            "Campo 'periodo' inválido. Valores permitidos: diario, semanal, quincenal, mensual.",
+        };
+      }
+
+      const sueldoBruto = Number(args.sueldoBruto);
+      if (!Number.isFinite(sueldoBruto)) {
+        return { success: false, error: "Campo 'sueldoBruto' debe ser numérico." };
+      }
+
+      const diasPeriodo =
+        args.diasPeriodo == null ? (PERIODOS[periodo]?.dias ?? 30) : Number(args.diasPeriodo);
+      if (!Number.isFinite(diasPeriodo) || diasPeriodo <= 0) {
+        return { success: false, error: "Campo 'diasPeriodo' debe ser numérico y mayor a 0." };
+      }
+
+      const diasTrabajados =
+        args.diasTrabajados == null ? diasPeriodo : Number(args.diasTrabajados);
+      if (!Number.isFinite(diasTrabajados)) {
+        return { success: false, error: "Campo 'diasTrabajados' debe ser numérico." };
+      }
+
+      const sbcProporcionado = args.sbcDiario != null;
+      const sbcDiario = sbcProporcionado
+        ? Number(args.sbcDiario)
+        : Math.round((sueldoBruto / diasPeriodo) * 1.0493 * 100) / 100;
+      if (!Number.isFinite(sbcDiario)) {
+        return { success: false, error: "Campo 'sbcDiario' debe ser numérico." };
+      }
+
       const parametros: ParametrosNomina = {
         periodo,
         sueldoBruto,
@@ -545,7 +614,14 @@ export async function executeAiTool(
         sbcDiario,
       };
       const resultado = calcularNomina(parametros);
-      return { success: true, data: resultado };
+      return {
+        success: true,
+        data: {
+          ...resultado,
+          sbcDiarioEfectivo: sbcDiario,
+          sbcDiarioFuente: sbcProporcionado ? 'proporcionado' : 'default_1.0493',
+        },
+      };
     }
 
     if (toolName === 'calcular_finiquito_lft') {
