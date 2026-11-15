@@ -43,7 +43,10 @@ import type { ParametrosNomina } from '../../tools/nomina/types';
 import { PERIODOS } from '../../tools/nomina/data/periodos';
 import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
-import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
+import {
+  calcularRecargosYActualizacion,
+  validarEntradaRecargos,
+} from '../../tools/recargos/lib/calcularRecargos';
 import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
 import { procesarCierreNomina } from '../../tools/cierre-nomina/lib/calcularCierreNomina';
 import type { TrabajadorFilaInput } from '../../tools/cierre-nomina/types';
@@ -1735,15 +1738,32 @@ export async function executeToolPreview(
       }
 
       case 'recargos': {
+        // Fail-closed: sin valores por defecto silenciosos (misma guardia que Nómina).
+        // Preview requiere los tres campos; {} vacío o campo faltante/inválido -> 400.
+        const isDemo = rawPayload && Object.keys(rawPayload).length === 0;
+        if (isDemo) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              "Campos requeridos faltantes para Recargos: 'importeHistorico', 'fechaVencimiento', 'fechaPago'. Use los nombres de campo correctos del catálogo.",
+          };
+        }
+        const validacion = validarEntradaRecargos(payload);
+        if (!validacion.ok) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              'Campos requeridos faltantes o inválidos para Recargos: ' +
+              validacion.errores.join(' ') +
+              '. Use los nombres de campo correctos del catálogo (importeHistorico, fechaVencimiento, fechaPago).',
+          };
+        }
         resultOutput = calcularRecargosYActualizacion({
-          importeHistorico: Number(payload.importeHistorico ?? 45000),
-          fechaVencimiento: String(
-            payload.fechaVencimiento ??
-              (payload.mesObligacion ? `${String(payload.mesObligacion)}-17` : '2025-06-17')
-          ),
-          fechaPago: String(
-            payload.fechaPago ?? (payload.mesPago ? `${String(payload.mesPago)}-17` : '2026-02-17')
-          ),
+          importeHistorico: Number(payload.importeHistorico),
+          fechaVencimiento: String(payload.fechaVencimiento),
+          fechaPago: String(payload.fechaPago),
         });
         break;
       }

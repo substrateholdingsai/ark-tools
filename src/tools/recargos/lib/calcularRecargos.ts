@@ -124,9 +124,11 @@ export function obtenerFactorActualizacion(
 
   // Obtener INPC del denominador (mes anterior al del adeudo)
   let inpcAntiguo = obtenerInpc(antiguo.anio, antiguo.mes);
+  let notaPublicacionAntiguo: string | undefined;
   if (!inpcAntiguo) {
     // Si la fecha es muy antigua (anterior al catálogo), tomamos el primer INPC disponible
     inpcAntiguo = 110.129; // Ene 2021
+    notaPublicacionAntiguo = `INPC del mes anterior al vencimiento (${nombreAntiguo}) no disponible en el catálogo DOF; se usó valor de respaldo Ene 2021 (110.129) sin nota oficial de publicación.`;
   }
 
   // Obtener INPC del numerador (mes anterior al del pago)
@@ -161,6 +163,7 @@ export function obtenerFactorActualizacion(
     esDeflacion,
     factorFinal,
     notaPublicacion,
+    notaPublicacionAntiguo,
   };
 }
 
@@ -255,25 +258,51 @@ export function calcularRecargosYActualizacion(entrada: EntradaRecargos): Result
   const impuestoActualizado = Math.round(importeHistorico * factorActualizacion * 100) / 100;
   const montoActualizacion = Math.round((impuestoActualizado - importeHistorico) * 100) / 100;
 
-  // Meses de mora (Art. 21 CFF)
-  const mesesMora = calcularMesesMora(entrada.fechaVencimiento, entrada.fechaPago);
-  const tasaRecargosTotal = Number((mesesMora * tasaRecargosMensual).toFixed(2));
+  // Meses de mora (Art. 21 CFF) con tope legal de 60 meses (88.2%)
+  const mesesMoraBruto = calcularMesesMora(entrada.fechaVencimiento, entrada.fechaPago);
+  const TOPE_MESES_RECARGOS = 60;
+  const mesesCobrados = Math.min(mesesMoraBruto, TOPE_MESES_RECARGOS);
+  const recargosCapped = mesesMoraBruto > TOPE_MESES_RECARGOS;
+  const tasaRecargosTotal = Number((mesesCobrados * tasaRecargosMensual).toFixed(2));
 
-  // Monto de recargos: Se calcula sobre el monto actualizado de las contribuciones (Art. 21 CFF)
+  // Monto de recargos: Se calcula sobre el monto actualizado de las contribuciones (Art. 21 CFF), plano, no compuesto
   const montoRecargos = Math.round(impuestoActualizado * (tasaRecargosTotal / 100) * 100) / 100;
 
   // Total a pagar
   const totalPagar = Math.round((impuestoActualizado + montoRecargos) * 100) / 100;
   const totalEnLetras = numeroALetras(totalPagar);
 
-  // Desglose analítico
+  // Advertencias (tope de recargos, fallbacks de INPC)
+  const advertencias: string[] = [];
+  if (recargosCapped) {
+    advertencias.push(
+      `Tope de recargos Art. 21 CFF aplicado: la mora de ${mesesMoraBruto} mes(es) excede los 60 meses; los recargos se limitan a 60 meses (tasa acumulada ${tasaRecargosTotal}%).`
+    );
+  }
+  if (factorDetalle.notaPublicacionAntiguo) {
+    advertencias.push(factorDetalle.notaPublicacionAntiguo);
+  }
+
+  // Desglose analítico (sobre los meses efectivamente cobrados, respetando el tope)
   const fVenc = parseFechaISO(entrada.fechaVencimiento);
   const desgloseMeses = generarDesgloseMesesRecargo(
     fVenc,
-    mesesMora,
+    mesesCobrados,
     impuestoActualizado,
     tasaRecargosMensual
   );
+
+  // Folio de Integridad (token determinista derivado del payload; no constituye sellado fiscal ante SAT)
+  const folioDeIntegridad = generarFolioDeIntegridad({
+    importeHistorico,
+    fechaVencimiento: entrada.fechaVencimiento,
+    fechaPago: entrada.fechaPago,
+    factorActualizacion,
+    mesesMora: mesesMoraBruto,
+    tasaRecargosTotal,
+    montoRecargos,
+    totalPagar,
+  });
 
   return {
     importeHistorico,
@@ -283,12 +312,129 @@ export function calcularRecargosYActualizacion(entrada: EntradaRecargos): Result
     factorActualizacion,
     impuestoActualizado,
     montoActualizacion,
-    mesesMora,
+    mesesMora: mesesMoraBruto,
+    mesesCobrados,
+    recargosCapped,
     tasaRecargosMensual,
     tasaRecargosTotal,
     montoRecargos,
     totalPagar,
     totalEnLetras,
+    folioDeIntegridad,
+    advertencias,
     desgloseMeses,
   };
+}
+
+/**
+ * Campos canónicos de entrada de Recargos. Cualquier otro campo se rechaza con 400
+ * (sin valores por defecto silenciosos, idéntico al contrato de Nómina).
+ */
+export const CAMPOS_CANONICOS_RECARGOS = new Set([
+  'importeHistorico',
+  'fechaVencimiento',
+  'fechaPago',
+  'tasaRecargosMensual',
+]);
+
+/**
+ * Valida estrictamente los campos de entrada de Recargos (usado en Preview y IA).
+ * No aplica valores por defecto silenciosos.
+ */
+export function validarEntradaRecargos(entrada: Record<string, unknown>): {
+  ok: boolean;
+  errores: string[];
+} {
+  const errores: string[] = [];
+
+  const camposNoPermitidos = Object.keys(entrada).filter((k) => !CAMPOS_CANONICOS_RECARGOS.has(k));
+  if (camposNoPermitidos.length > 0) {
+    errores.push(`Campos no permitidos para Recargos: ${camposNoPermitidos.join(', ')}.`);
+  }
+
+  const importe = Number(entrada.importeHistorico);
+  if (!Number.isFinite(importe) || importe <= 0) {
+    errores.push("'importeHistorico' debe ser un número mayor a 0.");
+  }
+
+  const fVenc = entrada.fechaVencimiento
+    ? parseFechaISOEstricta(String(entrada.fechaVencimiento))
+    : null;
+  const fPago = entrada.fechaPago ? parseFechaISOEstricta(String(entrada.fechaPago)) : null;
+
+  if (!fVenc) {
+    errores.push("'fechaVencimiento' es requerida y debe tener formato ISO YYYY-MM-DD válido.");
+  }
+  if (!fPago) {
+    errores.push("'fechaPago' es requerida y debe tener formato ISO YYYY-MM-DD válido.");
+  }
+  if (fVenc && fPago) {
+    const dv = Date.UTC(fVenc.anio, fVenc.mes - 1, fVenc.dia);
+    const dp = Date.UTC(fPago.anio, fPago.mes - 1, fPago.dia);
+    if (dp < dv) {
+      errores.push("'fechaPago' no puede ser anterior a 'fechaVencimiento'.");
+    }
+  }
+
+  return { ok: errores.length === 0, errores };
+}
+
+const FECHA_ISO_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * Parsea estrictamente una fecha ISO YYYY-MM-DD (sin valores por defecto que oculten errores).
+ */
+export function parseFechaISOEstricta(
+  fechaStr: string
+): { anio: number; mes: number; dia: number } | null {
+  const m = FECHA_ISO_RE.exec(fechaStr);
+  if (!m) return null;
+  const anio = Number(m[1]);
+  const mes = Number(m[2]);
+  const dia = Number(m[3]);
+  if (mes < 1 || mes > 12 || dia < 1 || dia > 31) return null;
+  const d = new Date(Date.UTC(anio, mes - 1, dia));
+  if (d.getUTCFullYear() !== anio || d.getUTCMonth() !== mes - 1 || d.getUTCDate() !== dia) {
+    return null;
+  }
+  return { anio, mes, dia };
+}
+
+/**
+ * Hash determinista FNV-1a 32 bits sobre una cadena.
+ */
+function hashFnv1a32(str: string): number {
+  let hash = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = (hash * 16777619) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+/**
+ * Genera el Folio de Integridad (token determinista) derivado del payload del cálculo.
+ * Cambiar cualquier entrada cambia el folio. No es un sello fiscal ante el SAT.
+ */
+export function generarFolioDeIntegridad(campos: {
+  importeHistorico: number;
+  fechaVencimiento: string;
+  fechaPago: string;
+  factorActualizacion: number;
+  mesesMora: number;
+  tasaRecargosTotal: number;
+  montoRecargos: number;
+  totalPagar: number;
+}): string {
+  const input = [
+    String(campos.importeHistorico),
+    campos.fechaVencimiento,
+    campos.fechaPago,
+    String(campos.factorActualizacion),
+    String(campos.mesesMora),
+    String(campos.tasaRecargosTotal),
+    String(campos.montoRecargos),
+    String(campos.totalPagar),
+  ].join('|');
+  return `REC-${hashFnv1a32(input).toString(16).padStart(8, '0')}`;
 }

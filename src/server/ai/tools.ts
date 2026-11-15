@@ -10,7 +10,10 @@ import type { Env } from '../../index';
 import type { AiToolFunction } from './types';
 import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
-import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
+import {
+  calcularRecargosYActualizacion,
+  validarEntradaRecargos,
+} from '../../tools/recargos/lib/calcularRecargos';
 import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
 import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
 import { calcularRetencionClinicas } from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
@@ -474,10 +477,20 @@ export async function executeAiTool(
     }
 
     if (toolName === 'calcular_recargos_fiscales') {
+      const validacion = validarEntradaRecargos(args);
+      if (!validacion.ok) {
+        return {
+          success: false,
+          error:
+            'Campos requeridos faltantes o inválidos para Recargos: ' +
+            validacion.errores.join(' ') +
+            '. Campos requeridos: importeHistorico, fechaVencimiento, fechaPago.',
+        };
+      }
       const resultado = calcularRecargosYActualizacion({
-        importeHistorico: Number(args.importeHistorico || 0),
-        fechaVencimiento: String(args.fechaVencimiento || ''),
-        fechaPago: String(args.fechaPago || ''),
+        importeHistorico: Number(args.importeHistorico),
+        fechaVencimiento: String(args.fechaVencimiento),
+        fechaPago: String(args.fechaPago),
       });
       return { success: true, data: resultado };
     }
