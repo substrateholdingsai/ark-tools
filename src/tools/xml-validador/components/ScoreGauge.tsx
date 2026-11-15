@@ -1,6 +1,6 @@
 /**
  * ARK LEDGER — Validador de XMLs CFDI
- * Componente: ScoreGauge — Visualizador de Calificación de Salud Fiscal
+ * Componente: ScoreGauge — Visualizador de puntaje interno
  */
 
 import React from 'react';
@@ -38,14 +38,10 @@ export const ScoreGauge: React.FC<ScoreGaugeProps> = ({ score, size = 'md', show
       {showLabel && (
         <div className="flex flex-col">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-            Salud Fiscal
+            Evaluación interna
           </span>
           <span className={`text-xs font-semibold ${colors.text}`}>
-            {score >= 90
-              ? 'Íntegro / Válido'
-              : score >= 70
-                ? 'Con Observaciones'
-                : 'Riesgo / No Deducible'}
+            {score >= 90 ? 'Score alto' : score >= 70 ? 'Con observaciones' : 'Revisar resultado'}
           </span>
         </div>
       )}

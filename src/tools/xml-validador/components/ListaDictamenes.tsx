@@ -72,21 +72,21 @@ export const ListaDictamenes: React.FC<ListaDictamenesProps> = ({
         return (
           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-950/60 px-2.5 py-1 text-[10px] font-bold text-emerald-300">
             <CheckCircle2 className="h-3 w-3 text-emerald-400" />
-            100% Válido
+            Sin errores detectados
           </span>
         );
       case 'advertencia':
         return (
           <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-950/60 px-2.5 py-1 text-[10px] font-bold text-amber-300">
             <AlertTriangle className="h-3 w-3 text-amber-400" />
-            Observaciones
+            Con advertencias
           </span>
         );
       case 'rechazado':
         return (
           <span className="inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-950/60 px-2.5 py-1 text-[10px] font-bold text-red-300">
             <XCircle className="h-3 w-3 text-red-400" />
-            No Deducible / Error
+            Rechazado / Error
           </span>
         );
     }
@@ -238,7 +238,7 @@ export const ListaDictamenes: React.FC<ListaDictamenesProps> = ({
                   <div className="animate-fadeIn space-y-4 border-t border-white/10 bg-surface/80 p-5">
                     <h4 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted">
                       <Scale className="h-3.5 w-3.5 text-gold" />
-                      Auditoría Normativa del SAT (Anexo 20)
+                      Reglas internas de formato y consistencia
                     </h4>
 
                     <div className="space-y-2">

@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { validarCFDI, calcularResumenAuditoria } from './validadorCFDI';
+import { generarCSVDictamenes } from './exportarDictamen';
+import { AVISO_ALCANCE_DICTAMEN } from '../types';
 
 // CFDI 4.0 Válido y Perfecto
 const XML_CFDI_VALIDO = `<?xml version="1.0" encoding="utf-8"?>
@@ -71,6 +73,15 @@ const XML_PPD_INCONSISTENTE = `<?xml version="1.0" encoding="utf-8"?>
   </cfdi:Complemento>
 </cfdi:Comprobante>`;
 
+const XML_GOLDEN_PREVIEW = `<?xml version="1.0" encoding="UTF-8"?>
+<cfdi:Comprobante Version="4.0" Serie="A" Folio="101" Fecha="2026-10-15T12:00:00" SubTotal="10000.00" Total="11600.00" Moneda="MXN" TipoDeComprobante="I" MetodoPago="PUE" FormaPago="03" LugarExpedicion="97000" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital">
+  <cfdi:Emisor Rfc="AAA010101AAA" Nombre="EMPRESA DEMO SA DE CV" RegimenFiscal="601"/>
+  <cfdi:Receptor Rfc="XAXX010101000" Nombre="PUBLICO EN GENERAL" UsoCFDI="S01" DomicilioFiscalReceptor="97000" RegimenFiscalReceptor="616"/>
+  <cfdi:Conceptos><cfdi:Concepto ClaveProdServ="84111506" Cantidad="1" ClaveUnidad="E48" Descripcion="Servicios contables" ValorUnitario="10000.00" Importe="10000.00" ObjetoImp="02"/></cfdi:Conceptos>
+  <cfdi:Impuestos TotalImpuestosTrasladados="1600.00"><cfdi:Traslados><cfdi:Traslado Base="10000.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="1600.00"/></cfdi:Traslados></cfdi:Impuestos>
+  <cfdi:Complemento><tfd:TimbreFiscalDigital Version="1.1" UUID="11111111-2222-3333-4444-555555555555" FechaTimbrado="2026-10-15T12:01:00"/></cfdi:Complemento>
+</cfdi:Comprobante>`;
+
 describe('Motor de Auditoría CFDI (validadorCFDI)', () => {
   it('debe aprobar con calificación perfecta un CFDI 4.0 sin errores', () => {
     const dictamen = validarCFDI(XML_CFDI_VALIDO, 'factura-valida.xml');
@@ -139,5 +150,137 @@ describe('Motor de Auditoría CFDI (validadorCFDI)', () => {
     expect(resumen.conAdvertencias).toBe(1);
     expect(resumen.rechazados).toBe(1);
     expect(resumen.promedioScore).toBeGreaterThan(0);
+  });
+
+  it('conserva el resultado del vector dorado de Preview y su aviso de alcance', () => {
+    const dictamen = validarCFDI(XML_GOLDEN_PREVIEW, 'cfdi-validacion-preview.xml');
+
+    expect(dictamen.score).toBe(70);
+    expect(dictamen.estatusGeneral).toBe('advertencia');
+    expect(dictamen.erroresCount).toBe(0);
+    expect(dictamen.advertenciasCount).toBe(3);
+    expect(dictamen.exitosCount).toBe(9);
+    expect(dictamen.reglas).toHaveLength(12);
+    expect(dictamen.avisoAlcance).toBe(AVISO_ALCANCE_DICTAMEN);
+  });
+
+  it('detecta una mutación del Total que rompe la cuadratura', () => {
+    const xml = XML_GOLDEN_PREVIEW.replace('Total="11600.00"', 'Total="11000.00"');
+    const dictamen = validarCFDI(xml);
+    const regla = dictamen.reglas.find((r) => r.codigo === 'ARIT-01');
+
+    expect(regla?.severidad).toBe('error');
+    expect(regla?.descripcion).toContain('difiere');
+  });
+
+  it('mantiene los avisos de PPD/Forma de Pago y versión CFDI 3.3', () => {
+    const xmlPpd = XML_GOLDEN_PREVIEW.replace('MetodoPago="PUE"', 'MetodoPago="PPD"');
+    const xmlV33 = XML_GOLDEN_PREVIEW.replace('Version="4.0"', 'Version="3.3"');
+    const dictamenPpd = validarCFDI(xmlPpd);
+    const dictamenV33 = validarCFDI(xmlV33);
+
+    expect(dictamenPpd.reglas.find((r) => r.codigo === 'FISC-07')?.severidad).toBe('advertencia');
+    expect(dictamenV33.reglas.find((r) => r.codigo === 'VIG-01')?.severidad).toBe('advertencia');
+  });
+
+  it('advierte RFC de Emisor con formato inválido', () => {
+    const xml = XML_GOLDEN_PREVIEW.replace('Rfc="AAA010101AAA"', 'Rfc="AAA010101AA"');
+    const dictamen = validarCFDI(xml);
+    const regla = dictamen.reglas.find((r) => r.codigo === 'FISC-01');
+
+    expect(regla?.severidad).toBe('advertencia');
+  });
+
+  it('limpia las advertencias del vector al añadir Exportacion y atributos de sello/certificado', () => {
+    const xml = XML_GOLDEN_PREVIEW.replace(
+      'Folio="101"',
+      'Folio="101" Exportacion="01" NoCertificado="00001000000500000000"'
+    ).replace(
+      'FechaTimbrado="2026-10-15T12:01:00"',
+      'FechaTimbrado="2026-10-15T12:01:00" SelloCFD="S1" SelloSAT="S2"'
+    );
+    const dictamen = validarCFDI(xml);
+
+    expect(dictamen.score).toBe(100);
+    expect(dictamen.estatusGeneral).toBe('aprobado');
+    expect(dictamen.erroresCount).toBe(0);
+    expect(dictamen.advertenciasCount).toBe(0);
+
+    const xmlError = xml.replace('Total="11600.00"', 'Total="11000.00"');
+    const xmlErrorYAdvertencia = xmlError.replace(' Exportacion="01"', '');
+    expect(validarCFDI(xmlError).score).toBe(50);
+    expect(validarCFDI(xmlErrorYAdvertencia).score).toBe(60);
+  });
+
+  it.each([
+    ['11601.00', 'exito'],
+    ['11601.01', 'error'],
+  ])('mantiene la tolerancia de ARIT-01 para Total %s', (total, severidad) => {
+    const xml = XML_GOLDEN_PREVIEW.replace('Total="11600.00"', `Total="${total}"`);
+    const dictamen = validarCFDI(xml);
+    const regla = dictamen.reglas.find((r) => r.codigo === 'ARIT-01');
+
+    expect(regla?.severidad).toBe(severidad);
+    expect(regla?.descripcion).toContain('no es un criterio oficial del SAT');
+  });
+
+  it('detecta inconsistencia entre Base, TasaOCuota e Importe por traslado', () => {
+    const xmlInconsistente = XML_GOLDEN_PREVIEW.replace(
+      'TasaOCuota="0.160000"',
+      'TasaOCuota="0.080000"'
+    );
+    const xmlConsistente = xmlInconsistente.replace('Importe="1600.00"', 'Importe="800.00"');
+
+    const dictamenInconsistente = validarCFDI(xmlInconsistente);
+    const dictamenConsistente = validarCFDI(xmlConsistente);
+
+    expect(dictamenInconsistente.reglas.find((r) => r.codigo === 'ARIT-01')?.severidad).toBe(
+      'error'
+    );
+    expect(dictamenInconsistente.reglas.find((r) => r.codigo === 'ARIT-01')?.descripcion).toContain(
+      'TasaOCuota 0.08'
+    );
+    expect(dictamenConsistente.reglas.find((r) => r.codigo === 'ARIT-01')?.severidad).toBe('exito');
+  });
+
+  it.each([
+    ['raíz sin cierre', XML_GOLDEN_PREVIEW.replace('</cfdi:Comprobante>', '')],
+    [
+      'documento truncado',
+      XML_GOLDEN_PREVIEW.slice(0, XML_GOLDEN_PREVIEW.indexOf('</cfdi:Impuestos>')),
+    ],
+  ])('rechaza XML mal formado (%s)', (_caso, xml) => {
+    const dictamen = validarCFDI(xml);
+    const reglaEstructura = dictamen.reglas.find((r) => r.codigo === 'ESTR-01');
+
+    expect(dictamen.estatusGeneral).toBe('rechazado');
+    expect(dictamen.score).toBe(0);
+    expect(reglaEstructura?.severidad).toBe('error');
+    expect(reglaEstructura?.descripcion).toContain('XML mal formado');
+  });
+
+  it('rechaza una entrada vacía sin lanzar una excepción', () => {
+    const dictamen = validarCFDI('');
+
+    expect(dictamen.estatusGeneral).toBe('rechazado');
+    expect(dictamen.score).toBe(0);
+    expect(dictamen.reglas[0]?.codigo).toBe('ESTR-01');
+    expect(dictamen.reglas[0]?.severidad).toBe('error');
+  });
+
+  it('exporta todas las reglas y los avisos en el CSV BOM UTF-8', () => {
+    const dictamen = validarCFDI(XML_GOLDEN_PREVIEW, 'cfdi-validacion-preview.xml');
+    const csv = generarCSVDictamenes([dictamen]);
+
+    expect(csv.startsWith('\uFEFF')).toBe(true);
+    expect(csv).toContain(AVISO_ALCANCE_DICTAMEN);
+    expect(csv).not.toMatch(/SHA-256|QR|PDF/i);
+    for (const regla of dictamen.reglas) {
+      expect(csv).toContain(`${regla.codigo} (${regla.categoria})`);
+      expect(csv).toContain(`[${regla.severidad.toUpperCase()}]`);
+    }
+    expect(csv).toContain('TIMB-03 (timbre)');
+    expect(csv).toContain('FISC-07 (fiscal)');
+    expect(csv).toContain('ARIT-01 (aritmetica)');
   });
 });

@@ -15,6 +15,7 @@
  */
 
 import { CATALOGO_2026 } from './valores-vigentes/catalogo';
+import { CODIGOS_REGLA_VALIDADOR } from '../tools/xml-validador/types';
 
 export interface HerramientaSuite {
   /** Identificador de la herramienta; debe coincidir con el `ToolId` de `src/App.tsx`. */
@@ -93,9 +94,8 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
   {
     id: 'validador',
     nombre: 'Validador y Auditor de XMLs',
-    categoria: 'SAT y Auditoría CFDI 4.0 (100% Local en Navegador)',
-    descripcion:
-      'Motor de 8 reglas técnicas (Anexo 20 RMF), consistencia de régimen fiscal, cuadratura matemática y detección preventiva contra listas negras del SAT CFF Art. 69-B (EFOS/EDOS).',
+    categoria: 'SAT y Auditoría CFDI 4.0 (validación local / Preview en Worker)',
+    descripcion: `Revisión de XML bien formado para CFDI 4.0/3.3 con ${CODIGOS_REGLA_VALIDADOR.length} códigos de regla de formato y consistencia. Revisa RFC por formato y presencia de UUID, sellos y certificado; no consulta listas del SAT, no valida el XSD oficial ni verifica firmas criptográficas. La carga local en la UI no sube el XML; el Preview lo envía al Worker de Ark para validarlo y no persiste el contenido.`,
   },
   {
     id: 'timbrado',

@@ -131,7 +131,7 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
 1. Conversor XML a Excel ('xml-excel'):
    - Extracción y procesamiento masivo de CFDIs 3.3 y 4.0 en el navegador con tablas consolidadas e impuestos retenidos y trasladados.
 2. Validador de XMLs ('validador'):
-   - Auditoría técnica conforme a XSD del SAT, verificación CSD y cruce contra lista negra EFOS del Art. 69-B CFF.
+   - Revisión de XML bien formado, campos y consistencia aritmética. RFC por formato; sellos y certificado solo por presencia. No consulta listas del SAT, no valida el XSD oficial ni verifica firmas criptográficas. El Preview envía XML al Worker de Ark y no lo persiste.
 3. Calculadora ISN 2026 ('isn'):
    - Determinación del Impuesto Sobre Nóminas para las 32 entidades federativas (incluyendo Yucatán 2026 al 3.75% bruto / 3.0% neto MIPyME bajo LGHY Arts. 21 al 27 y Decreto 147/2025).
 4. Calculadora SBC 2026 ('sbc'):

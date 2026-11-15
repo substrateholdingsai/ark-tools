@@ -482,6 +482,110 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
     });
   });
 
+  const XML_VALIDADOR_PREVIEW = `<?xml version="1.0" encoding="UTF-8"?>
+  <cfdi:Comprobante Version="4.0" Serie="A" Folio="101" Fecha="2026-10-15T12:00:00" SubTotal="10000.00" Total="11600.00" Moneda="MXN" TipoDeComprobante="I" MetodoPago="PUE" FormaPago="03" LugarExpedicion="97000" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital">
+    <cfdi:Emisor Rfc="AAA010101AAA" Nombre="EMPRESA DEMO SA DE CV" RegimenFiscal="601"/>
+    <cfdi:Receptor Rfc="XAXX010101000" Nombre="PUBLICO EN GENERAL" UsoCFDI="S01" DomicilioFiscalReceptor="97000" RegimenFiscalReceptor="616"/>
+    <cfdi:Conceptos><cfdi:Concepto ClaveProdServ="84111506" Cantidad="1" ClaveUnidad="E48" Descripcion="Servicios contables" ValorUnitario="10000.00" Importe="10000.00" ObjetoImp="02"/></cfdi:Conceptos>
+    <cfdi:Impuestos TotalImpuestosTrasladados="1600.00"><cfdi:Traslados><cfdi:Traslado Base="10000.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="1600.00"/></cfdi:Traslados></cfdi:Impuestos>
+    <cfdi:Complemento><tfd:TimbreFiscalDigital Version="1.1" UUID="11111111-2222-3333-4444-555555555555" FechaTimbrado="2026-10-15T12:01:00"/></cfdi:Complemento>
+  </cfdi:Comprobante>`;
+
+  describe('Validador XML Preview contract', () => {
+    beforeEach(() => {
+      resetStayPuftMemoryAuditForTests();
+    });
+
+    const postPreview = async (payload: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      const response = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/validador/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+            'X-Tenant-Id': 'tenant-alpha',
+          },
+          body: JSON.stringify(payload),
+        }),
+        env,
+        mockCtx
+      );
+      return { response, env };
+    };
+
+    it.each([
+      ['objeto vacío', {}],
+      ['XML vacío', { xmlContent: '  ' }],
+      ['XML no textual', { xmlContent: 42 }],
+      ['fileName no textual', { xmlContent: XML_VALIDADOR_PREVIEW, fileName: 9 }],
+      ['campo desconocido', { xmlContent: XML_VALIDADOR_PREVIEW, xml: 'demo' }],
+    ])('rechaza %s en vez de usar valores demo', async (_caso, payload) => {
+      const { response } = await postPreview(payload);
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('xmlContent');
+    });
+
+    it.each([
+      ['XML no CFDI', '<html><body>no es un CFDI</body></html>'],
+      ['XML mal formado', '<cfdi:Comprobante Version="4.0">'],
+    ])('rechaza %s con 400', async (_caso, xmlContent) => {
+      const { response } = await postPreview({ xmlContent });
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+    });
+
+    it('valida el XML, enmascara RFCs profundamente y registra solo metadatos', async () => {
+      const { response, env } = await postPreview({
+        xmlContent: XML_VALIDADOR_PREVIEW,
+        fileName: 'cfdi-validacion-preview.xml',
+      });
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as {
+        preview_notice: string;
+        result: {
+          rfcEmisor: string;
+          rfcReceptor: string;
+          reglas: unknown[];
+          avisoAlcance: string;
+        };
+      };
+      const responseText = JSON.stringify(body);
+
+      expect(body.preview_notice).toContain('Worker');
+      expect(body.result.rfcEmisor).toBe('[RFC_PREVIEW]');
+      expect(body.result.rfcReceptor).toBe('[RFC_PREVIEW]');
+      expect(body.result.avisoAlcance).toContain('no una certificación del SAT');
+      expect(responseText).not.toContain('AAA010101AAA');
+      expect(responseText).not.toContain('XAXX010101000');
+      expect(responseText).not.toContain(XML_VALIDADOR_PREVIEW);
+
+      const auditResponse = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/audit?tenantId=tenant-alpha', {
+          headers: { 'X-StayPuft-Key': TEST_STAYPUFT_KEY },
+        }),
+        env,
+        mockCtx
+      );
+      expect(auditResponse.status).toBe(200);
+      const auditBody = (await auditResponse.json()) as {
+        entries: Array<{ path: string; details: string | null }>;
+      };
+      const previewEntry = auditBody.entries.find(
+        (entry) => entry.path === '/api/internal/tools/validador/preview'
+      );
+      expect(previewEntry?.details).toBe('preview_validador');
+      const auditText = JSON.stringify(auditBody.entries);
+      expect(auditText).not.toContain('AAA010101AAA');
+      expect(auditText).not.toContain('XAXX010101000');
+      expect(auditText).not.toContain(XML_VALIDADOR_PREVIEW);
+      expect(auditText).not.toContain('xmlContent');
+    });
+  });
+
   // ==========================================================================
   // 4. Preview Calculation Mode (Writes nothing, seals nothing, stamps nothing)
   // ==========================================================================
@@ -514,7 +618,9 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
                     edadJubilacion: 65,
                     asignacionFamiliar: true,
                   }
-                : {};
+                : tool.id === 'validador'
+                  ? { xmlContent: XML_VALIDADOR_PREVIEW }
+                  : {};
 
         const res = await worker.fetch(
           new Request(`https://ledger.arksystems.site/api/internal/tools/${tool.id}/preview`, {

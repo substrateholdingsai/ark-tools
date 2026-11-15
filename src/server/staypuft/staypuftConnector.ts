@@ -57,7 +57,11 @@ import type { TrabajadorFilaInput } from '../../tools/cierre-nomina/types';
 import { analizarBalance, calcularTotales } from '../../tools/balance-general/lib/calcularBalance';
 import type { JerarquiaBalance } from '../../tools/balance-general/types';
 import { parsearCFDI } from '../../tools/xml-excel/lib/parserCFDI';
-import { validarCFDI } from '../../tools/xml-validador/lib/validadorCFDI';
+import {
+  enmascararRFCsPreview,
+  enmascararTextoRfcPreview,
+  validarCFDI,
+} from '../../tools/xml-validador/lib/validadorCFDI';
 import { calcularComisionClip } from '../../tools/spei/lib/clipClient';
 import {
   PARAMETROS_DEFAULT as LEASING_DEFAULT,
@@ -185,6 +189,7 @@ interface ToolInternalSpec {
   description: string;
   status: 'active' | 'preview_only';
   preview_supported: boolean;
+  preview_notice?: string;
   approval_gate_notes?: string;
   law_cited: string[];
   inputs: Record<string, string>;
@@ -981,10 +986,12 @@ const TOOL_SPECS_MAP: Record<
     route: '/#validador',
     status: 'active',
     preview_supported: true,
+    preview_notice:
+      'El Preview ejecuta la validación en el Worker de Ark: el XML se envía al servidor para su validación y no se persiste. La validación local en el navegador (carga de archivos) no sube el XML.',
     law_cited: [
-      'CFF Art. 29-A (Requisitos fiscales de los CFDI 4.0)',
-      'CFF Art. 69-B (Presunción de inexistencia de operaciones — EFOS / Listas Negras SAT)',
-      'Anexo 20 RMF 2026 (Validación de 8 reglas técnicas, coherencia PUE/PPD y cuadratura aritmética)',
+      'CFF Art. 29-A (referencia declarada por reglas de campos; revisión interna parcial)',
+      'Anexo 20 RMF 2026 (referencia declarada; chequeos internos seleccionados)',
+      'Guía de llenado CFDI SAT (referencia declarada para PUE/PPD; chequeo interno)',
     ],
     inputs: {
       xmlContent: 'string (XML CFDI 4.0 / 3.3)',
@@ -1368,6 +1375,7 @@ export function buildLiveToolCatalog(): ToolInternalSpec[] {
       route: spec?.route ?? `/#${item.id}`,
       status: spec?.status ?? 'active',
       preview_supported: spec?.preview_supported ?? true,
+      ...(spec?.preview_notice ? { preview_notice: spec.preview_notice } : {}),
       approval_gate_notes: spec?.approval_gate_notes,
       law_cited: spec?.law_cited ?? ['CFF Art. 28 y LISR vigente 2026'],
       inputs: spec?.inputs ?? {},
@@ -1375,6 +1383,50 @@ export function buildLiveToolCatalog(): ToolInternalSpec[] {
       sample_preview_payload: spec?.sample_preview_payload ?? {},
     };
   });
+}
+
+const CAMPOS_PREVIEW_VALIDADOR =
+  'Campos aceptados: xmlContent (string no vacío, requerido) y fileName (string, opcional).';
+
+function esObjetoRegistro(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
+}
+
+function validarPayloadPreviewValidador(
+  payload: unknown
+): { ok: true; payload: Record<string, unknown> } | { ok: false; error: string } {
+  if (!esObjetoRegistro(payload)) {
+    return {
+      ok: false,
+      error: `Se requiere un objeto JSON. ${CAMPOS_PREVIEW_VALIDADOR}`,
+    };
+  }
+
+  const camposDesconocidos = Object.keys(payload).filter(
+    (campo) => campo !== 'xmlContent' && campo !== 'fileName'
+  );
+  if (camposDesconocidos.length > 0) {
+    return {
+      ok: false,
+      error: `Campos desconocidos: ${camposDesconocidos.join(', ')}. ${CAMPOS_PREVIEW_VALIDADOR}`,
+    };
+  }
+
+  if (typeof payload.xmlContent !== 'string' || payload.xmlContent.trim().length === 0) {
+    return {
+      ok: false,
+      error: `xmlContent es obligatorio y debe ser una cadena no vacía. ${CAMPOS_PREVIEW_VALIDADOR}`,
+    };
+  }
+
+  if (Object.hasOwn(payload, 'fileName') && typeof payload.fileName !== 'string') {
+    return {
+      ok: false,
+      error: `fileName debe ser una cadena cuando se proporciona. ${CAMPOS_PREVIEW_VALIDADOR}`,
+    };
+  }
+
+  return { ok: true, payload };
 }
 
 // ============================================================================
@@ -1400,12 +1452,21 @@ export async function executeToolPreview(
   }
 
   const spec = TOOL_SPECS_MAP[toolId];
-  const payload =
-    toolId === 'modalidad40'
-      ? rawPayload
-      : rawPayload && Object.keys(rawPayload).length > 0
+  let payload: Record<string, unknown>;
+  if (toolId === 'validador') {
+    const validacionPayload = validarPayloadPreviewValidador(rawPayload);
+    if (!validacionPayload.ok) {
+      return { ok: false, statusCode: 400, error: validacionPayload.error };
+    }
+    payload = validacionPayload.payload;
+  } else {
+    payload =
+      toolId === 'modalidad40'
         ? rawPayload
-        : (spec?.sample_preview_payload ?? {});
+        : rawPayload && Object.keys(rawPayload).length > 0
+          ? rawPayload
+          : (spec?.sample_preview_payload ?? {});
+  }
 
   try {
     let resultOutput: unknown;
@@ -1954,14 +2015,22 @@ export async function executeToolPreview(
       }
 
       case 'validador': {
-        const xmlContent = String(payload.xmlContent ?? SAMPLE_CFDI_XML);
-        const fileName = String(payload.fileName ?? 'cfdi-validacion-preview.xml');
+        const xmlContent = payload.xmlContent as string;
+        const fileName =
+          typeof payload.fileName === 'string' ? payload.fileName : 'cfdi-validacion-preview.xml';
         const validated = validarCFDI(xmlContent, fileName);
-        resultOutput = {
-          ...validated,
-          rfcEmisor: '[RFC_PREVIEW]',
-          rfcReceptor: '[RFC_PREVIEW]',
-        };
+        if (
+          validated.reglas.some(
+            (regla) => regla.codigo === 'ESTR-01' && regla.severidad === 'error'
+          )
+        ) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: 'xmlContent debe ser XML bien formado con raíz CFDI <Comprobante>.',
+          };
+        }
+        resultOutput = enmascararRFCsPreview(validated);
         break;
       }
 
@@ -2224,14 +2293,17 @@ export async function executeToolPreview(
         dictamen_issued: false,
         catalog_version: CURRENT_CATALOG_VERSION,
         law_cited: spec?.law_cited ?? [],
+        ...(spec?.preview_notice ? { preview_notice: spec.preview_notice } : {}),
         result: resultOutput,
       },
     };
   } catch (err) {
+    const errorMessage =
+      err instanceof Error ? err.message : 'Error al ejecutar cálculo en modo preview.';
     return {
       ok: false,
       statusCode: 400,
-      error: err instanceof Error ? err.message : 'Error al ejecutar cálculo en modo preview.',
+      error: toolId === 'validador' ? enmascararTextoRfcPreview(errorMessage) : errorMessage,
     };
   }
 }
