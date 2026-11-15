@@ -448,7 +448,11 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(data.tools).toHaveLength(21);
 
       for (const tool of data.tools) {
-        expect(tool.law_cited.length).toBeGreaterThan(0);
+        if (tool.id === 'xml-excel') {
+          expect(tool.law_cited).toEqual([]);
+        } else {
+          expect(tool.law_cited.length).toBeGreaterThan(0);
+        }
       }
     });
 
@@ -586,6 +590,109 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
     });
   });
 
+  describe('XML a Excel Preview contract', () => {
+    beforeEach(() => {
+      resetStayPuftMemoryAuditForTests();
+    });
+
+    const postPreview = async (payload: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      const response = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/xml-excel/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+            'X-Tenant-Id': 'tenant-alpha',
+          },
+          body: JSON.stringify(payload),
+        }),
+        env,
+        mockCtx
+      );
+      return { response, env };
+    };
+
+    it.each([
+      ['objeto vacío', {}],
+      ['XML vacío', { xmlContent: '  ' }],
+      ['XML no textual', { xmlContent: 42 }],
+      ['fileName no textual', { xmlContent: XML_VALIDADOR_PREVIEW, fileName: 9 }],
+      ['campo desconocido', { xmlContent: XML_VALIDADOR_PREVIEW, xml: 'demo' }],
+    ])('rechaza %s en vez de usar valores demo', async (_caso, payload) => {
+      const { response } = await postPreview(payload);
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('xmlContent');
+    });
+
+    it.each([
+      ['XML no CFDI', '<html><body>no es un CFDI</body></html>'],
+      ['XML mal formado', '<cfdi:Comprobante Version="4.0">'],
+    ])('rechaza %s con 400', async (_caso, xmlContent) => {
+      const { response } = await postPreview({ xmlContent });
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('XML');
+    });
+
+    it('procesa el CFDI enviado, enmascara RFCs y registra solo metadatos', async () => {
+      const { response, env } = await postPreview({
+        xmlContent: XML_VALIDADOR_PREVIEW,
+        fileName: 'cfdi-extraccion-preview.xml',
+      });
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as {
+        preview_notice: string;
+        result: {
+          fileName: string;
+          uuid: string;
+          rfcEmisor: string;
+          rfcReceptor: string;
+          subtotal: number;
+          iva16: number;
+          total: number;
+        };
+      };
+      const responseText = JSON.stringify(body);
+
+      expect(body.preview_notice).toContain('XML se envía al servidor');
+      expect(body.result.fileName).toBe('cfdi-extraccion-preview.xml');
+      expect(body.result.uuid).toBe('11111111-2222-3333-4444-555555555555');
+      expect(body.result.rfcEmisor).toBe('[RFC_PREVIEW]');
+      expect(body.result.rfcReceptor).toBe('[RFC_PREVIEW]');
+      expect(body.result.subtotal).toBe(10000);
+      expect(body.result.iva16).toBe(1600);
+      expect(body.result.total).toBe(11600);
+      expect(responseText).not.toContain('AAA010101AAA');
+      expect(responseText).not.toContain('XAXX010101000');
+      expect(responseText).not.toContain(XML_VALIDADOR_PREVIEW);
+
+      const auditResponse = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/audit?tenantId=tenant-alpha', {
+          headers: { 'X-StayPuft-Key': TEST_STAYPUFT_KEY },
+        }),
+        env,
+        mockCtx
+      );
+      expect(auditResponse.status).toBe(200);
+      const auditBody = (await auditResponse.json()) as {
+        entries: Array<{ path: string; details: string | null }>;
+      };
+      const previewEntry = auditBody.entries.find(
+        (entry) => entry.path === '/api/internal/tools/xml-excel/preview'
+      );
+      expect(previewEntry?.details).toBe('preview_xml-excel');
+      const auditText = JSON.stringify(auditBody.entries);
+      expect(auditText).not.toContain('AAA010101AAA');
+      expect(auditText).not.toContain('XAXX010101000');
+      expect(auditText).not.toContain(XML_VALIDADOR_PREVIEW);
+      expect(auditText).not.toContain('xmlContent');
+    });
+  });
+
   // ==========================================================================
   // 4. Preview Calculation Mode (Writes nothing, seals nothing, stamps nothing)
   // ==========================================================================
@@ -620,7 +727,9 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
                   }
                 : tool.id === 'validador'
                   ? { xmlContent: XML_VALIDADOR_PREVIEW }
-                  : {};
+                  : tool.id === 'xml-excel'
+                    ? { xmlContent: XML_VALIDADOR_PREVIEW }
+                    : {};
 
         const res = await worker.fetch(
           new Request(`https://ledger.arksystems.site/api/internal/tools/${tool.id}/preview`, {
@@ -655,7 +764,11 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
         expect(body.saved).toBe(false);
         expect(body.stamped).toBe(false);
         expect(body.dictamen_issued).toBe(false);
-        expect(body.law_cited.length).toBeGreaterThan(0);
+        if (tool.id === 'xml-excel') {
+          expect(body.law_cited).toEqual([]);
+        } else {
+          expect(body.law_cited.length).toBeGreaterThan(0);
+        }
         expect(body.result).toBeDefined();
 
         if (tool.id === 'nomina') {

@@ -11,9 +11,10 @@
 
 **ARK LEDGER** minimiza la exposición de información fiscal sensible separando claramente lo que se procesa en el dispositivo del usuario de lo que se persiste en la nube:
 
-1. **Procesamiento 100% Local en el Navegador (_Client-Side_):**
-   - Herramientas como **Conversor XML → Excel**, **Validador CFDI (Anexo 20 y Art. 69-B CFF)**, **Auditor de CFDI Atípico** y **Conciliación Anexo 24** leen y analizan tus comprobantes XML directamente en la memoria del navegador del usuario.
-   - Los archivos XML analizados en estas herramientas **no se suben, almacenan ni comercializan** en servidores externos.
+1. **Procesamiento local de cargas interactivas:**
+   - La carga desde la interfaz de **Conversor XML a CSV para Excel** se procesa en el navegador; ese flujo no envía el XML al servidor.
+   - El Preview del conector para esta herramienta sí envía el XML al Worker de Ark para extraer los datos, pero no persiste el contenido. Esta excepción no aplica a la carga interactiva en el navegador.
+   - Otras herramientas de análisis XML, como **Validador CFDI**, **Auditor de CFDI Atípico** y **Conciliación Anexo 24**, procesan los archivos de sus flujos locales en el navegador.
 2. **Persistencia Multi-Tenant en Cloudflare D1:**
    - Se almacenan en **Cloudflare D1** únicamente los registros estructurados necesarios para operar la cuenta y los flujos colaborativos del despacho o institución: usuarios, sesiones, invitaciones, expedientes de clientes/RFC, cédulas de trabajo, registros de ventanilla, leads y configuraciones de timbrado.
 

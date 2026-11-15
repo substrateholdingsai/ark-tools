@@ -961,10 +961,9 @@ const TOOL_SPECS_MAP: Record<
     route: '/#xml-excel',
     status: 'active',
     preview_supported: true,
-    law_cited: [
-      'CFF Art. 29 y Art. 29-A (Comprobantes Fiscales Digitales por Internet CFDI 3.3 y 4.0)',
-      'Anexo 20 RMF 2026 (Extracción estructurada de impuestos, conceptos y Timbre Fiscal Digital)',
-    ],
+    preview_notice:
+      'El Preview ejecuta la extracción en el Worker de Ark: el XML se envía al servidor para procesarlo y no se persiste. La conversión de archivos desde el navegador no sube el XML.',
+    law_cited: [],
     inputs: {
       xmlContent: 'string (XML CFDI 4.0 o 3.3)',
       fileName: 'string (opcional)',
@@ -1385,20 +1384,20 @@ export function buildLiveToolCatalog(): ToolInternalSpec[] {
   });
 }
 
-const CAMPOS_PREVIEW_VALIDADOR =
+const CAMPOS_PREVIEW_XML =
   'Campos aceptados: xmlContent (string no vacío, requerido) y fileName (string, opcional).';
 
 function esObjetoRegistro(valor: unknown): valor is Record<string, unknown> {
   return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
 }
 
-function validarPayloadPreviewValidador(
+function validarPayloadPreviewXml(
   payload: unknown
 ): { ok: true; payload: Record<string, unknown> } | { ok: false; error: string } {
   if (!esObjetoRegistro(payload)) {
     return {
       ok: false,
-      error: `Se requiere un objeto JSON. ${CAMPOS_PREVIEW_VALIDADOR}`,
+      error: `Se requiere un objeto JSON. ${CAMPOS_PREVIEW_XML}`,
     };
   }
 
@@ -1408,21 +1407,21 @@ function validarPayloadPreviewValidador(
   if (camposDesconocidos.length > 0) {
     return {
       ok: false,
-      error: `Campos desconocidos: ${camposDesconocidos.join(', ')}. ${CAMPOS_PREVIEW_VALIDADOR}`,
+      error: `Campos desconocidos: ${camposDesconocidos.join(', ')}. ${CAMPOS_PREVIEW_XML}`,
     };
   }
 
   if (typeof payload.xmlContent !== 'string' || payload.xmlContent.trim().length === 0) {
     return {
       ok: false,
-      error: `xmlContent es obligatorio y debe ser una cadena no vacía. ${CAMPOS_PREVIEW_VALIDADOR}`,
+      error: `xmlContent es obligatorio y debe ser una cadena no vacía. ${CAMPOS_PREVIEW_XML}`,
     };
   }
 
   if (Object.hasOwn(payload, 'fileName') && typeof payload.fileName !== 'string') {
     return {
       ok: false,
-      error: `fileName debe ser una cadena cuando se proporciona. ${CAMPOS_PREVIEW_VALIDADOR}`,
+      error: `fileName debe ser una cadena cuando se proporciona. ${CAMPOS_PREVIEW_XML}`,
     };
   }
 
@@ -1453,8 +1452,8 @@ export async function executeToolPreview(
 
   const spec = TOOL_SPECS_MAP[toolId];
   let payload: Record<string, unknown>;
-  if (toolId === 'validador') {
-    const validacionPayload = validarPayloadPreviewValidador(rawPayload);
+  if (toolId === 'validador' || toolId === 'xml-excel') {
+    const validacionPayload = validarPayloadPreviewXml(rawPayload);
     if (!validacionPayload.ok) {
       return { ok: false, statusCode: 400, error: validacionPayload.error };
     }
@@ -2003,9 +2002,17 @@ export async function executeToolPreview(
       }
 
       case 'xml-excel': {
-        const xmlContent = String(payload.xmlContent ?? SAMPLE_CFDI_XML);
-        const fileName = String(payload.fileName ?? 'cfdi-preview.xml');
+        const xmlContent = payload.xmlContent as string;
+        const fileName =
+          typeof payload.fileName === 'string' ? payload.fileName : 'cfdi-preview.xml';
         const parsed = parsearCFDI(xmlContent, fileName);
+        if (parsed.estado === 'error') {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: 'xmlContent debe ser XML bien formado con raíz CFDI <Comprobante>.',
+          };
+        }
         resultOutput = {
           ...parsed,
           rfcEmisor: '[RFC_PREVIEW]',

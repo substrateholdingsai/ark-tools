@@ -225,7 +225,7 @@ export function OnboardingQuickstartModal({
                   >
                     <span className="flex items-center gap-2">
                       <FileSpreadsheet size={14} className="text-navy" />
-                      <span>Conversor & Validador XML SAT</span>
+                      <span>Conversor XML a CSV para Excel</span>
                     </span>
                     <ArrowRight size={12} className="text-muted" />
                   </button>

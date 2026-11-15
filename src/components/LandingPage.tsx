@@ -105,9 +105,9 @@ const TOOLS_PREVIEW: ToolPreview[] = [
   {
     icon: FileSpreadsheet,
     category: 'SAT & CFDI',
-    title: 'Conversor XML → Excel',
+    title: 'Conversor XML → CSV para Excel',
     description:
-      'Arrastra lotes de CFDIs 3.3 y 4.0 (ingresos, nómina, gastos) y expórtalos en tablas organizadas de Excel/CSV listas para tu contabilidad.',
+      'Extrae CFDI 3.3 y 4.0 a CSV con una fila por comprobante: hasta 200 archivos de 10 MB cada uno.',
     tag: 'Hasta 200 archivos',
   },
   {

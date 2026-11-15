@@ -4,6 +4,7 @@
  */
 
 import type { FacturaCFDI, TipoComprobante, ResumenLoteXML } from '../types';
+import { SaxesParser } from 'saxes';
 
 /**
  * Mapeo de TipoDeComprobante del SAT a descripción amigable
@@ -84,52 +85,97 @@ function buscarTags(xml: string, tagName: string): Record<string, string>[] {
   return resultados;
 }
 
+function obtenerErrorParseoXML(xmlText: string): string | null {
+  const parser = new SaxesParser({ xmlns: false });
+  let errorParseo: Error | null = null;
+
+  parser.on('error', (error) => {
+    errorParseo ??= error;
+  });
+
+  try {
+    parser.write(xmlText).close();
+  } catch (error) {
+    errorParseo ??= error instanceof Error ? error : new Error(String(error));
+  }
+
+  return errorParseo?.message ?? null;
+}
+
+function crearFacturaError(
+  id: string,
+  fileName: string,
+  mensajeError: string,
+  tipoComprobanteDesc: string
+): FacturaCFDI {
+  return {
+    id,
+    fileName,
+    version: 'N/A',
+    uuid: 'SIN UUID',
+    fecha: '',
+    tipoComprobante: 'Desconocido',
+    tipoComprobanteDesc,
+    serie: '',
+    folio: '',
+    moneda: 'MXN',
+    tipoCambio: 1,
+    formaPago: '',
+    metodoPago: '',
+    lugarExpedicion: '',
+    rfcEmisor: '',
+    nombreEmisor: '',
+    regimenFiscalEmisor: '',
+    rfcReceptor: '',
+    nombreReceptor: '',
+    regimenFiscalReceptor: '',
+    usoCFDI: '',
+    subtotal: 0,
+    descuento: 0,
+    totalImpuestosTrasladados: 0,
+    totalImpuestosRetenidos: 0,
+    total: 0,
+    iva16: 0,
+    iva8: 0,
+    ivaRetenido: 0,
+    isrRetenido: 0,
+    ieps: 0,
+    conceptosCount: 0,
+    descripcionResumen: mensajeError,
+    estado: 'error',
+    mensajeError,
+  };
+}
+
 /**
  * Parsea un único XML de CFDI y extrae la información contable estructurada
  */
 export function parsearCFDI(xmlText: string, fileName: string = 'factura.xml'): FacturaCFDI {
   const id = `cfdi-${Math.random().toString(36).substring(2, 9)}-${Date.now()}`;
 
+  const errorParseoXML = obtenerErrorParseoXML(xmlText);
+  if (errorParseoXML) {
+    if (!buscarTag(xmlText, 'Comprobante')) {
+      return crearFacturaError(
+        id,
+        fileName,
+        'No se encontró el nodo principal <Comprobante>',
+        'XML Inválido (Sin Comprobante)'
+      );
+    }
+
+    return crearFacturaError(id, fileName, `XML mal formado: ${errorParseoXML}`, 'XML mal formado');
+  }
+
   // 1. Validar que tenga comprobante
   const comprobanteAttrs = buscarTag(xmlText, 'Comprobante');
   if (!comprobanteAttrs) {
-    return {
+    return crearFacturaError(
       id,
       fileName,
-      version: 'N/A',
-      uuid: 'SIN UUID',
-      fecha: '',
-      tipoComprobante: 'Desconocido',
-      tipoComprobanteDesc: 'XML Inválido (Sin Comprobante)',
-      serie: '',
-      folio: '',
-      moneda: 'MXN',
-      tipoCambio: 1,
-      formaPago: '',
-      metodoPago: '',
-      lugarExpedicion: '',
-      rfcEmisor: '',
-      nombreEmisor: '',
-      regimenFiscalEmisor: '',
-      rfcReceptor: '',
-      nombreReceptor: '',
-      regimenFiscalReceptor: '',
-      usoCFDI: '',
-      subtotal: 0,
-      descuento: 0,
-      totalImpuestosTrasladados: 0,
-      totalImpuestosRetenidos: 0,
-      total: 0,
-      iva16: 0,
-      iva8: 0,
-      ivaRetenido: 0,
-      isrRetenido: 0,
-      ieps: 0,
-      conceptosCount: 0,
-      descripcionResumen: 'El archivo no contiene un nodo CFDI válido',
-      estado: 'error',
-      mensajeError: 'No se encontró el nodo principal <Comprobante>',
-    };
+      'No se encontró el nodo principal <Comprobante>',
+      'XML Inválido (Sin Comprobante)'
+    );
   }
 
   // 2. Extraer datos del Comprobante
@@ -329,6 +375,28 @@ export function parsearCFDI(xmlText: string, fileName: string = 'factura.xml'): 
     estado,
     mensajeError,
   };
+}
+
+export function filtrarDuplicadosPorUUID(
+  existentes: FacturaCFDI[],
+  nuevas: FacturaCFDI[]
+): { unicas: FacturaCFDI[]; duplicadas: string[] } {
+  const uuidsVistos = new Set(
+    existentes.map((factura) => factura.uuid).filter((uuid) => uuid !== 'SIN UUID')
+  );
+  const unicas: FacturaCFDI[] = [];
+  const duplicadas: string[] = [];
+
+  for (const factura of nuevas) {
+    if (factura.uuid !== 'SIN UUID' && uuidsVistos.has(factura.uuid)) {
+      duplicadas.push(factura.fileName);
+      continue;
+    }
+    if (factura.uuid !== 'SIN UUID') uuidsVistos.add(factura.uuid);
+    unicas.push(factura);
+  }
+
+  return { unicas, duplicadas };
 }
 
 /**

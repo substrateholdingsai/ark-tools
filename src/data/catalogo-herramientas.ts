@@ -86,10 +86,10 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
   },
   {
     id: 'xml-excel',
-    nombre: 'Conversor XML a Excel (CFDI 4.0 / 3.3)',
-    categoria: 'SAT y Auditoría CFDI 4.0 (100% Local en Navegador)',
+    nombre: 'Conversor XML a CSV para Excel (CFDI 4.0 / 3.3)',
+    categoria: 'SAT y CFDI (extracción local)',
     descripcion:
-      'Extracción masiva cliente-side de hasta 200 XMLs a CSV con BOM UTF-8 (compatibilidad Excel). No envía archivos a servidores para garantizar confidencialidad bancaria y contable.',
+      'Extracción local de hasta 200 XMLs (10 MB por archivo) a CSV con BOM UTF-8, una fila por CFDI, compatible con Excel. La carga desde la interfaz no envía archivos al servidor; el Preview del conector sí envía el XML al Worker y no persiste el contenido. No valida cumplimiento SAT.',
   },
   {
     id: 'validador',

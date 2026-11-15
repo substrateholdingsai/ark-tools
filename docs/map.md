@@ -216,7 +216,7 @@ ark-tools/
 │       ├── recargos/                ✅ Actualización y Recargos CFF (#18)
 │       ├── modalidad40/             ✅ Simulador Modalidad 40 DOF 2026 (#19)
 │       ├── auditor-cfdi-atipico/    ✅ Detector de Comportamientos Atípicos CFDI (#20)
-│       ├── xml-excel/               ✅ Conversor XML a Excel (CFDI 4.0/3.3)
+│       ├── xml-excel/               ✅ Conversor XML a CSV para Excel (CFDI 4.0/3.3)
 │       ├── xml-validador/           ✅ Validador y Auditor de XMLs
 │       ├── spei/                    ✅ Generador Enlaces de Pago Clip / SPEI
 │       ├── leasing/                 ✅ Simulador Fiscal: Leasing vs Crédito vs Contado
@@ -276,7 +276,7 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 | 5   | `resico`          | Calculadora y Cédula RESICO 2026                          | Fiscal y Laboral                  | active           |
 | 6   | `balance-general` | Balance General Comparativo                               | Patrimonial y Análisis Financiero | active           |
 | 7   | `cierre-nomina`   | Cierre de Nómina Masivo + Layout IDSE/DISPMAG (175 chars) | Fiscal y Laboral                  | active           |
-| 8   | `xml-excel`       | Conversor XML a Excel (CFDI 4.0/3.3)                      | SAT y Auditoría CFDI 4.0          | active           |
+| 8   | `xml-excel`       | Conversor XML a CSV para Excel (CFDI 4.0/3.3)             | SAT y CFDI (extracción local)     | active           |
 | 9   | `validador`       | Validador y Auditor de XMLs                               | SAT y Auditoría CFDI 4.0          | active           |
 | 10  | `spei`            | Generador de Enlaces de Pago Clip / SPEI                  | Cobros y Facturación Fiscal B2B   | active           |
 | 11  | `leasing`         | Simulador Fiscal: Leasing vs Crédito vs Contado           | Cobros y Facturación Fiscal B2B   | active           |

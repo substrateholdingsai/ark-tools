@@ -8,19 +8,26 @@ import { UploadCloud, FileCode, AlertCircle } from 'lucide-react';
 
 interface DropZoneXMLProps {
   onFilesSelected: (files: File[]) => void;
+  onFilesRejected?: (files: File[]) => void;
   isLoading?: boolean;
   totalCargados: number;
+  maxFileSizeBytes?: number;
+  maxFileSizeLabel?: string;
 }
 
 const LIMITE_MAXIMO = 200;
 
 export const DropZoneXML: React.FC<DropZoneXMLProps> = ({
   onFilesSelected,
+  onFilesRejected,
   isLoading = false,
   totalCargados,
+  maxFileSizeBytes,
+  maxFileSizeLabel,
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [errorLimite, setErrorLimite] = useState<string | null>(null);
+  const [errorTamano, setErrorTamano] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const procesarArchivos = useCallback(
@@ -28,12 +35,33 @@ export const DropZoneXML: React.FC<DropZoneXMLProps> = ({
       setErrorLimite(null);
       const arr = Array.from(lista);
       // Filtrar solo archivos con extensión .xml
-      const xmls = arr.filter(
+      const candidatosXml = arr.filter(
         (f) => f.name.toLowerCase().endsWith('.xml') || f.type.includes('xml')
       );
 
-      if (xmls.length === 0) {
+      if (candidatosXml.length === 0) {
+        setErrorTamano([]);
         setErrorLimite('Por favor selecciona archivos con formato .xml');
+        return;
+      }
+
+      const archivosGrandes =
+        maxFileSizeBytes === undefined
+          ? []
+          : candidatosXml.filter((file) => file.size > maxFileSizeBytes);
+      const nombresArchivosGrandes = archivosGrandes.map(
+        (file) => `Archivo mayor a ${maxFileSizeLabel ?? `${maxFileSizeBytes} bytes`}: ${file.name}`
+      );
+      const xmls =
+        maxFileSizeBytes === undefined
+          ? candidatosXml
+          : candidatosXml.filter((file) => file.size <= maxFileSizeBytes);
+
+      setErrorTamano(nombresArchivosGrandes);
+      if (archivosGrandes.length > 0) onFilesRejected?.(archivosGrandes);
+
+      if (xmls.length === 0) {
+        onFilesSelected([]);
         return;
       }
 
@@ -46,7 +74,7 @@ export const DropZoneXML: React.FC<DropZoneXMLProps> = ({
 
       onFilesSelected(xmls);
     },
-    [onFilesSelected, totalCargados]
+    [maxFileSizeBytes, maxFileSizeLabel, onFilesRejected, onFilesSelected, totalCargados]
   );
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -124,6 +152,13 @@ export const DropZoneXML: React.FC<DropZoneXMLProps> = ({
         <p className="mt-2 max-w-md text-sm text-muted">
           O haz clic para explorar en tu equipo. Acepta hasta{' '}
           <strong className="font-semibold text-gold">200 comprobantes</strong> CFDI 4.0 o 3.3.
+          {maxFileSizeLabel && (
+            <>
+              {' '}
+              Máximo <strong className="font-semibold text-gold">{maxFileSizeLabel}</strong> por
+              archivo.
+            </>
+          )}
         </p>
 
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-muted/80">
@@ -132,13 +167,21 @@ export const DropZoneXML: React.FC<DropZoneXMLProps> = ({
             CFDI 4.0 / 3.3
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface px-3 py-1">
-            🔒 100% privado en tu navegador
+            🔒 Lectura local en navegador
           </span>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-surface px-3 py-1">
-            ⚡ Conversión instantánea a Excel
+            ⚡ {maxFileSizeBytes ? 'CSV compatible con Excel' : 'Lectura local de XML'}
           </span>
         </div>
       </div>
+
+      {errorTamano.length > 0 && (
+        <div className="flex flex-col gap-1 rounded-xl border border-red-500/40 bg-red-950/40 p-3 text-xs text-red-200">
+          {errorTamano.map((mensaje) => (
+            <span key={mensaje}>{mensaje}</span>
+          ))}
+        </div>
+      )}
 
       {errorLimite && (
         <div className="flex items-center gap-2 rounded-xl border border-red-500/40 bg-red-950/40 p-3 text-xs text-red-200">
