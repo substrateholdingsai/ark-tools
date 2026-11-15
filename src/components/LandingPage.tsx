@@ -98,7 +98,7 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     category: 'Fiscal',
     title: 'Simulador Modalidad 40',
     description:
-      'Proyección de pensión Ley 73 con la restricción del Acuerdo DOF 21/10/2026 (Último SBC + 1 UMA), cuota 14.438%, ROI y Cédula QR.',
+      'Proyección Ley 73. Para nuevas incorporaciones aplica la medida temporal del Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026): permite último SBC o hasta último SBC + 1 UMA; conserva periodos contratados y excluye independientes Art. 13-I. El alcance jurídico es materia de discusión. Cuota estimada 2026 14.438%, ROI y cédula imprimible con Folio de Integridad; QR de referencia, no certifica ni verifica previews no archivados.',
     tag: 'DOF 21/10/2026',
   },
   // SAT
