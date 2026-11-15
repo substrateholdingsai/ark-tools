@@ -28,32 +28,33 @@ beforeEach(() => {
           encontrado: true,
           estatus: 'Socio Activo',
           socio: {
-            folioSiem: 'SIEM-MID-2026-FPE1-MIC-9988',
-            razonSocial: 'Ferretería La Peninsular S.A. de C.V.',
-            nombreComercial: 'Ferretería Peninsular',
-            rfc: 'FPE980415XYZ',
+            folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+            razonSocial: 'Comercializadora del Mayab',
+            nombreComercial: 'Comercializadora del Mayab',
+            rfc: 'CPM2106158A1',
             sector: 'comercio',
-            estrato: 'micro',
-            numEmpleados: 4,
+            estrato: 'pequena',
+            numEmpleados: 15,
             direccion: {
-              calle: 'Calle 60 #450',
+              calle: 'Domicilio de prueba',
               colonia: 'Centro',
-              codigoPostal: '97000',
+              codigoPostal: '00000',
               municipio: 'Mérida',
               ciudad: 'Mérida, Yucatán',
             },
             contacto: {
-              nombre: 'Lic. Fernando Pech',
-              email: 'pagos@ferre.mx',
-              telefono: '+52 999 912 3456',
+              nombre: 'Fernando Pech',
+              email: 'demo@example.invalid',
+              telefono: '0000000000',
             },
-            fechaAfiliacion: '2026-10-25',
-            fechaVigencia: '2027-10-25',
+            fechaAfiliacion: '2026-11-16',
+            fechaVigencia: '2027-11-16',
             estatus: 'activo',
-            montoPagado: 2150,
+            pagoConfirmado: true,
+            montoPagado: 3700,
             metodoPago: 'tarjeta',
             cfdiRequerido: true,
-            selloDigitalSha256: 'SHA256:CANACO-MID-9988-2026-OFICIAL',
+            folioIntegridad: 'CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
           },
         }),
       };
@@ -82,7 +83,8 @@ describe('CANACO SERVYTUR Mérida — Landing Page Institucional (HENEQUÉN)', (
       })
     ).toBeInTheDocument();
     expect(screen.getByText(/120 Años de Trayectoria Empresarial/i)).toBeInTheDocument();
-    expect(screen.getByText(/\+1,200 afiliados formales/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+1,200/i)).toBeInTheDocument();
+    expect(screen.getByText(/Socios Agremiados/i)).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: /Afiliarme \/ Renovar Registro SIEM 2026/i })
     ).toBeInTheDocument();
@@ -111,17 +113,18 @@ describe('CANACO SERVYTUR Mérida — Landing Page Institucional (HENEQUÉN)', (
     renderLanding();
 
     const inputRfc = screen.getByPlaceholderText(/Ej\. AMA200101XYZ o RFC/i);
-    fireEvent.change(inputRfc, { target: { value: 'FPE980415XYZ' } });
+    fireEvent.change(inputRfc, { target: { value: 'CPM2106158A1' } });
 
     const botonConsultar = screen.getByRole('button', { name: /Consultar Padrón/i });
     fireEvent.click(botonConsultar);
 
     await waitFor(() => {
-      expect(screen.getByText(/Ferretería La Peninsular S\.A\. de C\.V\./i)).toBeInTheDocument();
+      expect(screen.getByText(/Comercializadora del Mayab/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByText(/SIEM-MID-2026-FPE1-MIC-9988/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Ver Cédula Oficial Carta/i })).toBeInTheDocument();
+    expect(screen.getByText(/SIEM-MID-2026-CPM2-PEQ-4242/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Ver resumen de pago/i })).toBeInTheDocument();
+    expect(screen.queryByText(/Cédula Oficial/i)).not.toBeInTheDocument();
   });
 
   it('abre el modal de la Ventanilla Digital de Afiliación al pulsar el botón principal', async () => {
@@ -155,7 +158,7 @@ describe('CANACO SERVYTUR Mérida — Landing Page Institucional (HENEQUÉN)', (
   it('renderiza la distinción de Portal de Servicios al Socio y el pie de página de Ark Systems', () => {
     renderLanding();
 
-    expect(screen.getByText(/Portal Oficial de Servicios al Socio/i)).toBeInTheDocument();
+    expect(screen.getByText(/Servicios CANACO para negocios/i)).toBeInTheDocument();
     expect(
       screen.getByText(/Ventanilla Digital y Suite de Servicios al Afiliado/i)
     ).toBeInTheDocument();

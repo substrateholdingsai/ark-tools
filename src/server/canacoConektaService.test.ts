@@ -61,17 +61,19 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
     expect(result.valid).toBe(false);
   });
 
-  it('crea sesión en modo simulado cuando CONEKTA_PRIVATE_KEY no está configurada', async () => {
+  it('mantiene el checkout en simulación mientras precio no está confirmado', async () => {
     const env = {
       APP_URL: 'https://ledger.arksystems.site',
+      CONEKTA_PRIVATE_KEY: 'test_private_key',
     } as unknown as Env;
 
     const result = await createCanacoConektaCheckout(env, {
-      razonSocial: 'Abarrotes del Mayab S.A.',
-      rfc: 'AMA200101AB1',
-      folioSiem: 'SIEM-MID-2026-AMA2-MIC-4819',
-      email: 'facturas@mayab.mx',
-      monto: 2000,
+      razonSocial: 'Comercializadora del Mayab',
+      rfc: 'CPM2106158A1',
+      folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+      email: 'demo@example.invalid',
+      numEmpleados: 15,
+      leadId: 'lead-demo-1',
     });
 
     expect(result.ok).toBe(true);
@@ -85,11 +87,13 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
 
     const mockLead = {
       id: 'lead-can-conekta-1',
-      web: 'Comercializadora Peninsular S.A.',
-      email: 'admin@peninsular.mx',
+      web: 'Comercializadora del Mayab',
+      email: 'demo@example.invalid',
       status: 'Nuevo / Pendiente',
-      notas: 'Folio SIEM: SIEM-MID-2026-CPS1-MIC-9988 | Cuota: $2,000 MXN',
-      contacto_nombre: 'Ing. Rodrigo Canto',
+      especialidad: 'comercio',
+      notas:
+        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
+      contacto_nombre: 'Fernando Pech',
     };
 
     const mockDb = {
@@ -99,7 +103,7 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
           if (query.includes('FROM leads_ark_tools')) return mockLead;
           return null;
         }),
-        run: vi.fn(async () => ({ success: true })),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
       })),
     };
 
@@ -114,14 +118,19 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
       type: 'order.paid',
       data: {
         object: {
-          id: 'ord_live_12345',
-          amount: 200000,
-          customer_info: { email: 'admin@peninsular.mx', name: 'Ing. Rodrigo Canto' },
+          id: 'ord_test_12345',
+          amount: 370000,
+          currency: 'MXN',
+          customer_info: { email: 'demo@example.invalid', name: 'Fernando Pech' },
           metadata: {
-            folioSiem: 'SIEM-MID-2026-CPS1-MIC-9988',
-            rfc: 'CPS200101XYZ',
-            razonSocial: 'Comercializadora Peninsular S.A.',
-            email: 'admin@peninsular.mx',
+            folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+            rfc: 'CPM2106158A1',
+            razonSocial: 'COMERCIALIZADORA DEL MAYAB',
+            email: 'demo@example.invalid',
+            numEmpleados: '15',
+            sector: 'comercio',
+            totalCentavos: '370000',
+            leadId: 'lead-can-conekta-1',
           },
         },
       },
@@ -152,7 +161,50 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
     expect(json.ok).toBe(true);
     expect(json.received).toBe(true);
     expect(json.status).toBe('Socio Activo');
-    expect(json.folioSiem).toBe('SIEM-MID-2026-CPS1-MIC-9988');
+    expect(json.folioSiem).toBe('SIEM-MID-2026-CPM2-PEQ-4242');
+  });
+
+  it('rechaza un importe de webhook distinto de la cotización calculada antes de consultar D1', async () => {
+    const { publicKey, privateKey } = await generateRsaKeyPair();
+    const pem = await exportPublicKeyPem(publicKey);
+    const prepare = vi.fn();
+    const env = {
+      ARK_TOOLS_DB: { prepare } as unknown as Env['ARK_TOOLS_DB'],
+      CONEKTA_WEBHOOK_PUBLIC_KEY: pem,
+    } as unknown as Env;
+    const eventPayload = {
+      id: 'evt_conekta_mismatch',
+      type: 'order.paid',
+      data: {
+        object: {
+          id: 'ord_mismatch',
+          amount: 200000,
+          currency: 'MXN',
+          customer_info: { email: 'demo@example.invalid' },
+          metadata: {
+            folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+            rfc: 'CPM2106158A1',
+            razonSocial: 'COMERCIALIZADORA DEL MAYAB',
+            email: 'demo@example.invalid',
+            numEmpleados: '15',
+            sector: 'comercio',
+            totalCentavos: '200000',
+            leadId: 'lead-demo-1',
+          },
+        },
+      },
+    };
+    const rawBody = JSON.stringify(eventPayload);
+    const digest = await signPayload(rawBody, privateKey);
+    const request = new Request('https://ledger.arksystems.site/api/canaco/conekta/webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', digest },
+      body: rawBody,
+    });
+
+    const response = await handleCanacoConektaApiRequest(request, env, corsHeaders);
+    expect(response?.status).toBe(422);
+    expect(prepare).not.toHaveBeenCalled();
   });
 
   it('informa el estatus de la conexión en GET /api/canaco/conekta/status', async () => {
@@ -160,6 +212,7 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
       CONEKTA_PRIVATE_KEY: 'key_test_123456789',
       CONEKTA_WEBHOOK_PUBLIC_KEY: '-----BEGIN PUBLIC KEY-----\nAAAA\n-----END PUBLIC KEY-----',
       CONEKTA_ENVIRONMENT: 'sandbox',
+      CANACO_PRICING_CONFIRMED: 'true',
     } as unknown as Env;
 
     const request = new Request('https://ledger.arksystems.site/api/canaco/conekta/status', {

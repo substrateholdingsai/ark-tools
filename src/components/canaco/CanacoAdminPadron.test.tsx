@@ -5,42 +5,42 @@ import { CanacoAdminPadron } from './CanacoAdminPadron';
 const MOCK_LEADS = [
   {
     id: 'lead-can-1',
-    web: 'Abarrotes y Comercializadora Mayab S.A. de C.V.',
-    whatsapp: '9999123456',
-    email: 'contacto@mayab.mx',
+    web: 'Comercializadora del Mayab',
+    whatsapp: '0000000000',
+    email: 'demo@example.invalid',
     ciudad: 'Mérida',
     especialidad: 'comercio',
     status: 'Socio Activo',
     last_contact: '2026-10-25',
-    contacto_nombre: 'Lic. Fernando Pech',
+    contacto_nombre: 'Fernando Pech',
     notas:
-      'Folio SIEM: SIEM-MID-2026-AMA2-MIC-4819 | Estrato: MICRO (4 emp.) | Cuota: $2,000 MXN | CFDI: Requerido | Sello: SHA256:CANACO-MID-4819-2026',
+      'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN) | Folio de Integridad: CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
   },
   {
     id: 'lead-can-2',
-    web: 'Restaurante y Mariscos Montejo',
-    whatsapp: '9999887766',
-    email: 'admon@montejo.com',
+    web: 'Comercio Demo Pendiente',
+    whatsapp: '0000000000',
+    email: 'demo@example.invalid',
     ciudad: 'Mérida',
     especialidad: 'turismo',
     status: 'Nuevo / Pendiente',
     last_contact: '2026-10-27',
-    contacto_nombre: 'Chef Roberto Sosa',
+    contacto_nombre: 'Contacto de prueba',
     notas:
-      'Folio SIEM: SIEM-MID-2026-RMM1-PEQ-7291 | Estrato: PEQUEÑA (18 emp.) | Cuota: $3,700 MXN | CFDI: Requerido',
+      'Razón Social: COMERCIO DEMO PENDIENTE | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-MIC-2424 | Estrato: MICRO (5 emp.) | Empleados: 5 | Cuota: $2,000 MXN',
   },
   {
     id: 'lead-can-3',
-    web: 'Servicios Logísticos y Portuarios de Progreso',
-    whatsapp: '9699341200',
-    email: 'operaciones@puertoprogreso.mx',
+    web: 'Servicios Demo de Progreso',
+    whatsapp: '0000000000',
+    email: 'demo@example.invalid',
     ciudad: 'Progreso',
     especialidad: 'servicios',
     status: 'Socio Activo',
     last_contact: '2026-10-20',
-    contacto_nombre: 'Ing. Alejandro Solís',
+    contacto_nombre: 'Contacto de prueba',
     notas:
-      'Folio SIEM: SIEM-MID-2026-SLP0-MED-1845 | Estrato: MEDIANA (45 emp.) | Cuota: $6,500 MXN | Sello: SHA256:CANACO-MID-1845-2026',
+      'Razón Social: SERVICIOS DEMO DE PROGRESO | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-MED-6060 | Estrato: MEDIANA (60 emp.) | Empleados: 60 | Cuota: $6,500 MXN | Pago Confirmado Call Center: SPEI-DEMO-6060 ($6,500 MXN)',
   },
 ];
 
@@ -75,7 +75,7 @@ afterEach(() => {
 async function renderAdmin() {
   render(<CanacoAdminPadron />);
   await waitFor(() => {
-    expect(screen.getByText(/Abarrotes y Comercializadora Mayab/i)).toBeInTheDocument();
+    expect(screen.getByText(/Comercializadora del Mayab/i)).toBeInTheDocument();
   });
 }
 
@@ -83,21 +83,19 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
   it('renderiza la cabecera institucional y el badge oficial de horus.i2d@gmail.com', async () => {
     await renderAdmin();
 
-    expect(screen.getByText(/Padrón de Afiliados & Control SIEM/i)).toBeInTheDocument();
+    expect(screen.getByText(/Registros de afiliación CANACO/i)).toBeInTheDocument();
     expect(screen.getByText(/Admin: horus\.i2d@gmail\.com/i)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Padrón Oficial ante Secretaría de Economía 2026/i)
-    ).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Exportar Excel \(SIEM\)/i })).toBeInTheDocument();
+    expect(screen.getByText(/CRM interno; no acredita el alta ante SIEM/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Exportar CSV del CRM/i })).toBeInTheDocument();
   });
 
   it('muestra los 4 KPIs del padrón cameral', async () => {
     await renderAdmin();
 
-    expect(screen.getByText('Total en Padrón')).toBeInTheDocument();
-    expect(screen.getByText('Socios Activos')).toBeInTheDocument();
-    expect(screen.getByText('Por Liquidar')).toBeInTheDocument();
-    expect(screen.getByText('Recaudación Anual')).toBeInTheDocument();
+    expect(screen.getByText('Registros en CRM')).toBeInTheDocument();
+    expect(screen.getByText('Pagos confirmados')).toBeInTheDocument();
+    expect(screen.getByText('Pendientes')).toBeInTheDocument();
+    expect(screen.getByText('Pagos marcados confirmados')).toBeInTheDocument();
   });
 
   it('permite filtrar el padrón de socios por término de búsqueda', async () => {
@@ -106,10 +104,10 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
     const inputBusqueda = screen.getByPlaceholderText(
       /Buscar por comercio, RFC, contacto o WhatsApp\.\.\./i
     );
-    fireEvent.change(inputBusqueda, { target: { value: 'Progreso' } });
+    fireEvent.change(inputBusqueda, { target: { value: 'Servicios Demo' } });
 
-    expect(screen.getByText(/Servicios Logísticos y Portuarios de Progreso/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Abarrotes y Comercializadora Mayab/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Servicios Demo de Progreso/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Comercializadora del Mayab/i)).not.toBeInTheDocument();
   });
 
   it('permite filtrar por estatus (sólo pendientes de pago)', async () => {
@@ -118,53 +116,45 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
     const selectEstatus = screen.getByDisplayValue('Todos los Estatus');
     fireEvent.change(selectEstatus, { target: { value: 'pendientes' } });
 
-    expect(screen.getByText(/Restaurante y Mariscos Montejo/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Abarrotes y Comercializadora Mayab/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Comercio Demo Pendiente/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Comercializadora del Mayab/i)).not.toBeInTheDocument();
   });
 
-  it('abre la Cédula Oficial con QR al hacer clic en el botón de acción', async () => {
+  it('abre el resumen interno de pago, no una Cédula oficial', async () => {
     await renderAdmin();
 
-    const botonesCedula = screen.getAllByRole('button', { name: /Cédula/i });
-    expect(botonesCedula.length).toBeGreaterThan(0);
-    const primerBotonCedula = botonesCedula[0];
-    if (primerBotonCedula) {
-      fireEvent.click(primerBotonCedula);
-    }
+    fireEvent.click(screen.getAllByRole('button', { name: /Resumen/i })[0]!);
 
     await waitFor(() => {
-      expect(screen.getByText(/Constancia Oficial de Afiliación Comercial/i)).toBeInTheDocument();
+      expect(screen.getByText(/Resumen de registro y pago/i)).toBeInTheDocument();
     });
-    expect(screen.getByText(/Padrón Oficial SIEM/i)).toBeInTheDocument();
+    expect(screen.getByText(/No es una constancia oficial SIEM/i)).toBeInTheDocument();
   });
 
   it('dispara la sincronización con Arkangel al confirmar en el modal de Recordatorio Masivo', async () => {
     await renderAdmin();
 
-    const botonSync = screen.getByRole('button', { name: /Sincronizar Call Center/i });
+    const botonSync = screen.getByRole('button', { name: /Sincronizar registros/i });
     expect(botonSync).toBeInTheDocument();
     fireEvent.click(botonSync);
 
     // Modal de confirmación "Modo Sarita"
-    expect(await screen.findByText(/Iniciar Recordatorio Masivo de Cobranza/i)).toBeInTheDocument();
-    const botonConfirmar = screen.getByRole('button', { name: /Sí, Enviar Recordatorios Ahora/i });
+    expect(await screen.findByText(/Confirmar sincronización de registros/i)).toBeInTheDocument();
+    const botonConfirmar = screen.getByRole('button', { name: /Enviar lote al proveedor/i });
     fireEvent.click(botonConfirmar);
 
     await waitFor(() => {
-      expect(screen.getByText(/Lote sincronizado con Arkangel Call Center/i)).toBeInTheDocument();
+      expect(screen.getByText(/Lote enviado al proveedor Arkangel/i)).toBeInTheDocument();
     });
   });
 
-  it('permite a Sarita disparar un recordatorio individual de 1-click con María', async () => {
+  it('no simula un envío de recordatorio individual no conectado', async () => {
     await renderAdmin();
 
-    const botonIndividual = screen.getByRole('button', { name: /Recordar con María/i });
+    const botonIndividual = screen.getByRole('button', { name: /Recordatorio no conectado/i });
     expect(botonIndividual).toBeInTheDocument();
-    fireEvent.click(botonIndividual);
-
-    await waitFor(() => {
-      expect(screen.getByText(/¡Listo Sarita! 'María'/i)).toBeInTheDocument();
-    });
+    expect(botonIndividual).toBeDisabled();
+    expect(botonIndividual).toHaveAttribute('title', expect.stringContaining('no está conectado'));
   });
 
   it('muestra la barra de ubicación cameral y la guía rápida de bienvenida ocultable', async () => {

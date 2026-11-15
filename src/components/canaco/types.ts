@@ -12,7 +12,7 @@ export interface CotizacionAfiliacion {
   estrato: EstratoEmpresa;
   sector: SectorEconomico;
   numEmpleados: number;
-  /** Cuota obligatoria del Registro SIEM (Ley de Cámaras) */
+  /** Importe de SIEM mostrado por el prototipo; debe confirmarse con CANACO. */
   cuotaSiem: number;
   /** Cuota de Afiliación Anual a CANACO SERVYTUR Mérida */
   cuotaMembresia: number;
@@ -45,10 +45,11 @@ export interface SocioCanacoRegistro {
   fechaAfiliacion: string;
   fechaVigencia: string;
   estatus: 'activo' | 'pendiente_pago' | 'renovacion';
+  pagoConfirmado?: boolean;
   montoPagado: number;
   metodoPago: 'tarjeta' | 'spei' | 'clip';
   cfdiRequerido: boolean;
-  selloDigitalSha256: string;
+  folioIntegridad: string;
   /** Número de Registro Patronal ante el IMSS (NRP - 11 caracteres) */
   registroPatronalImss?: string;
   /** Registro Estatal de Contribuyentes ante la AAFY (Padrón ISN Yucatán) */

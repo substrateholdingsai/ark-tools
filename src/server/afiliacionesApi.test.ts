@@ -39,15 +39,15 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     } as unknown as Env;
 
     const payload = {
-      razonSocial: 'Abarrotes del Mayab S.A. de C.V.',
-      nombreComercial: 'Abarrotes Mayab',
-      rfc: 'AMA200101AB1',
+      razonSocial: 'Comercializadora del Mayab',
+      nombreComercial: 'Comercializadora del Mayab',
+      rfc: 'CPM2106158A1',
       sector: 'comercio',
-      numEmpleados: 4,
+      numEmpleados: 5,
       municipio: 'Mérida',
-      contactoNombre: 'Lic. Fernando Pech',
-      email: 'pech@mayab.mx',
-      telefono: '9999123456',
+      contactoNombre: 'Fernando Pech',
+      email: 'demo@example.invalid',
+      telefono: '0000000000',
       estatus: 'pendiente_pago',
     };
 
@@ -68,6 +68,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
         estatus: string;
         montoPagado: number;
         estrato: string;
+        pagoConfirmado: boolean;
       };
       cotizacion: { totalAnual: number };
     };
@@ -75,11 +76,13 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(json.success).toBe(true);
     expect(json.socio.estatus).toBe('pendiente_pago');
     expect(json.socio.estrato).toBe('micro');
-    expect(json.socio.montoPagado).toBe(2000); // $200 SIEM + $1800 Membresía
-    expect(json.socio.folioSiem).toContain('SIEM-MID-2026-AMA2-MIC');
+    expect(json.socio.montoPagado).toBe(0);
+    expect(json.socio.pagoConfirmado).toBe(false);
+    expect(json.cotizacion.totalAnual).toBe(2000);
+    expect(json.socio.folioSiem).toContain('SIEM-MID-2026-CPM2-MIC');
   });
 
-  it('registra la liquidación de cuota y cambia el estatus a "Socio Activo" con CFDI', async () => {
+  it('ignora el estatus activo enviado por el cliente y deja el registro pendiente', async () => {
     const mockDb = createMockDb();
     const env = {
       ARK_TOOLS_DB: mockDb as any,
@@ -87,14 +90,14 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     } as unknown as Env;
 
     const payload = {
-      razonSocial: 'Servicios Turísticos de Mérida S.A.',
-      rfc: 'STM150420XYZ',
-      sector: 'turismo',
-      numEmpleados: 25,
-      municipio: 'Progreso',
-      contactoNombre: 'Lic. Carla Gómez',
-      email: 'carla@turismomerida.com',
-      telefono: '9999887766',
+      razonSocial: 'Comercializadora del Mayab',
+      rfc: 'CPM2106158A1',
+      sector: 'comercio',
+      numEmpleados: 15,
+      municipio: 'Mérida',
+      contactoNombre: 'Fernando Pech',
+      email: 'demo@example.invalid',
+      telefono: '0000000000',
       metodoPago: 'tarjeta',
       cfdiRequerido: true,
       estatus: 'activo',
@@ -116,13 +119,17 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
         montoPagado: number;
         cfdiRequerido: boolean;
         estatus: string;
+        pagoConfirmado: boolean;
       };
+      cotizacion: { totalAnual: number };
     };
 
     expect(json.success).toBe(true);
-    expect(json.socio.estatus).toBe('activo');
+    expect(json.socio.estatus).toBe('pendiente_pago');
+    expect(json.socio.pagoConfirmado).toBe(false);
     expect(json.socio.estrato).toBe('pequena');
-    expect(json.socio.montoPagado).toBe(3700); // $500 SIEM + $3200 Membresía
+    expect(json.socio.montoPagado).toBe(0);
+    expect(json.cotizacion.totalAnual).toBe(3700);
     expect(json.socio.cfdiRequerido).toBe(true);
   });
 
@@ -199,16 +206,16 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
         bind: vi.fn().mockReturnThis(),
         first: vi.fn().mockResolvedValue({
           id: 'lead-can-1',
-          web: 'Abarrotes del Mayab S.A. de C.V.',
-          whatsapp: '9999123456',
-          email: 'contacto@mayab.mx',
+          web: 'Comercializadora del Mayab',
+          whatsapp: '0000000000',
+          email: 'demo@example.invalid',
           ciudad: 'Mérida',
           especialidad: 'comercio',
           status: 'Socio Activo',
           last_contact: '2026-10-25',
-          contacto_nombre: 'Lic. Fernando Pech',
+          contacto_nombre: 'Fernando Pech',
           notas:
-            'Folio SIEM: SIEM-MID-2026-AMA2-MIC-4819 | RFC: AMA200101AB1 | Cuota: $2,000 MXN | Sello: SHA256:CANACO-MID-4819-2026',
+            'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN) | Folio de Integridad: CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
         }),
       }),
     };
@@ -219,7 +226,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     } as unknown as Env;
 
     const request = new Request(
-      'https://ledger.arksystems.site/api/afiliaciones/consulta?rfc=AMA200101AB1',
+      'https://ledger.arksystems.site/api/afiliaciones/consulta?rfc=CPM2106158A1',
       { method: 'GET' }
     );
 
@@ -228,8 +235,11 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(response?.status).toBe(200);
     const json = (await response?.json()) as any;
     expect(json.encontrado).toBe(true);
-    expect(json.socio.razonSocial).toBe('Abarrotes del Mayab S.A. de C.V.');
-    expect(json.socio.folioSiem).toBe('SIEM-MID-2026-AMA2-MIC-4819');
+    expect(json.socio.razonSocial).toBe('COMERCIALIZADORA DEL MAYAB');
+    expect(json.socio.folioSiem).toBe('SIEM-MID-2026-CPM2-PEQ-4242');
+    expect(json.socio.estrato).toBe('pequena');
+    expect(json.socio.numEmpleados).toBe(15);
+    expect(json.socio.pagoConfirmado).toBe(true);
     expect(json.estatus).toBe('Socio Activo');
     // M-01: sin sesión autenticada, el correo y teléfono se enmascaran
     expect(json.socio.contacto.email).toContain('***');
@@ -255,16 +265,28 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
   });
 
   it('bloquea con 401 la migración sin sesión cuando el email ya pertenece a una cuenta existente (prevención de Account Takeover C-01)', async () => {
+    const paidLead = {
+      id: 'lead-demo-paid',
+      web: 'Comercializadora del Mayab',
+      whatsapp: '0000000000',
+      email: 'demo@example.invalid',
+      ciudad: 'Mérida',
+      especialidad: 'comercio',
+      status: 'Socio Activo',
+      contacto_nombre: 'Fernando Pech',
+      notas:
+        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
+    };
     const mockDb = {
       prepare: vi.fn((query: string) => ({
         bind: vi.fn().mockReturnThis(),
         first: vi.fn(async () => {
-          if (query.includes('FROM leads_ark_tools')) return null;
+          if (query.includes('FROM leads_ark_tools')) return paidLead;
           if (query.includes('FROM users')) {
             return {
               id: 'user-victim-1',
-              email: 'admin@arksystems.site',
-              full_name: 'Admin Víctima',
+              email: 'demo@example.invalid',
+              full_name: 'Usuario de prueba',
             };
           }
           return null;
@@ -284,9 +306,10 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        rfc: 'AMA200101AB1',
-        razonSocial: 'Empresa Atacante S.A.',
-        email: 'admin@arksystems.site',
+        rfc: 'CPM2106158A1',
+        folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+        razonSocial: 'Comercializadora del Mayab',
+        email: 'demo@example.invalid',
       }),
     });
 
@@ -295,6 +318,49 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(response?.headers.get('Set-Cookie')).toBeNull();
     const json = (await response?.json()) as any;
     expect(json.requiresLogin).toBe(true);
+  });
+
+  it('rechaza una migración cuando el cliente cambia la identidad del registro pagado', async () => {
+    const paidLead = {
+      id: 'lead-demo-paid',
+      web: 'Comercializadora del Mayab',
+      whatsapp: '0000000000',
+      email: 'demo@example.invalid',
+      ciudad: 'Mérida',
+      especialidad: 'comercio',
+      status: 'Socio Activo',
+      contacto_nombre: 'Fernando Pech',
+      notas:
+        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
+    };
+    const run = vi.fn();
+    const mockDb = {
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () => (query.includes('FROM leads_ark_tools') ? paidLead : null)),
+        run,
+      })),
+      batch: vi.fn(),
+    };
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/migrar-a-ledger', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rfc: 'CPM2106158A1',
+        folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+        razonSocial: 'Empresa distinta',
+        email: 'demo@example.invalid',
+      }),
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response?.status).toBe(409);
+    expect(run).not.toHaveBeenCalled();
+    expect(mockDb.batch).not.toHaveBeenCalled();
   });
 
   it('retorna 404 cuando un RFC no está registrado en el Padrón', async () => {
@@ -325,18 +391,18 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
   // ─────────────────────────────────────────────────────────────────
   // HANDOFF SIEM ➔ EXPEDIENTE ÚNICO EN LEDGER
   // ─────────────────────────────────────────────────────────────────
-  it('migra un socio registrado en SIEM hacia el Expediente Único (Guest Onboarding con Set-Cookie)', async () => {
+  it('migra un socio con pago confirmado usando los datos del registro de D1', async () => {
     const mockLead = {
       id: 'lead-canaco-99',
-      web: 'Comercializadora del Mayab S.A. de C.V.',
-      whatsapp: '9999123456',
-      email: 'facturas@mayab.mx',
+      web: 'Comercializadora del Mayab',
+      whatsapp: '0000000000',
+      email: 'demo@example.invalid',
       ciudad: 'Mérida',
       especialidad: 'comercio',
       status: 'Socio Activo',
-      contacto_nombre: 'Lic. Fernando Pech',
+      contacto_nombre: 'Fernando Pech',
       notas:
-        'Folio SIEM: SIEM-MID-2026-AMA2-MIC-4819 | RFC: AMA200101AB1 | Cuota: $2,000 MXN | Sello: SHA256:CANACO-MID-4819-2026',
+        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN) | Folio de Integridad: CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
     };
 
     const mockDb = {
@@ -363,10 +429,10 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        folioSiem: 'SIEM-MID-2026-AMA2-MIC-4819',
-        rfc: 'AMA200101AB1',
-        razonSocial: 'Comercializadora del Mayab S.A. de C.V.',
-        email: 'facturas@mayab.mx',
+        folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+        rfc: 'CPM2106158A1',
+        razonSocial: 'Comercializadora del Mayab',
+        email: 'demo@example.invalid',
       }),
     });
 
@@ -389,11 +455,11 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     };
 
     expect(json.ok).toBe(true);
-    expect(json.client.rfc).toBe('AMA200101AB1');
-    expect(json.client.nombre).toBe('COMERCIALIZADORA DEL MAYAB S.A. DE C.V.');
+    expect(json.client.rfc).toBe('CPM2106158A1');
+    expect(json.client.nombre).toBe('COMERCIALIZADORA DEL MAYAB');
     expect(json.client.tipo).toBe('empresa');
     expect(json.client.metadata.origen).toBe('siem_canaco');
-    expect(json.client.metadata.folio_siem).toBe('SIEM-MID-2026-AMA2-MIC-4819');
+    expect(json.client.metadata.folio_siem).toBe('SIEM-MID-2026-CPM2-PEQ-4242');
     expect(json.redirectTo).toContain('/?tool=nomina&welcome=siem');
 
     // Debe incluir Set-Cookie para sesión inmediata en el navegador
@@ -402,7 +468,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(setCookie).toContain('ark_session=');
   });
 
-  it('migra el socio dentro del tenant existente cuando el usuario ya tiene sesión iniciada', async () => {
+  it('no crea un cliente cuando no existe un registro pagado en el padrón', async () => {
     const mockPrincipal = {
       id: 'user-auth-123',
       email: 'contador@mid.mx',
@@ -449,16 +515,24 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     });
 
     const response = await handleAfiliacionesApiRequest(request, env, corsHeaders, mockPrincipal);
-    expect(response?.status).toBe(200);
-
-    const json = (await response?.json()) as any;
-    expect(json.ok).toBe(true);
-    expect(json.tenantId).toBe('tenant-mi-despacho');
-    expect(json.client.tipo).toBe('persona_fisica');
-    expect(json.client.nombre).toBe('PEDRO CANCHÉ MEDINA');
+    expect(response?.status).toBe(409);
+    const json = (await response?.json()) as { error: string };
+    expect(json.error).toContain('pendiente de confirmación de pago');
   });
 
   it('actualiza el cliente existente en lugar de duplicarlo si el RFC ya existe en el tenant', async () => {
+    const paidLead = {
+      id: 'lead-demo-paid',
+      web: 'Comercializadora del Mayab',
+      whatsapp: '0000000000',
+      email: 'demo@example.invalid',
+      ciudad: 'Mérida',
+      especialidad: 'comercio',
+      status: 'Socio Activo',
+      contacto_nombre: 'Fernando Pech',
+      notas:
+        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
+    };
     const mockPrincipal = {
       id: 'user-auth-456',
       email: 'socio@canaco.mx',
@@ -470,12 +544,13 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       prepare: vi.fn((query: string) => ({
         bind: vi.fn().mockReturnThis(),
         first: vi.fn(async () => {
+          if (query.includes('FROM leads_ark_tools')) return paidLead;
           if (query.includes('FROM clients WHERE tenant_id')) {
             return {
               id: 'client-existente-001',
               tenant_id: 'tenant-existente',
-              nombre: 'NOMBRE ANTERIOR',
-              rfc: 'AMA200101AB1',
+              nombre: 'COMERCIALIZADORA DEL MAYAB',
+              rfc: 'CPM2106158A1',
               tipo: 'empresa',
               estado: 'activo',
             };
@@ -506,8 +581,10 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        rfc: 'AMA200101AB1',
-        razonSocial: 'NOMBRE ACTUALIZADO S.A. DE C.V.',
+        rfc: 'CPM2106158A1',
+        folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+        razonSocial: 'Comercializadora del Mayab',
+        email: 'demo@example.invalid',
       }),
     });
 
@@ -515,7 +592,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(response?.status).toBe(200);
     const json = (await response?.json()) as any;
     expect(json.client.id).toBe('client-existente-001');
-    expect(json.client.nombre).toBe('NOMBRE ACTUALIZADO S.A. DE C.V.');
+    expect(json.client.nombre).toBe('COMERCIALIZADORA DEL MAYAB');
   });
 
   it('retorna 400 cuando no se envía RFC, Folio SIEM ni Razón Social', async () => {

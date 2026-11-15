@@ -1,14 +1,13 @@
 /**
  * CANACO SERVYTUR MÉRIDA — Motor Determinista de Cuotas de Afiliación & SIEM
  *
- * Determina el estrato comercial conforme a la Ley de Cámaras Empresariales
- * y calcula el desglose anual oficial (Registro SIEM + Cuota Institucional).
+ * Determina el estrato comercial usado por el prototipo y calcula sus importes de referencia.
  */
 
 import type { EstratoEmpresa, SectorEconomico, CotizacionAfiliacion } from './types';
 
 /**
- * Determina el estrato conforme a la estratificación oficial de la Secretaría de Economía.
+ * Determina el estrato usando los rangos que utiliza esta cotización.
  */
 export function determinarEstrato(numEmpleados: number): EstratoEmpresa {
   if (numEmpleados <= 10) return 'micro';
@@ -18,7 +17,7 @@ export function determinarEstrato(numEmpleados: number): EstratoEmpresa {
 }
 
 /**
- * Calcula la cuota anual oficial de SIEM y membresía institucional.
+ * Calcula los importes de referencia del prototipo para SIEM y membresía.
  */
 export function calcularCuotaAfiliacion(
   numEmpleados: number,
@@ -51,19 +50,14 @@ export function calcularCuotaAfiliacion(
   const totalAnual = cuotaSiem + cuotaMembresia;
 
   const beneficios = [
-    'Registro oficial en el padrón nacional SIEM ante Secretaría de Economía',
-    'Acceso sin límite a la Suite Fiscal HENEQUÉN (RESICO, Nómina, Finiquitos, ISN)',
-    'Constancia Digital de Afiliación con Código QR y Sello Criptográfico',
-    'Asesoría y representación institucional ante autoridades federales y estatales',
-    'Ventanilla de gestión de quejas y mediación mercantil',
-    'Presencia en el Directorio Comercial Oficial de CANACO SERVYTUR Mérida',
+    'Importes de referencia sujetos a confirmación por CANACO',
+    'Acceso al portal y sus herramientas sujeto a las condiciones aplicables',
+    'Folio de Integridad para referencia interna; no es una constancia NOM-151',
+    'Contacto con CANACO para confirmar los requisitos y beneficios vigentes',
   ];
 
   if (estrato === 'mediana' || estrato === 'grande') {
-    beneficios.push(
-      'Ventanilla prioritaria en trámites municipales de licencias de funcionamiento'
-    );
-    beneficios.push('Voto activo en asambleas generales y comisiones sectoriales');
+    beneficios.push('Consulta con CANACO si hay servicios adicionales disponibles para tu estrato');
   }
 
   return {
@@ -85,4 +79,19 @@ export function generarFolioSiem(rfc: string, estrato: EstratoEmpresa): string {
   const randomSuffix = Math.floor(1000 + Math.random() * 9000);
   const estratoCode = estrato.slice(0, 3).toUpperCase();
   return `SIEM-MID-2026-${rfcClean}-${estratoCode}-${randomSuffix}`;
+}
+
+export function generarFolioIntegridad(folioSiem: string): string {
+  return `CANACO-FI-${folioSiem}`;
+}
+
+export function extraerNumEmpleados(notas: string | null | undefined): number {
+  const match =
+    notas?.match(/Empleados:\s*(\d+)/i) ?? notas?.match(/Estrato:\s*[A-Z]+\s*\((\d+)\s*emp\.?\)/i);
+  const numEmpleados = match?.[1] ? Number(match[1]) : 0;
+  return Number.isInteger(numEmpleados) && numEmpleados > 0 ? numEmpleados : 0;
+}
+
+export function tienePagoConfirmado(notas: string | null | undefined): boolean {
+  return /Pago Confirmado (?:Conekta|Call Center):/i.test(notas || '');
 }

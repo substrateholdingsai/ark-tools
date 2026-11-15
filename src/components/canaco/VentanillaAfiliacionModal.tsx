@@ -14,34 +14,36 @@ import {
   CreditCard,
   QrCode,
   ArrowRight,
-  ExternalLink,
   FileCheck2,
   FlaskConical,
   Sparkles,
   Inbox,
   Zap,
+  AlertCircle,
 } from 'lucide-react';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
-import { calcularCuotaAfiliacion, determinarEstrato, generarFolioSiem } from './calculoCuota';
-import { BuzonDocumentalModal } from './BuzonDocumentalModal';
 import {
-  CANACO_WALKTHROUGH_SOCIO_DEMO,
-  getDemoClipPaymentUrl,
-  setDemoClipPaymentUrl,
-  useCanacoDemoMode,
-} from './canacoDemoMode';
+  calcularCuotaAfiliacion,
+  determinarEstrato,
+  generarFolioIntegridad,
+  generarFolioSiem,
+} from './calculoCuota';
+import { BuzonDocumentalModal } from './BuzonDocumentalModal';
+import { CANACO_WALKTHROUGH_SOCIO_DEMO, useCanacoDemoMode } from './canacoDemoMode';
 import type { SectorEconomico, SocioCanacoRegistro } from './types';
 
 interface VentanillaAfiliacionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAfiliacionCompletada?: (registro: SocioCanacoRegistro) => void;
+  onRegistroGuardado?: (registro: SocioCanacoRegistro) => void;
+  onOpenPrivacyNotice?: () => void;
 }
 
 export function VentanillaAfiliacionModal({
   isOpen,
   onClose,
-  onAfiliacionCompletada,
+  onRegistroGuardado,
+  onOpenPrivacyNotice,
 }: VentanillaAfiliacionModalProps) {
   const razonSocialId = useId();
   const nombreComercialId = useId();
@@ -59,11 +61,18 @@ export function VentanillaAfiliacionModal({
 
   // Estados del flujo
   const [paso, setPaso] = useState<1 | 2 | 3>(1);
+  const [isSaving, setIsSaving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [registroExitoso, setRegistroExitoso] = useState<SocioCanacoRegistro | null>(null);
+  const [leadIdRegistrado, setLeadIdRegistrado] = useState<string | null>(null);
+  const [socioGuardado, setSocioGuardado] = useState<SocioCanacoRegistro | null>(null);
   const [isMigrating, setIsMigrating] = useState(false);
   const [migracionError, setMigracionError] = useState<string | null>(null);
   const [buzonOpen, setBuzonOpen] = useState(false);
+  const [errorVentanilla, setErrorVentanilla] = useState<string | null>(null);
+  const [mensajePendiente, setMensajePendiente] = useState(
+    'Registro recibido, aún sin confirmación. Este recorrido no emite una Cédula, un alta SIEM ni un CFDI.'
+  );
 
   // Formulario
   const [razonSocial, setRazonSocial] = useState('');
@@ -80,7 +89,7 @@ export function VentanillaAfiliacionModal({
   const [metodoPago, setMetodoPago] = useState<'tarjeta' | 'spei' | 'clip'>('tarjeta');
   const [cfdiRequerido, setCfdiRequerido] = useState(true);
 
-  // Afiliación Simultánea AAFY — SAT — IMSS en Yucatán
+  // Datos opcionales para que CANACO pueda orientar sobre trámites relacionados.
   const [afiliacionSimultanea, setAfiliacionSimultanea] = useState(true);
   const [registroPatronalImss, setRegistroPatronalImss] = useState('');
   const [tramiteImssSolicitado, setTramiteImssSolicitado] = useState(false);
@@ -88,8 +97,6 @@ export function VentanillaAfiliacionModal({
 
   // Modo Demo / Walkthrough
   const { isDemoMode } = useCanacoDemoMode();
-  const [simularPagoInstantaneo, setSimularPagoInstantaneo] = useState(true);
-  const [clipDemoUrl, setClipDemoUrl] = useState<string>(() => getDemoClipPaymentUrl());
 
   if (!isOpen) return null;
 
@@ -112,121 +119,14 @@ export function VentanillaAfiliacionModal({
     }
   };
 
-  const registrarEnCrm = async (estatus: 'pendiente_pago' | 'activo') => {
-    try {
-      const payload = {
-        razonSocial: razonSocial.trim().toUpperCase() || 'EMPRESA COMERCIAL DE YUCATÁN',
-        nombreComercial: nombreComercial.trim() || razonSocial.trim(),
-        rfc: rfc.trim().toUpperCase() || 'XAXX010101000',
-        sector,
-        numEmpleados,
-        municipio,
-        calle,
-        codigoPostal,
-        contactoNombre: contactoNombre.trim() || 'Representante Acreditado',
-        email: email.trim() || 'contacto@empresa.com',
-        telefono: telefono.trim() || '9991234567',
-        metodoPago,
-        cfdiRequerido,
-        estatus,
-        tenantId: 'canaco_merida',
-        registroPatronalImss: registroPatronalImss.trim() || undefined,
-        registroEstatalAafy: registroEstatalAafy.trim() || undefined,
-        afiliacionSimultanea,
-        tramiteImssSolicitado,
-      };
-
-      const res = await fetch('/api/afiliaciones/registro', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const data = (await res.json()) as { socio: SocioCanacoRegistro };
-        return data.socio;
-      }
-    } catch {
-      // Continuar con fallback en caso de entorno offline o demo
-    }
-    return null;
-  };
-
-  const handleAvanzarPaso2 = () => {
-    setPaso(2);
-    // Registrar lead preliminar en CRM (en segundo plano, previene pérdida si abandona)
-    void registrarEnCrm('pendiente_pago');
-  };
-
-  const handleCompletarPago = async (forceSimulated = false) => {
-    setIsProcessing(true);
-
-    const shouldBypassExternalRedirect = forceSimulated || (isDemoMode && simularPagoInstantaneo);
-
-    // Si se selecciona tarjeta o SPEI y NO estamos forzando simulación en vivo, intentamos enrutar por Conekta
-    if (!shouldBypassExternalRedirect && (metodoPago === 'tarjeta' || metodoPago === 'spei')) {
-      try {
-        const estratoActual = determinarEstrato(numEmpleados);
-        const folioSiemCalculado = generarFolioSiem(rfc, estratoActual);
-
-        const conektaRes = await fetch('/api/canaco/conekta/create-checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            razonSocial: razonSocial.trim().toUpperCase() || 'EMPRESA COMERCIAL DE YUCATÁN',
-            rfc: rfc.trim().toUpperCase() || 'XAXX010101000',
-            folioSiem: folioSiemCalculado,
-            email: email.trim() || 'contacto@empresa.com',
-            telefono: telefono.trim() || '9991234567',
-            monto: cotizacion.totalAnual,
-            cfdiRequerido,
-          }),
-        });
-
-        if (conektaRes.ok) {
-          const conektaData = (await conektaRes.json()) as {
-            ok?: boolean;
-            url?: string;
-            simulated?: boolean;
-          };
-
-          // Redirección a Conekta Checkout en vivo (CANACO merchant of record)
-          if (
-            conektaData.ok &&
-            conektaData.url &&
-            !conektaData.simulated &&
-            typeof window !== 'undefined'
-          ) {
-            window.location.href = conektaData.url;
-            return;
-          }
-        }
-      } catch {
-        // Modo offline / fallback
-      }
-    }
-
-    const socioGuardado = await registrarEnCrm('activo');
-
-    if (socioGuardado) {
-      setRegistroExitoso(socioGuardado);
-      setIsProcessing(false);
-      onAfiliacionCompletada?.(socioGuardado);
-      return;
-    }
-
-    // Fallback local client-side si el worker responde offline
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
+  const crearRegistroPendienteLocal = (): SocioCanacoRegistro => {
     const estrato = determinarEstrato(numEmpleados);
     const folioSiem = generarFolioSiem(rfc, estrato);
     const fechaHoy = new Date().toISOString().split('T')[0] || '';
     const fechaVigencia =
       new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '';
 
-    const selloDigital = `SHA256:CANACO-MID-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Date.now().toString(36).toUpperCase()}`;
-
-    const nuevoSocio: SocioCanacoRegistro = {
+    return {
       folioSiem,
       razonSocial: razonSocial.trim().toUpperCase() || 'EMPRESA COMERCIAL DE YUCATÁN',
       nombreComercial: nombreComercial.trim() || razonSocial.trim(),
@@ -248,11 +148,12 @@ export function VentanillaAfiliacionModal({
       },
       fechaAfiliacion: fechaHoy,
       fechaVigencia,
-      estatus: 'activo',
-      montoPagado: cotizacion.totalAnual,
+      estatus: 'pendiente_pago',
+      pagoConfirmado: false,
+      montoPagado: 0,
       metodoPago,
       cfdiRequerido,
-      selloDigitalSha256: selloDigital,
+      folioIntegridad: generarFolioIntegridad(folioSiem),
       registroPatronalImss: registroPatronalImss.trim()
         ? registroPatronalImss.trim().toUpperCase()
         : undefined,
@@ -262,10 +163,138 @@ export function VentanillaAfiliacionModal({
       afiliacionSimultanea,
       tramiteImssSolicitado,
     };
+  };
 
-    setRegistroExitoso(nuevoSocio);
-    setIsProcessing(false);
-    onAfiliacionCompletada?.(nuevoSocio);
+  const registrarEnCrm = async (): Promise<{ leadId: string; socio: SocioCanacoRegistro }> => {
+    const payload = {
+      razonSocial: razonSocial.trim().toUpperCase() || 'EMPRESA COMERCIAL DE YUCATÁN',
+      nombreComercial: nombreComercial.trim() || razonSocial.trim(),
+      rfc: rfc.trim().toUpperCase() || 'XAXX010101000',
+      sector,
+      numEmpleados,
+      municipio,
+      calle,
+      codigoPostal,
+      contactoNombre: contactoNombre.trim() || 'Representante Acreditado',
+      email: email.trim(),
+      telefono: telefono.trim(),
+      metodoPago,
+      cfdiRequerido,
+      tenantId: 'canaco_merida',
+      registroPatronalImss: registroPatronalImss.trim() || undefined,
+      registroEstatalAafy: registroEstatalAafy.trim() || undefined,
+      afiliacionSimultanea,
+      tramiteImssSolicitado,
+    };
+
+    const res = await fetch('/api/afiliaciones/registro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = (await res.json().catch(() => ({}))) as {
+      error?: string;
+      leadId?: string;
+      socio?: SocioCanacoRegistro;
+    };
+    if (!res.ok || !data.socio || !data.leadId) {
+      throw new Error(data.error || 'No se pudo guardar el registro como pendiente.');
+    }
+    return { leadId: data.leadId, socio: data.socio };
+  };
+
+  const handleAvanzarPaso2 = async () => {
+    setErrorVentanilla(null);
+    if (
+      !razonSocial.trim() ||
+      !rfc.trim() ||
+      !contactoNombre.trim() ||
+      !email.trim() ||
+      !telefono.trim()
+    ) {
+      setErrorVentanilla('Completa razón social, RFC, contacto, correo y teléfono para continuar.');
+      return;
+    }
+    if (!isDemoMode) {
+      setIsSaving(true);
+      try {
+        const registro = await registrarEnCrm();
+        setLeadIdRegistrado(registro.leadId);
+        setSocioGuardado(registro.socio);
+        onRegistroGuardado?.(registro.socio);
+      } catch (error) {
+        setErrorVentanilla(
+          error instanceof Error ? error.message : 'No se pudo guardar el registro.'
+        );
+        return;
+      } finally {
+        setIsSaving(false);
+      }
+    }
+    setPaso(2);
+  };
+
+  const handleCompletarPago = async (forceSimulated = false) => {
+    setIsProcessing(true);
+    setErrorVentanilla(null);
+    try {
+      if (isDemoMode || forceSimulated) {
+        setMensajePendiente(
+          'Esta simulación no confirma un pago ni activa el registro. No se emite una Cédula, un alta SIEM ni un CFDI.'
+        );
+        setRegistroExitoso(crearRegistroPendienteLocal());
+        return;
+      }
+
+      let registro = socioGuardado;
+      let leadId = leadIdRegistrado;
+      if (!registro || !leadId) {
+        const guardado = await registrarEnCrm();
+        registro = guardado.socio;
+        leadId = guardado.leadId;
+        setSocioGuardado(registro);
+        setLeadIdRegistrado(leadId);
+      }
+
+      if (metodoPago === 'clip') {
+        setMensajePendiente(
+          'Clip no está conectado a una confirmación de pago en este portal. El registro sigue pendiente y no se emitirá una Cédula hasta confirmar el pago.'
+        );
+        setRegistroExitoso(registro);
+        return;
+      }
+
+      const conektaRes = await fetch('/api/canaco/conekta/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId,
+        }),
+      });
+      const conektaData = (await conektaRes.json().catch(() => ({}))) as {
+        ok?: boolean;
+        url?: string;
+        simulated?: boolean;
+        error?: string;
+      };
+      if (!conektaRes.ok || !conektaData.ok) {
+        throw new Error(conektaData.error || 'No se pudo iniciar el checkout de pago.');
+      }
+      if (conektaData.simulated || !conektaData.url) {
+        setMensajePendiente(
+          'El checkout está en modo simulación y no confirma un pago. Tu registro sigue pendiente; no se activó ni se emitió una Cédula.'
+        );
+        setRegistroExitoso(registro);
+        return;
+      }
+      window.location.assign(conektaData.url);
+    } catch (error) {
+      setErrorVentanilla(
+        error instanceof Error ? error.message : 'No se pudo confirmar el inicio del pago.'
+      );
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleMigrarALedger = async () => {
@@ -331,6 +360,13 @@ export function VentanillaAfiliacionModal({
   const resetForm = () => {
     setPaso(1);
     setRegistroExitoso(null);
+    setLeadIdRegistrado(null);
+    setSocioGuardado(null);
+    setErrorVentanilla(null);
+    setMensajePendiente(
+      'Registro recibido, aún sin confirmación. Este recorrido no emite una Cédula, un alta SIEM ni un CFDI.'
+    );
+    setIsSaving(false);
     setIsMigrating(false);
     setMigracionError(null);
     setRegistroPatronalImss('');
@@ -352,7 +388,7 @@ export function VentanillaAfiliacionModal({
                 Ventanilla Digital de Afiliación
               </div>
               <div className="font-mono text-[10px] font-semibold uppercase tracking-widest text-henequen-terra">
-                CANACO SERVYTUR MÉRIDA · REGISTRO SIEM 2026
+                CANACO SERVYTUR MÉRIDA · SOLICITUD DE SEGUIMIENTO SIEM 2026
               </div>
             </div>
           </div>
@@ -366,187 +402,227 @@ export function VentanillaAfiliacionModal({
           </button>
         </div>
 
-        {/* ═══ CASO ÉXITO: AFILIACIÓN COMPLETADA ═══ */}
+        {/* Un registro pendiente nunca debe presentarse como una afiliación activa. */}
         {registroExitoso ? (
-          <div className="space-y-6 py-6 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600">
-              <CheckCircle2 size={36} />
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="font-fraunces text-2xl font-bold text-henequen-anil">
-                ¡Afiliación Acreditada con Éxito!
-              </h3>
-              <p className="mx-auto max-w-md text-sm text-henequen-piedra">
-                Tu establecimiento ha quedado formalmente registrado en el padrón empresarial de
-                CANACO SERVYTUR Mérida y en el SIEM ante la Secretaría de Economía.
-              </p>
-            </div>
-
-            {/* Cédula digital compacta */}
-            <div className="space-y-3 rounded-xl border border-henequen-arena bg-henequen-muro p-5 text-left shadow-tarjeta">
-              <div className="flex items-center justify-between border-b border-henequen-arena/60 pb-3">
+          registroExitoso.estatus !== 'activo' || registroExitoso.pagoConfirmado !== true ? (
+            <div
+              className="space-y-4 rounded-xl border border-amber-300 bg-amber-50 p-5 text-left"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex items-start gap-3">
+                <AlertCircle size={22} className="mt-0.5 shrink-0 text-amber-700" />
                 <div>
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-henequen-terra">
-                    Folio SIEM Oficial
-                  </span>
-                  <span className="font-mono text-xs font-bold text-henequen-anil">
-                    {registroExitoso.folioSiem}
-                  </span>
-                </div>
-                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                  <ShieldCheck size={12} />
-                  Socio Activo
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="block text-[10px] text-henequen-piedra">Razón Social</span>
-                  <span className="font-semibold text-henequen-grafito">
-                    {registroExitoso.razonSocial}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] text-henequen-piedra">RFC Registrado</span>
-                  <span className="font-mono font-semibold text-henequen-grafito">
-                    {registroExitoso.rfc}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] text-henequen-piedra">Vigencia Anual</span>
-                  <span className="font-semibold text-henequen-grafito">
-                    {registroExitoso.fechaVigencia}
-                  </span>
-                </div>
-                <div>
-                  <span className="block text-[10px] text-henequen-piedra">CFDI Emitido</span>
-                  <span className="font-semibold text-emerald-700">
-                    {registroExitoso.cfdiRequerido
-                      ? 'Timbrado y enviado por correo'
-                      : 'No solicitado'}
-                  </span>
+                  <h3 className="font-fraunces text-xl font-bold text-amber-950">
+                    Registro pendiente de pago
+                  </h3>
+                  <p className="mt-1 text-sm text-amber-900">{mensajePendiente}</p>
                 </div>
               </div>
-
-              {(registroExitoso.registroPatronalImss ||
-                registroExitoso.registroEstatalAafy ||
-                registroExitoso.afiliacionSimultanea) && (
-                <div className="flex flex-wrap items-center gap-1.5 border-t border-henequen-arena/40 pt-2 text-[10px]">
-                  <span className="rounded-full bg-henequen-anil/10 px-2 py-0.5 font-mono font-bold uppercase text-henequen-anil">
-                    Ventanilla Única Tripartita
-                  </span>
-                  {registroExitoso.registroPatronalImss && (
-                    <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 font-mono font-semibold text-emerald-800">
-                      NRP IMSS: {registroExitoso.registroPatronalImss}
-                    </span>
-                  )}
-                  {registroExitoso.tramiteImssSolicitado && (
-                    <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 font-mono font-semibold text-amber-800">
-                      Alta Patronal IMSS en gestión
-                    </span>
-                  )}
-                  {registroExitoso.registroEstatalAafy && (
-                    <span className="rounded-full border border-purple-300 bg-purple-50 px-2 py-0.5 font-mono font-semibold text-purple-800">
-                      REC AAFY: {registroExitoso.registroEstatalAafy}
-                    </span>
-                  )}
+              <div className="rounded-lg border border-amber-200 bg-white p-3 text-xs">
+                <div className="font-semibold text-henequen-grafito">
+                  {registroExitoso.razonSocial} · RFC {registroExitoso.rfc}
                 </div>
-              )}
-
-              <div className="break-all rounded border border-henequen-arena/60 bg-henequen-sisal/40 p-2 font-mono text-[9.5px] text-henequen-piedra">
-                {registroExitoso.selloDigitalSha256}
+                <div className="mt-1 font-mono text-henequen-piedra">
+                  Referencia interna: {registroExitoso.folioIntegridad}
+                </div>
+                <p className="mt-1 text-henequen-piedra">
+                  Esta referencia no es un hash SHA-256, una constancia oficial ni una constancia
+                  NOM-151. No se ha emitido una Cédula ni un CFDI.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <a
+                  href="mailto:pavel@arksystems.site?subject=Ayuda%20Ventanilla%20CANACO"
+                  className="text-xs font-semibold text-henequen-anil underline"
+                >
+                  Contactar soporte técnico de ARK Systems
+                </a>
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="rounded-lg border border-amber-400 bg-white px-4 py-2 text-xs font-semibold text-amber-950"
+                >
+                  Volver al portal
+                </button>
               </div>
             </div>
+          ) : (
+            <div className="space-y-6 py-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 text-emerald-600">
+                <CheckCircle2 size={36} />
+              </div>
 
-            {/* ═══ ACCESO DIRECTO AL BUZÓN DOCUMENTAL ═══ */}
-            <div className="rounded-xl border border-henequen-arena bg-henequen-muro p-4 text-left shadow-sm">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-henequen-anil text-white shadow">
-                    <Inbox size={18} />
+              <div className="space-y-1">
+                <h3 className="font-fraunces text-2xl font-bold text-henequen-anil">
+                  Pago confirmado
+                </h3>
+                <p className="mx-auto max-w-md text-sm text-henequen-piedra">
+                  El pago se confirmó. Esto no acredita por sí solo el alta en el SIEM ni la emisión
+                  de un CFDI.
+                </p>
+              </div>
+
+              {/* Resumen de pago, no constancia oficial */}
+              <div className="space-y-3 rounded-xl border border-henequen-arena bg-henequen-muro p-5 text-left shadow-tarjeta">
+                <div className="flex items-center justify-between border-b border-henequen-arena/60 pb-3">
+                  <div>
+                    <span className="block text-[10px] font-bold uppercase tracking-wider text-henequen-terra">
+                      Referencia SIEM generada por el portal
+                    </span>
+                    <span className="font-mono text-xs font-bold text-henequen-anil">
+                      {registroExitoso.folioSiem}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-henequen-piedra">
+                    El pago no confirma que la Secretaría de Economía haya registrado el SIEM. Esta
+                    pantalla no es una Cédula oficial.
+                  </p>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                    <ShieldCheck size={12} />
+                    Pago confirmado
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="block text-[10px] text-henequen-piedra">Razón Social</span>
+                    <span className="font-semibold text-henequen-grafito">
+                      {registroExitoso.razonSocial}
+                    </span>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-henequen-anil">
-                      Paso Final: Depósito en Oficialía de Partes
+                    <span className="block text-[10px] text-henequen-piedra">RFC Registrado</span>
+                    <span className="font-mono font-semibold text-henequen-grafito">
+                      {registroExitoso.rfc}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-[10px] text-henequen-piedra">Estado del CFDI</span>
+                    <span className="font-semibold text-henequen-grafito">
+                      {registroExitoso.cfdiRequerido ? 'Pendiente de emisión' : 'No solicitado'}
+                    </span>
+                  </div>
+                </div>
+
+                {(registroExitoso.registroPatronalImss ||
+                  registroExitoso.registroEstatalAafy ||
+                  registroExitoso.afiliacionSimultanea) && (
+                  <div className="flex flex-wrap items-center gap-1.5 border-t border-henequen-arena/40 pt-2 text-[10px]">
+                    <span className="rounded-full bg-henequen-anil/10 px-2 py-0.5 font-mono font-bold uppercase text-henequen-anil">
+                      Ventanilla Única Tripartita
+                    </span>
+                    {registroExitoso.registroPatronalImss && (
+                      <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 font-mono font-semibold text-emerald-800">
+                        NRP IMSS: {registroExitoso.registroPatronalImss}
+                      </span>
+                    )}
+                    {registroExitoso.tramiteImssSolicitado && (
+                      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 font-mono font-semibold text-amber-800">
+                        Alta Patronal IMSS en gestión
+                      </span>
+                    )}
+                    {registroExitoso.registroEstatalAafy && (
+                      <span className="rounded-full border border-purple-300 bg-purple-50 px-2 py-0.5 font-mono font-semibold text-purple-800">
+                        REC AAFY: {registroExitoso.registroEstatalAafy}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <div className="break-all rounded border border-henequen-arena/60 bg-henequen-sisal/40 p-2 font-mono text-[9.5px] text-henequen-piedra">
+                  Folio de Integridad (referencia interna): {registroExitoso.folioIntegridad}. No es
+                  un hash SHA-256 ni una constancia NOM-151.
+                </div>
+              </div>
+
+              {/* ═══ ACCESO DIRECTO AL BUZÓN DOCUMENTAL ═══ */}
+              <div className="rounded-xl border border-henequen-arena bg-henequen-muro p-4 text-left shadow-sm">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-henequen-anil text-white shadow">
+                      <Inbox size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-henequen-anil">
+                        Carga de documentos al buzón CANACO
+                      </h4>
+                      <p className="mt-0.5 text-[11px] text-henequen-piedra">
+                        Puedes consultar o completar tu expediente desde el buzón documental. El
+                        depósito de archivos no equivale a una emisión oficial.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setBuzonOpen(true)}
+                    className="shadow-xs inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-henequen-terra px-4 py-2.5 text-xs font-bold text-white transition hover:bg-henequen-terra-dark"
+                  >
+                    <Inbox size={14} />
+                    <span>Abrir Buzón de Expediente</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* ═══ PUENTE DE HANDOFF AL EXPEDIENTE ÚNICO ARK LEDGER ═══ */}
+              <div className="rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 p-5 text-left shadow-md">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow">
+                    <Building2 size={20} />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                      <Sparkles size={11} />
+                      Beneficio Exclusivo Socio CANACO
+                    </div>
+                    <h4 className="font-fraunces text-base font-bold text-henequen-anil">
+                      Pago confirmado; continúa el registro con CANACO
                     </h4>
-                    <p className="mt-0.5 text-[11px] text-henequen-piedra">
-                      Para emitir tu constancia definitiva, la Secretaría de Economía solicita
-                      integrar tu expediente (INE, CSF, comprobante y anexos). Puedes depositar hoy
-                      o regresar luego.
+                    <p className="text-xs leading-relaxed text-henequen-grafito">
+                      La importación de datos abre herramientas de ARK LEDGER. No emite CFDI ni
+                      acredita por sí sola el alta ante el SIEM.
                     </p>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setBuzonOpen(true)}
-                  className="shadow-xs inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-henequen-terra px-4 py-2.5 text-xs font-bold text-white transition hover:bg-henequen-terra-dark"
-                >
-                  <Inbox size={14} />
-                  <span>Abrir Buzón de Expediente</span>
-                </button>
-              </div>
-            </div>
-
-            {/* ═══ PUENTE DE HANDOFF AL EXPEDIENTE ÚNICO ARK LEDGER ═══ */}
-            <div className="rounded-xl border-2 border-emerald-500/40 bg-emerald-500/10 p-5 text-left shadow-md">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow">
-                  <Building2 size={20} />
-                </div>
-                <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                    <Sparkles size={11} />
-                    Beneficio Exclusivo Socio CANACO
+                {migracionError && (
+                  <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
+                    {migracionError}
                   </div>
-                  <h4 className="font-fraunces text-base font-bold text-henequen-anil">
-                    ¡Felicidades, tu registro SIEM está listo!
-                  </h4>
-                  <p className="text-xs leading-relaxed text-henequen-grafito">
-                    Como socio de CANACO, tienes acceso gratis a la suite fiscal{' '}
-                    <strong>ARK LEDGER</strong>. ¿Quieres importar los datos de tu empresa para
-                    empezar a facturar y calcular nómina?
-                  </p>
-                </div>
-              </div>
+                )}
 
-              {migracionError && (
-                <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2.5 text-xs text-red-700">
-                  {migracionError}
+                <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="rounded-lg border border-henequen-arena bg-white px-4 py-2.5 text-xs font-semibold text-henequen-piedra transition hover:text-henequen-anil"
+                  >
+                    Continuar navegando en el portal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleMigrarALedger}
+                    disabled={isMigrating}
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {isMigrating ? (
+                      <>
+                        <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        <span>Importando a Expediente Único...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={14} />
+                        <span>Importar Empresa y Abrir herramientas</span>
+                        <ArrowRight size={14} />
+                      </>
+                    )}
+                  </button>
                 </div>
-              )}
-
-              <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-end">
-                <button
-                  type="button"
-                  onClick={resetForm}
-                  className="rounded-lg border border-henequen-arena bg-white px-4 py-2.5 text-xs font-semibold text-henequen-piedra transition hover:text-henequen-anil"
-                >
-                  Continuar navegando en el portal
-                </button>
-                <button
-                  type="button"
-                  onClick={handleMigrarALedger}
-                  disabled={isMigrating}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-emerald-700 disabled:opacity-50"
-                >
-                  {isMigrating ? (
-                    <>
-                      <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                      <span>Importando a Expediente Único...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={14} />
-                      <span>Importar Empresa y Abrir Nómina</span>
-                      <ArrowRight size={14} />
-                    </>
-                  )}
-                </button>
               </div>
             </div>
-          </div>
+          )
         ) : (
           /* ═══ PASOS DE CAPTURA ═══ */
           <div className="space-y-6 py-5">
@@ -690,7 +766,7 @@ export function VentanillaAfiliacionModal({
                       htmlFor={numEmpleadosId}
                       className="mb-1 block font-semibold text-henequen-grafito"
                     >
-                      Empleados (Estrato SIEM)
+                      Empleados (para estimar tamaño)
                     </label>
                     <input
                       id={numEmpleadosId}
@@ -704,6 +780,19 @@ export function VentanillaAfiliacionModal({
                       className="w-full rounded-lg border border-henequen-arena bg-henequen-muro px-3 py-2 font-mono text-xs focus:border-henequen-anil focus:outline-none"
                     />
                   </div>
+                </div>
+
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-[11px] leading-relaxed text-blue-950">
+                  En el flujo real, los datos fiscales, de contacto y domicilio se envían al CRM
+                  CANACO (Cloudflare D1) para dar seguimiento; no se envían a SAT, IMSS o AAFY. En
+                  modo demo no se transmiten ni guardan.{' '}
+                  <button
+                    type="button"
+                    onClick={onOpenPrivacyNotice}
+                    className="font-bold underline"
+                  >
+                    Consultar Aviso de Privacidad
+                  </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -777,7 +866,7 @@ export function VentanillaAfiliacionModal({
                       htmlFor={emailId}
                       className="mb-1 block font-semibold text-henequen-grafito"
                     >
-                      Correo Electrónico (Para CFDI) *
+                      Correo Electrónico (Para seguimiento) *
                     </label>
                     <input
                       id={emailId}
@@ -818,12 +907,12 @@ export function VentanillaAfiliacionModal({
                     />
                     <label htmlFor="check-afiliacion-simultanea" className="cursor-pointer">
                       <span className="block text-xs font-bold text-henequen-anil">
-                        Participar en el Programa de Afiliación Simultánea AAFY — SAT — IMSS
+                        Solicitar orientación sobre trámites relacionados
                       </span>
                       <span className="block text-[11px] leading-relaxed text-henequen-piedra">
-                        Ventanilla Única CANACO Mérida: Vincula tu registro patronal del IMSS y el
-                        Padrón Estatal del Impuesto Sobre Nómina de Yucatán (ISN 3.75% / 3.0% MIPyME
-                        — LGHY) con tu alta mercantil.
+                        Estos datos se usan para seguimiento. Este formulario no registra ni
+                        modifica trámites ante IMSS, SAT o AAFY; CANACO debe confirmar los pasos y
+                        requisitos aplicables.
                       </span>
                     </label>
                   </div>
@@ -881,23 +970,41 @@ export function VentanillaAfiliacionModal({
                           className="w-full rounded-lg border border-henequen-arena bg-white px-3 py-1.5 font-mono text-xs uppercase focus:border-henequen-anil focus:outline-none"
                         />
                         <span className="mt-1 block text-[10px] text-henequen-piedra">
-                          Cédula mensual ISN generada conforme a la Ley General de Hacienda de
-                          Yucatán.
+                          Este portal no genera una cédula ISN ni presenta declaraciones ante AAFY.
                         </span>
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="flex justify-end pt-3">
-                  <button
-                    type="button"
-                    onClick={handleAvanzarPaso2}
-                    className="inline-flex items-center gap-2 rounded-lg bg-henequen-terra px-5 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-henequen-terra-dark"
+                {errorVentanilla && (
+                  <p
+                    role="alert"
+                    className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800"
                   >
-                    <span>Calcular Cuota y Ver Beneficios</span>
-                    <ArrowRight size={14} />
-                  </button>
+                    {errorVentanilla}
+                  </p>
+                )}
+
+                <div className="space-y-2 border-t border-henequen-arena/60 pt-3">
+                  <p className="text-[11px] leading-relaxed text-henequen-piedra">
+                    {isDemoMode
+                      ? 'En el modo demo, estos datos no se envían ni guardan.'
+                      : 'Al continuar, guardamos estos datos en el CRM de Ark/CANACO (Cloudflare D1) para dar seguimiento al registro. El registro queda pendiente de pago.'}
+                  </p>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void handleAvanzarPaso2()}
+                      disabled={isSaving}
+                      className="inline-flex items-center gap-2 rounded-lg bg-henequen-terra px-5 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-henequen-terra-dark disabled:opacity-50"
+                    >
+                      <span>
+                        {isSaving ? 'Guardando registro...' : 'Calcular Cuota y Ver Beneficios'}
+                      </span>
+                      <ArrowRight size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -910,7 +1017,7 @@ export function VentanillaAfiliacionModal({
                   <div className="flex items-center justify-between border-b border-henequen-arena/60 pb-3">
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-henequen-terra">
-                        Estrato Determinado
+                        Estrato de referencia
                       </span>
                       <div className="font-fraunces text-base font-bold capitalize text-henequen-anil">
                         Empresa {cotizacion.estrato} ({numEmpleados} colaboradores)
@@ -918,7 +1025,7 @@ export function VentanillaAfiliacionModal({
                     </div>
                     <div className="text-right">
                       <span className="block text-[10px] text-henequen-piedra">
-                        Inversión Total Anual
+                        Importe de referencia (prototipo)
                       </span>
                       <span className="font-mono text-xl font-bold text-henequen-anil">
                         ${cotizacion.totalAnual.toLocaleString('es-MX')} MXN
@@ -926,11 +1033,16 @@ export function VentanillaAfiliacionModal({
                     </div>
                   </div>
 
-                  {/* Desglose oficial */}
+                  <p className="text-[11px] leading-relaxed text-amber-900">
+                    Estos importes del prototipo están pendientes de confirmación por CANACO; no son
+                    una tarifa oficial. No pagues hasta recibir una cotización confirmada.
+                  </p>
+
+                  {/* Desglose de referencia */}
                   <div className="grid grid-cols-2 gap-3 rounded-lg border border-henequen-arena/40 bg-henequen-sisal/30 p-3">
                     <div>
                       <span className="block text-[10px] text-henequen-piedra">
-                        Registro SIEM 2026 (Ley Federal)
+                        SIEM 2026 (referencia del prototipo)
                       </span>
                       <span className="font-mono font-semibold text-henequen-grafito">
                         ${cotizacion.cuotaSiem.toLocaleString('es-MX')} MXN
@@ -938,7 +1050,7 @@ export function VentanillaAfiliacionModal({
                     </div>
                     <div>
                       <span className="block text-[10px] text-henequen-piedra">
-                        Membresía Anual CANACO SERVYTUR
+                        Membresía anual (referencia del prototipo)
                       </span>
                       <span className="font-mono font-semibold text-henequen-grafito">
                         ${cotizacion.cuotaMembresia.toLocaleString('es-MX')} MXN
@@ -975,14 +1087,14 @@ export function VentanillaAfiliacionModal({
                     onClick={() => setPaso(3)}
                     className="inline-flex items-center gap-2 rounded-lg bg-henequen-terra px-5 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-henequen-terra-dark"
                   >
-                    <span>Proceder al Pago y Emisión</span>
+                    <span>Revisar métodos de pago</span>
                     <ArrowRight size={14} />
                   </button>
                 </div>
               </div>
             )}
 
-            {/* PASO 3: PAGO & CFDI */}
+            {/* PASO 3: OPCIONES DE PAGO */}
             {paso === 3 && (
               <div className="space-y-4 text-xs">
                 {/* Selector de método de pago */}
@@ -990,7 +1102,7 @@ export function VentanillaAfiliacionModal({
                   <label className="block font-semibold text-henequen-grafito">
                     Selecciona el Método de Liquidación:
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <button
                       type="button"
                       onClick={() => setMetodoPago('tarjeta')}
@@ -1016,7 +1128,7 @@ export function VentanillaAfiliacionModal({
                     >
                       <Building2 size={18} className="mx-auto mb-1 text-henequen-terra" />
                       <span className="block text-[11px]">Transferencia SPEI</span>
-                      <span className="text-[9px] text-henequen-piedra">CLABE en vivo</span>
+                      <span className="text-[9px] text-henequen-piedra">SPEI por Conekta</span>
                     </button>
 
                     <button
@@ -1029,8 +1141,8 @@ export function VentanillaAfiliacionModal({
                       }`}
                     >
                       <QrCode size={18} className="mx-auto mb-1 text-henequen-verde" />
-                      <span className="block text-[11px]">Enlace Clip / QR</span>
-                      <span className="text-[9px] text-henequen-piedra">Pago móvil</span>
+                      <span className="block text-[11px]">Clip</span>
+                      <span className="text-[9px] text-henequen-piedra">No conectado</span>
                     </button>
                   </div>
                 </div>
@@ -1055,30 +1167,30 @@ export function VentanillaAfiliacionModal({
                             <CreditCard size={18} className="text-henequen-anil" />
                             <div>
                               <div className="font-mono text-xs font-bold text-henequen-grafito">
-                                VISA CORPORATIVA •••• •••• •••• 4242
+                                VISA de prueba •••• 4242
                               </div>
                               <div className="text-[10px] text-henequen-piedra">
-                                Tarjeta Sandbox Conekta · Vigencia 12/28 · CVC 999 · Aprobación
-                                Inmediata
+                                Dato de prueba de Conekta Sandbox; no usar una tarjeta real.
                               </div>
                             </div>
                           </div>
                           <span className="rounded bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
-                            Lista para prueba
+                            Solo sandbox
                           </span>
                         </div>
-                        <label className="flex cursor-pointer items-center gap-2 text-[11px] text-amber-900">
-                          <input
-                            type="checkbox"
-                            checked={simularPagoInstantaneo}
-                            onChange={(e) => setSimularPagoInstantaneo(e.target.checked)}
-                            className="rounded border-amber-400 text-amber-700 focus:ring-amber-600"
-                          />
-                          <span>
-                            <strong>Simular aprobación bancaria en vivo</strong> (acredita al socio
-                            y emite Cédula SIEM sin salir a pasarela externa)
-                          </span>
-                        </label>
+                        <p className="text-[11px] leading-relaxed text-amber-900">
+                          La simulación solo muestra el estado pendiente. No realiza un cargo, no
+                          confirma pago ni activa el registro.
+                        </p>
+                        <button
+                          type="button"
+                          disabled={isProcessing}
+                          onClick={() => void handleCompletarPago(true)}
+                          className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-amber-700 px-3 py-2 text-xs font-bold text-white"
+                        >
+                          <FlaskConical size={13} />
+                          <span>Simular recorrido (sin pago)</span>
+                        </button>
                       </div>
                     )}
 
@@ -1087,19 +1199,16 @@ export function VentanillaAfiliacionModal({
                         <div className="rounded-lg border border-amber-200 bg-white p-3">
                           <div className="flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase text-henequen-terra">
-                              Ficha SPEI Referenciada STP (CANACO Mérida)
+                              Transferencia SPEI (prueba)
                             </span>
-                            <span className="font-mono text-[10px] font-semibold text-emerald-700">
-                              Conciliación Automática
+                            <span className="font-mono text-[10px] font-semibold text-amber-700">
+                              Sin datos bancarios
                             </span>
                           </div>
-                          <div className="mt-1 font-mono text-xs font-bold tracking-wider text-henequen-anil">
-                            CLABE: 6461 8015 7042 8910 42
-                          </div>
-                          <div className="mt-0.5 text-[10px] text-henequen-piedra">
-                            Beneficiario: CANACO SERVYTUR MÉRIDA · Concepto: SIEM-2026-
-                            {(rfc || 'DEMO').slice(0, 6)}
-                          </div>
+                          <p className="mt-1 text-[11px] text-henequen-piedra">
+                            No se ha proporcionado una CLABE para este modo demo. Una transferencia
+                            solo cuenta tras una confirmación recibida por el servidor.
+                          </p>
                         </div>
                         <button
                           type="button"
@@ -1108,7 +1217,7 @@ export function VentanillaAfiliacionModal({
                           className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
                         >
                           <Zap size={13} />
-                          <span>Simular Recepción de Webhook SPEI y Activar Socio Ahora</span>
+                          <span>Simular recorrido SPEI (sin transferencia)</span>
                         </button>
                       </div>
                     )}
@@ -1116,30 +1225,9 @@ export function VentanillaAfiliacionModal({
                     {metodoPago === 'clip' && (
                       <div className="space-y-2.5">
                         <p className="text-[11px] text-amber-900">
-                          Puedes abrir un <strong>Link de Pago Real de Clip</strong> en otra pestaña
-                          para mostrar la pasarela bancaria, y luego acreditar el socio aquí mismo:
+                          Clip no está conectado a una confirmación segura. No se abrirá ningún link
+                          ni se marcará el registro como pagado.
                         </p>
-                        <div className="flex flex-col gap-2 sm:flex-row">
-                          <input
-                            type="url"
-                            value={clipDemoUrl}
-                            onChange={(e) => {
-                              setClipDemoUrl(e.target.value);
-                              setDemoClipPaymentUrl(e.target.value);
-                            }}
-                            placeholder="https://pago.clip.mx/..."
-                            className="flex-1 rounded-lg border border-amber-300 bg-white px-2.5 py-1.5 font-mono text-[11px] text-henequen-grafito focus:border-henequen-anil focus:outline-none"
-                          />
-                          <a
-                            href={clipDemoUrl || 'https://pago.clip.mx/'}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-henequen-anil px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-henequen-anil/90"
-                          >
-                            <span>Abrir Link Clip Real</span>
-                            <ExternalLink size={12} />
-                          </a>
-                        </div>
                         <button
                           type="button"
                           disabled={isProcessing}
@@ -1147,14 +1235,14 @@ export function VentanillaAfiliacionModal({
                           className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-700"
                         >
                           <CheckCircle2 size={13} />
-                          <span>Simular Pago Clip Acreditado y Emitir Cédula SIEM</span>
+                          <span>Mostrar registro pendiente (sin pago)</span>
                         </button>
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* Checkbox de Facturación CFDI */}
+                {/* Solicitud de CFDI */}
                 <div className="space-y-2 rounded-xl border border-henequen-arena bg-henequen-muro p-4">
                   <label className="flex cursor-pointer items-center gap-2">
                     <input
@@ -1164,13 +1252,12 @@ export function VentanillaAfiliacionModal({
                       className="rounded border-henequen-arena text-henequen-anil focus:ring-henequen-anil"
                     />
                     <span className="text-xs font-semibold text-henequen-grafito">
-                      Emitir Factura Electrónica CFDI 4.0 al Instante
+                      Solicitar CFDI (no se emite desde este flujo)
                     </span>
                   </label>
                   <p className="pl-6 text-[11px] text-henequen-piedra">
-                    Se timbrará con Uso de CFDI <strong>G03 (Gastos en general)</strong> a nombre de{' '}
-                    <strong>{razonSocial || 'tu Razón Social'}</strong> ({rfc || 'tu RFC'}),
-                    deducible al 100% de ISR.
+                    Si solicitas CFDI, CANACO deberá confirmar los datos y la emisión por separado.
+                    Marcar esta opción no timbra ni envía una factura.
                   </p>
                 </div>
 
@@ -1178,16 +1265,26 @@ export function VentanillaAfiliacionModal({
                 <div className="flex items-center justify-between rounded-xl bg-henequen-anil p-4 text-white">
                   <div>
                     <span className="block text-[10px] uppercase tracking-wider text-henequen-arena">
-                      Total a Liquidar (SIEM + Membresía)
+                      Importe de referencia (no pagar sin confirmación)
                     </span>
                     <span className="text-xs text-henequen-sisal">
-                      Válido por 365 días en toda la península
+                      SIEM: ${cotizacion.cuotaSiem.toLocaleString('es-MX')} + membresía: $
+                      {cotizacion.cuotaMembresia.toLocaleString('es-MX')} MXN
                     </span>
                   </div>
                   <div className="font-mono text-2xl font-bold">
                     ${cotizacion.totalAnual.toLocaleString('es-MX')} MXN
                   </div>
                 </div>
+
+                {errorVentanilla && (
+                  <p
+                    role="alert"
+                    className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800"
+                  >
+                    {errorVentanilla}
+                  </p>
+                )}
 
                 <div className="flex justify-between pt-2">
                   <button
@@ -1207,12 +1304,14 @@ export function VentanillaAfiliacionModal({
                     {isProcessing ? (
                       <>
                         <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        <span>Procesando Pago y Timbrando CFDI...</span>
+                        <span>Iniciando checkout...</span>
                       </>
                     ) : (
                       <>
                         <FileCheck2 size={15} />
-                        <span>Confirmar Pago y Activar Socio</span>
+                        <span>
+                          {isDemoMode ? 'Simular recorrido (sin pago)' : 'Continuar a pago'}
+                        </span>
                       </>
                     )}
                   </button>

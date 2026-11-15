@@ -1,16 +1,16 @@
 /**
  * CANACO SERVYTUR MÉRIDA — Landing Page Institucional Pública
  *
- * Portal público oficial de la Cámara Nacional de Comercio, Servicios y Turismo de Mérida.
+ * Portal de servicios CANACO SERVYTUR Mérida.
  * Rutea el tráfico hacia:
- *  1) Ventanilla Digital de Afiliación & Checkout SIEM (Nuevos registros y renovaciones).
- *  2) Consulta pública de Socio Activo (Búsqueda por RFC para descarga de Cédula Oficial QR).
+ *  1) Solicitud de seguimiento para afiliación.
+ *  2) Consulta del estado interno del registro por RFC.
  *  3) Acceso Directivo y Padrón SIEM (horus.i2d@gmail.com).
  *
  * Basada en los lineamientos del Design System HENEQUÉN y el contenido oficial de canacomerida.com.mx
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Building2,
   CheckCircle2,
@@ -54,7 +54,7 @@ interface CanacoLandingPageProps {
 
 export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
   const { signIn } = useAuth();
-  const { isDemoMode, disableDemoMode, toggleDemoMode } = useCanacoDemoMode();
+  const { isDemoMode, disableDemoMode } = useCanacoDemoMode();
 
   // Modales
   const [modalAfiliacionOpen, setModalAfiliacionOpen] = useState(false);
@@ -109,6 +109,36 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
     socio?: SocioCanacoRegistro;
   } | null>(null);
 
+  const crearSocioDemoPendiente = (): SocioCanacoRegistro => ({
+    folioSiem: 'DEMO-SIN-ALTA-SIEM',
+    razonSocial: CANACO_WALKTHROUGH_SOCIO_DEMO.razonSocial,
+    nombreComercial: CANACO_WALKTHROUGH_SOCIO_DEMO.nombreComercial,
+    rfc: CANACO_WALKTHROUGH_SOCIO_DEMO.rfc,
+    sector: CANACO_WALKTHROUGH_SOCIO_DEMO.sector,
+    estrato: 'pequena',
+    numEmpleados: CANACO_WALKTHROUGH_SOCIO_DEMO.numEmpleados,
+    direccion: {
+      calle: CANACO_WALKTHROUGH_SOCIO_DEMO.calle,
+      colonia: 'Dato de prueba',
+      codigoPostal: CANACO_WALKTHROUGH_SOCIO_DEMO.codigoPostal,
+      municipio: CANACO_WALKTHROUGH_SOCIO_DEMO.municipio,
+      ciudad: `${CANACO_WALKTHROUGH_SOCIO_DEMO.municipio}, Yucatán`,
+    },
+    contacto: {
+      nombre: CANACO_WALKTHROUGH_SOCIO_DEMO.contactoNombre,
+      email: CANACO_WALKTHROUGH_SOCIO_DEMO.email,
+      telefono: CANACO_WALKTHROUGH_SOCIO_DEMO.telefono,
+    },
+    fechaAfiliacion: '',
+    fechaVigencia: '',
+    estatus: 'pendiente_pago',
+    pagoConfirmado: false,
+    montoPagado: 0,
+    metodoPago: 'tarjeta',
+    cfdiRequerido: false,
+    folioIntegridad: 'DEMO-REFERENCIA-INTERNA',
+  });
+
   // Consultar RFC en el padrón
   const handleConsultarRfc = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +147,16 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
 
     setConsultando(true);
     setResultadoConsulta(null);
+
+    if (isDemoMode && rfcLimpio === CANACO_WALKTHROUGH_SOCIO_DEMO.rfc) {
+      setResultadoConsulta({
+        encontrado: true,
+        estatus: 'Demo · pendiente de pago',
+        socio: crearSocioDemoPendiente(),
+      });
+      setConsultando(false);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/afiliaciones/consulta?rfc=${encodeURIComponent(rfcLimpio)}`);
@@ -136,55 +176,41 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
         });
       }
     } catch {
-      // Fallback demo local si corre sin backend D1 o si se consulta el RFC de Walkthrough
-      if (
-        rfcLimpio.includes('MAYAB') ||
-        rfcLimpio.includes('FPE') ||
-        rfcLimpio === CANACO_WALKTHROUGH_SOCIO_DEMO.rfc
-      ) {
-        const socioDemo: SocioCanacoRegistro = {
-          folioSiem: 'SIEM-MID-2026-AMA2-MIC-4819',
-          razonSocial: 'Abarrotes y Comercializadora Mayab S.A. de C.V.',
-          nombreComercial: 'Abarrotes del Mayab',
-          rfc: rfcLimpio,
-          sector: 'comercio',
-          estrato: 'micro',
-          numEmpleados: 4,
-          direccion: {
-            calle: 'Calle 60 #450 x 51 y 53',
-            colonia: 'Centro',
-            codigoPostal: '97000',
-            municipio: 'Mérida',
-            ciudad: 'Mérida, Yucatán',
-          },
-          contacto: {
-            nombre: 'Lic. Fernando Pech',
-            email: 'contacto@mayab.mx',
-            telefono: '+52 999 912 3456',
-          },
-          fechaAfiliacion: '2026-10-25',
-          fechaVigencia: '2027-10-25',
-          estatus: 'activo',
-          montoPagado: 2000,
-          metodoPago: 'tarjeta',
-          cfdiRequerido: true,
-          selloDigitalSha256: 'SHA256:CANACO-MID-4819-2026-OFICIAL',
-        };
-        setResultadoConsulta({
-          encontrado: true,
-          estatus: 'Socio Activo',
-          socio: socioDemo,
-        });
-      } else {
-        setResultadoConsulta({
-          encontrado: false,
-          mensaje: `No se localizó afiliación vigente para el RFC ${rfcLimpio} en el ejercicio 2026.`,
-        });
-      }
+      setResultadoConsulta({
+        encontrado: false,
+        mensaje:
+          'No se pudo consultar el padrón en este momento. No se emitió ningún documento; intenta de nuevo o contacta a CANACO.',
+      });
     } finally {
       setConsultando(false);
     }
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const url = new URL(window.location.href);
+    const cancelled = url.searchParams.get('conekta_cancel') === '1';
+    const returnedFromPayment = url.searchParams.get('conekta_success') === '1';
+    if (!cancelled && !returnedFromPayment) return;
+
+    url.searchParams.delete('conekta_cancel');
+    url.searchParams.delete('conekta_success');
+    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+
+    if (cancelled) {
+      setResultadoConsulta({
+        encontrado: false,
+        mensaje: 'Checkout cancelado. No recibimos una confirmación de pago.',
+      });
+      return;
+    }
+
+    setResultadoConsulta({
+      encontrado: false,
+      mensaje:
+        'Regresaste del checkout. Esta pantalla no confirma el pago ni emite documentos. Consulta el estado con tu RFC; si no aparece confirmado, contacta a CANACO.',
+    });
+  }, []);
 
   const serviciosGrid = [
     {
@@ -277,17 +303,17 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
               href="#consulta-socio"
               className="hidden rounded-lg px-2.5 py-1.5 text-xs font-semibold text-henequen-piedra transition hover:text-henequen-anil md:inline-block"
             >
-              Consultar Socio SIEM
+              Consultar estado por RFC
             </a>
 
             <button
               type="button"
               onClick={() => setBuzonOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg border border-henequen-anil/30 bg-henequen-cal px-3 py-1.5 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/50"
-              title="Subir documentos a la Oficialía de Partes Digital"
+              title="Subir documentos al buzón documental de CANACO"
             >
               <Inbox size={13} className="text-henequen-terra" />
-              <span className="hidden sm:inline">Buzón Oficialía</span>
+              <span className="hidden sm:inline">Buzón documental</span>
             </button>
 
             <button
@@ -324,7 +350,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
           <div className="shadow-xs inline-flex flex-wrap items-center justify-center gap-2 rounded-full border border-henequen-anil/25 bg-white px-4 py-1.5 text-[11px] font-semibold tracking-wider text-henequen-anil">
             <span className="flex items-center gap-1.5 font-bold uppercase text-henequen-anil">
               <Sparkles size={13} className="text-henequen-terra" />
-              Portal Oficial de Servicios al Socio
+              Servicios CANACO para negocios
             </span>
             <span className="text-henequen-arena">•</span>
             <span className="text-[11px] font-medium text-henequen-piedra">
@@ -340,13 +366,12 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
           </h1>
 
           <p className="mx-auto mt-5 max-w-2xl text-base text-henequen-piedra sm:text-lg sm:leading-relaxed">
-            Plataforma institucional de servicios para los{' '}
+            Portal de consulta, cálculos de referencia y contacto para los negocios que buscan:{' '}
             <strong className="font-semibold text-henequen-grafito">
-              +1,200 afiliados formales
+              afiliarse a CANACO SERVYTUR Mérida
             </strong>{' '}
-            que representamos ante autoridades e instituciones. Gestiona tu Registro SIEM 2026,
-            descarga tu Cédula Oficial y accede a la suite contable, fiscal y de defensa para tu
-            empresa.
+            . Solicita seguimiento de afiliación, consulta registros disponibles y explora
+            herramientas de ARK LEDGER. La solicitud del portal no registra por sí sola el SIEM.
           </p>
 
           {/* Botones de acción del Hero */}
@@ -365,7 +390,13 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
               className="shadow-xs inline-flex w-full items-center justify-center gap-2 rounded-xl border border-henequen-arena bg-white px-6 py-3.5 text-sm font-semibold text-henequen-anil transition hover:bg-henequen-sisal/40 sm:w-auto"
             >
               <Search size={16} className="text-henequen-piedra" />
-              <span>Consultar Estatus de Socio / Cédula</span>
+              <span>Consultar estado por RFC</span>
+            </a>
+            <a
+              href="https://ledger.arksystems.site/?brand=canaco&demo=1"
+              className="text-xs font-semibold text-henequen-anil underline underline-offset-2"
+            >
+              Ver demo guiada (sin enviar datos)
             </a>
           </div>
 
@@ -387,27 +418,22 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
             </div>
             <div>
               <div className="font-mono text-2xl font-bold text-henequen-anil sm:text-3xl">
-                100% Legal
+                21 herramientas
               </div>
-              <div className="text-[11px] font-medium text-henequen-piedra">
-                Padrón Oficial SIEM
-              </div>
+              <div className="text-[11px] font-medium text-henequen-piedra">Catálogo Ledger</div>
             </div>
             <div>
               <div className="font-mono text-2xl font-bold text-emerald-700 sm:text-3xl">
-                SHA-256
+                Referencia
               </div>
-              <div className="text-[11px] font-medium text-henequen-piedra">
-                Cédula Digital Criptográfica
-              </div>
+              <div className="text-[11px] font-medium text-henequen-piedra">Sin validación QR</div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* 2.25 BANNER INSTITUCIONAL: AFILIACIÓN SIMULTÁNEA AAFY — SAT — IMSS */}
-      {/* Sede Oficial: CANACO Servytur Mérida (aafy.yucatan.gob.mx/noticia.php?id=16) */}
+      {/* 2.25 Orientación sobre trámites relacionados */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       <section className="border-b border-henequen-arena bg-gradient-to-r from-henequen-anil via-henequen-anil to-slate-900 py-6 text-white">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
@@ -418,20 +444,19 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-henequen-sisal">
-                  Sede Oficial CANACO Mérida · Ventanilla Única
+                  CANACO SERVYTUR Mérida · Solicitud de orientación
                 </span>
                 <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 font-mono text-[9px] font-bold uppercase text-emerald-300">
-                  Cumplimiento Tripartito
+                  No es un trámite oficial
                 </span>
               </div>
               <h2 className="mt-0.5 font-serif text-lg font-bold text-white sm:text-xl">
-                Programa de Afiliación Simultánea AAFY — SAT — IMSS
+                Orientación sobre trámites empresariales
               </h2>
               <p className="mt-1 max-w-2xl text-xs leading-relaxed text-henequen-arena/90">
-                Formaliza tu comercio en un solo paso: Registro ante el SAT (CFF / CFDI 4.0), Alta
-                Patronal IMSS (LSS / IDSE) y Padrón Estatal AAFY (Impuesto Sobre Nómina 3.75% / 3.0%
-                MIPyME — LGHY Art. 21-27). Suite contable ARK LEDGER precargada para todos los
-                socios.
+                El portal puede enviar una solicitud de seguimiento a CANACO, pero no registra ni
+                modifica trámites ante SAT, IMSS o AAFY. Confirma los requisitos, tasas e importes
+                directamente con las autoridades correspondientes.
               </p>
             </div>
           </div>
@@ -441,7 +466,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
             className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-henequen-terra px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-henequen-terra-dark"
           >
             <UserPlus size={14} />
-            <span>Tramitar Afiliación Integral</span>
+            <span>Solicitar seguimiento</span>
           </button>
         </div>
       </section>
@@ -485,8 +510,9 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                   Registra tu Empresa y Cuota SIEM
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-henequen-piedra">
-                  Captura tu RFC y número de empleados. El sistema calcula tu cuota oficial, emite
-                  tu folio SIEM al instante y te entrega acceso a la Suite Fiscal.
+                  Captura los datos para obtener una cotización de referencia y dejar una solicitud
+                  pendiente. CANACO debe confirmar el importe y el trámite; aquí no se emite el
+                  SIEM.
                 </p>
               </div>
               <button
@@ -507,7 +533,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                     2
                   </span>
                   <span className="rounded-full bg-henequen-anil/10 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-henequen-anil">
-                    Oficialía de Partes
+                    Buzón documental CANACO
                   </span>
                 </div>
                 <h3 className="mt-3 font-serif text-base font-bold text-henequen-anil">
@@ -536,15 +562,16 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                     3
                   </span>
                   <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-emerald-800">
-                    Cédula QR + Suite
+                    Consulta y herramientas
                   </span>
                 </div>
                 <h3 className="mt-3 font-serif text-base font-bold text-henequen-anil">
-                  Descarga tu Cédula y Usa las Calculadoras
+                  Consulta el estado y explora las herramientas
                 </h3>
                 <p className="mt-1.5 text-xs leading-relaxed text-henequen-piedra">
-                  Verifica tu estatus por RFC para imprimir tu Cédula Oficial tamaño Carta con Sello
-                  SHA-256 + QR y operar las 12 herramientas fiscales de socio.
+                  Consulta si existe un registro y el estado de pago. El portal no emite una
+                  constancia SIEM ni ofrece verificación QR. El catálogo Ledger incluye 21
+                  herramientas.
                 </p>
               </div>
               <a
@@ -575,11 +602,11 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                   <span>Ventanilla de Verificación Rápida</span>
                 </div>
                 <h2 className="mt-1 font-serif text-2xl font-bold text-henequen-anil">
-                  Consulta de Socio Activo y Cédula SIEM
+                  Consulta de registro y pago
                 </h2>
                 <p className="mt-1 text-xs text-henequen-piedra">
-                  Ingresa el RFC de tu empresa para verificar tu vigencia cameral o reimprimir tu
-                  Cédula Oficial Carta con Sello SHA-256.
+                  Ingresa el RFC para consultar si existe un registro. Un pago confirmado no
+                  acredita por sí solo el alta SIEM ni genera una constancia oficial.
                 </p>
               </div>
             </div>
@@ -614,48 +641,75 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
             {resultadoConsulta && (
               <div className="mt-6 border-t border-henequen-arena/70 pt-6">
                 {resultadoConsulta.encontrado && resultadoConsulta.socio ? (
-                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4">
+                  <div
+                    className={`rounded-xl border p-4 ${
+                      resultadoConsulta.socio.pagoConfirmado
+                        ? 'border-emerald-200 bg-emerald-50/60'
+                        : 'border-amber-200 bg-amber-50/70'
+                    }`}
+                  >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-start gap-3">
-                        <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-700" />
+                        {resultadoConsulta.socio.pagoConfirmado ? (
+                          <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-emerald-700" />
+                        ) : (
+                          <Clock size={20} className="mt-0.5 shrink-0 text-amber-700" />
+                        )}
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-emerald-900">
+                            <span className="text-sm font-semibold text-henequen-anil">
                               {resultadoConsulta.socio.razonSocial}
                             </span>
-                            <span className="rounded-full bg-emerald-700 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                              {resultadoConsulta.estatus || 'Socio Activo'}
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase text-white ${
+                                resultadoConsulta.socio.pagoConfirmado
+                                  ? 'bg-emerald-700'
+                                  : 'bg-amber-700'
+                              }`}
+                            >
+                              {resultadoConsulta.socio.pagoConfirmado
+                                ? 'Pago confirmado'
+                                : 'Pendiente de pago'}
                             </span>
                           </div>
-                          <div className="mt-1 font-mono text-xs text-emerald-800">
-                            RFC: {resultadoConsulta.socio.rfc} · Folio SIEM:{' '}
+                          <div className="mt-1 font-mono text-xs text-henequen-grafito">
+                            RFC: {resultadoConsulta.socio.rfc} · Referencia SIEM (no oficial):{' '}
                             {resultadoConsulta.socio.folioSiem}
                           </div>
+                          {!resultadoConsulta.socio.pagoConfirmado && (
+                            <p className="mt-1 text-[11px] text-amber-900">
+                              No se ha confirmado el pago. No se emitió una Cédula ni un CFDI.
+                            </p>
+                          )}
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setBuzonRfc(resultadoConsulta.socio?.rfc || '');
-                            setBuzonEmail(resultadoConsulta.socio?.contacto?.email || '');
-                            setBuzonOpen(true);
-                          }}
-                          className="shadow-xs inline-flex items-center justify-center gap-1.5 rounded-lg border border-henequen-anil/40 bg-white px-3.5 py-2 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/30"
-                        >
-                          <Inbox size={13} />
-                          <span>Buzón de Expediente</span>
-                        </button>
+                        {resultadoConsulta.socio.pagoConfirmado && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBuzonRfc(resultadoConsulta.socio?.rfc || '');
+                                setBuzonEmail(resultadoConsulta.socio?.contacto?.email || '');
+                                setBuzonOpen(true);
+                              }}
+                              className="shadow-xs inline-flex items-center justify-center gap-1.5 rounded-lg border border-henequen-anil/40 bg-white px-3.5 py-2 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/30"
+                            >
+                              <Inbox size={13} />
+                              <span>Buzón de Expediente</span>
+                            </button>
 
-                        <button
-                          type="button"
-                          onClick={() => setSocioConsultado(resultadoConsulta.socio || null)}
-                          className="shadow-xs inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-800"
-                        >
-                          <Download size={13} />
-                          <span>Ver Cédula Oficial Carta</span>
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => setSocioConsultado(resultadoConsulta.socio || null)}
+                              className="shadow-xs inline-flex items-center justify-center gap-1.5 rounded-lg bg-emerald-700 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-800"
+                            >
+                              <Download size={13} />
+                              <span>Ver resumen de pago</span>
+                            </button>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -857,11 +911,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
             </div>
           </div>
 
-          <div
-            onDoubleClick={toggleDemoMode}
-            title="Doble clic o Ctrl+Shift+D para alternar Modo Walkthrough"
-            className="mt-6 flex cursor-default select-none flex-col items-center justify-between gap-2 border-t border-henequen-arena/60 pt-4 text-center text-[10px] text-henequen-piedra/80 sm:flex-row sm:text-left"
-          >
+          <div className="mt-6 flex flex-col items-center justify-between gap-2 border-t border-henequen-arena/60 pt-4 text-center text-[10px] text-henequen-piedra/80 sm:flex-row sm:text-left">
             <span>
               © {new Date().getFullYear()} CANACO SERVYTUR Mérida. Todos los derechos reservados.
               Desarrollado con tecnología de Ark Systems (Substrate Holdings LLC).
@@ -917,7 +967,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
                   Modo Walkthrough CANACO Activo
                 </div>
                 <div className="text-[10px] text-henequen-sisal">
-                  Atajos de demostración para directivos (Ctrl + Shift + D)
+                  Datos de demostración; no se envían ni guardan.
                 </div>
               </div>
             </div>
@@ -971,10 +1021,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
       <VentanillaAfiliacionModal
         isOpen={modalAfiliacionOpen}
         onClose={() => setModalAfiliacionOpen(false)}
-        onAfiliacionCompletada={(socio: SocioCanacoRegistro) => {
-          setSocioConsultado(socio);
-          setModalAfiliacionOpen(false);
-        }}
+        onOpenPrivacyNotice={() => setActiveLegalDoc('privacidad')}
       />
 
       {socioConsultado && (
@@ -985,7 +1032,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
         />
       )}
 
-      {/* Buzón Documental Oficial (Oficialía de Partes Digital) */}
+      {/* Buzón documental interno de CANACO */}
       <BuzonDocumentalModal
         isOpen={buzonOpen}
         onClose={() => setBuzonOpen(false)}

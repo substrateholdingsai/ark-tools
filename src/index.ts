@@ -57,6 +57,7 @@ export interface Env {
   CLIP_ENVIRONMENT?: string;
   CLIP_PAYMENT_URL?: string;
   PRO_PRICE_MXN?: string;
+  CANACO_PRICING_CONFIRMED?: string;
 
   // Email transaccional (Telnyx / Resend)
   EMAIL_PROVIDER?: 'telnyx' | 'resend';

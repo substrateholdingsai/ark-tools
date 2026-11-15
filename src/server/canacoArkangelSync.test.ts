@@ -28,7 +28,7 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
     it('extrae el monto de la cuota desde las notas del socio', () => {
       expect(extraerMontoDeNotas('Folio SIEM: 123 | Cuota: $3,700.00 MXN')).toBe(3700.0);
       expect(extraerMontoDeNotas('Cuota: 2150')).toBe(2150.0);
-      expect(extraerMontoDeNotas('Sin cuota especificada')).toBe(1090.0);
+      expect(extraerMontoDeNotas('Sin cuota especificada')).toBe(0);
     });
 
     it('extrae el RFC desde las notas del socio', () => {
@@ -170,13 +170,14 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
             results: [
               {
                 id: 'lead-1',
-                web: 'Ferretería Peninsular',
-                whatsapp: '9999123456',
-                email: 'pagos@ferre.mx',
+                web: 'Comercializadora del Mayab',
+                whatsapp: '0000000000',
+                email: 'demo@example.invalid',
                 ciudad: 'Mérida',
                 especialidad: 'comercio',
                 status: 'Nuevo / Pendiente',
-                notas: 'RFC: FPE980415XYZ | Cuota: $2,150.00 MXN',
+                notas:
+                  'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
               },
             ],
           }),
@@ -205,18 +206,24 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       const json = (await res?.json()) as any;
       expect(json.ok).toBe(true);
       expect(json.socios_enviados).toBe(1);
-      expect(json.monto_total_cartera).toBe(2150);
+      expect(json.monto_total_cartera).toBe(3700);
     });
 
-    it('procesa el webhook de pago recibido desde Arkangel y actualiza el socio a Activo', async () => {
+    it('procesa solo el pago exacto de un registro pendiente previamente guardado', async () => {
       const mockDb = {
         prepare: vi.fn().mockReturnValue({
           bind: vi.fn().mockReturnThis(),
           first: vi.fn().mockResolvedValue({
-            id: 'lead-1',
-            notas: 'RFC: FPE980415XYZ | Estrato: MICRO',
+            id: 'lead-demo-1',
+            email: 'demo@example.invalid',
+            web: 'Comercializadora del Mayab',
+            contacto_nombre: 'Fernando Pech',
+            status: 'Nuevo / Pendiente',
+            especialidad: 'comercio',
+            notas:
+              'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
           }),
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       };
 
@@ -232,9 +239,9 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
           Authorization: 'Bearer secreto-arkangel',
         },
         body: JSON.stringify({
-          rfc: 'FPE980415XYZ',
-          folio_pago: 'SPEI-998822',
-          monto: 2150.0,
+          rfc: 'CPM2106158A1',
+          folio_pago: 'SPEI-DEMO-4242',
+          monto: 3700,
         }),
       });
 
@@ -244,7 +251,47 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       const json = (await res?.json()) as any;
       expect(json.ok).toBe(true);
       expect(json.estatus).toBe('Socio Activo');
-      expect(json.folioPago).toBe('SPEI-998822');
+      expect(json.folioPago).toBe('SPEI-DEMO-4242');
+    });
+
+    it('rechaza el webhook si el importe no coincide con la cuota guardada', async () => {
+      const mockRun = vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } });
+      const mockDb = {
+        prepare: vi.fn().mockReturnValue({
+          bind: vi.fn().mockReturnThis(),
+          first: vi.fn().mockResolvedValue({
+            id: 'lead-demo-1',
+            email: 'demo@example.invalid',
+            web: 'Comercializadora del Mayab',
+            contacto_nombre: 'Fernando Pech',
+            status: 'Nuevo / Pendiente',
+            especialidad: 'comercio',
+            notas:
+              'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
+          }),
+          run: mockRun,
+        }),
+      };
+      const env = {
+        ARK_TOOLS_DB: mockDb as any,
+        ARKANGEL_WEBHOOK_SECRET: 'secreto-arkangel',
+      } as Env;
+      const req = new Request('https://ledger.arksystems.site/api/canaco/webhook-pago-arkangel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer secreto-arkangel',
+        },
+        body: JSON.stringify({
+          rfc: 'CPM2106158A1',
+          folio_pago: 'SPEI-DEMO-4242',
+          monto: 2000,
+        }),
+      });
+
+      const res = await handleCanacoArkangelSyncApi(req, env, {}, null);
+      expect(res?.status).toBe(409);
+      expect(mockRun).not.toHaveBeenCalled();
     });
   });
 });

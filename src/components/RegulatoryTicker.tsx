@@ -2,13 +2,14 @@
  * ARK LEDGER — Regulatory Ticker (Wall Street / Bloomberg Tape Style)
  *
  * Cinta horizontal compacta de alta densidad en el tope de la interfaz.
- * Comunica en tiempo real que la suite está conectada al radar de Sentinela
- * RegTech y que las 21 herramientas fiscales/laborales están sincronizadas con el DOF.
+ * Comunica alertas regulatorias recibidas y referencias al catálogo de la suite.
  */
 
 import { useState, useEffect } from 'react';
 import { ShieldCheck, ExternalLink, X, Radio, Sparkles, ChevronRight, Info } from 'lucide-react';
 import type { ToolId } from '@/App';
+import { CATALOGO_2026, VALORES_POR_ID } from '@/data/valores-vigentes/catalogo';
+import { TOTAL_HERRAMIENTAS } from '@/data/catalogo-herramientas';
 
 export interface RegulatoryEventItem {
   id: string;
@@ -45,23 +46,36 @@ interface StaticToolGuarantee {
   };
 }
 
+function valorCatalogado(id: string): string {
+  const valor = VALORES_POR_ID.get(id)?.valor;
+  if (typeof valor !== 'number') {
+    throw new Error(`Falta el valor fiscal "${id}" en el catálogo vigente.`);
+  }
+  return valor.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+const RESUMEN_FISCAL_2026 =
+  `UMA $${valorCatalogado('UMA_DIARIA_2026')} · ` +
+  `SMG $${valorCatalogado('SALARIO_MINIMO_GENERAL_2026')} · ` +
+  `FRONTERA $${valorCatalogado('SALARIO_MINIMO_FRONTERA_2026')} · ` +
+  `TOPE SBC $${valorCatalogado('TOPE_SBC_25_UMA_2026')} · ` +
+  `RECARGOS ${valorCatalogado('TASA_RECARGOS_MORA_2026')}% · RESICO PF (consulte tarifa vigente)`;
+
 const STATIC_SUITE_GUARANTEES: StaticToolGuarantee[] = [
   {
     id: 'tool_18_recargos',
     type: 'tool_guarantee',
     label: 'HERRAMIENTA #18',
-    headline:
-      'RECARGOS CFF ART. 17-A & 21: FACTOR INPC TRUNCADO A 4 DECIMALES (TASA LIF 1.47% SIN DEFLACIÓN)',
+    headline: `RECARGOS CFF ART. 17-A & 21: FACTOR INPC TRUNCADO A 4 DECIMALES (TASA LIF ${valorCatalogado('TASA_RECARGOS_MORA_2026')}% SIN DEFLACIÓN)`,
     toolId: 'recargos',
     badgeText: 'CFF VIGENTE',
     badgeVariant: 'gold',
     details: {
       title: 'Actualización y Recargos Fiscales (CFF Art. 17-A y 21)',
-      description:
-        'Motor determinista con tablas INPC oficiales del INEGI. Aplica factor truncado a cuatro decimales sin redondeo y respeta el principio de no deflación con recargos por mora al 1.47% mensual.',
+      description: `Motor determinista con tablas INPC oficiales del INEGI. Aplica factor truncado a cuatro decimales sin redondeo y respeta el principio de no deflación con recargos por mora al ${valorCatalogado('TASA_RECARGOS_MORA_2026')}% mensual.`,
       fundamento:
         'Art. 17-A y 21 del Código Fiscal de la Federación; Art. 8 Fracc. I penúltimo párrafo LIF.',
-      cobertura: 'Cálculo auditado y sellado criptográficamente en Cédula Oficial SHA-256 con QR.',
+      cobertura: 'Herramienta de cálculo; verifica el resultado y su vigencia antes de usarlo.',
     },
   },
   {
@@ -78,8 +92,7 @@ const STATIC_SUITE_GUARANTEES: StaticToolGuarantee[] = [
         'Para nuevas incorporaciones aplica la medida temporal del Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026): permite último SBC o hasta último SBC + 1 UMA, sujeto al mínimo SMG general. Conserva periodos contratados y excluye trabajadores independientes Art. 13-I; el alcance frente a la LSS y su Reglamento es materia de discusión jurídica.',
       fundamento:
         'LSS 1973 Arts. 167 y 171; LSS 1997 Arts. 168 y 218 a 221; Acuerdo ACDO.AS2.HCT.101026/302.P.DG, Punto Cuarto (DOF 21/10/2026).',
-      cobertura:
-        'Simulación actuarial con desglose mes a mes de cuota 2026 (14.438%) y análisis de ROI.',
+      cobertura: `Simulación actuarial con desglose mes a mes de cuota 2026 (${valorCatalogado('CUOTA_MODALIDAD_40_2026')}%) y análisis de ROI.`,
     },
   },
   {
@@ -135,18 +148,17 @@ const STATIC_SUITE_GUARANTEES: StaticToolGuarantee[] = [
   {
     id: 'catalogo_dof_oficial',
     type: 'dof_catalog',
-    label: 'DOF 2026 AUDITADO',
-    headline:
-      'UMA $113.14 · SMG $278.80 · FRONTERA $419.88 · TOPE SBC $2,828.50 · RESICO PF 1.0%-2.5% (8/8 OFICIALES)',
-    badgeText: '8/8 DOF',
+    label: 'CATÁLOGO FISCAL 2026',
+    headline: RESUMEN_FISCAL_2026,
+    badgeText: `${CATALOGO_2026.length} VALORES`,
     badgeVariant: 'emerald',
     details: {
       title: 'Catálogo de Vigencias Fiscales y Laborales 2026',
       description:
-        'Todos los parámetros de cálculo provienen directamente de publicaciones oficiales del DOF, INEGI y CONASAMI. Cero valores hardcodeados ni proyecciones no oficiales.',
+        'Los valores enlazados al catálogo incluyen organismo, publicación y vigencia. Verifica cada fuente oficial antes de aplicar un cálculo.',
       fundamento:
         'DOF 10/01/2026 (UMA), DOF 19/12/2025 (Salarios Mínimos), RMF 2026 (Tarifas ISR).',
-      cobertura: 'Auditoría automática periódica de vigencias con verificación DOF en tiempo real.',
+      cobertura: 'Consulta las fuentes y vigencias del catálogo fiscal central.',
     },
   },
 ];
@@ -261,7 +273,7 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
         );
       })}
 
-      {/* 2. Garantías de Blindaje y Actualización de las 20 Herramientas */}
+      {/* 2. Garantías de Blindaje y Actualización de la Suite */}
       {STATIC_SUITE_GUARANTEES.map((g) => (
         <button
           key={`${isClone ? 'clone' : 'orig'}-g-${g.id}`}
@@ -312,8 +324,8 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
         {/* Pin derecho: Conteo de herramientas blindadas */}
         <div className="z-10 hidden h-full shrink-0 items-center gap-1.5 border-l border-slate-800 bg-[#070b16] px-3 font-mono text-[9.5px] tracking-wider text-slate-300 shadow-[-4px_0_12px_rgba(0,0,0,0.5)] lg:flex">
           <ShieldCheck size={12} className="text-emerald-400" />
-          <span className="font-bold text-emerald-400">21/21</span>
-          <span className="uppercase text-slate-400">HERRAMIENTAS VIGENTES</span>
+          <span className="font-bold text-emerald-400">{TOTAL_HERRAMIENTAS}</span>
+          <span className="uppercase text-slate-400">HERRAMIENTAS EN SUITE</span>
         </div>
       </div>
 

@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import {
-  CANACO_DEMO_STORAGE_KEY,
   CANACO_WALKTHROUGH_SOCIO_DEMO,
   checkInitialDemoMode,
   setCanacoDemoMode,
@@ -24,7 +23,6 @@ describe('CANACO Walkthrough Demo Mode & Simulated Payment', () => {
   it('se activa con ?demo=1, permite autollenar el socio de 15 empleados y simular pago en Paso 3', () => {
     window.history.replaceState({}, '', '/?brand=canaco&demo=1');
     expect(checkInitialDemoMode()).toBe(true);
-    expect(window.localStorage.getItem(CANACO_DEMO_STORAGE_KEY)).toBe('true');
 
     render(<VentanillaAfiliacionModal isOpen={true} onClose={() => {}} />);
 
@@ -34,17 +32,24 @@ describe('CANACO Walkthrough Demo Mode & Simulated Payment', () => {
     // Clic en "Ir directo a Pago (Paso 3) →"
     fireEvent.click(screen.getByRole('button', { name: /Ir directo a Pago \(Paso 3\)/i }));
 
-    // Verifica que en Paso 3 aparece el Simulador de Pasarela con el RFC autollenado
+    // Verifica que el Paso 3 informa que el recorrido no procesa ni confirma pagos.
     expect(screen.getByText(/Simulador de Pasarela \(Modo Walkthrough\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/VISA CORPORATIVA/i)).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(CANACO_WALKTHROUGH_SOCIO_DEMO.rfc))).toBeInTheDocument();
+    expect(screen.getByText(/VISA de prueba •••• 4242/i)).toBeInTheDocument();
+    expect(screen.getByText(/no confirma pago/i)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Clip/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /pago acreditado/i })).not.toBeInTheDocument();
 
-    // Cambiar a Enlace Clip / QR y verificar que muestra el link de pago real de Clip + botón simulado
-    fireEvent.click(screen.getByRole('button', { name: /Enlace Clip \/ QR/i }));
-    expect(screen.getByRole('link', { name: /Abrir Link Clip Real/i })).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /Simular Pago Clip Acreditado y Emitir Cédula SIEM/i })
-    ).toBeInTheDocument();
+    fireEvent.click(screen.getAllByRole('button', { name: /Simular recorrido \(sin pago\)/i })[0]!);
+    expect(screen.getByText(/Registro pendiente de pago/i)).toBeInTheDocument();
+    expect(screen.getByText(/No se emite una Cédula/i)).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(CANACO_WALKTHROUGH_SOCIO_DEMO.rfc))).toBeInTheDocument();
+  });
+
+  it('no activa la demostración por un valor heredado en localStorage', () => {
+    window.history.replaceState({}, '', '/?brand=canaco');
+    window.localStorage.setItem('canaco_demo_mode_v1', 'true');
+
+    expect(checkInitialDemoMode()).toBe(false);
   });
 
   it('se desactiva y limpia el parámetro ?demo=1 de la URL al apagar el modo demo', () => {

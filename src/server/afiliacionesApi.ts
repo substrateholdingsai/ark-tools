@@ -6,11 +6,13 @@
  */
 
 import type { Env } from '../index';
-import { sendCanacoConfirmacionPagoEmail } from './canacoEmailService';
 import {
   calcularCuotaAfiliacion,
   determinarEstrato,
+  extraerNumEmpleados,
+  generarFolioIntegridad,
   generarFolioSiem,
+  tienePagoConfirmado,
 } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico, SocioCanacoRegistro } from '@/components/canaco/types';
 import {
@@ -52,7 +54,6 @@ interface AfiliacionPayload {
   telefono: string;
   metodoPago?: 'tarjeta' | 'spei' | 'clip';
   cfdiRequerido?: boolean;
-  estatus?: 'pendiente_pago' | 'activo';
   tenantId?: string;
   registroPatronalImss?: string;
   registroEstatalAafy?: string;
@@ -145,24 +146,40 @@ export async function handleAfiliacionesApiRequest(
     }
 
     const folioMatch = row.notas?.match(/Folio SIEM:\s*([^\s|]+)/i);
-    const folioSiem = folioMatch ? folioMatch[1] : 'SIEM-MID-2026-OFICIAL';
-    const selloMatch = row.notas?.match(/Sello:\s*([^\s|]+)/i);
-    const selloSha = selloMatch ? selloMatch[1] : `SHA256:CANACO-MID-${row.id.slice(0, 8)}`;
+    const folioSiem = folioMatch?.[1] || '';
+    const razonSocialFromNotas = row.notas?.match(/Razón Social:\s*([^|]+)/i)?.[1]?.trim();
+    const folioIntegridadMatch = row.notas?.match(/Folio de Integridad:\s*([^\s|]+)/i);
+    const folioIntegridad =
+      folioIntegridadMatch?.[1] || (folioSiem ? generarFolioIntegridad(folioSiem) : '');
     const cuotaMatch = row.notas?.match(/Cuota:\s*\$?([\d,]+(\.\d+)?)/i);
-    const cuota = cuotaMatch && cuotaMatch[1] ? parseFloat(cuotaMatch[1].replace(/,/g, '')) : 2000;
+    const cuota = cuotaMatch && cuotaMatch[1] ? parseFloat(cuotaMatch[1].replace(/,/g, '')) : 0;
+    const pagoMatch = row.notas?.match(/Pago Confirmado [^(]+\(\$([\d,]+(?:\.\d+)?)\s*MXN\)/i);
+    const montoConfirmado = pagoMatch?.[1] ? parseFloat(pagoMatch[1].replace(/,/g, '')) : 0;
     const nrpMatch = row.notas?.match(/NRP:\s*([A-Z0-9]{10,11})/i);
     const aafyMatch = row.notas?.match(/AAFY:\s*([^\s|]+)/i);
     const simultaneaFlag = /Afiliaci[oó]n Simult[aá]nea/i.test(row.notas || '');
     const tramiteImssFlag = /Tr[aá]mite IMSS Solicitado/i.test(row.notas || '');
 
+    const numEmpleados = extraerNumEmpleados(row.notas);
+    const sector = row.especialidad as SectorEconomico;
+    const cuotaEsperada =
+      numEmpleados > 0 && ['comercio', 'servicios', 'turismo'].includes(sector)
+        ? calcularCuotaAfiliacion(numEmpleados, sector).totalAnual
+        : 0;
+    const pagoConfirmado =
+      row.status === 'Socio Activo' &&
+      tienePagoConfirmado(row.notas) &&
+      cuota > 0 &&
+      Math.round(cuota * 100) === Math.round(cuotaEsperada * 100) &&
+      Math.round(montoConfirmado * 100) === Math.round(cuotaEsperada * 100);
     const socioRegistro: SocioCanacoRegistro = {
-      folioSiem: folioSiem || 'SIEM-MID-2026-OFICIAL',
-      razonSocial: row.web || 'Comercio Afiliado de Yucatán',
+      folioSiem,
+      razonSocial: razonSocialFromNotas || row.web || 'Comercio Afiliado de Yucatán',
       nombreComercial: row.web || '',
       rfc: qRfc,
-      sector: (row.especialidad as any) || 'comercio',
-      estrato: 'micro',
-      numEmpleados: 5,
+      sector: ['comercio', 'servicios', 'turismo'].includes(sector) ? sector : 'comercio',
+      estrato: numEmpleados ? determinarEstrato(numEmpleados) : 'micro',
+      numEmpleados,
       direccion: {
         calle: 'Domicilio Registrado',
         colonia: 'Centro',
@@ -176,12 +193,13 @@ export async function handleAfiliacionesApiRequest(
         telefono: authPrincipal ? row.whatsapp || '9991234567' : maskPhone(row.whatsapp),
       },
       fechaAfiliacion: row.last_contact || new Date().toISOString().split('T')[0] || '',
-      fechaVigencia: '2027-10-27',
-      estatus: row.status === 'Socio Activo' ? 'activo' : 'pendiente_pago',
-      montoPagado: cuota,
-      metodoPago: 'tarjeta',
+      fechaVigencia: '',
+      estatus: pagoConfirmado ? 'activo' : 'pendiente_pago',
+      pagoConfirmado,
+      montoPagado: pagoConfirmado ? montoConfirmado : 0,
+      metodoPago: /Pago Confirmado Call Center:/i.test(row.notas || '') ? 'spei' : 'tarjeta',
       cfdiRequerido: true,
-      selloDigitalSha256: selloSha || `SHA256:CANACO-MID-${row.id.slice(0, 8)}`,
+      folioIntegridad,
       registroPatronalImss: nrpMatch ? nrpMatch[1] : undefined,
       registroEstatalAafy: aafyMatch ? aafyMatch[1] : undefined,
       afiliacionSimultanea: simultaneaFlag,
@@ -192,7 +210,7 @@ export async function handleAfiliacionesApiRequest(
       {
         encontrado: true,
         socio: socioRegistro,
-        estatus: row.status,
+        estatus: pagoConfirmado ? 'Socio Activo' : 'Nuevo / Pendiente',
       },
       { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
     );
@@ -257,21 +275,82 @@ export async function handleAfiliacionesApiRequest(
           notas: string | null;
         }>();
 
-      // 2. Extraer metadatos oficiales del socio
+      if (!leadRow || leadRow.status !== 'Socio Activo' || !tienePagoConfirmado(leadRow.notas)) {
+        return Response.json(
+          {
+            error:
+              'El registro sigue pendiente de confirmación de pago. La empresa se podrá importar cuando exista un pago confirmado.',
+          },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      // 2. Derivar los datos de importación del registro pagado en D1.
       const rfcFromNotas = leadRow?.notas?.match(/RFC:\s*([A-Z0-9]{12,13})/i)?.[1];
       const folioFromNotas = leadRow?.notas?.match(/Folio SIEM:\s*([^\s|]+)/i)?.[1];
+      const razonSocialFromNotas = leadRow?.notas?.match(/Razón Social:\s*([^|]+)/i)?.[1]?.trim();
+      const numEmpleadosFromNotas = extraerNumEmpleados(leadRow?.notas);
+      const nrpFromNotas = leadRow?.notas?.match(/NRP:\s*([A-Z0-9]{10,11})/i)?.[1];
+      const aafyFromNotas = leadRow?.notas?.match(/AAFY:\s*([^\s|]+)/i)?.[1];
+      const cuotaRegistrada = Number(
+        leadRow?.notas?.match(/Cuota:\s*\$?([\d,]+(?:\.\d+)?)/i)?.[1]?.replace(/,/g, '') || 0
+      );
+      const pagoRegistrado = Number(
+        leadRow?.notas
+          ?.match(/Pago Confirmado [^(]+\(\$([\d,]+(?:\.\d+)?)\s*MXN\)/i)?.[1]
+          ?.replace(/,/g, '') || 0
+      );
+      const cuotaEsperada =
+        numEmpleadosFromNotas > 0 &&
+        ['comercio', 'servicios', 'turismo'].includes(leadRow?.especialidad || '')
+          ? calcularCuotaAfiliacion(numEmpleadosFromNotas, leadRow?.especialidad as SectorEconomico)
+              .totalAnual
+          : 0;
+      const finalEmailStored = leadRow?.email?.trim().toLowerCase() || '';
+      const finalTelefonoStored = leadRow?.whatsapp?.trim() || '';
+      const finalContactoStored = leadRow?.contacto_nombre?.trim() || '';
+      const finalNombreStored = (razonSocialFromNotas || leadRow?.web || '').trim();
+      const mismatch =
+        (qRfc && qRfc !== rfcFromNotas?.toUpperCase()) ||
+        (qFolio && qFolio !== folioFromNotas) ||
+        (body.razonSocial &&
+          body.razonSocial.trim().toUpperCase() !== finalNombreStored.toUpperCase()) ||
+        (qEmail && qEmail !== finalEmailStored) ||
+        (body.telefono && body.telefono.trim() !== finalTelefonoStored) ||
+        (body.contactoNombre && body.contactoNombre.trim() !== finalContactoStored) ||
+        (body.numEmpleados !== undefined && Number(body.numEmpleados) !== numEmpleadosFromNotas) ||
+        (body.sector && body.sector !== leadRow?.especialidad) ||
+        (body.registroPatronalImss &&
+          body.registroPatronalImss.trim().toUpperCase() !== nrpFromNotas?.toUpperCase()) ||
+        (body.registroEstatalAafy &&
+          body.registroEstatalAafy.trim().toUpperCase() !== aafyFromNotas?.toUpperCase()) ||
+        (body.municipio &&
+          body.municipio.trim().toLowerCase() !== leadRow?.ciudad?.trim().toLowerCase());
+      if (
+        mismatch ||
+        !rfcFromNotas ||
+        !folioFromNotas ||
+        !finalNombreStored ||
+        !finalEmailStored ||
+        !numEmpleadosFromNotas ||
+        cuotaEsperada <= 0 ||
+        Math.round(cuotaRegistrada * 100) !== Math.round(cuotaEsperada * 100) ||
+        Math.round(pagoRegistrado * 100) !== Math.round(cuotaEsperada * 100)
+      ) {
+        return Response.json(
+          { error: 'Los datos enviados no coinciden con el registro confirmado en el padrón.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
       const finalRfc = (qRfc || rfcFromNotas || 'XAXX010101000').toUpperCase();
-      const finalNombre = (
-        body.razonSocial?.trim() ||
-        leadRow?.web ||
-        'Comercio Afiliado de Yucatán'
-      ).toUpperCase();
-      const finalEmail = (body.email?.trim() || leadRow?.email || '').toLowerCase();
-      const finalTelefono = body.telefono?.trim() || leadRow?.whatsapp || '';
-      const finalContacto = body.contactoNombre?.trim() || leadRow?.contacto_nombre || '';
+      const finalNombre = finalNombreStored.toUpperCase();
+      const finalEmail = finalEmailStored;
+      const finalTelefono = finalTelefonoStored;
+      const finalContacto = finalContactoStored;
       const finalFolioSiem = qFolio || folioFromNotas || 'SIEM-MID-2026-OFICIAL';
-      const finalSector = body.sector || (leadRow?.especialidad as SectorEconomico) || 'comercio';
-      const finalNumEmpleados = Math.max(1, Number(body.numEmpleados) || 5);
+      const finalSector = (leadRow?.especialidad as SectorEconomico) || 'comercio';
+      const finalNumEmpleados = numEmpleadosFromNotas;
       const finalMunicipio = body.municipio?.trim() || leadRow?.ciudad || 'Mérida';
       const tipoCliente: 'empresa' | 'persona_fisica' =
         finalRfc.length === 13 ? 'persona_fisica' : 'empresa';
@@ -382,8 +461,6 @@ export async function handleAfiliacionesApiRequest(
       }
 
       // 4. Inserción o actualización en el catálogo de clientes del Expediente Único
-      const nrpFromNotas = leadRow?.notas?.match(/NRP:\s*([A-Z0-9]{10,11})/i)?.[1];
-      const aafyFromNotas = leadRow?.notas?.match(/AAFY:\s*([^\s|]+)/i)?.[1];
       const metadataObj = {
         origen: 'siem_canaco',
         folio_siem: finalFolioSiem,
@@ -393,8 +470,8 @@ export async function handleAfiliacionesApiRequest(
         email: finalEmail,
         telefono: finalTelefono,
         municipio: finalMunicipio,
-        registro_patronal_imss: body.registroPatronalImss || nrpFromNotas || null,
-        registro_estatal_aafy: body.registroEstatalAafy || aafyFromNotas || null,
+        registro_patronal_imss: nrpFromNotas || null,
+        registro_estatal_aafy: aafyFromNotas || null,
         afiliacion_simultanea: /Afiliaci[oó]n Simult[aá]nea/i.test(leadRow?.notas || ''),
         importado_en: new Date().toISOString(),
       };
@@ -545,9 +622,15 @@ export async function handleAfiliacionesApiRequest(
   try {
     const body = (await request.json()) as AfiliacionPayload;
 
-    if (!body.razonSocial?.trim() || !body.rfc?.trim() || !body.email?.trim()) {
+    if (
+      !body.razonSocial?.trim() ||
+      !body.rfc?.trim() ||
+      !body.email?.trim() ||
+      !body.contactoNombre?.trim() ||
+      !body.telefono?.trim()
+    ) {
       return Response.json(
-        { error: 'Razón social, RFC y correo electrónico son requeridos.' },
+        { error: 'Razón social, RFC, contacto, correo y teléfono son requeridos.' },
         { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
       );
     }
@@ -564,25 +647,34 @@ export async function handleAfiliacionesApiRequest(
       authPrincipal?.platformRole === 'super_admin' ||
       authPrincipal?.email?.toLowerCase() === 'horus.i2d@gmail.com';
     const tenantId = isSuperOrCanacoAdmin && body.tenantId ? body.tenantId.trim() : 'canaco_merida';
-    const sector: SectorEconomico = body.sector || 'comercio';
-    const numEmpleados = Math.max(1, Number(body.numEmpleados) || 1);
+    const sectorInput = body.sector || 'comercio';
+    if (!['comercio', 'servicios', 'turismo'].includes(sectorInput)) {
+      return Response.json(
+        { error: 'El sector seleccionado no es válido.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const sector: SectorEconomico = sectorInput;
+    const numEmpleados = Number(body.numEmpleados);
+    if (!Number.isInteger(numEmpleados) || numEmpleados < 1 || numEmpleados > 5000) {
+      return Response.json(
+        { error: 'El número de empleados debe ser un entero entre 1 y 5,000.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
     const estrato = determinarEstrato(numEmpleados);
     const cotizacion = calcularCuotaAfiliacion(numEmpleados, sector);
     const rfcUpper = body.rfc.trim().toUpperCase();
     const razonSocialUpper = body.razonSocial.trim().toUpperCase();
     const nombreComercial = (body.nombreComercial || body.razonSocial).trim();
     const municipio = (body.municipio || 'Mérida').trim();
-    // En producción con Conekta activo, un usuario sin privilegios no puede auto-activarse sin webhook de pago
-    const allowDirectActive =
-      isSuperOrCanacoAdmin || !(env.ENVIRONMENT === 'production' && env.CONEKTA_PRIVATE_KEY);
-    const effectiveActive = body.estatus === 'activo' && allowDirectActive;
-    const estatus = effectiveActive ? 'Socio Activo' : 'Nuevo / Pendiente';
+    const estatus = 'Nuevo / Pendiente';
     const folioSiem = generarFolioSiem(rfcUpper, estrato);
     const fechaHoy = new Date().toISOString().split('T')[0] || '';
     const fechaVigencia =
       new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '';
 
-    const selloDigitalSha256 = `SHA256:CANACO-MID-${folioSiem.slice(-8)}-${Date.now().toString(36).toUpperCase()}`;
+    const folioIntegridad = generarFolioIntegridad(folioSiem);
 
     const extraSimultanea = [
       body.afiliacionSimultanea ? 'Afiliación Simultánea AAFY-SAT-IMSS' : '',
@@ -593,7 +685,7 @@ export async function handleAfiliacionesApiRequest(
       .filter(Boolean)
       .join(' | ');
 
-    const notasDetalle = `RFC: ${rfcUpper} | Folio SIEM: ${folioSiem} | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Cuota: $${cotizacion.totalAnual.toLocaleString('es-MX')} MXN | Sector: ${sector} | CFDI: ${body.cfdiRequerido ? 'Requerido' : 'No'}${extraSimultanea ? ` | ${extraSimultanea}` : ''} | Sello: ${selloDigitalSha256}`;
+    const notasDetalle = `Razón Social: ${razonSocialUpper} | RFC: ${rfcUpper} | Folio SIEM: ${folioSiem} | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Empleados: ${numEmpleados} | Cuota: $${cotizacion.totalAnual.toLocaleString('es-MX')} MXN | Sector: ${sector} | CFDI: ${body.cfdiRequerido ? 'Requerido' : 'No'}${extraSimultanea ? ` | ${extraSimultanea}` : ''} | Folio de Integridad: ${folioIntegridad}`;
 
     // Verificar si el comercio ya existe registrado en este tenant por su RFC o Email
     const existing = await db
@@ -606,11 +698,11 @@ export async function handleAfiliacionesApiRequest(
     let leadId = existing?.id;
 
     if (existing) {
-      if (existing.status === 'Socio Activo' && !isSuperOrCanacoAdmin) {
+      if (existing.status === 'Socio Activo' || existing.status === 'activo') {
         return Response.json(
           {
             error:
-              'Este RFC o correo ya pertenece a un Socio Activo en el Padrón 2026. Inicia sesión o contacta a CANACO para actualizar tus datos.',
+              'Este RFC o correo ya pertenece a un Socio Activo en el padrón. Contacta a CANACO para actualizar sus datos.',
           },
           { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
@@ -683,11 +775,12 @@ export async function handleAfiliacionesApiRequest(
       },
       fechaAfiliacion: fechaHoy,
       fechaVigencia,
-      estatus: effectiveActive ? 'activo' : 'pendiente_pago',
-      montoPagado: cotizacion.totalAnual,
+      estatus: 'pendiente_pago',
+      pagoConfirmado: false,
+      montoPagado: 0,
       metodoPago: body.metodoPago || 'tarjeta',
       cfdiRequerido: !!body.cfdiRequerido,
-      selloDigitalSha256,
+      folioIntegridad,
       registroPatronalImss: body.registroPatronalImss
         ? body.registroPatronalImss.trim().toUpperCase()
         : undefined,
@@ -698,30 +791,6 @@ export async function handleAfiliacionesApiRequest(
       tramiteImssSolicitado: !!body.tramiteImssSolicitado,
     };
 
-    // Disparar correo oficial de confirmación vía Resend si el pago quedó activo
-    let emailEnviado = false;
-    let emailId: string | undefined;
-
-    if (effectiveActive && body.email && body.email.includes('@')) {
-      const emailRes = await sendCanacoConfirmacionPagoEmail(env, {
-        email: body.email.trim(),
-        contactoNombre: body.contactoNombre?.trim(),
-        razonSocial: razonSocialUpper,
-        rfc: rfcUpper,
-        folioSiem,
-        folioPago: `VENTANILLA-${Date.now().toString(36).toUpperCase()}`,
-        monto: cotizacion.totalAnual,
-        selloDigitalSha256,
-        metodo: body.metodoPago || 'tarjeta',
-      }).catch((err: any) => {
-        console.warn('[Afiliaciones API] Error no bloqueante al enviar correo Resend:', err);
-        return { success: false, error: err.message, id: undefined };
-      });
-
-      emailEnviado = emailRes.success;
-      emailId = emailRes.id;
-    }
-
     return Response.json(
       {
         success: true,
@@ -729,8 +798,7 @@ export async function handleAfiliacionesApiRequest(
         leadId,
         socio: socioRegistro,
         cotizacion,
-        emailEnviado,
-        emailId,
+        emailEnviado: false,
       },
       { status: 201, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
     );
