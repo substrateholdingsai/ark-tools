@@ -14,7 +14,11 @@ import {
   calcularRecargosYActualizacion,
   validarEntradaRecargos,
 } from '../../tools/recargos/lib/calcularRecargos';
-import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
+import {
+  simularModalidad40,
+  validarParametrosModalidad40,
+} from '../../tools/modalidad40/lib/calcularModalidad40';
+import { VECTOR_REFERENCIA_MODALIDAD40 } from '../../tools/modalidad40/mensajes';
 import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
 import { calcularRetencionClinicas } from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
 import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
@@ -30,8 +34,7 @@ import { parseStrictBoolean } from '../../lib/parseBoolean';
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calcular_modalidad_40',
-    description:
-      'Calcula la proyección actuarial de pensión Ley 73 y cuota mensual de Modalidad 40 conforme al Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026). Restringe el nuevo salario al último SBC + 1 UMA diaria (máx. 25 UMAs).',
+    description: `Calcula una proyección Ley 73 y cuota de Modalidad 40 con los seis campos obligatorios. La regla de registro se basa en una medida temporal del Acuerdo ACDO.AS2.HCT.101026/302.P.DG, cuyo alcance jurídico es materia de discusión. Vector de referencia: ${JSON.stringify(VECTOR_REFERENCIA_MODALIDAD40)}`,
     parameters: {
       type: 'object',
       properties: {
@@ -61,7 +64,14 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           description: 'Si cuenta con cónyuge o solicita ayuda asistencial por soledad (+15%).',
         },
       },
-      required: ['ultimoSbc', 'semanasPrevias'],
+      required: [
+        'ultimoSbc',
+        'sbcDeseado',
+        'semanasPrevias',
+        'mesesAportacion',
+        'edadJubilacion',
+        'asignacionFamiliar',
+      ],
     },
   },
   {
@@ -458,21 +468,12 @@ export async function executeAiTool(
   try {
     // 1. Herramientas de cálculo puro (no requieren base de datos)
     if (toolName === 'calcular_modalidad_40') {
-      const ultimoSbc = Number(args.ultimoSbc) || 315.04;
-      const sbcDeseado = Number(args.sbcDeseado) || 2932.75;
-      const semanasPrevias = Number(args.semanasPrevias) || 500;
-      const mesesAportacion = Number(args.mesesAportacion) || 36;
-      const edadJubilacion = Number(args.edadJubilacion) || 65;
-      const asignacionFamiliar = args.asignacionFamiliar !== false;
+      const validacion = validarParametrosModalidad40(args);
+      if (!validacion.ok) {
+        return { success: false, error: validacion.error };
+      }
 
-      const resultado = await simularModalidad40({
-        ultimoSbc,
-        sbcDeseado,
-        semanasPrevias,
-        mesesAportacion,
-        edadJubilacion,
-        asignacionFamiliar,
-      });
+      const resultado = await simularModalidad40(validacion.valor);
       return { success: true, data: resultado };
     }
 

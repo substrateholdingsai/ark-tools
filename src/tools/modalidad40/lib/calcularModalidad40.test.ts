@@ -9,6 +9,7 @@ import {
   obtenerFactorEdad,
   calcularAniosExcedentes,
   VALORES_OFICIALES_M40,
+  validarParametrosModalidad40,
 } from './calcularModalidad40';
 
 describe('Motor Matemático de Modalidad 40 (Ley 73 + DOF 21/10/2026)', () => {
@@ -37,7 +38,22 @@ describe('Motor Matemático de Modalidad 40 (Ley 73 + DOF 21/10/2026)', () => {
 
     expect(evaluacion.excedeLimiteDof).toBe(false);
     expect(evaluacion.sbcEfectivo).toBe(850.0);
-    expect(evaluacion.mensajeCriterio).toContain('dentro del límite permitido');
+    expect(evaluacion.mensajeCriterio).toContain('dentro del límite aplicado');
+  });
+
+  it('conserva el SBC deseado bajo el último SBC y acepta exactamente el límite aplicado', () => {
+    const debajoDelUltimo = evaluarLimitesModalidad40(900, 700);
+    expect(debajoDelUltimo.sbcEfectivo).toBe(700);
+    expect(debajoDelUltimo.excedeLimiteDof).toBe(false);
+
+    const limite = VALORES_OFICIALES_M40.TOPE_25_UMA;
+    const exacto = evaluarLimitesModalidad40(900, 900 + VALORES_OFICIALES_M40.UMA_DIARIA);
+    expect(exacto.sbcEfectivo).toBe(1017.31);
+    expect(exacto.excedeLimiteDof).toBe(false);
+
+    const ultimoSbcAlTope = evaluarLimitesModalidad40(limite, limite);
+    expect(ultimoSbcAlTope.limitePermitidoDof2026).toBe(limite);
+    expect(ultimoSbcAlTope.sbcEfectivo).toBe(limite);
   });
 
   it('respeta el tope general de 25 UMAs si último SBC + 1 UMA supera las 25 UMAs', () => {
@@ -154,5 +170,47 @@ describe('Motor Matemático de Modalidad 40 (Ley 73 + DOF 21/10/2026)', () => {
     expect(resultado.selloSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(resultado.pension.pensionMensualEstimada).toBeGreaterThan(0);
     expect(resultado.roi.mesesRecuperacionRoi).toBeGreaterThan(0);
+  });
+
+  it('rechaza parámetros faltantes, desconocidos o fuera de rango y advierte menos de 500 semanas', async () => {
+    const params = {
+      ultimoSbc: 600,
+      sbcDeseado: 2932.75,
+      semanasPrevias: 0,
+      mesesAportacion: 24,
+      edadJubilacion: 65,
+      asignacionFamiliar: false,
+    };
+
+    expect(validarParametrosModalidad40({ ...params, mesesAportacion: 6 }).ok).toBe(false);
+    expect(validarParametrosModalidad40({ ...params, edadJubilacion: 66 }).ok).toBe(false);
+    expect(validarParametrosModalidad40({ ...params, sbcDeseado: -1 }).ok).toBe(false);
+    expect(validarParametrosModalidad40({ ...params, unknown: true }).ok).toBe(false);
+    expect(validarParametrosModalidad40({}).ok).toBe(false);
+
+    const resultado = await simularModalidad40(params);
+    expect(resultado.advertencias.some((warning) => warning.includes('500 semanas mínimas'))).toBe(
+      true
+    );
+    expect(resultado.pension.importeAsignacionFamiliar).toBe(0);
+  });
+
+  it('reproduce el vector de referencia del lunes', async () => {
+    const resultado = await simularModalidad40({
+      ultimoSbc: 600,
+      sbcDeseado: 2932.75,
+      semanasPrevias: 1250,
+      mesesAportacion: 24,
+      edadJubilacion: 65,
+      asignacionFamiliar: true,
+    });
+
+    expect(resultado.limites.sbcEfectivo).toBe(717.31);
+    expect(resultado.inversion.cuotaMensual).toBe(3148.38);
+    expect(resultado.inversion.inversionTotal).toBe(75561.12);
+    expect(resultado.pension.pensionMensualEstimada).toBe(16783.17);
+    expect(resultado.roi.pensionSinM40).toBe(15395.83);
+    expect(resultado.roi.incrementoMensualPension).toBe(1387.34);
+    expect(resultado.roi.mesesRecuperacionRoi).toBe(55);
   });
 });

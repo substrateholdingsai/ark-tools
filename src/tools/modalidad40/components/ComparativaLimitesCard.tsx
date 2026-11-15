@@ -1,5 +1,10 @@
 import { AlertTriangle, CheckCircle2, Info, ArrowRight } from 'lucide-react';
 import type { LimitesModalidad40 } from '../types';
+import {
+  CITACION_ACUERDO_MODALIDAD40,
+  NOTA_ALCANCE_ACUERDO_MODALIDAD40,
+  URL_ACUERDO_MODALIDAD40,
+} from '../mensajes';
 
 interface Props {
   limites: LimitesModalidad40;
@@ -20,7 +25,7 @@ export function ComparativaLimitesCard({ limites, ultimoSbc, sbcDeseado }: Props
             AUDITORÍA DE CRITERIO NORMATIVO
           </span>
           <h2 className="mt-0.5 font-playfair text-xl font-black text-navy">
-            Cotejo vs. Acuerdo DOF 21/10/2026
+            Límite aplicado · Acuerdo DOF 21/10/2026
           </h2>
         </div>
         <span
@@ -32,11 +37,11 @@ export function ComparativaLimitesCard({ limites, ultimoSbc, sbcDeseado }: Props
         >
           {excedeLimiteDof ? (
             <>
-              <AlertTriangle size={14} /> Límite Excedido
+              <AlertTriangle size={14} /> Supera límite aplicado
             </>
           ) : (
             <>
-              <CheckCircle2 size={14} /> Salario Conforme
+              <CheckCircle2 size={14} /> Dentro del límite aplicado
             </>
           )}
         </span>
@@ -49,16 +54,16 @@ export function ComparativaLimitesCard({ limites, ultimoSbc, sbcDeseado }: Props
             <AlertTriangle className="mt-0.5 shrink-0 text-amber-600" size={18} />
             <div>
               <strong className="font-bold">
-                Aviso Restrictivo — Acuerdo ACDO.AS2.HCT.101026/302.P.DG:
+                Proyección — medida temporal del Acuerdo ACDO.AS2.HCT.101026/302.P.DG:
               </strong>{' '}
-              El salario que solicitaste (${sbcDeseado.toFixed(2)} MXN) no es admitido por el IMSS.
-              Conforme al nuevo acuerdo publicado el 21 de octubre de 2026, tu cotización máxima en
-              Modalidad 40 queda acotada a tu último SBC registrado (${ultimoSbc.toFixed(2)}) más 1
-              UMA diaria (${umaDiaria.toFixed(2)}), fijando tu techo legal en{' '}
+              El SBC deseado (${sbcDeseado.toFixed(2)} MXN) supera el límite que el simulador aplica
+              para nuevas incorporaciones conforme al Punto Cuarto, publicado el 21 de octubre de
+              2026. El modelo lo acota a tu último SBC (${ultimoSbc.toFixed(2)}) más 1 UMA diaria ($
+              {umaDiaria.toFixed(2)}), con límite aplicado de{' '}
               <span className="font-mono font-bold underline">
                 ${limitePermitidoDof2026.toFixed(2)} MXN/día
               </span>
-              .
+              . Este resultado no determina por sí solo la admisibilidad de un caso individual.
             </div>
           </div>
         </div>
@@ -87,7 +92,7 @@ export function ComparativaLimitesCard({ limites, ultimoSbc, sbcDeseado }: Props
         >
           <div className="flex items-center justify-between">
             <span className="block text-[10px] font-bold uppercase tracking-wider text-navy">
-              2. Nuevo Techo DOF 2026
+              2. Límite aplicado 2026
             </span>
             <span className="font-orbitron text-[9px] font-bold text-gold-dark">+1 UMA</span>
           </div>
@@ -140,7 +145,13 @@ export function ComparativaLimitesCard({ limites, ultimoSbc, sbcDeseado }: Props
       {/* Nota técnica */}
       <div className="flex items-center gap-2 text-[11px] text-muted">
         <Info size={14} className="shrink-0 text-navy" />
-        <span>{limites.mensajeCriterio}</span>
+        <span>
+          {limites.mensajeCriterio} {CITACION_ACUERDO_MODALIDAD40}{' '}
+          {NOTA_ALCANCE_ACUERDO_MODALIDAD40}{' '}
+          <a href={URL_ACUERDO_MODALIDAD40} target="_blank" rel="noreferrer" className="underline">
+            Fuente SIDOF
+          </a>
+        </span>
       </div>
     </div>
   );

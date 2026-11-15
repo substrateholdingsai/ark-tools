@@ -1,5 +1,7 @@
 import type { ValorFiscal } from './tipos';
 
+export const CUOTA_MODALIDAD_40_PCT_2026 = 14.438;
+
 /**
  * CATÁLOGO CENTRAL DE VALORES FISCALES VIGENTES 2026
  *
@@ -124,7 +126,7 @@ export const CATALOGO_2026: ValorFiscal[] = [
   {
     id: 'CUOTA_MODALIDAD_40_2026',
     nombre: 'Cuota de Continuación Voluntaria / Modalidad 40 (LSS 2026)',
-    valor: 14.438,
+    valor: CUOTA_MODALIDAD_40_PCT_2026,
     unidad: 'PORCENTAJE',
     vigencia: { inicio: '2026-01-01', fin: '2026-12-31' },
     fuente: {
@@ -285,9 +287,6 @@ export const CATALOGO_2026: ValorFiscal[] = [
     criticidad: 'MEDIA',
   },
 ];
-
-// ─── CUOTA CONTINUACIÓN VOLUNTARIA VIGENTE 2026 (LSS Art. 168 y 218) ─
-export const CUOTA_MODALIDAD_40_PCT_2026 = 14.438;
 
 // ─── TASA DE RECARGOS VIGENTE (LIF Art. 8 / CFF Art. 21) ───────────
 export const TASA_RECARGOS_MORA_MENSUAL = 1.47;

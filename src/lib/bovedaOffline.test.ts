@@ -197,5 +197,43 @@ describe('Bóveda Offline Criptográfica (Art. 30 CFF)', () => {
       const hashViewerReal = await computeSha256(viewerHtmlStr);
       expect(manifestStr).toContain(`${hashViewerReal}  offline-viewer.html`);
     });
+
+    it('exports Modalidad 40 with the canonical tool id and folio-only presentation', async () => {
+      const modalidad40Params: BovedaOfflineParams = {
+        ...dummyParams,
+        toolId: 'modalidad40',
+        qrDataUrl: 'data:image/png;base64,ZmFrZS1xci1kYXRh',
+        presentation: {
+          integrityLabel: 'Folio de Integridad (hash determinista)',
+          integrityDescription:
+            'No constituye sellado fiscal ni certificación del IMSS; el QR no verifica previews no archivados.',
+          jsonHashField: 'folio_integridad',
+          manifestHashLabel: 'Folio de Integridad',
+          manifestScope: 'Paquete de proyección; no acredita cumplimiento fiscal',
+          legalHeading: 'Alcance informativo',
+          legalText: 'Proyección informativa, no resolución oficial del IMSS.',
+          qrCaption: 'Referencia; no verifica el cálculo',
+          verifierMode: 'reference_only',
+        },
+      };
+
+      const blob = await generarBovedaOfflineZip(modalidad40Params);
+      const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+      const parsed = JSON.parse(await zip.file('datos_expediente.json')!.async('string'));
+      const paper = await zip.file('papel_de_trabajo.html')!.async('string');
+      const viewer = await zip.file('offline-viewer.html')!.async('string');
+      const manifest = await zip.file('manifest.sha256')!.async('string');
+
+      expect(parsed.herramienta.id).toBe('modalidad40');
+      expect(parsed.folio_integridad).toBe(dummyParams.inputHash);
+      expect(parsed).not.toHaveProperty('sello_sha256_canónico');
+      expect(paper).toContain('Folio de Integridad (hash determinista)');
+      expect(paper).toContain('Referencia; no verifica el cálculo');
+      expect(paper).not.toContain('SELLO DIGITAL INMUTABLE');
+      expect(viewer).toContain('const referenceOnly = true;');
+      expect(viewer).toContain('Alcance del folio');
+      expect(manifest).toContain('Folio de Integridad');
+      expect(manifest).toContain('no acredita cumplimiento fiscal');
+    });
   });
 });

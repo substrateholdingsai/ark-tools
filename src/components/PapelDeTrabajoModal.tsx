@@ -17,6 +17,13 @@ import { Printer, X, ShieldCheck } from 'lucide-react';
 import type { ClientRecord, ExpedienteRecord } from '@/lib/apiClient';
 import { numeroALetras } from '@/lib/numeroALetras';
 import { BotonBovedaOffline } from '@/components/BotonBovedaOffline';
+import {
+  CITACION_ACUERDO_MODALIDAD40,
+  NOTA_ALCANCE_ACUERDO_MODALIDAD40,
+  NOTA_FOLIO_INTEGRIDAD_MODALIDAD40,
+  PRESENTACION_BOVEDA_MODALIDAD40,
+  URL_ACUERDO_MODALIDAD40,
+} from '@/tools/modalidad40/mensajes';
 
 interface Props {
   isOpen: boolean;
@@ -50,6 +57,11 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
 
   // Extraer totales y conceptos según la herramienta
   const { tool_id, inputs, outputs } = expediente;
+  const esModalidad40 = tool_id === 'modalidad40';
+  const advertenciasModalidad40 =
+    esModalidad40 && Array.isArray(outputs.advertencias)
+      ? outputs.advertencias.filter((warning): warning is string => typeof warning === 'string')
+      : [];
 
   let totalMonto = 0;
   let filasConceptos: Array<{
@@ -329,6 +341,7 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
             totalMonto,
             importeEnLetras,
             qrDataUrl,
+            ...(esModalidad40 ? { presentation: PRESENTACION_BOVEDA_MODALIDAD40 } : {}),
           }}
         />
 
@@ -365,15 +378,18 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
                 {despachoName.toUpperCase()}
               </span>
               <span className="rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase text-emerald-800">
-                Auditado y Sellado
+                {esModalidad40 ? 'Archivado · hash de integridad' : 'Auditado y Sellado'}
               </span>
             </div>
             <h1 className="mt-1 font-playfair text-2xl font-black tracking-tight text-ink sm:text-3xl">
-              Papel de Trabajo y Dictamen de Auditoría
+              {esModalidad40
+                ? 'Proyección de Pensión Ley 73 · Modalidad 40'
+                : 'Papel de Trabajo y Dictamen de Auditoría'}
             </h1>
             <p className="mt-0.5 text-[11px] font-medium text-muted">
-              Conforme a las Normas de Información Financiera y Leyes Fiscales/Laborales Federales
-              de los Estados Unidos Mexicanos.
+              {esModalidad40
+                ? 'Proyección informativa generada por ARK LEDGER; no constituye resolución del IMSS ni asesoría jurídica individual.'
+                : 'Conforme a las Normas de Información Financiera y Leyes Fiscales/Laborales Federales de los Estados Unidos Mexicanos.'}
             </p>
           </div>
 
@@ -487,13 +503,38 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
 
         {/* FUNDAMENTACIÓN Y CERTEZA JURÍDICA */}
         <div className="mb-8 space-y-1 border-l-2 border-gold pl-3 text-[10px] leading-relaxed text-muted">
-          <p>
-            <strong className="text-ink">Certeza Jurídica y Validez de Papel de Trabajo:</strong>{' '}
-            Este cálculo fue determinado conforme a los artículos 50, 76, 79, 80, 87, 162 y 486 de
-            la Ley Federal del Trabajo, Ley del Seguro Social, Código Fiscal de la Federación (Art.
-            28) y las tarifas oficiales publicadas en el Diario Oficial de la Federación vigentes al
-            ejercicio 2026.
-          </p>
+          {esModalidad40 ? (
+            <div className="space-y-2">
+              <p>
+                <strong className="text-ink">{CITACION_ACUERDO_MODALIDAD40}</strong>{' '}
+                <a
+                  href={URL_ACUERDO_MODALIDAD40}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-navy underline"
+                >
+                  Fuente oficial SIDOF
+                </a>
+              </p>
+              <p>{NOTA_ALCANCE_ACUERDO_MODALIDAD40}</p>
+              <p>{NOTA_FOLIO_INTEGRIDAD_MODALIDAD40}</p>
+              {advertenciasModalidad40.length > 0 && (
+                <ul className="list-disc space-y-1 pl-4">
+                  {advertenciasModalidad40.map((warning) => (
+                    <li key={warning}>{warning}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <p>
+              <strong className="text-ink">Certeza Jurídica y Validez de Papel de Trabajo:</strong>{' '}
+              Este cálculo fue determinado conforme a los artículos 50, 76, 79, 80, 87, 162 y 486 de
+              la Ley Federal del Trabajo, Ley del Seguro Social, Código Fiscal de la Federación
+              (Art. 28) y las tarifas oficiales publicadas en el Diario Oficial de la Federación
+              vigentes al ejercicio 2026.
+            </p>
+          )}
         </div>
 
         {/* FIRMAS DE CONFORMIDAD Y AUDITORÍA */}
@@ -515,7 +556,11 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
           <div className="max-w-[560px] space-y-1.5">
             <div className="flex items-center gap-1.5 font-bold text-navy">
               <ShieldCheck size={14} className="text-gold" />
-              <span>SELLO DIGITAL INMUTABLE (SHA-256):</span>
+              <span>
+                {esModalidad40
+                  ? 'Folio del expediente archivado (SHA-256):'
+                  : 'SELLO DIGITAL INMUTABLE (SHA-256):'}
+              </span>
               <button
                 type="button"
                 onClick={copyHash}
@@ -528,9 +573,9 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
               {expediente.input_hash}
             </div>
             <p className="text-[9px] text-muted">
-              Para validar la autenticidad e inalterabilidad legal de este dictamen, escanee el
-              código QR o consulte en{' '}
-              <span className="text-navy">https://ledger.arksystems.site</span> con el hash digital.
+              {esModalidad40
+                ? 'Este hash permite consultar la integridad del expediente archivado; no acredita derechos pensionarios ni constituye certificación del IMSS.'
+                : 'Para validar la autenticidad e inalterabilidad legal de este dictamen, escanee el código QR o consulte en https://ledger.arksystems.site con el hash digital.'}
             </p>
           </div>
 
@@ -538,11 +583,15 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
             <div className="shrink-0 text-center">
               <img
                 src={qrDataUrl}
-                alt="Código QR de Verificación"
+                alt={
+                  esModalidad40
+                    ? 'Código QR de referencia al expediente'
+                    : 'Código QR de Verificación'
+                }
                 className="mx-auto h-20 w-20 rounded-lg border border-navy/20 bg-white p-1"
               />
               <span className="mt-1 block text-[8px] font-bold uppercase text-navy">
-                Escanear para Validar
+                {esModalidad40 ? 'Consultar expediente' : 'Escanear para Validar'}
               </span>
             </div>
           )}

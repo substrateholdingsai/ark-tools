@@ -38,7 +38,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
   {
     id: 'cierre-nomina',
     nombre: 'Cierre de Nómina Masivo (Batch DOF)',
-    categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
+    categoria: 'Fiscal y Laboral (Expediente Único + cédula imprimible)',
     descripcion:
       'Ingesta de plantillas CSV/Excel y módulo de Cruce Laboral-Fiscal (CFDI Nómina vs. Reloj Checador Art. 132 LFT). Determina simultáneamente por colaborador ISR Art. 96, Subsidio al Empleo, factor de integración, cuotas IMSS obrero e ISN estatal de las 32 entidades. Audita discrepancias de jornada y horas extras, emitiendo Cédula Concentradora y Cédula de Cruce con Folio de Integridad (hash determinista en navegador, no sellado fiscal) + QR descargable en PDF y Layout de Dispersión Bancaria.',
   },
@@ -165,7 +165,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Simulador de Modalidad 40 (Criterio DOF 2026)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Proyección actuarial de pensión bajo el Régimen 1973 de la LSS conforme a los Arts. 167 y 218. Aplica la restricción del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026) que topa el nuevo registro al salario previo más 1 UMA diaria. Calcula cuota mensual (14.438% en 2026), retorno de inversión (ROI) y emite Papel de Trabajo Oficial con Sello SHA-256 + QR.',
+      'Proyección actuarial bajo el Régimen 1973 de la LSS. Para nuevas incorporaciones aplica la medida temporal del Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (aprobado 10/10/2026, DOF 21/10/2026, vigente desde 22/10/2026): último SBC o hasta último SBC + 1 UMA, sujeto al mínimo SMG general; conserva condiciones previamente contratadas y excluye trabajadores independientes Art. 13-I. El alcance frente a los Arts. 218 LSS y 65–66 del Reglamento es materia de discusión jurídica. Calcula cuota estimada (14.438% en 2026) y ROI. Emite una cédula imprimible; el Folio de Integridad es determinista, no constituye sello fiscal ni certificación IMSS. El QR solo referencia el sitio y no verifica previews no archivados. Fuente oficial: https://sidof.segob.gob.mx/notas/docFuente/5801708.',
   },
   {
     id: 'auditor-cfdi-atipico',

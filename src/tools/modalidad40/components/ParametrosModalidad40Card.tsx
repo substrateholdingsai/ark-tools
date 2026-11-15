@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { DollarSign, Calendar, Clock, HelpCircle, UserCheck } from 'lucide-react';
 import type { ParametrosModalidad40 } from '../types';
 import { VALORES_OFICIALES_M40 } from '../lib/calcularModalidad40';
+import {
+  ALCANCE_ACUERDO_MODALIDAD40,
+  CITACION_ACUERDO_MODALIDAD40,
+  NOTA_ALCANCE_ACUERDO_MODALIDAD40,
+  URL_ACUERDO_MODALIDAD40,
+} from '../mensajes';
 
 interface Props {
   params: ParametrosModalidad40;
@@ -51,11 +57,17 @@ export function ParametrosModalidad40Card({ params, onChange }: Props) {
           </button>
           {showTooltip && (
             <div className="absolute right-0 top-10 z-20 w-80 rounded-xl border border-line bg-surface p-4 text-[11px] leading-relaxed text-muted shadow-xl">
-              <strong className="block font-bold text-navy">Acuerdo DOF 21/10/2026:</strong>
-              El Consejo Técnico del IMSS dictó que el nuevo Salario Base de Cotización no puede
-              exceder el último salario registrado previo a la baja más 1 UMA diaria ($117.31 MXN),
-              con tope de 25 UMAs. Las semanas se acumulan prospectivamente sin opción de pago
-              retroactivo.
+              <strong className="block font-bold text-navy">{CITACION_ACUERDO_MODALIDAD40}</strong>
+              <span className="mt-2 block">{ALCANCE_ACUERDO_MODALIDAD40}</span>
+              <span className="mt-2 block">{NOTA_ALCANCE_ACUERDO_MODALIDAD40}</span>
+              <a
+                href={URL_ACUERDO_MODALIDAD40}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 block font-bold text-navy underline"
+              >
+                Consultar publicación oficial en SIDOF
+              </a>
             </div>
           )}
         </div>

@@ -68,16 +68,16 @@ const STATIC_SUITE_GUARANTEES: StaticToolGuarantee[] = [
     id: 'tool_19_modalidad40',
     type: 'tool_guarantee',
     label: 'HERRAMIENTA #19',
-    headline:
-      'MODALIDAD 40 LSS 1973: RESTRICTIVA DOF 21/10/2026 (TOPE EN ÚLTIMO SBC + 1 UMA ACTIVA)',
+    headline: 'MODALIDAD 40 LSS 1973: MEDIDA TEMPORAL ACUERDO DOF 21/10/2026',
     toolId: 'modalidad40',
     badgeText: 'DOF 21/10/2026',
     badgeVariant: 'emerald',
     details: {
       title: 'Simulador Actuarial de Modalidad 40 IMSS',
       description:
-        'Incorpora la restricción imperativa del Acuerdo ACDO.AS2.HCT.101026/302.P.DG publicado en el DOF el 21 de octubre de 2026: el salario base cotizable no puede superar el último registrado más una UMA diaria.',
-      fundamento: 'Art. 167, 168 y 218 LSS 1973; Acuerdo Consejo Técnico IMSS DOF 21/10/2026.',
+        'Para nuevas incorporaciones aplica la medida temporal del Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026): permite último SBC o hasta último SBC + 1 UMA, sujeto al mínimo SMG general. Conserva periodos contratados y excluye trabajadores independientes Art. 13-I; el alcance frente a la LSS y su Reglamento es materia de discusión jurídica.',
+      fundamento:
+        'LSS 1973 Arts. 167 y 171; LSS 1997 Arts. 168 y 218 a 221; Acuerdo ACDO.AS2.HCT.101026/302.P.DG, Punto Cuarto (DOF 21/10/2026).',
       cobertura:
         'Simulación actuarial con desglose mes a mes de cuota 2026 (14.438%) y análisis de ROI.',
     },

@@ -3,6 +3,13 @@ import QRCode from 'qrcode';
 import { Printer, X, ShieldCheck } from 'lucide-react';
 import type { ResultadoModalidad40 } from '../types';
 import { BotonBovedaOffline } from '@/components/BotonBovedaOffline';
+import {
+  CITACION_ACUERDO_MODALIDAD40,
+  NOTA_ALCANCE_ACUERDO_MODALIDAD40,
+  NOTA_FOLIO_INTEGRIDAD_MODALIDAD40,
+  PRESENTACION_BOVEDA_MODALIDAD40,
+  URL_ACUERDO_MODALIDAD40,
+} from '../mensajes';
 
 interface Props {
   isOpen: boolean;
@@ -25,7 +32,7 @@ export function CedulaModalidad40Modal({
   const printContainerRef = useRef<HTMLDivElement>(null);
 
   const hash = resultado.selloSha256;
-  const verifyUrl = `https://ledger.arksystems.site/?verify=${hash}`;
+  const verifyUrl = 'https://ledger.arksystems.site/';
 
   useEffect(() => {
     if (!isOpen) return;
@@ -54,7 +61,7 @@ export function CedulaModalidad40Modal({
         <div className="flex items-center justify-between border-b border-line px-6 py-4 print:hidden">
           <div className="flex items-center gap-2">
             <span className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark">
-              PAPEL DE TRABAJO INSTITUCIONAL
+              CÉDULA DE PROYECCIÓN
             </span>
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700">
               ACUERDO DOF 21/10/2026 · LEY 73
@@ -64,9 +71,10 @@ export function CedulaModalidad40Modal({
             <BotonBovedaOffline
               variant="secondary"
               params={{
-                titulo: 'Simulador y Dictamen de Pensión Modalidad 40 IMSS',
-                toolId: 'modalidad-40',
+                titulo: 'Simulador y Proyección de Pensión Modalidad 40',
+                toolId: 'modalidad40',
                 despachoName,
+                presentation: PRESENTACION_BOVEDA_MODALIDAD40,
                 client: {
                   nombre: nombreAsegurado,
                   nss: nssAsegurado,
@@ -75,7 +83,16 @@ export function CedulaModalidad40Modal({
                 folio: `M40-${hash.slice(0, 8).toUpperCase()}`,
                 inputHash: hash,
                 inputs: (resultado.parametros as unknown as Record<string, unknown>) || {},
-                outputs: (resultado as unknown as Record<string, unknown>) || {},
+                outputs: {
+                  parametros: resultado.parametros,
+                  limites: resultado.limites,
+                  inversion: resultado.inversion,
+                  pension: resultado.pension,
+                  roi: resultado.roi,
+                  advertencias: resultado.advertencias,
+                  folioIntegridad: resultado.selloSha256,
+                  fechaCalculoIso: resultado.fechaCalculoIso,
+                },
                 filasConceptos: [
                   {
                     concepto: 'Pensión Mensual Estimada (con Asignaciones)',
@@ -139,9 +156,17 @@ export function CedulaModalidad40Modal({
                 Cédula de Proyección de Pensión Ley 73 & Modalidad 40
               </h1>
               <p className="text-xs text-muted">
-                Dictamen actuarial conforme a los Arts. 167 y 218 LSS y el Acuerdo
-                ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026)
+                Proyección actuarial conforme a los Arts. 167 y 218 LSS.{' '}
+                {CITACION_ACUERDO_MODALIDAD40}
               </p>
+              <a
+                href={URL_ACUERDO_MODALIDAD40}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[10px] font-bold text-navy underline"
+              >
+                Consultar publicación oficial en SIDOF
+              </a>
             </div>
 
             <div className="text-right">
@@ -188,7 +213,7 @@ export function CedulaModalidad40Modal({
           {/* Memoria de Criterio Normativo DOF 21/10/2026 */}
           <div className="mt-6 rounded-xl border border-line p-4">
             <span className="block font-orbitron text-[10px] font-bold uppercase tracking-wider text-gold-dark">
-              AUDITORÍA DE CRITERIO NORMATIVO — ACUERDO DOF 21/10/2026
+              LÍMITE APLICADO EN LA PROYECCIÓN — ACUERDO DOF 21/10/2026
             </span>
             <div className="mt-2 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
               <div className="border-r border-line pr-2">
@@ -211,6 +236,7 @@ export function CedulaModalidad40Modal({
               </div>
             </div>
             <p className="mt-2 text-[11px] italic text-muted">{limites.mensajeCriterio}</p>
+            <p className="mt-2 text-[10px] text-muted">{NOTA_ALCANCE_ACUERDO_MODALIDAD40}</p>
           </div>
 
           {/* Desglose Actuarial Ley 73 */}
@@ -381,29 +407,35 @@ export function CedulaModalidad40Modal({
             </div>
           </div>
 
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-950">
+            <strong>Advertencias de la proyección</strong>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {resultado.advertencias.map((advertencia) => (
+                <li key={advertencia}>{advertencia}</li>
+              ))}
+            </ul>
+          </div>
+
           {/* Bloque de Autenticidad Criptográfica y QR */}
           <div className="mt-8 flex flex-col gap-4 rounded-2xl border-2 border-navy/20 bg-surface-2 p-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1 text-xs">
               <div className="flex items-center gap-1.5 font-orbitron text-[10px] font-bold uppercase text-navy">
                 <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                <span>Sello Digital SHA-256 e Inalterabilidad Pericial</span>
+                <span>Folio de Integridad</span>
               </div>
-              <p className="max-w-md break-all font-mono text-[10px] text-muted">Hash: {hash}</p>
-              <p className="text-[10px] text-muted">
-                Este dictamen cuenta con respaldo determinista y verificación pública abierta ante
-                el IMSS, tribunales y despachos contables auditores.
-              </p>
+              <p className="max-w-md break-all font-mono text-[10px] text-muted">Folio: {hash}</p>
+              <p className="text-[10px] text-muted">{NOTA_FOLIO_INTEGRIDAD_MODALIDAD40}</p>
             </div>
 
             {qrDataUrl && (
               <div className="flex flex-col items-center">
                 <img
                   src={qrDataUrl}
-                  alt="QR Verificación"
+                  alt="QR de referencia al sitio"
                   className="h-24 w-24 rounded-lg border border-line bg-white p-1"
                 />
                 <span className="mt-1 font-mono text-[8px] uppercase text-muted">
-                  Escanear para cotejo
+                  Referencia; no verifica el cálculo
                 </span>
               </div>
             )}
@@ -413,7 +445,7 @@ export function CedulaModalidad40Modal({
           <div className="mt-12 grid grid-cols-2 gap-12 text-center text-xs">
             <div className="border-t border-navy pt-2">
               <strong className="block text-navy">{despachoName}</strong>
-              <span className="text-[10px] text-muted">Asesor / Contador Certificado</span>
+              <span className="text-[10px] text-muted">Responsable de la proyección</span>
             </div>
             <div className="border-t border-navy pt-2">
               <strong className="block text-navy">{nombreAsegurado}</strong>

@@ -2,14 +2,14 @@
  * ARK LEDGER — Simulador de Modalidad 40 (Herramienta #19)
  *
  * Módulo para la proyección actuarial de pensión bajo el Régimen 1973 de la LSS
- * y auditoría determinista conforme al Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026).
+ * y el límite temporal aplicado por el Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026).
  *
  * Características:
- * - Cotejo legal automático contra la regla restrictiva: Salario previo + 1 UMA diaria (máx 25 UMAs).
+ * - Proyección del límite aplicado: SBC previo + hasta 1 UMA diaria (máx 25 UMAs).
  * - Proyección de inversión acumulada con la cuota oficial 2026 (14.438%).
  * - Estimación de pensión Ley 73 con cuantía básica, incrementos anuales, edad, asignaciones y factor Fox.
  * - Análisis de retorno de inversión (ROI) vs. no aportar en Modalidad 40.
- * - Expediente Único D1 y emisión de Papel de Trabajo con Sello SHA-256 + QR de verificación pública.
+ * - Expediente Único D1 y emisión de una proyección con folio determinista y QR de referencia.
  */
 
 import { useState, useMemo, useEffect } from 'react';
@@ -28,7 +28,9 @@ import {
   calcularPensionLey73,
   analizarRoi,
   generarSelloSha256,
+  validarParametrosModalidad40,
 } from './lib/calcularModalidad40';
+import { ADVERTENCIAS_MODALIDAD40, advertenciaSemanasMinimasModalidad40 } from './mensajes';
 import type { ParametrosModalidad40, ResultadoModalidad40 } from './types';
 
 interface Modalidad40Props {
@@ -49,6 +51,17 @@ export function Modalidad40({ onBack }: Modalidad40Props) {
   const [params, setParams] = useState<ParametrosModalidad40>(PARAMETROS_INICIALES);
   const [showCedulaModal, setShowCedulaModal] = useState<boolean>(false);
   const [selloHash, setSelloHash] = useState<string>('');
+  const [errorParametros, setErrorParametros] = useState('');
+
+  const actualizarParametros = (siguientes: ParametrosModalidad40) => {
+    const validacion = validarParametrosModalidad40(siguientes);
+    if (!validacion.ok) {
+      setErrorParametros(`${validacion.error} La proyección conserva los últimos valores válidos.`);
+      return;
+    }
+    setErrorParametros('');
+    setParams(validacion.valor);
+  };
 
   // 1. Evaluación de límites del nuevo acuerdo DOF 21/10/2026
   const limites = useMemo(() => {
@@ -98,7 +111,17 @@ export function Modalidad40({ onBack }: Modalidad40Props) {
     inversion.inversionTotal,
   ]);
 
-  // Generación asíncrona del sello SHA-256
+  const advertencias = useMemo(
+    () => [
+      ...ADVERTENCIAS_MODALIDAD40,
+      ...(pension.semanasTotales < 500
+        ? [advertenciaSemanasMinimasModalidad40(pension.semanasTotales)]
+        : []),
+    ],
+    [pension.semanasTotales]
+  );
+
+  // Generación asíncrona del folio determinista
   useEffect(() => {
     let cancel = false;
     const payload = {
@@ -107,6 +130,7 @@ export function Modalidad40({ onBack }: Modalidad40Props) {
       pensionEstimada: pension.pensionMensualEstimada,
       inversionTotal: inversion.inversionTotal,
       mesesRoi: roi.mesesRecuperacionRoi,
+      advertencias,
     };
     void generarSelloSha256(payload).then((h) => {
       if (!cancel) setSelloHash(h);
@@ -120,6 +144,7 @@ export function Modalidad40({ onBack }: Modalidad40Props) {
     pension.pensionMensualEstimada,
     inversion.inversionTotal,
     roi.mesesRecuperacionRoi,
+    advertencias,
   ]);
 
   const resultadoCompleto: ResultadoModalidad40 = useMemo(() => {
@@ -129,10 +154,11 @@ export function Modalidad40({ onBack }: Modalidad40Props) {
       inversion,
       pension,
       roi,
-      selloSha256: selloHash || 'calculando_sello_criptografico...',
+      advertencias,
+      selloSha256: selloHash,
       fechaCalculoIso: new Date().toISOString(),
     };
-  }, [params, limites, inversion, pension, roi, selloHash]);
+  }, [params, limites, inversion, pension, roi, advertencias, selloHash]);
 
   const inputsActuales = useMemo(() => {
     return params as unknown as Record<string, unknown>;
@@ -145,9 +171,10 @@ export function Modalidad40({ onBack }: Modalidad40Props) {
       inversionTotal: inversion.inversionTotal,
       pensionMensualEstimada: pension.pensionMensualEstimada,
       roiMeses: roi.mesesRecuperacionRoi,
-      selloSha256: selloHash,
+      advertencias,
+      folioIntegridad: selloHash,
     };
-  }, [limites, inversion, pension, roi, selloHash]);
+  }, [limites, inversion, pension, roi, advertencias, selloHash]);
 
   const nombreAsegurado = activeClient?.nombre || 'Asegurado Proyectado';
   const nssAsegurado = activeClient?.rfc || '0000-00-0000';
@@ -184,11 +211,11 @@ export function Modalidad40({ onBack }: Modalidad40Props) {
 
         <div className="flex items-center gap-2 font-inter text-[12px] text-muted">
           <Sparkles className="h-4 w-4 flex-shrink-0 text-gold" />
-          <span>Restricción Último SBC + 1 UMA · Cuota 14.438% · Proyección Ley 73</span>
+          <span>Medida temporal: SBC previo + 1 UMA · Cuota 14.438% · Proyección Ley 73</span>
         </div>
       </div>
 
-      {/* Sello Digital & Expediente Único (Cloudflare D1) */}
+      {/* Expediente Único (Cloudflare D1) */}
       <ExpedienteToolBanner
         toolId="modalidad40"
         titulo={`Modalidad 40 Ley 73 — Pensión Proyectada $${pension.pensionMensualEstimada.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`}
@@ -200,7 +227,15 @@ export function Modalidad40({ onBack }: Modalidad40Props) {
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
         {/* Columna Izquierda: Parámetros del Asegurado (5 de 12) */}
         <div className="space-y-6 lg:col-span-5">
-          <ParametrosModalidad40Card params={params} onChange={setParams} />
+          <ParametrosModalidad40Card params={params} onChange={actualizarParametros} />
+          {errorParametros && (
+            <p
+              role="alert"
+              className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-800"
+            >
+              {errorParametros}
+            </p>
+          )}
         </div>
 
         {/* Columna Derecha: Comparativa de Límites DOF y Resultado (7 de 12) */}

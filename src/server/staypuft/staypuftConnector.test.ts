@@ -505,7 +505,16 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
                   fechaVencimiento: '2025-06-17',
                   fechaPago: '2026-02-17',
                 }
-              : {};
+              : tool.id === 'modalidad40'
+                ? {
+                    ultimoSbc: 600,
+                    sbcDeseado: 2932.75,
+                    semanasPrevias: 1250,
+                    mesesAportacion: 24,
+                    edadJubilacion: 65,
+                    asignacionFamiliar: true,
+                  }
+                : {};
 
         const res = await worker.fetch(
           new Request(`https://ledger.arksystems.site/api/internal/tools/${tool.id}/preview`, {
@@ -563,6 +572,72 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
 
       // Ningún cálculo en preview puede insertar en expedientes
       expect(store.expedienteInserts).toBe(0);
+    });
+  });
+
+  describe('Modalidad 40 preview input contract', () => {
+    const postModalidad40Preview = async (payload: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      return worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/modalidad40/preview', {
+          method: 'POST',
+          headers: {
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }),
+        env,
+        mockCtx
+      );
+    };
+
+    it('rejects an empty payload rather than silently using the demo vector', async () => {
+      const response = await postModalidad40Preview({});
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('Faltan campos requeridos');
+    });
+
+    it('rejects noncanonical fields and returns the calculation for the six canonical inputs', async () => {
+      const invalid = await postModalidad40Preview({
+        ultimoSbc: 600,
+        sbcDeseado: 2932.75,
+        semanasPrevias: 1250,
+        mesesAportacion: 24,
+        edadJubilacion: 65,
+        asignacionFamiliar: true,
+        mesesModalidad40: 24,
+      });
+      expect(invalid.status).toBe(400);
+      const invalidBody = (await invalid.json()) as { error: string };
+      expect(invalidBody.error).toContain('Campos desconocidos');
+
+      const valid = await postModalidad40Preview({
+        ultimoSbc: 600,
+        sbcDeseado: 2932.75,
+        semanasPrevias: 1250,
+        mesesAportacion: 24,
+        edadJubilacion: 65,
+        asignacionFamiliar: true,
+      });
+      expect(valid.status).toBe(200);
+      const body = (await valid.json()) as {
+        ok: boolean;
+        result: {
+          limites: { sbcEfectivo: number };
+          inversion: { cuotaMensual: number; inversionTotal: number };
+          pension: { pensionMensualEstimada: number };
+          roi: { mesesRecuperacionRoi: number };
+        };
+      };
+      expect(body.ok).toBe(true);
+      expect(body.result.limites.sbcEfectivo).toBe(717.31);
+      expect(body.result.inversion.cuotaMensual).toBe(3148.38);
+      expect(body.result.inversion.inversionTotal).toBe(75561.12);
+      expect(body.result.pension.pensionMensualEstimada).toBe(16783.17);
+      expect(body.result.roi.mesesRecuperacionRoi).toBe(55);
     });
   });
 

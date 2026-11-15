@@ -44,6 +44,17 @@ export interface BovedaOfflineParams {
   totalMonto?: number;
   importeEnLetras?: string;
   qrDataUrl?: string;
+  presentation?: {
+    integrityLabel: string;
+    integrityDescription: string;
+    jsonHashField: string;
+    manifestHashLabel?: string;
+    manifestScope?: string;
+    legalHeading?: string;
+    legalText?: string;
+    qrCaption: string;
+    verifierMode?: 'digest' | 'reference_only';
+  };
   archivosAdicionales?: Array<{
     ruta: string;
     contenido: string | Uint8Array;
@@ -57,6 +68,8 @@ export interface BovedaMetadata {
   clientRfc: string;
   clientNombre: string;
   catalogVersion: string;
+  inputHashLabel?: string;
+  scopeLabel?: string;
 }
 
 /**
@@ -116,13 +129,15 @@ export function generarManifestSha256(
   const header = [
     '# ==============================================================================#',
     '# ARK LEDGER — BÓVEDA OFFLINE · MANIFEST DE INTEGRIDAD CRIPTOGRÁFICA           #',
-    '# Cumplimiento: Código Fiscal de la Federación (CFF Art. 30 / 10 Años)         #',
+    `# ${meta.scopeLabel || 'Cumplimiento: Código Fiscal de la Federación (CFF Art. 30 / 10 Años)'}`,
     '# Estándar de Digest: FIPS 180-4 (SHA-256, 256 bits)                           #',
     '# ==============================================================================#',
     `# Folio Expediente : ${meta.folio}`,
     `# Herramienta      : ${meta.toolId}`,
     `# Contribuyente    : ${meta.clientNombre} (${meta.clientRfc})`,
-    `# Sello Canónico   : ${meta.inputHash}`,
+    meta.inputHashLabel
+      ? `# ${meta.inputHashLabel} : ${meta.inputHash}`
+      : `# Sello Canónico   : ${meta.inputHash}`,
     `# Versión Catálogo : ${meta.catalogVersion}`,
     `# Fecha Generación : ${fechaIso}`,
     '#',
@@ -148,6 +163,11 @@ export function generarPapelDeTrabajoHtml(params: BovedaOfflineParams): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+  const integrityLabel = params.presentation?.integrityLabel || 'SELLO DIGITAL INMUTABLE (SHA-256)';
+  const integrityDescription =
+    params.presentation?.integrityDescription ||
+    'La integridad del cálculo está sellada criptográficamente en el origen.';
+  const qrCaption = params.presentation?.qrCaption || 'ESCANEAR';
 
   const filasHtml = (params.filasConceptos || [])
     .map(
@@ -200,8 +220,8 @@ export function generarPapelDeTrabajoHtml(params: BovedaOfflineParams): string {
   <div class="header">
     <div>
       <div class="despacho">${escapeHtml(params.despachoName)}</div>
-      <h1 class="titulo">Papel de Trabajo y Dictamen de Auditoría</h1>
-      <p class="subtitulo">${escapeHtml(params.toolNombre || params.titulo)} · Cumplimiento Fiscal y Laboral</p>
+      <h1 class="titulo">${escapeHtml(params.presentation ? params.titulo : 'Papel de Trabajo y Dictamen de Auditoría')}</h1>
+      <p class="subtitulo">${escapeHtml(params.presentation ? 'Proyección informativa; no resolución oficial' : `${params.toolNombre || params.titulo} · Cumplimiento Fiscal y Laboral`)}</p>
     </div>
     <div class="meta-box">
       <div class="folio">FOLIO: ${escapeHtml(folio)}</div>
@@ -220,10 +240,10 @@ export function generarPapelDeTrabajoHtml(params: BovedaOfflineParams): string {
       </div>
     </div>
     <div>
-      <div class="info-label">Certeza Jurídica & Integridad</div>
-      <div class="info-val">Art. 30 CFF (Conservación 5 a 10 Años)</div>
+      <div class="info-label">${params.presentation ? 'Alcance del folio' : 'Certeza Jurídica & Integridad'}</div>
+      <div class="info-val">${params.presentation ? 'Referencia del cálculo' : 'Art. 30 CFF (Conservación 5 a 10 Años)'}</div>
       <div style="color: #059669; font-weight: 600; font-size: 11px; margin-top: 2px;">
-        ✓ Sellado con Algoritmo SHA-256 Deterministico
+        ${params.presentation ? escapeHtml(params.presentation.integrityLabel) : '✓ Sellado con Algoritmo SHA-256 Deterministico'}
       </div>
     </div>
   </div>
@@ -259,15 +279,14 @@ export function generarPapelDeTrabajoHtml(params: BovedaOfflineParams): string {
   }
 
   <div class="legal-box">
-    <strong>Fundamentación y Valor Probatorio:</strong> Este papel de trabajo fue generado conforme a las disposiciones
-    fiscales aplicables del Código Fiscal de la Federación (Art. 28 y 30), Ley del Impuesto Sobre la Renta, Ley del
-    Seguro Social y Ley Federal del Trabajo. La integridad del cálculo está sellada criptográficamente en el origen.
+    <strong>${escapeHtml(params.presentation?.legalHeading || 'Fundamentación y Valor Probatorio')}:</strong>
+    ${escapeHtml(params.presentation?.legalText || `Este papel de trabajo fue generado conforme a las disposiciones fiscales aplicables del Código Fiscal de la Federación (Art. 28 y 30), Ley del Impuesto Sobre la Renta, Ley del Seguro Social y Ley Federal del Trabajo. ${integrityDescription}`)}
   </div>
 
   <div class="firmas">
     <div>
       <div class="linea-firma"></div>
-      <strong style="color: #0F172A;">Firma del Contador Auditor</strong>
+      <strong style="color: #0F172A;">${params.presentation ? 'Responsable de la proyección' : 'Firma del Contador Auditor'}</strong>
       <div style="color: #64748B; font-size: 10px;">Por el Despacho Emisor</div>
     </div>
     <div>
@@ -279,17 +298,21 @@ export function generarPapelDeTrabajoHtml(params: BovedaOfflineParams): string {
 
   <div class="footer-sello">
     <div style="max-width: 580px;">
-      <strong style="color: #002B7F;">SELLO DIGITAL INMUTABLE (SHA-256):</strong>
+      <strong style="color: #002B7F;">${escapeHtml(integrityLabel)}:</strong>
       <div class="hash-val">${escapeHtml(params.inputHash)}</div>
-      <div style="color: #64748B; font-size: 9px; margin-top: 3px;">
+      ${
+        params.presentation?.verifierMode === 'reference_only'
+          ? ''
+          : `<div style="color: #64748B; font-size: 9px; margin-top: 3px;">
         Auditoría independiente en terminal: <code>echo -n '&lt;canonical_json&gt;' | sha256sum</code>
-      </div>
+      </div>`
+      }
     </div>
     ${
       params.qrDataUrl
         ? `<div style="text-align: center;">
-             <img src="${params.qrDataUrl}" alt="QR Verificación" style="width: 72px; height: 72px; border: 1px solid #CBD5E1; padding: 2px; border-radius: 6px; background: #FFF;">
-             <div style="font-size: 8px; color: #002B7F; font-weight: 700; margin-top: 2px;">ESCANEAR</div>
+             <img src="${params.qrDataUrl}" alt="${params.presentation ? 'QR de referencia' : 'QR Verificación'}" style="width: 72px; height: 72px; border: 1px solid #CBD5E1; padding: 2px; border-radius: 6px; background: #FFF;">
+             <div style="font-size: 8px; color: #002B7F; font-weight: 700; margin-top: 2px;">${escapeHtml(qrCaption)}</div>
            </div>`
         : ''
     }
@@ -305,6 +328,12 @@ export function generarPapelDeTrabajoHtml(params: BovedaOfflineParams): string {
 export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
   const folio = params.folio || `EXP-${Date.now().toString(36).toUpperCase()}`;
   const fechaStr = params.fecha || new Date().toISOString().split('T')[0];
+  const referenceOnly = params.presentation?.verifierMode === 'reference_only';
+  const integrityLabel =
+    params.presentation?.integrityLabel || 'SELLO DETERMINÍSTICO INMUTABLE (SHA-256)';
+  const integrityDescription =
+    params.presentation?.integrityDescription ||
+    'El navegador puede recalcular el SHA-256 de los datos para cotejarlos con el sello registrado.';
   const payloadJson = JSON.stringify(
     {
       folio,
@@ -313,7 +342,7 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
       contribuyente: params.client,
       herramienta: params.toolId,
       version_catalogo_dof: params.catalogVersion || 'DOF-2026-OFICIAL',
-      sello_registrado_sha256: params.inputHash,
+      [params.presentation?.jsonHashField || 'sello_registrado_sha256']: params.inputHash,
       inputs: params.inputs,
       outputs: params.outputs,
     },
@@ -328,7 +357,7 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ARK LEDGER · Bóveda Offline Criptográfica [${escapeHtml(folio)}]</title>
+  <title>ARK LEDGER · Bóveda Offline [${escapeHtml(folio)}]</title>
   <style>
     :root {
       --bg: #0A0A0B;
@@ -405,7 +434,7 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
     <div class="hero-card">
       <div class="hero-title">${escapeHtml(params.toolNombre || params.titulo)}</div>
       <div class="hero-sub">
-        Expediente sellado conforme al Art. 30 del Código Fiscal de la Federación (conservación obligatoria de 5 a 10 años).
+        ${referenceOnly ? escapeHtml(integrityDescription) : 'Expediente sellado conforme al Art. 30 del Código Fiscal de la Federación (conservación obligatoria de 5 a 10 años).'}
       </div>
 
       <div class="meta-grid">
@@ -418,7 +447,7 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
           <div class="meta-val" style="font-family: monospace; color: var(--cyan);">${escapeHtml(params.client.rfc || 'No registrado')}</div>
         </div>
         <div class="meta-item">
-          <div class="meta-lbl">Folio Criptográfico</div>
+          <div class="meta-lbl">Folio</div>
           <div class="meta-val" style="font-family: monospace;">${escapeHtml(folio)}</div>
         </div>
         <div class="meta-item">
@@ -429,16 +458,16 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
 
       <div class="hash-banner">
         <div class="hash-title">
-          <span>SELLO DETERMINÍSTICO INMUTABLE (SHA-256)</span>
-          <span style="color: var(--text-dim); font-size: 10px;">FIPS 180-4 CANÓNICO</span>
+          <span>${escapeHtml(integrityLabel)}</span>
+          <span style="color: var(--text-dim); font-size: 10px;">${referenceOnly ? 'Referencia del cálculo' : 'FIPS 180-4 CANÓNICO'}</span>
         </div>
         <div class="hash-code" id="registered-hash">${escapeHtml(params.inputHash)}</div>
       </div>
     </div>
 
     <nav class="nav-tabs">
-      <button class="tab-btn active" onclick="showTab('papel')">1. Papel de Trabajo Oficial</button>
-      <button class="tab-btn" onclick="showTab('validador')">2. Auditor Criptográfico en Vivo</button>
+      <button class="tab-btn active" onclick="showTab('papel')">${referenceOnly ? '1. Cédula de proyección' : '1. Papel de Trabajo Oficial'}</button>
+      <button class="tab-btn" onclick="showTab('validador')">${referenceOnly ? '2. Información del folio' : '2. Auditor Criptográfico en Vivo'}</button>
       <button class="tab-btn" onclick="showTab('manifest')">3. Manifiesto sha256sum</button>
       <button class="tab-btn" onclick="showTab('raw')">4. Datos Crudos (JSON)</button>
     </nav>
@@ -447,7 +476,7 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
     <div id="tab-papel" class="tab-panel active">
       <div class="card" style="padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
         <span style="font-size: 12px; color: var(--text-muted);">
-          Visualizador del Papel de Trabajo con formato oficial y firmas de auditoría.
+          ${referenceOnly ? 'Vista imprimible de la proyección; no es un documento oficial.' : 'Visualizador del Papel de Trabajo con formato oficial y firmas de auditoría.'}
         </span>
         <button class="btn btn-lime" onclick="printFrame()">
           Imprimir / Guardar en PDF (Carta)
@@ -459,14 +488,14 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
     <!-- TAB 2: AUDITOR CRIPTOGRÁFICO EN VIVO -->
     <div id="tab-validador" class="tab-panel">
       <div class="card">
-        <h3 style="font-size: 15px; margin-bottom: 6px;">Recalcular Integridad con Web Crypto API (Local)</h3>
+        <h3 style="font-size: 15px; margin-bottom: 6px;">${referenceOnly ? 'Alcance del folio' : 'Recalcular Integridad con Web Crypto API (Local)'}</h3>
         <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 14px;">
-          Tu navegador recalcula directamente el SHA-256 de los datos originales utilizando <code>crypto.subtle.digest</code>.
-          No se envía ningún dato a internet; la validación ocurre 100% en tu CPU.
+          ${escapeHtml(integrityDescription)}
+          ${referenceOnly ? '' : ' No se envía ningún dato a internet; la validación ocurre 100% en tu CPU.'}
         </p>
 
         <button class="btn" onclick="recalcularIntegridad()">
-          Ejecutar Auditoría Forense Local
+          ${referenceOnly ? 'Mostrar alcance' : 'Ejecutar Auditoría Forense Local'}
         </button>
 
         <div id="audit-result" style="display: none;" class="audit-box success"></div>
@@ -477,7 +506,7 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
             Arrastra aquí <code>datos_expediente.json</code> o cualquier archivo del .zip
           </div>
           <div style="font-size: 11px; color: var(--text-dim);">
-            Calcularemos su hash SHA-256 al vuelo para cotejarlo con el sello registrado.
+            ${referenceOnly ? 'El hash de cada archivo puede calcularse localmente, pero no verifica este folio.' : 'Calcularemos su hash SHA-256 al vuelo para cotejarlo con el sello registrado.'}
           </div>
         </div>
         <div id="drop-result" style="display: none; margin-top: 14px;" class="audit-box"></div>
@@ -504,8 +533,7 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
         </div>
 
         <div style="font-size: 12px; color: var(--text-dim);">
-          Respaldo legal: Conforme al Art. 30 del CFF, la conservación en medios magnéticos u ópticos con firma/sello inalterable
-          satisface los requerimientos de la autoridad fiscalizadora.
+          ${referenceOnly ? 'Este manifiesto permite revisar los hashes de los archivos del paquete; no acredita cumplimiento fiscal ni valida el cálculo pensionario.' : 'Respaldo legal: Conforme al Art. 30 del CFF, la conservación en medios magnéticos u ópticos con firma/sello inalterable satisface los requerimientos de la autoridad fiscalizadora.'}
         </div>
       </div>
     </div>
@@ -524,6 +552,7 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
 
   <script>
     const registeredHash = "${escapeHtml(params.inputHash)}";
+    const referenceOnly = ${referenceOnly};
     const rawData = ${JSON.stringify(params.inputs)};
 
     function showTab(tabName) {
@@ -563,6 +592,10 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
       const resEl = document.getElementById('audit-result');
       resEl.style.display = 'block';
       resEl.className = 'audit-box';
+      if (referenceOnly) {
+        resEl.textContent = ${JSON.stringify(integrityDescription)};
+        return;
+      }
 
       try {
         const canonical = JSON.stringify(normalize(rawData));
@@ -576,14 +609,14 @@ export function generarOfflineViewerHtml(params: BovedaOfflineParams): string {
         if (coincide) {
           resEl.className = 'audit-box success';
           resEl.innerHTML = '<strong>â VERIFICACIÃN EXITOSA (COINCIDENCIA DETERMINÃSTICA AL 100%)</strong><br>' +
-            'Sello Registrado: &nbsp;' + registeredHash + '<br>' +
+            '${referenceOnly ? 'Folio registrado: &nbsp;' : 'Sello Registrado: &nbsp;'}' + registeredHash + '<br>' +
             'Hash Recalculado: &nbsp;' + calculatedHash + '<br>' +
             '<span style="color: var(--lime); font-size: 11px;">Los datos no han sufrido alteraciÃ³n alguna desde su sellado en ARK LEDGER.</span>';
         } else {
           resEl.className = 'audit-box success';
           resEl.innerHTML = '<strong>â HASH DE PAYLOAD GENERADO</strong><br>' +
             'Hash Recalculado en Vivo: ' + calculatedHash + '<br>' +
-            'Sello General de Expediente: ' + registeredHash;
+            '${referenceOnly ? 'Folio de Integridad: ' : 'Sello General de Expediente: '}' + registeredHash;
         }
       } catch (err) {
         resEl.className = 'audit-box error';
@@ -650,10 +683,12 @@ export async function generarBovedaOfflineZip(params: BovedaOfflineParams): Prom
   // 1. JSON Canónico
   const canonicalData = {
     formato: 'ARK_LEDGER_BOVEDA_OFFLINE_V1',
-    estandar: 'Art. 30 CFF / FIPS 180-4',
+    estandar: params.presentation
+      ? 'Paquete de referencia; hashes de archivos incluidos en manifest.sha256'
+      : 'Art. 30 CFF / FIPS 180-4',
     folio,
     fecha_emision: fecha,
-    sello_sha256_canónico: params.inputHash,
+    [params.presentation?.jsonHashField || 'sello_sha256_canónico']: params.inputHash,
     version_catalogo_dof: params.catalogVersion || 'DOF-2026-OFICIAL',
     despacho: params.despachoName,
     contribuyente: params.client,
@@ -713,6 +748,8 @@ export async function generarBovedaOfflineZip(params: BovedaOfflineParams): Prom
     clientRfc: params.client.rfc || 'XAXX010101000',
     clientNombre: params.client.nombre,
     catalogVersion: params.catalogVersion || 'DOF-2026-OFICIAL',
+    inputHashLabel: params.presentation?.manifestHashLabel,
+    scopeLabel: params.presentation?.manifestScope,
   });
   zip.file('manifest.sha256', manifestContent);
 

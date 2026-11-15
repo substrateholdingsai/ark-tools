@@ -61,7 +61,11 @@ export function BotonBovedaOffline({ params, variant = 'primary', className = ''
         type="button"
         onClick={handleDownload}
         disabled={isGenerating}
-        title="Descargar paquete de preservación Art. 30 CFF (.zip)"
+        title={
+          params.presentation
+            ? 'Descargar paquete ZIP de proyección con hashes de integridad'
+            : 'Descargar paquete de preservación Art. 30 CFF (.zip)'
+        }
         className={`inline-flex cursor-pointer items-center gap-2 rounded-full border border-navy/20 bg-white px-3.5 py-2 font-mono text-[11px] font-bold text-navy shadow-md transition hover:bg-navy/5 disabled:opacity-60 ${className}`}
       >
         {isGenerating ? (

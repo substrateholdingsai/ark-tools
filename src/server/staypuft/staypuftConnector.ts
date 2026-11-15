@@ -47,7 +47,11 @@ import {
   calcularRecargosYActualizacion,
   validarEntradaRecargos,
 } from '../../tools/recargos/lib/calcularRecargos';
-import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
+import {
+  simularModalidad40,
+  validarParametrosModalidad40,
+} from '../../tools/modalidad40/lib/calcularModalidad40';
+import { VECTOR_REFERENCIA_MODALIDAD40 } from '../../tools/modalidad40/mensajes';
 import { procesarCierreNomina } from '../../tools/cierre-nomina/lib/calcularCierreNomina';
 import type { TrabajadorFilaInput } from '../../tools/cierre-nomina/types';
 import { analizarBalance, calcularTotales } from '../../tools/balance-general/lib/calcularBalance';
@@ -1272,6 +1276,7 @@ const TOOL_SPECS_MAP: Record<
       'LSS 1997 Arts. 218 a 221 (Continuación Voluntaria en el Régimen Obligatorio — Modalidad 40)',
       'Reforma LSS Art. 168 y Segundo Transitorio (Cuota progresiva Modalidad 40 2026: 14.438%)',
       'LSS 1973 Arts. 167 y 171 (Cuantía básica, incrementos anuales y factor de edad 60-65 años)',
+      'Acuerdo ACDO.AS2.HCT.101026/302.P.DG, Punto Cuarto (medida temporal; alcance jurídico discutido), aprobado 10/10/2026, DOF 21/10/2026, vigente desde 22/10/2026',
     ],
     inputs: {
       ultimoSbc: 'number (MXN diario)',
@@ -1297,12 +1302,7 @@ const TOOL_SPECS_MAP: Record<
       mesesRecuperacion: 'number',
     },
     sample_preview_payload: {
-      ultimoSbc: 600,
-      sbcDeseado: 2932.75,
-      semanasPrevias: 1250,
-      mesesAportacion: 24,
-      edadJubilacion: 65,
-      asignacionFamiliar: true,
+      ...VECTOR_REFERENCIA_MODALIDAD40,
     },
   },
   'auditor-cfdi-atipico': {
@@ -1401,9 +1401,11 @@ export async function executeToolPreview(
 
   const spec = TOOL_SPECS_MAP[toolId];
   const payload =
-    rawPayload && Object.keys(rawPayload).length > 0
+    toolId === 'modalidad40'
       ? rawPayload
-      : (spec?.sample_preview_payload ?? {});
+      : rawPayload && Object.keys(rawPayload).length > 0
+        ? rawPayload
+        : (spec?.sample_preview_payload ?? {});
 
   try {
     let resultOutput: unknown;
@@ -1769,17 +1771,15 @@ export async function executeToolPreview(
       }
 
       case 'modalidad40': {
-        resultOutput = await simularModalidad40({
-          ultimoSbc: Number(payload.ultimoSbc ?? payload.sbcActualDiario ?? 600),
-          sbcDeseado: Number(payload.sbcDeseado ?? 2932.75),
-          semanasPrevias: Number(payload.semanasPrevias ?? payload.semanasActuales ?? 1250),
-          mesesAportacion: Number(payload.mesesAportacion ?? payload.mesesModalidad40 ?? 24),
-          edadJubilacion: Number(payload.edadJubilacion ?? payload.edadRetiro ?? 65),
-          asignacionFamiliar:
-            parseStrictBoolean(payload.asignacionFamiliar) ??
-            parseStrictBoolean(payload.tieneEsposa) ??
-            true,
-        });
+        const validacion = validarParametrosModalidad40(payload);
+        if (!validacion.ok) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: validacion.error,
+          };
+        }
+        resultOutput = await simularModalidad40(validacion.valor);
         break;
       }
 
@@ -3685,7 +3685,9 @@ export async function handleStayPuftInternalRequest(
   if (pathname === '/api/internal/diagnostics' && method === 'GET') {
     const toolDiagnostics = await Promise.all(
       CATALOGO_HERRAMIENTAS.map(async (tool) => {
-        const previewCheck = await executeToolPreview(tool.id, {});
+        const previewPayload =
+          tool.id === 'modalidad40' ? (TOOL_SPECS_MAP[tool.id]?.sample_preview_payload ?? {}) : {};
+        const previewCheck = await executeToolPreview(tool.id, previewPayload);
         const toolStatus = TOOL_SPECS_MAP[tool.id]?.status ?? 'active';
         return {
           id: tool.id,

@@ -105,7 +105,8 @@ export interface ResultadoModalidad40 {
   inversion: InversionModalidad40;
   pension: ProyeccionPensionLey73;
   roi: AnalisisRoi;
-  /** Sello criptográfico SHA-256 generado para el papel de trabajo */
+  advertencias: string[];
+  /** Folio determinista del cálculo; no es un sello fiscal ni certificación del IMSS */
   selloSha256: string;
   /** Fecha y hora UTC del cálculo */
   fechaCalculoIso: string;
