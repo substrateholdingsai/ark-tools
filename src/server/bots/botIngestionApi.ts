@@ -21,7 +21,7 @@ import type { Env } from '../../index';
 import { authenticateRequest } from '../auth';
 import { timingSafeEqual } from '../canacoConektaService';
 import { verifyStayPuftKey } from '../staypuft/staypuftConnector';
-import { calcularCuotaAfiliacion, extraerNumEmpleados } from '@/components/canaco/calculoCuota';
+import { calcularCuotaAfiliacion } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico } from '@/components/canaco/types';
 import { canonicalizarRfc } from '../canacoLifecycle';
 
@@ -444,20 +444,43 @@ botApp.post('/ingest', async (c) => {
           }>();
 
         if (leadExistente) {
-          const employees = extraerNumEmpleados(leadExistente.notas);
-          const sector = leadExistente.especialidad as SectorEconomico | null;
-          const quotedAmount =
-            employees && sector && ['comercio', 'servicios', 'turismo'].includes(sector)
-              ? calcularCuotaAfiliacion(employees, sector).totalAnual
-              : null;
+          let quotedAmount: number | null = null;
+          if (classification.categoria === 'comprobante_pago' && tenantId === 'canaco_merida') {
+            const { results: paymentIntents = [] } = await db
+              .prepare(
+                `SELECT num_empleados, sector
+                 FROM canaco_payment_intents
+                 WHERE lead_id = ? AND tenant_id = ? AND rfc = ? AND environment = 'production'
+                 ORDER BY created_at DESC LIMIT 1`
+              )
+              .bind(leadExistente.id, tenantId, canonicalRfc)
+              .all<{ num_empleados: number; sector: string }>();
+            const paymentIntent = paymentIntents[0];
+            const sector =
+              paymentIntent && ['comercio', 'servicios', 'turismo'].includes(paymentIntent.sector)
+                ? (paymentIntent.sector as SectorEconomico)
+                : null;
+            if (
+              paymentIntent &&
+              Number.isInteger(paymentIntent.num_empleados) &&
+              paymentIntent.num_empleados > 0 &&
+              sector &&
+              sector === leadExistente.especialidad
+            ) {
+              quotedAmount = calcularCuotaAfiliacion(
+                paymentIntent.num_empleados,
+                sector
+              ).totalAnual;
+            }
+          }
           const evidenceAmount = classification.datos_extraidos.monto;
-          const amountMatches =
+          const amountMismatch =
             quotedAmount !== null &&
-            typeof evidenceAmount === 'number' &&
-            Math.round(evidenceAmount * 100) === Math.round(quotedAmount * 100);
+            (typeof evidenceAmount !== 'number' ||
+              Math.round(evidenceAmount * 100) !== Math.round(quotedAmount * 100));
           const quarantine =
             classification.categoria === 'comprobante_pago' &&
-            (!amountMatches || leadExistente.lifecycle_stage !== 'pago_pendiente');
+            (amountMismatch || leadExistente.lifecycle_stage !== 'pago_pendiente');
           const reviewLabel =
             classification.categoria === 'comprobante_pago'
               ? quarantine
