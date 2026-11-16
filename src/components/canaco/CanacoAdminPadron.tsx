@@ -43,7 +43,6 @@ import {
   determinarEstrato,
   extraerNumEmpleados,
   generarFolioIntegridad,
-  tienePagoConfirmado,
 } from './calculoCuota';
 
 interface LeadRow {
@@ -62,6 +61,15 @@ interface LeadRow {
   arkangel_share_consent?: number | null;
   origin?: string | null;
   payment_environment?: string | null;
+  canonical_rfc?: string | null;
+  verified_payment_amount_cents?: number | null;
+  verified_payment_channel?: string | null;
+  verified_payment_environment?: string | null;
+  verified_payment_rfc?: string | null;
+  verified_payment_folio_siem?: string | null;
+  verified_payment_razon_social?: string | null;
+  verified_payment_num_empleados?: number | null;
+  verified_payment_sector?: string | null;
   last_contact: string | null;
   contacto_nombre: string | null;
   notas: string | null;
@@ -78,36 +86,28 @@ interface ArcoRequestRow {
 }
 
 function getConfirmedPaymentAmount(lead: LeadRow): number | null {
+  const employees = lead.verified_payment_num_empleados;
+  const sector = lead.verified_payment_sector;
   if (
     lead.lifecycle_stage !== 'socio_activo' ||
     lead.status !== 'Socio Activo' ||
-    !tienePagoConfirmado(lead.notas)
-  ) {
-    return null;
-  }
-  const employees = extraerNumEmpleados(lead.notas);
-  const sector = lead.especialidad;
-  const amountMatch = lead.notas?.match(/Pago Confirmado [^(]+\(\$([\d,]+(?:\.\d+)?)\s*MXN\)/i);
-  const quoteMatch = lead.notas?.match(/Cuota:\s*\$([\d,]+(?:\.\d+)?)/i);
-  if (
+    lead.payment_environment !== 'production' ||
+    lead.verified_payment_environment !== 'production' ||
+    !lead.canonical_rfc ||
+    lead.verified_payment_rfc !== lead.canonical_rfc ||
     !employees ||
     !['comercio', 'servicios', 'turismo'].includes(sector || '') ||
-    !amountMatch?.[1] ||
-    !quoteMatch?.[1]
+    lead.verified_payment_amount_cents == null ||
+    !Number.isInteger(lead.verified_payment_amount_cents)
   ) {
     return null;
   }
-  const amount = Number(amountMatch[1].replace(/,/g, ''));
-  const quotedAmount = Number(quoteMatch[1].replace(/,/g, ''));
   const expected = calcularCuotaAfiliacion(
     employees,
     sector as SocioCanacoRegistro['sector']
   ).totalAnual;
-  return Number.isFinite(amount) &&
-    Math.round(amount * 100) === Math.round(expected * 100) &&
-    Math.round(quotedAmount * 100) === Math.round(expected * 100)
-    ? amount
-    : null;
+  const amountCents = lead.verified_payment_amount_cents;
+  return amountCents === Math.round(expected * 100) ? amountCents / 100 : null;
 }
 
 interface CanacoAdminPadronProps {
@@ -348,7 +348,6 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     ).length;
     const pendientes = total - activos;
 
-    // Estimar recaudación a partir de las notas o cuota base
     const recaudacion = reportableLeads.reduce((acc, l) => {
       return acc + (getConfirmedPaymentAmount(l) || 0);
     }, 0);
@@ -363,9 +362,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         employees,
         sector as SocioCanacoRegistro['sector']
       ).totalAnual;
-      const amountMatch = l.notas?.match(/Cuota:\s*\$([\d,]+(?:\.\d+)?)/i);
-      const amount = amountMatch?.[1] ? Number(amountMatch[1].replace(/,/g, '')) : 0;
-      return Math.round(amount * 100) === Math.round(expected * 100) ? acc + amount : acc;
+      return acc + expected;
     }, 0);
 
     return { total, activos, pendientes, recaudacion, carteraPendiente, stageCounts };
@@ -442,15 +439,13 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
   const verResumenPago = (lead: LeadRow) => {
     const montoPagadoValidado = getConfirmedPaymentAmount(lead);
     if (montoPagadoValidado === null) return;
-    const folioSiem = lead.notas?.match(/Folio SIEM:\s*([^\s|]+)/i)?.[1];
-    const rfc = lead.notas?.match(/RFC:\s*([A-Z0-9]+)/i)?.[1];
-    const razonSocial = lead.notas?.match(/Razón Social:\s*([^|]+)/i)?.[1]?.trim();
-    const numEmpleados = extraerNumEmpleados(lead.notas);
+    const folioSiem = lead.verified_payment_folio_siem;
+    const rfc = lead.verified_payment_rfc;
+    const razonSocial = lead.verified_payment_razon_social;
+    const numEmpleados = lead.verified_payment_num_empleados;
     if (!folioSiem || !rfc || !razonSocial || !numEmpleados) return;
 
-    const sector = ['comercio', 'servicios', 'turismo'].includes(lead.especialidad || '')
-      ? (lead.especialidad as SocioCanacoRegistro['sector'])
-      : 'comercio';
+    const sector = lead.verified_payment_sector as SocioCanacoRegistro['sector'];
     const folioIntegridad =
       lead.notas?.match(/Folio de Integridad:\s*([^\s|]+)/i)?.[1] ||
       generarFolioIntegridad(folioSiem);
@@ -480,7 +475,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
       estatus: 'activo',
       pagoConfirmado: true,
       montoPagado: montoPagadoValidado,
-      metodoPago: /Pago Confirmado Call Center:/i.test(lead.notas || '') ? 'spei' : 'tarjeta',
+      metodoPago: lead.verified_payment_channel === 'conekta_spei' ? 'spei' : 'tarjeta',
       cfdiRequerido: /CFDI:\s*Requerido/i.test(lead.notas || ''),
       folioIntegridad,
     };
@@ -1135,9 +1130,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         <AdminExpedienteModal
           isOpen={!!expedienteAdminSocio}
           onClose={() => setExpedienteAdminSocio(null)}
-          rfc={
-            expedienteAdminSocio.notas?.match(/RFC:\s*([A-Z0-9]{12,13})/i)?.[1] || 'AMA200101AB1'
-          }
+          rfc={expedienteAdminSocio.canonical_rfc || ''}
           razonSocial={expedienteAdminSocio.web || 'Comercio Registrado'}
           whatsapp={expedienteAdminSocio.whatsapp}
           contactoNombre={expedienteAdminSocio.contacto_nombre}

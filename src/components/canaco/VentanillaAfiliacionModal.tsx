@@ -350,6 +350,8 @@ export function VentanillaAfiliacionModal({
           codigoPostal: registroExitoso.direccion.codigoPostal,
           registroPatronalImss: registroExitoso.registroPatronalImss,
           registroEstatalAafy: registroExitoso.registroEstatalAafy,
+          afiliacionSimultanea: registroExitoso.afiliacionSimultanea,
+          tramiteImssSolicitado: registroExitoso.tramiteImssSolicitado,
         }),
       });
 

@@ -6,6 +6,7 @@ import { buildWhatsAppDeepLink, normalizeMexicanPhone } from '../lib/whatsappStu
 
 interface Lead {
   id: string;
+  canonical_rfc: string | null;
   web: string | null;
   whatsapp: string | null;
   whatsapp_link?: string | null;
@@ -27,6 +28,14 @@ interface Lead {
   origin: string | null;
   is_demo: number | null;
   payment_environment: string | null;
+  verified_payment_amount_cents: number | null;
+  verified_payment_channel: string | null;
+  verified_payment_environment: string | null;
+  verified_payment_rfc: string | null;
+  verified_payment_folio_siem: string | null;
+  verified_payment_razon_social: string | null;
+  verified_payment_num_empleados: number | null;
+  verified_payment_sector: string | null;
 }
 
 export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): string {
@@ -174,6 +183,7 @@ function rowToLead(row: Record<string, unknown>): Lead {
   const whatsapp = row.whatsapp == null ? null : String(row.whatsapp);
   return {
     id: String(row.id),
+    canonical_rfc: row.canonical_rfc == null ? null : String(row.canonical_rfc),
     web: row.web == null ? null : String(row.web),
     whatsapp,
     whatsapp_link: whatsapp ? buildWhatsAppDeepLink(whatsapp) : null,
@@ -197,6 +207,24 @@ function rowToLead(row: Record<string, unknown>): Lead {
     origin: row.origin == null ? null : String(row.origin),
     is_demo: row.is_demo == null ? null : Number(row.is_demo),
     payment_environment: row.payment_environment == null ? null : String(row.payment_environment),
+    verified_payment_amount_cents:
+      row.verified_payment_amount_cents == null ? null : Number(row.verified_payment_amount_cents),
+    verified_payment_channel:
+      row.verified_payment_channel == null ? null : String(row.verified_payment_channel),
+    verified_payment_environment:
+      row.verified_payment_environment == null ? null : String(row.verified_payment_environment),
+    verified_payment_rfc:
+      row.verified_payment_rfc == null ? null : String(row.verified_payment_rfc),
+    verified_payment_folio_siem:
+      row.verified_payment_folio_siem == null ? null : String(row.verified_payment_folio_siem),
+    verified_payment_razon_social:
+      row.verified_payment_razon_social == null ? null : String(row.verified_payment_razon_social),
+    verified_payment_num_empleados:
+      row.verified_payment_num_empleados == null
+        ? null
+        : Number(row.verified_payment_num_empleados),
+    verified_payment_sector:
+      row.verified_payment_sector == null ? null : String(row.verified_payment_sector),
   };
 }
 
@@ -339,34 +367,65 @@ export async function handleLeadsApiRequest(
       const limit = Math.min(100, Math.max(1, Number.isNaN(rawLimit) ? 20 : rawLimit));
       const offset = Math.max(0, Number.isNaN(rawOffset) ? 0 : rawOffset);
 
-      let query = 'SELECT * FROM leads_ark_tools WHERE tenant_id = ?';
+      const verifiedPaymentJoin =
+        tenantId === 'canaco_merida'
+          ? ` LEFT JOIN canaco_payment_intents AS verified_payment
+              ON verified_payment.id = (
+                SELECT MIN(payment.id)
+                FROM canaco_payment_intents AS payment
+                WHERE payment.lead_id = lead.id
+                  AND payment.tenant_id = lead.tenant_id
+                  AND payment.rfc = lead.canonical_rfc
+                  AND lead.payment_environment = 'production'
+                  AND payment.status = 'paid'
+                  AND payment.environment = 'production'
+                  AND payment.channel IN ('conekta_card', 'conekta_spei')
+                  AND payment.transaction_reference IS NOT NULL
+                  AND payment.paid_at IS NOT NULL
+                HAVING COUNT(*) = 1
+              )`
+          : '';
+      const verifiedPaymentColumns =
+        tenantId === 'canaco_merida'
+          ? `, verified_payment.amount_cents AS verified_payment_amount_cents,
+               verified_payment.channel AS verified_payment_channel,
+               verified_payment.environment AS verified_payment_environment,
+               verified_payment.rfc AS verified_payment_rfc,
+               verified_payment.folio_siem AS verified_payment_folio_siem,
+               verified_payment.razon_social AS verified_payment_razon_social,
+               verified_payment.num_empleados AS verified_payment_num_empleados,
+               verified_payment.sector AS verified_payment_sector`
+          : '';
+      let query = `SELECT lead.*${verifiedPaymentColumns}
+                   FROM leads_ark_tools AS lead${verifiedPaymentJoin}
+                   WHERE lead.tenant_id = ?`;
       const binds: unknown[] = [tenantId];
       if (tenantId === 'canaco_merida' && url.searchParams.get('include_demo') !== 'true') {
-        query += ' AND COALESCE(is_demo, 0) = 0';
+        query += ' AND COALESCE(lead.is_demo, 0) = 0';
       }
 
       if (ciudad) {
-        query += ' AND ciudad = ?';
+        query += ' AND lead.ciudad = ?';
         binds.push(ciudad);
       }
       if (status) {
-        query += ' AND status = ?';
+        query += ' AND lead.status = ?';
         binds.push(status);
       }
       if (especialidad) {
-        query += ' AND especialidad = ?';
+        query += ' AND lead.especialidad = ?';
         binds.push(especialidad);
       }
       if (conWhatsapp) {
-        query += " AND whatsapp IS NOT NULL AND TRIM(whatsapp) != ''";
+        query += " AND lead.whatsapp IS NOT NULL AND TRIM(lead.whatsapp) != ''";
       }
       if (q) {
         query +=
-          ' AND (web LIKE ? OR email LIKE ? OR contacto_nombre LIKE ? OR notas LIKE ? OR whatsapp LIKE ?)';
+          ' AND (lead.web LIKE ? OR lead.email LIKE ? OR lead.contacto_nombre LIKE ? OR lead.notas LIKE ? OR lead.whatsapp LIKE ?)';
         const wildcard = `%${q}%`;
         binds.push(wildcard, wildcard, wildcard, wildcard, wildcard);
       }
-      query += ' ORDER BY created_at DESC, id ASC LIMIT ? OFFSET ?';
+      query += ' ORDER BY lead.created_at DESC, lead.id ASC LIMIT ? OFFSET ?';
       binds.push(limit, offset);
 
       const stmt = db.prepare(query);

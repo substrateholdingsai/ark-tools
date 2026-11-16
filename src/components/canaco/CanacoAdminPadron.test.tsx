@@ -13,6 +13,15 @@ const MOCK_LEADS = [
     status: 'Socio Activo',
     lifecycle_stage: 'socio_activo',
     payment_environment: 'production',
+    canonical_rfc: 'CPM2106158A1',
+    verified_payment_amount_cents: 370000,
+    verified_payment_channel: 'conekta_card',
+    verified_payment_environment: 'production',
+    verified_payment_rfc: 'CPM2106158A1',
+    verified_payment_folio_siem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+    verified_payment_razon_social: 'COMERCIALIZADORA DEL MAYAB',
+    verified_payment_num_empleados: 15,
+    verified_payment_sector: 'comercio',
     last_contact: '2026-10-25',
     contacto_nombre: 'Fernando Pech',
     notas:
@@ -47,6 +56,21 @@ const MOCK_LEADS = [
     contacto_nombre: 'Contacto de prueba',
     notas:
       'Razón Social: SERVICIOS DEMO DE PROGRESO | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-MED-6060 | Estrato: MEDIANA (60 emp.) | Empleados: 60 | Cuota: $6,500 MXN | Pago Confirmado Call Center: SPEI-DEMO-6060 ($6,500 MXN)',
+  },
+  {
+    id: 'lead-can-5',
+    web: 'Prospecto con nota de pago no verificada',
+    whatsapp: '9999123457',
+    email: 'no-pago@example.invalid',
+    ciudad: 'Mérida',
+    especialidad: 'comercio',
+    status: 'Pago Pendiente',
+    lifecycle_stage: 'pago_pendiente',
+    is_demo: 0,
+    last_contact: '2026-10-29',
+    contacto_nombre: 'Contacto de prueba',
+    notas:
+      'RFC: NPV2106158A1 | Folio SIEM: SIEM-NPV-TEST | Empleados: 15 | Cuota: $3,700 | Pago Confirmado Conekta: fabricated-test ($3,700 MXN)',
   },
   {
     id: 'lead-can-4',
@@ -126,7 +150,15 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
     const stageCounts = screen.getByLabelText('Registros por etapa del ciclo de vida');
     expect(stageCounts).toHaveTextContent('prospecto: 0');
     expect(stageCounts).toHaveTextContent('socio activo: 1');
-    expect(stageCounts).toHaveTextContent('pago pendiente: 1');
+    expect(stageCounts).toHaveTextContent('pago pendiente: 2');
+  });
+
+  it('no cuenta una nota con texto de pago como pago confirmado', async () => {
+    await renderAdmin();
+
+    const paymentCard = screen.getByText('Pagos confirmados').parentElement?.parentElement;
+    expect(paymentCard).toHaveTextContent('1');
+    expect(screen.getByText(/Prospecto con nota de pago no verificada/i)).toBeInTheDocument();
   });
 
   it('excluye registros de demo del padrón visible', async () => {
@@ -174,10 +206,14 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
   it('no simula un envío de recordatorio individual no conectado', async () => {
     await renderAdmin();
 
-    const botonIndividual = screen.getByRole('button', { name: /Recordatorio no conectado/i });
-    expect(botonIndividual).toBeInTheDocument();
-    expect(botonIndividual).toBeDisabled();
-    expect(botonIndividual).toHaveAttribute('title', expect.stringContaining('no está conectado'));
+    const botonesIndividuales = screen.getAllByRole('button', {
+      name: /Recordatorio no conectado/i,
+    });
+    expect(botonesIndividuales).toHaveLength(2);
+    for (const boton of botonesIndividuales) {
+      expect(boton).toBeDisabled();
+      expect(boton).toHaveAttribute('title', expect.stringContaining('no está conectado'));
+    }
   });
 
   it('muestra la barra de ubicación cameral y la guía rápida de bienvenida ocultable', async () => {

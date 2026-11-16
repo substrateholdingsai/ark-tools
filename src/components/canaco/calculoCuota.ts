@@ -91,7 +91,3 @@ export function extraerNumEmpleados(notas: string | null | undefined): number {
   const numEmpleados = match?.[1] ? Number(match[1]) : 0;
   return Number.isInteger(numEmpleados) && numEmpleados > 0 ? numEmpleados : 0;
 }
-
-export function tienePagoConfirmado(notas: string | null | undefined): boolean {
-  return /Pago Confirmado (?:Conekta|Call Center):/i.test(notas || '');
-}

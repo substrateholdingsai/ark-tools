@@ -59,19 +59,6 @@ export function normalizarTelefonoE164(tel: string | null | undefined): string {
 }
 
 /**
- * Extrae el importe de la cuota desde las notas del lead o asigna valor por estrato.
- */
-export function extraerMontoDeNotas(notas: string | null | undefined): number {
-  if (!notas) return 0;
-  const match = notas.match(/Cuota:\s*\$?([\d,]+(\.\d+)?)/i);
-  if (match && match[1]) {
-    const parsed = parseFloat(match[1].replace(/,/g, ''));
-    if (!isNaN(parsed) && parsed > 0) return parsed;
-  }
-  return 0;
-}
-
-/**
  * Genera el archivo CSV con la cabecera estándar de ingesta que espera Arkangel:
  * nombre,telefono,email,rfc,monto,concepto,vencimiento,estrato
  */
@@ -441,8 +428,7 @@ export async function handleCanacoArkangelSyncApi(
           if (!employees || !['comercio', 'servicios', 'turismo'].includes(sector || '')) {
             return false;
           }
-          const quote = calcularCuotaAfiliacion(employees, sector as SectorEconomico).totalAnual;
-          return extraerMontoDeNotas(lead.notas) === quote && Boolean(lead.canonical_rfc);
+          return Boolean(lead.canonical_rfc);
         })
         .map((l) => ({
           id: l.id,
@@ -450,7 +436,10 @@ export async function handleCanacoArkangelSyncApi(
           telefono: normalizarTelefonoE164(l.whatsapp),
           email: l.email || '',
           rfc: l.canonical_rfc || '',
-          monto: extraerMontoDeNotas(l.notas),
+          monto: calcularCuotaAfiliacion(
+            extraerNumEmpleados(l.notas),
+            l.especialidad as SectorEconomico
+          ).totalAnual,
           concepto: 'Registro SIEM 2026 y Cuota Anual CANACO Mérida',
           vencimiento: fechaVencimiento,
           estrato: l.especialidad ? l.especialidad.toUpperCase() : '',

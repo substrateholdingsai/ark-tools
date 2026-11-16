@@ -13,7 +13,6 @@ import {
   extraerNumEmpleados,
   generarFolioIntegridad,
   generarFolioSiem,
-  tienePagoConfirmado,
 } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico, SocioCanacoRegistro } from '@/components/canaco/types';
 import { canonicalizarRfc } from './canacoLifecycle';
@@ -98,6 +97,85 @@ export interface MigrarALedgerPayload {
   codigoPostal?: string;
   registroPatronalImss?: string;
   registroEstatalAafy?: string;
+  afiliacionSimultanea?: boolean;
+  tramiteImssSolicitado?: boolean;
+}
+
+interface CanacoPaymentLead {
+  id: string;
+  canonical_rfc: string | null;
+  status: string | null;
+  lifecycle_stage: string | null;
+  payment_environment: string | null;
+  especialidad: string | null;
+}
+
+interface CanacoPaymentIntent {
+  id: string;
+  lead_id: string;
+  rfc: string;
+  folio_siem: string;
+  razon_social: string;
+  email: string;
+  num_empleados: number;
+  sector: string;
+  amount_cents: number;
+  channel: string;
+  environment: string;
+  status: string;
+  transaction_reference: string | null;
+  paid_at: string | null;
+}
+
+async function findVerifiedProductionPayment(
+  db: NonNullable<Env['ARK_TOOLS_DB']>,
+  lead: CanacoPaymentLead
+): Promise<CanacoPaymentIntent | null> {
+  if (
+    !lead.canonical_rfc ||
+    lead.lifecycle_stage !== 'socio_activo' ||
+    lead.status !== 'Socio Activo' ||
+    lead.payment_environment !== 'production'
+  ) {
+    return null;
+  }
+
+  const { results = [] } = await db
+    .prepare(
+      `SELECT id, lead_id, rfc, folio_siem, razon_social, email, num_empleados, sector,
+              amount_cents, channel, environment, status, transaction_reference, paid_at
+       FROM canaco_payment_intents
+       WHERE lead_id = ? AND tenant_id = 'canaco_merida' AND rfc = ?
+         AND status = 'paid' AND environment = 'production'
+         AND transaction_reference IS NOT NULL
+       ORDER BY paid_at DESC, created_at DESC LIMIT 2`
+    )
+    .bind(lead.id, lead.canonical_rfc)
+    .all<CanacoPaymentIntent>();
+
+  if (results.length !== 1) return null;
+  const intent = results[0];
+  if (
+    !intent ||
+    intent.lead_id !== lead.id ||
+    canonicalizarRfc(intent.rfc) !== lead.canonical_rfc ||
+    intent.status !== 'paid' ||
+    intent.environment !== 'production' ||
+    !['conekta_card', 'conekta_spei'].includes(intent.channel) ||
+    !intent.transaction_reference ||
+    !intent.paid_at ||
+    !Number.isInteger(intent.num_empleados) ||
+    intent.num_empleados < 1 ||
+    !['comercio', 'servicios', 'turismo'].includes(intent.sector) ||
+    intent.sector !== lead.especialidad
+  ) {
+    return null;
+  }
+
+  const expectedAmountCents = Math.round(
+    calcularCuotaAfiliacion(intent.num_empleados, intent.sector as SectorEconomico).totalAnual * 100
+  );
+  return intent.amount_cents === expectedAmountCents ? intent : null;
 }
 
 export async function handleAfiliacionesApiRequest(
@@ -143,7 +221,7 @@ export async function handleAfiliacionesApiRequest(
     const row = await db
       .prepare(
         `SELECT id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
-                last_contact, contacto_nombre, notas
+                last_contact, contacto_nombre, notas, canonical_rfc, payment_environment
          FROM leads_ark_tools
          WHERE tenant_id = 'canaco_merida' AND canonical_rfc = ?
          LIMIT 1`
@@ -161,6 +239,8 @@ export async function handleAfiliacionesApiRequest(
         last_contact: string | null;
         contacto_nombre: string | null;
         notas: string | null;
+        canonical_rfc: string | null;
+        payment_environment: string | null;
       }>();
 
     if (!row) {
@@ -170,37 +250,28 @@ export async function handleAfiliacionesApiRequest(
       );
     }
 
+    const paidIntent = await findVerifiedProductionPayment(db, row);
     const folioMatch = row.notas?.match(/Folio SIEM:\s*([^\s|]+)/i);
-    const folioSiem = folioMatch?.[1] || '';
+    const folioSiem = paidIntent?.folio_siem || folioMatch?.[1] || '';
     const razonSocialFromNotas = row.notas?.match(/Razón Social:\s*([^|]+)/i)?.[1]?.trim();
     const folioIntegridadMatch = row.notas?.match(/Folio de Integridad:\s*([^\s|]+)/i);
     const folioIntegridad =
       folioIntegridadMatch?.[1] || (folioSiem ? generarFolioIntegridad(folioSiem) : '');
-    const cuotaMatch = row.notas?.match(/Cuota:\s*\$?([\d,]+(\.\d+)?)/i);
-    const cuota = cuotaMatch && cuotaMatch[1] ? parseFloat(cuotaMatch[1].replace(/,/g, '')) : 0;
-    const pagoMatch = row.notas?.match(/Pago Confirmado [^(]+\(\$([\d,]+(?:\.\d+)?)\s*MXN\)/i);
-    const montoConfirmado = pagoMatch?.[1] ? parseFloat(pagoMatch[1].replace(/,/g, '')) : 0;
     const nrpMatch = row.notas?.match(/NRP:\s*([A-Z0-9]{10,11})/i);
     const aafyMatch = row.notas?.match(/AAFY:\s*([^\s|]+)/i);
     const simultaneaFlag = /Afiliaci[oó]n Simult[aá]nea/i.test(row.notas || '');
     const tramiteImssFlag = /Tr[aá]mite IMSS Solicitado/i.test(row.notas || '');
 
-    const numEmpleados = extraerNumEmpleados(row.notas);
-    const sector = row.especialidad as SectorEconomico;
-    const cuotaEsperada =
-      numEmpleados > 0 && ['comercio', 'servicios', 'turismo'].includes(sector)
-        ? calcularCuotaAfiliacion(numEmpleados, sector).totalAnual
-        : 0;
-    const pagoConfirmado =
-      row.lifecycle_stage === 'socio_activo' &&
-      row.status === 'Socio Activo' &&
-      tienePagoConfirmado(row.notas) &&
-      cuota > 0 &&
-      Math.round(cuota * 100) === Math.round(cuotaEsperada * 100) &&
-      Math.round(montoConfirmado * 100) === Math.round(cuotaEsperada * 100);
+    const numEmpleados = paidIntent?.num_empleados ?? extraerNumEmpleados(row.notas);
+    const sector = (paidIntent?.sector || row.especialidad || 'comercio') as SectorEconomico;
+    const pagoConfirmado = paidIntent !== null;
     const socioRegistro: SocioCanacoRegistro = {
       folioSiem,
-      razonSocial: razonSocialFromNotas || row.web || 'Comercio Afiliado de Yucatán',
+      razonSocial:
+        paidIntent?.razon_social ||
+        razonSocialFromNotas ||
+        row.web ||
+        'Comercio Afiliado de Yucatán',
       nombreComercial: row.web || '',
       rfc: qRfc,
       sector: ['comercio', 'servicios', 'turismo'].includes(sector) ? sector : 'comercio',
@@ -222,8 +293,13 @@ export async function handleAfiliacionesApiRequest(
       fechaVigencia: '',
       estatus: pagoConfirmado ? 'activo' : 'pendiente_pago',
       pagoConfirmado,
-      montoPagado: pagoConfirmado ? montoConfirmado : 0,
-      metodoPago: /Pago Confirmado Call Center:/i.test(row.notas || '') ? 'spei' : 'tarjeta',
+      montoPagado: paidIntent ? paidIntent.amount_cents / 100 : 0,
+      metodoPago:
+        paidIntent?.channel === 'conekta_spei'
+          ? 'spei'
+          : paidIntent?.channel === 'clip'
+            ? 'clip'
+            : 'tarjeta',
       cfdiRequerido: true,
       folioIntegridad,
       registroPatronalImss: nrpMatch ? nrpMatch[1] : undefined,
@@ -260,130 +336,90 @@ export async function handleAfiliacionesApiRequest(
       const qFolio = body.folioSiem?.trim();
       const qEmail = body.email?.trim().toLowerCase();
 
-      if (!qRfc && !qFolio && !body.razonSocial?.trim()) {
+      if (!qRfc) {
         return Response.json(
-          { error: 'Se requiere RFC, Folio SIEM o Razón Social para realizar la migración.' },
+          { error: 'Se requiere un RFC válido para realizar la migración.' },
           { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
 
-      // 1. Buscar el registro canónico en el Padrón Cameral (leads_ark_tools)
-      const leadRow = await db
+      const { results = [] } = await db
         .prepare(
           `SELECT id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
-                  contacto_nombre, notas
+                  contacto_nombre, canonical_rfc, payment_environment
            FROM leads_ark_tools
-           WHERE tenant_id = 'canaco_merida'
-             AND (
-               (? IS NOT NULL AND notas LIKE ?) OR
-               (? IS NOT NULL AND canonical_rfc = ?) OR
-               (? IS NOT NULL AND email = ?)
-             )
-           LIMIT 1`
+           WHERE tenant_id = 'canaco_merida' AND canonical_rfc = ?
+           ORDER BY created_at ASC, id ASC LIMIT 2`
         )
-        .bind(
-          qFolio || null,
-          qFolio ? `%${qFolio}%` : '',
-          qRfc || null,
-          qRfc,
-          qEmail || null,
-          qEmail || ''
-        )
-        .first<{
-          id: string;
-          web: string | null;
-          whatsapp: string | null;
-          email: string | null;
-          ciudad: string | null;
-          especialidad: string | null;
-          status: string | null;
-          lifecycle_stage: string | null;
-          contacto_nombre: string | null;
-          notas: string | null;
-        }>();
+        .bind(qRfc)
+        .all<
+          CanacoPaymentLead & {
+            web: string | null;
+            whatsapp: string | null;
+            email: string | null;
+            ciudad: string | null;
+            contacto_nombre: string | null;
+          }
+        >();
 
-      if (
-        !leadRow ||
-        leadRow.lifecycle_stage !== 'socio_activo' ||
-        leadRow.status !== 'Socio Activo' ||
-        !tienePagoConfirmado(leadRow.notas)
-      ) {
+      if (results.length === 0) {
         return Response.json(
-          {
-            error:
-              'El registro sigue pendiente de confirmación de pago. La empresa se podrá importar cuando exista un pago confirmado.',
-          },
+          { error: 'No se encontró un registro CANACO para el RFC indicado.' },
+          { status: 404, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      if (results.length > 1) {
+        return Response.json(
+          { error: 'Hay más de un registro con este RFC; requiere conciliación administrativa.' },
           { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
 
-      // 2. Derivar los datos de importación del registro pagado en D1.
-      const rfcFromNotas = leadRow?.notas?.match(/RFC:\s*([A-Z0-9]{12,13})/i)?.[1];
-      const folioFromNotas = leadRow?.notas?.match(/Folio SIEM:\s*([^\s|]+)/i)?.[1];
-      const razonSocialFromNotas = leadRow?.notas?.match(/Razón Social:\s*([^|]+)/i)?.[1]?.trim();
-      const numEmpleadosFromNotas = extraerNumEmpleados(leadRow?.notas);
-      const nrpFromNotas = leadRow?.notas?.match(/NRP:\s*([A-Z0-9]{10,11})/i)?.[1];
-      const aafyFromNotas = leadRow?.notas?.match(/AAFY:\s*([^\s|]+)/i)?.[1];
-      const cuotaRegistrada = Number(
-        leadRow?.notas?.match(/Cuota:\s*\$?([\d,]+(?:\.\d+)?)/i)?.[1]?.replace(/,/g, '') || 0
-      );
-      const pagoRegistrado = Number(
-        leadRow?.notas
-          ?.match(/Pago Confirmado [^(]+\(\$([\d,]+(?:\.\d+)?)\s*MXN\)/i)?.[1]
-          ?.replace(/,/g, '') || 0
-      );
-      const cuotaEsperada =
-        numEmpleadosFromNotas > 0 &&
-        ['comercio', 'servicios', 'turismo'].includes(leadRow?.especialidad || '')
-          ? calcularCuotaAfiliacion(numEmpleadosFromNotas, leadRow?.especialidad as SectorEconomico)
-              .totalAnual
-          : 0;
+      const leadRow = results[0]!;
+      const paidIntent = await findVerifiedProductionPayment(db, leadRow);
+      if (!paidIntent) {
+        return Response.json(
+          { error: 'No existe un pago de producción verificado para este registro CANACO.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
       const finalEmailStored = leadRow?.email?.trim().toLowerCase() || '';
       const finalTelefonoStored = leadRow?.whatsapp?.trim() || '';
       const finalContactoStored = leadRow?.contacto_nombre?.trim() || '';
-      const finalNombreStored = (razonSocialFromNotas || leadRow?.web || '').trim();
+      const finalNombreStored = paidIntent.razon_social.trim();
       const mismatch =
-        (qRfc && qRfc !== rfcFromNotas?.toUpperCase()) ||
-        (qFolio && qFolio !== folioFromNotas) ||
+        qRfc !== leadRow.canonical_rfc ||
+        (qFolio && qFolio !== paidIntent.folio_siem) ||
         (body.razonSocial &&
           body.razonSocial.trim().toUpperCase() !== finalNombreStored.toUpperCase()) ||
         (qEmail && qEmail !== finalEmailStored) ||
+        finalEmailStored !== paidIntent.email.trim().toLowerCase() ||
         (body.telefono && body.telefono.trim() !== finalTelefonoStored) ||
         (body.contactoNombre && body.contactoNombre.trim() !== finalContactoStored) ||
-        (body.numEmpleados !== undefined && Number(body.numEmpleados) !== numEmpleadosFromNotas) ||
-        (body.sector && body.sector !== leadRow?.especialidad) ||
-        (body.registroPatronalImss &&
-          body.registroPatronalImss.trim().toUpperCase() !== nrpFromNotas?.toUpperCase()) ||
-        (body.registroEstatalAafy &&
-          body.registroEstatalAafy.trim().toUpperCase() !== aafyFromNotas?.toUpperCase()) ||
+        (body.numEmpleados !== undefined &&
+          Number(body.numEmpleados) !== paidIntent.num_empleados) ||
+        (body.sector && body.sector !== paidIntent.sector) ||
         (body.municipio &&
-          body.municipio.trim().toLowerCase() !== leadRow?.ciudad?.trim().toLowerCase());
-      if (
-        mismatch ||
-        !rfcFromNotas ||
-        !folioFromNotas ||
-        !finalNombreStored ||
-        !finalEmailStored ||
-        !numEmpleadosFromNotas ||
-        cuotaEsperada <= 0 ||
-        Math.round(cuotaRegistrada * 100) !== Math.round(cuotaEsperada * 100) ||
-        Math.round(pagoRegistrado * 100) !== Math.round(cuotaEsperada * 100)
-      ) {
+          body.municipio.trim().toLowerCase() !== leadRow.ciudad?.trim().toLowerCase());
+      if (mismatch || !finalNombreStored || !finalEmailStored || !paidIntent.folio_siem) {
         return Response.json(
-          { error: 'Los datos enviados no coinciden con el registro confirmado en el padrón.' },
+          { error: 'Los datos enviados no coinciden con el pago verificado del registro CANACO.' },
           { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
 
-      const finalRfc = (qRfc || rfcFromNotas || 'XAXX010101000').toUpperCase();
+      // 2. Derivar los datos de importación del RFC canónico y del pago verificado.
+      const finalRfc = qRfc;
       const finalNombre = finalNombreStored.toUpperCase();
       const finalEmail = finalEmailStored;
       const finalTelefono = finalTelefonoStored;
       const finalContacto = finalContactoStored;
-      const finalFolioSiem = qFolio || folioFromNotas || 'SIEM-MID-2026-OFICIAL';
-      const finalSector = (leadRow?.especialidad as SectorEconomico) || 'comercio';
-      const finalNumEmpleados = numEmpleadosFromNotas;
-      const finalMunicipio = body.municipio?.trim() || leadRow?.ciudad || 'Mérida';
+      const finalFolioSiem = paidIntent.folio_siem;
+      const finalSector = paidIntent.sector as SectorEconomico;
+      const finalNumEmpleados = paidIntent.num_empleados;
+      const finalMunicipio = body.municipio?.trim() || leadRow.ciudad || 'Mérida';
       const tipoCliente: 'empresa' | 'persona_fisica' =
         finalRfc.length === 13 ? 'persona_fisica' : 'empresa';
 
@@ -502,9 +538,10 @@ export async function handleAfiliacionesApiRequest(
         email: finalEmail,
         telefono: finalTelefono,
         municipio: finalMunicipio,
-        registro_patronal_imss: nrpFromNotas || null,
-        registro_estatal_aafy: aafyFromNotas || null,
-        afiliacion_simultanea: /Afiliaci[oó]n Simult[aá]nea/i.test(leadRow?.notas || ''),
+        registro_patronal_imss: body.registroPatronalImss?.trim().toUpperCase() || null,
+        registro_estatal_aafy: body.registroEstatalAafy?.trim().toUpperCase() || null,
+        afiliacion_simultanea: body.afiliacionSimultanea === true,
+        tramite_imss_solicitado: body.tramiteImssSolicitado === true,
         importado_en: new Date().toISOString(),
       };
       const metadataJson = JSON.stringify(metadataObj);
@@ -593,21 +630,6 @@ export async function handleAfiliacionesApiRequest(
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
-      }
-
-      // 5. Trazabilidad en CRM Padrón Cameral
-      if (leadRow?.id) {
-        const stamp = `Migrado a LEDGER: ${new Date().toISOString().split('T')[0]}`;
-        const notasPrev = leadRow.notas || '';
-        if (!notasPrev.includes('Migrado a LEDGER')) {
-          const updatedNotas = notasPrev ? `${notasPrev} | ${stamp}` : stamp;
-          await db
-            .prepare(
-              'UPDATE leads_ark_tools SET notas = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-            )
-            .bind(updatedNotas, leadRow.id)
-            .run();
-        }
       }
 
       const respHeaders: Record<string, string> = {

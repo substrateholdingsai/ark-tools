@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   normalizarTelefonoE164,
-  extraerMontoDeNotas,
   generarCsvCobranzaArkangel,
   despacharLoteArkangel,
   handleCanacoArkangelSyncApi,
@@ -22,12 +21,6 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       expect(normalizarTelefonoE164('+52 999 912 3456')).toBe('+529999123456');
       expect(normalizarTelefonoE164('')).toBe('');
       expect(normalizarTelefonoE164(null)).toBe('');
-    });
-
-    it('extrae el monto de la cuota desde las notas del socio', () => {
-      expect(extraerMontoDeNotas('Folio SIEM: 123 | Cuota: $3,700.00 MXN')).toBe(3700.0);
-      expect(extraerMontoDeNotas('Cuota: 2150')).toBe(2150.0);
-      expect(extraerMontoDeNotas('Sin cuota especificada')).toBe(0);
     });
 
     it('genera un CSV bien estructurado para la ingesta de Arkangel', () => {
@@ -177,7 +170,7 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
         arkangel_share_consent: 1,
         is_demo: 0,
         notas:
-          'Razón Social: COMERCIALIZADORA DEL MAYAB | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
+          'Razón Social: COMERCIALIZADORA DEL MAYAB | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $1 MXN',
       };
       let approval: Record<string, unknown> | null = null;
       const mockFetch = vi.fn().mockResolvedValue({
@@ -245,6 +238,7 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       const preview = (await previewResponse?.json()) as any;
       expect(preview.preview.rows).toHaveLength(1);
       expect(preview.preview.rows[0].status).toBeUndefined();
+      expect(preview.preview.rows[0].monto).toBe(3700);
       expect(preview.preview.channels).toEqual(['arkangel_ingest_csv']);
       expect(preview.preview.content).toContain('CPM2106158A1');
       expect(mockFetch).not.toHaveBeenCalled();

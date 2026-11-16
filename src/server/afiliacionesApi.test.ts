@@ -33,6 +33,105 @@ function createMockDb() {
   };
 }
 
+const migrationLead = {
+  id: 'lead-canaco-paid',
+  web: 'Comercializadora del Mayab',
+  whatsapp: '0000000000',
+  email: 'demo@example.invalid',
+  ciudad: 'Mérida',
+  especialidad: 'comercio',
+  status: 'Socio Activo',
+  lifecycle_stage: 'socio_activo',
+  contacto_nombre: 'Fernando Pech',
+  canonical_rfc: 'CPM2106158A1',
+  payment_environment: 'production',
+  notas:
+    'RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: fabricated-test ($3,700 MXN)',
+};
+
+const migrationPaidIntent = {
+  id: 'intent-production-paid',
+  lead_id: 'lead-canaco-paid',
+  rfc: 'CPM2106158A1',
+  folio_siem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+  razon_social: 'COMERCIALIZADORA DEL MAYAB',
+  email: 'demo@example.invalid',
+  num_empleados: 15,
+  sector: 'comercio',
+  amount_cents: 370000,
+  channel: 'conekta_card',
+  environment: 'production',
+  status: 'paid',
+  transaction_reference: 'ord-production-paid',
+  paid_at: '2026-11-16T18:00:00.000Z',
+};
+
+function createMigrationMockDb({
+  leads = [migrationLead],
+  intents = [migrationPaidIntent],
+  existingUser = null,
+  existingClient = null,
+  memberships = [
+    { id: 'tenant-mi-despacho', name: 'Mi Despacho SC', slug: 'mi-despacho', role: 'owner' },
+  ],
+}: {
+  leads?: Array<Record<string, unknown>>;
+  intents?: Array<Record<string, unknown>>;
+  existingUser?: Record<string, unknown> | null;
+  existingClient?: Record<string, unknown> | null;
+  memberships?: Array<Record<string, unknown>>;
+} = {}) {
+  const statements: string[] = [];
+  const run = vi.fn(async () => ({ success: true, meta: { changes: 1 } }));
+  const db = {
+    statements,
+    run,
+    prepare: vi.fn((query: string) => {
+      statements.push(query);
+      let boundValues: unknown[] = [];
+      const statement = {
+        bind: vi.fn((...values: unknown[]) => {
+          boundValues = values;
+          return statement;
+        }),
+        first: vi.fn(async () => {
+          if (query.includes('FROM users')) return existingUser;
+          if (query.includes('FROM clients WHERE tenant_id')) return existingClient;
+          return null;
+        }),
+        all: vi.fn(async () => {
+          if (query.includes('FROM leads_ark_tools') && query.includes('canonical_rfc = ?')) {
+            return {
+              results: leads.filter((lead) => lead.canonical_rfc === boundValues[0]).slice(0, 2),
+            };
+          }
+          if (query.includes('FROM canaco_payment_intents')) {
+            return {
+              results: intents
+                .filter(
+                  (intent) =>
+                    intent.lead_id === boundValues[0] &&
+                    intent.rfc === boundValues[1] &&
+                    intent.status === 'paid' &&
+                    intent.environment === 'production' &&
+                    intent.transaction_reference &&
+                    intent.paid_at
+                )
+                .slice(0, 2),
+            };
+          }
+          if (query.includes('FROM tenant_memberships')) return { results: memberships };
+          return { results: [] };
+        }),
+        run,
+      };
+      return statement;
+    }),
+    batch: vi.fn(async () => [{ success: true, meta: { changes: 1 } }]),
+  };
+  return db;
+}
+
 describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
   it('captura un prospecto consentido con cuota calculada y sin pago confirmado', async () => {
     const mockDb = createMockDb();
@@ -482,23 +581,51 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
   });
 
   it('permite consultar públicamente un socio por RFC en GET /api/afiliaciones/consulta', async () => {
+    const paidLead = {
+      id: 'lead-can-1',
+      web: 'Comercializadora del Mayab',
+      whatsapp: '0000000000',
+      email: 'demo@example.invalid',
+      ciudad: 'Mérida',
+      especialidad: 'comercio',
+      status: 'Socio Activo',
+      lifecycle_stage: 'socio_activo',
+      canonical_rfc: 'CPM2106158A1',
+      payment_environment: 'production',
+      last_contact: '2026-10-25',
+      contacto_nombre: 'Fernando Pech',
+      notas:
+        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Folio de Integridad: CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
+    };
     const mockDb = {
-      prepare: vi.fn().mockReturnValue({
-        bind: vi.fn().mockReturnThis(),
-        first: vi.fn().mockResolvedValue({
-          id: 'lead-can-1',
-          web: 'Comercializadora del Mayab',
-          whatsapp: '0000000000',
-          email: 'demo@example.invalid',
-          ciudad: 'Mérida',
-          especialidad: 'comercio',
-          status: 'Socio Activo',
-          lifecycle_stage: 'socio_activo',
-          last_contact: '2026-10-25',
-          contacto_nombre: 'Fernando Pech',
-          notas:
-            'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN) | Folio de Integridad: CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
-        }),
+      prepare: vi.fn((query: string) => {
+        const statement = {
+          bind: vi.fn().mockReturnThis(),
+          first: vi.fn(async () => (query.includes('FROM leads_ark_tools') ? paidLead : null)),
+          all: vi.fn(async () => ({
+            results: query.includes('FROM canaco_payment_intents')
+              ? [
+                  {
+                    id: 'intent-paid-demo',
+                    lead_id: paidLead.id,
+                    rfc: paidLead.canonical_rfc,
+                    folio_siem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+                    razon_social: 'COMERCIALIZADORA DEL MAYAB',
+                    email: paidLead.email,
+                    num_empleados: 15,
+                    sector: 'comercio',
+                    amount_cents: 370000,
+                    channel: 'conekta_card',
+                    environment: 'production',
+                    status: 'paid',
+                    transaction_reference: 'ord-demo-paid',
+                    paid_at: '2026-10-25T10:00:00.000Z',
+                  },
+                ]
+              : [],
+          })),
+        };
+        return statement;
       }),
     };
 
@@ -528,6 +655,47 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(json.socio.contacto.telefono).toContain('*');
   });
 
+  it('no trata texto de pago en notas como evidencia al consultar un RFC', async () => {
+    const mockDb = {
+      prepare: vi.fn((_query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () => ({
+          id: 'lead-with-spoofed-payment-note',
+          web: 'Empresa ficticia de prueba',
+          whatsapp: '0000000000',
+          email: 'fixture@example.invalid',
+          ciudad: 'Mérida',
+          especialidad: 'comercio',
+          status: 'Socio Activo',
+          lifecycle_stage: 'socio_activo',
+          canonical_rfc: 'CPM2106158A1',
+          payment_environment: 'production',
+          last_contact: '2026-10-25',
+          contacto_nombre: 'Contacto de prueba',
+          notas:
+            'RFC: CPM2106158A1 | Folio SIEM: FICTITIOUS-TEST | Empleados: 15 | Cuota: $3,700 | Pago Confirmado Conekta: fabricated-test ($3,700 MXN)',
+        })),
+        all: vi.fn(async () => ({ results: [] })),
+      })),
+    };
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+
+    const response = await handleAfiliacionesApiRequest(
+      new Request('https://ledger.arksystems.site/api/afiliaciones/consulta?rfc=CPM2106158A1'),
+      env,
+      corsHeaders
+    );
+    const json = (await response?.json()) as any;
+
+    expect(response?.status).toBe(200);
+    expect(json.socio.pagoConfirmado).toBe(false);
+    expect(json.socio.montoPagado).toBe(0);
+    expect(json.estatus).toBe('Nuevo / Pendiente');
+  });
+
   it('rechaza con 404 búsquedas por prefijo corto en GET /api/afiliaciones/consulta (prevención de enumeración M-01)', async () => {
     const mockDb = {
       prepare: vi.fn(),
@@ -547,38 +715,13 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
   });
 
   it('bloquea con 401 la migración sin sesión cuando el email ya pertenece a una cuenta existente (prevención de Account Takeover C-01)', async () => {
-    const paidLead = {
-      id: 'lead-demo-paid',
-      web: 'Comercializadora del Mayab',
-      whatsapp: '0000000000',
-      email: 'demo@example.invalid',
-      ciudad: 'Mérida',
-      especialidad: 'comercio',
-      status: 'Socio Activo',
-      lifecycle_stage: 'socio_activo',
-      contacto_nombre: 'Fernando Pech',
-      notas:
-        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
-    };
-    const mockDb = {
-      prepare: vi.fn((query: string) => ({
-        bind: vi.fn().mockReturnThis(),
-        first: vi.fn(async () => {
-          if (query.includes('FROM leads_ark_tools')) return paidLead;
-          if (query.includes('FROM users')) {
-            return {
-              id: 'user-victim-1',
-              email: 'demo@example.invalid',
-              full_name: 'Usuario de prueba',
-            };
-          }
-          return null;
-        }),
-        all: vi.fn(async () => ({ results: [] })),
-        run: vi.fn(async () => ({ success: true })),
-      })),
-      batch: vi.fn(async () => [{ success: true }]),
-    };
+    const mockDb = createMigrationMockDb({
+      existingUser: {
+        id: 'user-victim-1',
+        email: 'demo@example.invalid',
+        full_name: 'Usuario de prueba',
+      },
+    });
 
     const env = {
       ARK_TOOLS_DB: mockDb as any,
@@ -604,28 +747,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
   });
 
   it('rechaza una migración cuando el cliente cambia la identidad del registro pagado', async () => {
-    const paidLead = {
-      id: 'lead-demo-paid',
-      web: 'Comercializadora del Mayab',
-      whatsapp: '0000000000',
-      email: 'demo@example.invalid',
-      ciudad: 'Mérida',
-      especialidad: 'comercio',
-      status: 'Socio Activo',
-      lifecycle_stage: 'socio_activo',
-      contacto_nombre: 'Fernando Pech',
-      notas:
-        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
-    };
-    const run = vi.fn();
-    const mockDb = {
-      prepare: vi.fn((query: string) => ({
-        bind: vi.fn().mockReturnThis(),
-        first: vi.fn(async () => (query.includes('FROM leads_ark_tools') ? paidLead : null)),
-        run,
-      })),
-      batch: vi.fn(),
-    };
+    const mockDb = createMigrationMockDb();
     const env = {
       ARK_TOOLS_DB: mockDb as any,
       APP_URL: 'https://ledger.arksystems.site',
@@ -643,7 +765,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
 
     const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
     expect(response?.status).toBe(409);
-    expect(run).not.toHaveBeenCalled();
+    expect(mockDb.run).not.toHaveBeenCalled();
     expect(mockDb.batch).not.toHaveBeenCalled();
   });
 
@@ -676,34 +798,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
   // HANDOFF SIEM ➔ EXPEDIENTE ÚNICO EN LEDGER
   // ─────────────────────────────────────────────────────────────────
   it('migra un socio con pago confirmado usando los datos del registro de D1', async () => {
-    const mockLead = {
-      id: 'lead-canaco-99',
-      web: 'Comercializadora del Mayab',
-      whatsapp: '0000000000',
-      email: 'demo@example.invalid',
-      ciudad: 'Mérida',
-      especialidad: 'comercio',
-      status: 'Socio Activo',
-      lifecycle_stage: 'socio_activo',
-      contacto_nombre: 'Fernando Pech',
-      notas:
-        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN) | Folio de Integridad: CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
-    };
-
-    const mockDb = {
-      prepare: vi.fn((query: string) => ({
-        bind: vi.fn().mockReturnThis(),
-        first: vi.fn(async () => {
-          if (query.includes('FROM leads_ark_tools')) return mockLead;
-          if (query.includes('FROM users')) return null; // Usuario nuevo
-          if (query.includes('FROM clients WHERE tenant_id')) return null; // Cliente nuevo
-          return null;
-        }),
-        all: vi.fn(async () => ({ results: [] })),
-        run: vi.fn(async () => ({ success: true })),
-      })),
-      batch: vi.fn(async () => [{ success: true }]),
-    };
+    const mockDb = createMigrationMockDb();
 
     const env = {
       ARK_TOOLS_DB: mockDb as any,
@@ -746,6 +841,8 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(json.client.metadata.origen).toBe('siem_canaco');
     expect(json.client.metadata.folio_siem).toBe('SIEM-MID-2026-CPM2-PEQ-4242');
     expect(json.redirectTo).toContain('/?tool=nomina&welcome=siem');
+    expect(mockDb.statements[0]).toContain('canonical_rfc = ?');
+    expect(mockDb.statements[0]).not.toContain('notas');
 
     // Debe incluir Set-Cookie para sesión inmediata en el navegador
     const setCookie = response?.headers.get('Set-Cookie');
@@ -753,7 +850,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(setCookie).toContain('ark_session=');
   });
 
-  it('no crea un cliente cuando no existe un registro pagado en el padrón', async () => {
+  it('no migra texto de pago en notas cuando no existe intención pagada', async () => {
     const mockPrincipal = {
       id: 'user-auth-123',
       email: 'contador@mid.mx',
@@ -761,28 +858,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       platformRole: 'user' as const,
     };
 
-    const mockDb = {
-      prepare: vi.fn((query: string) => ({
-        bind: vi.fn().mockReturnThis(),
-        first: vi.fn(async () => {
-          if (query.includes('FROM leads_ark_tools')) return null;
-          if (query.includes('FROM clients WHERE tenant_id')) return null;
-          return null;
-        }),
-        all: vi.fn(async () => ({
-          results: [
-            {
-              id: 'tenant-mi-despacho',
-              name: 'Mi Despacho SC',
-              slug: 'mi-despacho',
-              role: 'owner',
-            },
-          ],
-        })),
-        run: vi.fn(async () => ({ success: true })),
-      })),
-      batch: vi.fn(async () => [{ success: true }]),
-    };
+    const mockDb = createMigrationMockDb({ intents: [] });
 
     const env = {
       ARK_TOOLS_DB: mockDb as any,
@@ -793,32 +869,93 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-tenant-id': 'tenant-mi-despacho' },
       body: JSON.stringify({
-        rfc: 'PECM850101XYZ', // 13 chars -> Persona Física
-        razonSocial: 'Pedro Canché Medina',
-        email: 'pedro@mayab.mx',
+        rfc: 'CPM2106158A1',
+        razonSocial: 'Comercializadora del Mayab',
+        email: 'demo@example.invalid',
       }),
     });
 
     const response = await handleAfiliacionesApiRequest(request, env, corsHeaders, mockPrincipal);
     expect(response?.status).toBe(409);
     const json = (await response?.json()) as { error: string };
-    expect(json.error).toContain('pendiente de confirmación de pago');
+    expect(json.error).toContain('pago de producción verificado');
+    expect(mockDb.batch).not.toHaveBeenCalled();
+    expect(mockDb.run).not.toHaveBeenCalled();
+  });
+
+  it('no encuentra una fila por un RFC diferente aunque las notas coincidan', async () => {
+    const mockDb = createMigrationMockDb();
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+    const response = await handleAfiliacionesApiRequest(
+      new Request('https://ledger.arksystems.site/api/afiliaciones/migrar-a-ledger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rfc: 'AAA010101AA1',
+          folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+          razonSocial: 'COMERCIALIZADORA DEL MAYAB',
+          email: 'demo@example.invalid',
+        }),
+      }),
+      env,
+      corsHeaders
+    );
+
+    expect(response?.status).toBe(404);
+    expect(mockDb.statements).toHaveLength(1);
+    expect(mockDb.statements[0]).toContain('canonical_rfc = ?');
+    expect(mockDb.statements[0]).not.toContain('notas');
+  });
+
+  it('rechaza RFC ambiguos y no elige una fila por notas', async () => {
+    const mockDb = createMigrationMockDb({
+      leads: [migrationLead, { ...migrationLead, id: 'lead-canaco-duplicate' }],
+    });
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+    const response = await handleAfiliacionesApiRequest(
+      new Request('https://ledger.arksystems.site/api/afiliaciones/migrar-a-ledger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rfc: 'CPM2106158A1' }),
+      }),
+      env,
+      corsHeaders
+    );
+
+    expect(response?.status).toBe(409);
+    expect(mockDb.statements).toHaveLength(1);
+    expect(mockDb.batch).not.toHaveBeenCalled();
+  });
+
+  it('rechaza una intención pagada con monto distinto a la cuota calculada', async () => {
+    const mockDb = createMigrationMockDb({
+      intents: [{ ...migrationPaidIntent, amount_cents: 370001 }],
+    });
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+    const response = await handleAfiliacionesApiRequest(
+      new Request('https://ledger.arksystems.site/api/afiliaciones/migrar-a-ledger', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rfc: 'CPM2106158A1' }),
+      }),
+      env,
+      corsHeaders
+    );
+
+    expect(response?.status).toBe(409);
+    expect(mockDb.batch).not.toHaveBeenCalled();
   });
 
   it('actualiza el cliente existente en lugar de duplicarlo si el RFC ya existe en el tenant', async () => {
-    const paidLead = {
-      id: 'lead-demo-paid',
-      web: 'Comercializadora del Mayab',
-      whatsapp: '0000000000',
-      email: 'demo@example.invalid',
-      ciudad: 'Mérida',
-      especialidad: 'comercio',
-      status: 'Socio Activo',
-      lifecycle_stage: 'socio_activo',
-      contacto_nombre: 'Fernando Pech',
-      notas:
-        'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
-    };
     const mockPrincipal = {
       id: 'user-auth-456',
       email: 'socio@canaco.mx',
@@ -826,37 +963,24 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       platformRole: 'user' as const,
     };
 
-    const mockDb = {
-      prepare: vi.fn((query: string) => ({
-        bind: vi.fn().mockReturnThis(),
-        first: vi.fn(async () => {
-          if (query.includes('FROM leads_ark_tools')) return paidLead;
-          if (query.includes('FROM clients WHERE tenant_id')) {
-            return {
-              id: 'client-existente-001',
-              tenant_id: 'tenant-existente',
-              nombre: 'COMERCIALIZADORA DEL MAYAB',
-              rfc: 'CPM2106158A1',
-              tipo: 'empresa',
-              estado: 'activo',
-            };
-          }
-          return null;
-        }),
-        all: vi.fn(async () => ({
-          results: [
-            {
-              id: 'tenant-existente',
-              name: 'Tenant Existente',
-              slug: 'tenant-existente',
-              role: 'owner',
-            },
-          ],
-        })),
-        run: vi.fn(async () => ({ success: true })),
-      })),
-      batch: vi.fn(async () => [{ success: true }]),
-    };
+    const mockDb = createMigrationMockDb({
+      existingClient: {
+        id: 'client-existente-001',
+        tenant_id: 'tenant-existente',
+        nombre: 'COMERCIALIZADORA DEL MAYAB',
+        rfc: 'CPM2106158A1',
+        tipo: 'empresa',
+        estado: 'activo',
+      },
+      memberships: [
+        {
+          id: 'tenant-existente',
+          name: 'Tenant Existente',
+          slug: 'tenant-existente',
+          role: 'owner',
+        },
+      ],
+    });
 
     const env = {
       ARK_TOOLS_DB: mockDb as any,
@@ -893,7 +1017,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
     expect(response?.status).toBe(400);
     const json = (await response?.json()) as any;
-    expect(json.error).toContain('Se requiere RFC');
+    expect(json.error).toContain('Se requiere un RFC');
   });
 
   it('procesa el registro con afiliación simultánea AAFY-SAT-IMSS persistiendo NRP y REC', async () => {
