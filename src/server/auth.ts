@@ -200,7 +200,7 @@ async function sendAuthEmail(
   const actionLabel = isVerify ? 'Confirmar Cuenta y Activar' : 'Restablecer Contraseña';
   const headline = isVerify ? 'Bienvenido a ARK LEDGER' : 'Recuperación de Contraseña';
   const explanation = isVerify
-    ? 'Para completar tu registro y acceder a la suite de 19 herramientas fiscales, nómina y blindaje criptográfico, haz clic en el siguiente botón:'
+    ? 'Para completar tu registro y acceder a la suite de 22 herramientas fiscales, nómina y blindaje criptográfico, haz clic en el siguiente botón:'
     : 'Hemos recibido una solicitud para restablecer la contraseña de tu cuenta en ARK LEDGER. Para definir una nueva clave de acceso, haz clic en el siguiente botón:';
 
   const html = `

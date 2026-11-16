@@ -2,7 +2,7 @@
  * ARK LEDGER — Landing Pública
  *
  * Página de aterrizaje para usuarios no autenticados.
- * Presenta vistas previas de la suite y el acceso al catálogo completo.
+ * Presenta vistas previas de la suite y facilita el acceso al catálogo completo.
  */
 
 import { useEffect, useState } from 'react';

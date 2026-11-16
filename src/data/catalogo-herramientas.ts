@@ -119,6 +119,13 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
       'Comparador financiero y fiscal (LISR Arts. 28 Fracc. XIII, 34 y 36 Fracc. II; CFF Art. 15) entre arrendamiento puro, crédito bancario y compra de contado con escudo ISR/PTU.',
   },
   {
+    id: 'caja-codi',
+    nombre: 'Cobro con CoDi — Ark Caja',
+    categoria: 'Cobros y Facturación Fiscal B2B',
+    descripcion:
+      'Enlace externo a caja.arksystems.site. Cobra con CoDi sin terminal: QR en mostrador, $8,000 MXN por operación, SPEI arriba de eso. Motor Pey en Caja. No procesa tarjetas, Bitcoin ni efectivo desde este cuadrado — linka a Caja para detalles.',
+  },
+  {
     id: 'guia-sat-imss',
     nombre: 'Guía Interactiva SAT / IMSS',
     categoria: 'Compliance y Defensa Jurídica',
