@@ -395,3 +395,10 @@ El detalle cronológico de **Sprints 1-34** (incluyendo el evolución de conteos
 ---
 
 **Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 21 herramientas (12 PyME + 8 corporativo/forense/PLD + 1 retención clínicas), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 + Cédula Oficial AAFY, Cierre de Nómina + Layout IDSE/DISPMAG (175 chars, longitud Ledger no confirmada por manual oficial IMSS), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 16/16, pruebas 93 suites / 764 tests (100%).
+
+## Nota de alcance — Bóveda Offline (.zip) y verificación "2034 sin servidor"
+
+- La verificación **offline** del paquete Bóveda es válida únicamente para **integridad de archivos** mediante `manifest.sha256` (`sha256sum -c manifest.sha256` en Linux/macOS; procedimiento PowerShell en `offline-viewer.html`). Esto **no** sustituye el registro ni la autenticidad ante sistemas en línea de ARK.
+- Las rutas/QR de verificación en línea (`?verify=`) requieren que el servicio correspondiente esté disponible. **No presentar** "verificación en 2034 sin servidor" como prueba de autenticidad de registro; solo es aplicable a la integridad de los archivos del paquete descargado.
+- `crypto.subtle` (Web Crypto) requiere contexto seguro; `file://` suele funcionar en navegadores modernos pero depende del navegador/configuración.
+- Modalidad 40 y Recargos se exportan como **Folio de Integridad (reference_only)**: no presentan sello SHA-256 inmutable ni reclaman verificación de cálculo por QR.

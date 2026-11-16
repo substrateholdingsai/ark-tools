@@ -149,11 +149,12 @@ describe('Bóveda Offline Criptográfica (Art. 30 CFF)', () => {
       const viewer = generarOfflineViewerHtml(dummyParams);
 
       expect(viewer).toContain('<!DOCTYPE html>');
-      expect(viewer).toContain('ARK LEDGER · SOBERANÍA FISCAL');
-      expect(viewer).toContain('BÓVEDA OFFLINE · CERO SERVIDOR');
+      expect(viewer).toContain('ARK LEDGER · BÓVEDA OFFLINE');
+      expect(viewer).toContain('INTEGRIDAD DE ARCHIVOS (OFFLINE)');
       expect(viewer).toContain(dummyParams.inputHash);
       expect(viewer).toContain('recalcularIntegridad');
       expect(viewer).toContain('crypto.subtle.digest');
+      expect(viewer).toContain('manifestEntries');
 
       // No debe depender de scripts externos
       expect(viewer).not.toContain('<script src="http');
@@ -196,6 +197,17 @@ describe('Bóveda Offline Criptográfica (Art. 30 CFF)', () => {
       const viewerHtmlStr = await zip.file('offline-viewer.html')!.async('string');
       const hashViewerReal = await computeSha256(viewerHtmlStr);
       expect(manifestStr).toContain(`${hashViewerReal}  offline-viewer.html`);
+
+      // 4. LEAME.txt presente y con hash correcto en el manifiesto
+      expect(zip.file('LEAME.txt')).not.toBeNull();
+      const leameStr = await zip.file('LEAME.txt')!.async('string');
+      expect(leameStr).toContain('ALCANCE Y CONSERVACIÓN (Art. 30 CFF)');
+      const hashLeameReal = await computeSha256(leameStr);
+      expect(manifestStr).toContain(`${hashLeameReal}  LEAME.txt`);
+
+      // manifiesto lista exactamente los 4 archivos del paquete
+      const manifestLines = manifestStr.split('\n').filter((l) => /^[0-9a-f]{64}\s\s/.test(l));
+      expect(manifestLines.length).toBe(4);
     });
 
     it('exports Modalidad 40 with the canonical tool id and folio-only presentation', async () => {
@@ -234,6 +246,125 @@ describe('Bóveda Offline Criptográfica (Art. 30 CFF)', () => {
       expect(viewer).toContain('Alcance del folio');
       expect(manifest).toContain('Folio de Integridad');
       expect(manifest).toContain('no acredita cumplimiento fiscal');
+    });
+  });
+
+  describe('P0-1 LEAME.txt en ZIP y manifiesto', () => {
+    it('incluye LEAME.txt en .zip y manifiesto con hash coherente', async () => {
+      const blob = await generarBovedaOfflineZip(dummyParams);
+      const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+      expect(zip.file('LEAME.txt')).not.toBeNull();
+      const manifest = await zip.file('manifest.sha256')!.async('string');
+      expect(manifest).toContain('LEAME.txt');
+      const leame = await zip.file('LEAME.txt')!.async('string');
+      const hashLeame = await computeSha256(leame);
+      expect(manifest).toContain(`${hashLeame}  LEAME.txt`);
+    });
+  });
+
+  describe('P0-2 recargos reference_only (Folio de Integridad, no sello SHA-256)', () => {
+    it('exporta Recargos con presentación reference_only y sin sello SHA-256 inmutable', async () => {
+      const recargosParams: BovedaOfflineParams = {
+        ...dummyParams,
+        toolId: 'recargos',
+        presentation: {
+          integrityLabel: 'Folio de Integridad (token determinista)',
+          integrityDescription:
+            'Folio de integridad del cálculo (token determinista). No constituye sellado fiscal SHA-256 ni certificación ante el SAT.',
+          jsonHashField: 'folio_integridad',
+          manifestHashLabel: 'Folio de Integridad',
+          manifestScope: 'Alcance: paquete de referencia; no acredita cumplimiento fiscal',
+          legalHeading: 'Alcance informativo',
+          legalText: 'Cálculo referencial generado por ARK LEDGER.',
+          qrCaption: 'Referencia en línea; no verifica el cálculo',
+          verifierMode: 'reference_only',
+        },
+      };
+      const blob = await generarBovedaOfflineZip(recargosParams);
+      const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+      const parsed = JSON.parse(await zip.file('datos_expediente.json')!.async('string'));
+      const viewer = await zip.file('offline-viewer.html')!.async('string');
+      const manifest = await zip.file('manifest.sha256')!.async('string');
+      expect(parsed.folio_integridad).toBe(dummyParams.inputHash);
+      expect(parsed).not.toHaveProperty('sello_sha256_canónico');
+      expect(viewer).toContain('const referenceOnly = true;');
+      expect(viewer).toContain('ALCANCE:');
+      expect(manifest).toContain('Folio de Integridad');
+    });
+  });
+
+  describe('P0-2 SHA-256 invariant per export', () => {
+    it('solo usa lenguaje de sello SHA-256 cuando inputHash === computeDeterministicHash(inputs)', async () => {
+      const matchingInputs = { a: 1, b: 2 };
+      const matchingHash = await computeDeterministicHash(matchingInputs);
+      const okParams: BovedaOfflineParams = {
+        ...dummyParams,
+        inputHash: matchingHash,
+        inputs: matchingInputs,
+        outputs: {},
+      };
+      const blob = await generarBovedaOfflineZip(okParams);
+      const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+      const viewer = await zip.file('offline-viewer.html')!.async('string');
+      const paper = await zip.file('papel_de_trabajo.html')!.async('string');
+      expect(viewer).toContain('Hash determinista (inputs canónicos)');
+      expect(paper).toContain('SELLO DIGITAL INMUTABLE (SHA-256)');
+
+      const mismatchingHash = '0'.repeat(64);
+      const badParams: BovedaOfflineParams = {
+        ...dummyParams,
+        inputHash: mismatchingHash,
+        inputs: matchingInputs,
+        outputs: {},
+        presentation: {
+          integrityLabel: 'Folio de Integridad (token determinista)',
+          integrityDescription:
+            'Hash que no coincide con los inputs canónicos; no constituye sello SHA-256.',
+          jsonHashField: 'folio_integridad',
+          manifestHashLabel: 'Folio de Integridad',
+          manifestScope: 'Alcance: referencia; no acredita cumplimiento fiscal',
+          legalHeading: 'Alcance informativo',
+          legalText: 'El sello no corresponde a los datos canónicos.',
+          qrCaption: 'Referencia; no verifica el cálculo',
+          verifierMode: 'reference_only',
+        },
+      };
+      const badBlob = await generarBovedaOfflineZip(badParams);
+      const badZip = await JSZip.loadAsync(await badBlob.arrayBuffer());
+      const badViewer = await badZip.file('offline-viewer.html')!.async('string');
+      const badPaper = await badZip.file('papel_de_trabajo.html')!.async('string');
+      expect(badViewer).toContain('ALCANCE:');
+      expect(badPaper).not.toContain('SELLO DIGITAL INMUTABLE (SHA-256)');
+    });
+  });
+
+  describe('P1-1/P1-2 visor: validación drag-drop y mismatch FAIL', () => {
+    it('genera visor con lógica PASS/FAIL contra manifest para drag-drop', () => {
+      const manifestEntries = [
+        { nombre: 'datos_expediente.json', hash: 'abc123' },
+        { nombre: 'LEAME.txt', hash: 'def456' },
+      ];
+      const viewer = generarOfflineViewerHtml(dummyParams, manifestEntries);
+      expect(viewer).toContain('PASS — Coincide con manifest.sha256');
+      expect(viewer).toContain('FAIL — NO COINCIDE con manifest.sha256');
+      expect(viewer).toContain('SIN REFERENCIA EN MANIFIESTO');
+      expect(viewer).toContain('Get-Content .\\manifest.sha256');
+    });
+
+    it('recalcularIntegridad renderiza FAIL con ambos hashes cuando no coinciden', () => {
+      const viewer = generarOfflineViewerHtml(dummyParams, []);
+      expect(viewer).toContain('FAIL — NO COINCIDE: el sello no corresponde a los datos');
+      expect(viewer).toContain('Registrado:');
+      expect(viewer).toContain('Recalculado:');
+      expect(viewer).toContain('audit-box error');
+    });
+
+    it('recalcularIntegridad renderiza PASS cuando coinciden', async () => {
+      const inputs = { x: 1, y: 2 };
+      const hash = await computeDeterministicHash(inputs);
+      const params: BovedaOfflineParams = { ...dummyParams, inputHash: hash, inputs, outputs: {} };
+      const viewer = generarOfflineViewerHtml(params, []);
+      expect(viewer).toContain('PASS — El hash recalculado de inputs canónicos coincide');
     });
   });
 });
