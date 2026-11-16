@@ -12,14 +12,19 @@ const corsHeaders = {
 
 function createMockDb() {
   let existingLead: Record<string, unknown> | null = null;
+  const calls: Array<{ query: string; values: unknown[] }> = [];
 
   return {
+    calls,
     setExisting: (lead: Record<string, unknown> | null) => {
       existingLead = lead;
     },
     prepare: vi.fn((query: string) => {
-      return {
-        bind: vi.fn().mockReturnThis(),
+      const statement = {
+        bind: vi.fn((...values: unknown[]) => {
+          calls.push({ query, values });
+          return statement;
+        }),
         first: vi.fn(async () => {
           if (query.includes('FROM leads_ark_tools WHERE tenant_id = ? AND (email = ?')) {
             return existingLead;
@@ -29,6 +34,7 @@ function createMockDb() {
         all: vi.fn(async () => ({ results: existingLead ? [existingLead] : [] })),
         run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
       };
+      return statement;
     }),
   };
 }
@@ -188,6 +194,11 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(json.socio.pagoConfirmado).toBe(false);
     expect(json.cotizacion.totalAnual).toBe(2000);
     expect(json.socio.folioSiem).toContain('SIEM-MID-2026-CPM2-MIC');
+    const leadInsert = mockDb.calls.find((call) =>
+      call.query.includes('INSERT INTO leads_ark_tools')
+    );
+    expect(leadInsert?.query).toContain('num_empleados');
+    expect(leadInsert?.values).toContain(5);
   });
 
   it('rechaza UUID de lead enviado por el cliente durante la captura', async () => {

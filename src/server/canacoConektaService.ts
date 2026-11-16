@@ -11,7 +11,7 @@
 import type { Env } from '../index';
 import { sendCanacoConfirmacionPagoEmail } from './canacoEmailService';
 import { rateLimit } from './auth';
-import { calcularCuotaAfiliacion, extraerNumEmpleados } from '@/components/canaco/calculoCuota';
+import { calcularCuotaAfiliacion } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico } from '@/components/canaco/types';
 import { activateCanacoSocioByPayment, canonicalizarRfc } from './canacoLifecycle';
 
@@ -274,7 +274,7 @@ export async function handleCanacoConektaApiRequest(
       const lead = await db
         .prepare(
           `SELECT id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
-                  canonical_rfc, contacto_nombre, notas
+                  canonical_rfc, contacto_nombre, notas, num_empleados
            FROM leads_ark_tools
            WHERE id = ? AND tenant_id = 'canaco_merida'
            LIMIT 1`
@@ -292,11 +292,11 @@ export async function handleCanacoConektaApiRequest(
           canonical_rfc: string | null;
           contacto_nombre: string | null;
           notas: string | null;
+          num_empleados: number | null;
         }>();
       const rfc = lead?.canonical_rfc;
       const folioSiem = lead?.notas?.match(/Folio SIEM:\s*([^\s|]+)/i)?.[1];
       const razonSocial = lead?.notas?.match(/Razón Social:\s*([^|]+)/i)?.[1]?.trim();
-      const numEmpleados = extraerNumEmpleados(lead?.notas);
       const sector = lead?.especialidad;
       if (
         !lead ||
@@ -305,12 +305,27 @@ export async function handleCanacoConektaApiRequest(
         canonicalizarRfc(rfc) !== rfc ||
         !folioSiem ||
         !razonSocial ||
-        !numEmpleados ||
         !lead.email ||
         !['comercio', 'servicios', 'turismo'].includes(sector || '')
       ) {
         return Response.json(
           { error: 'No se encontró un registro validado para iniciar el pago.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const numEmpleados = lead.num_empleados;
+      if (
+        typeof numEmpleados !== 'number' ||
+        !Number.isInteger(numEmpleados) ||
+        numEmpleados < 1 ||
+        numEmpleados > 5000
+      ) {
+        return Response.json(
+          {
+            error:
+              'El registro no tiene un número de empleados estructurado válido; actualiza sus datos antes de generar el pago.',
+          },
           { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }

@@ -1131,6 +1131,7 @@ export async function handleAfiliacionesApiRequest(
         .prepare(
           `UPDATE leads_ark_tools
            SET canonical_rfc = ?, web = ?, whatsapp = ?, email = ?, ciudad = ?, especialidad = ?,
+               num_empleados = ?,
                lifecycle_stage = CASE WHEN lifecycle_stage = 'prospecto' THEN lifecycle_stage ELSE lifecycle_stage END,
                status = CASE lifecycle_stage WHEN 'prospecto' THEN 'Prospecto' WHEN 'registrado' THEN 'Registrado' WHEN 'pago_pendiente' THEN 'Pago Pendiente' ELSE status END,
                last_contact = DATE('now'), contacto_nombre = ?, notas = ?,
@@ -1146,6 +1147,7 @@ export async function handleAfiliacionesApiRequest(
           body.email.trim(),
           municipio,
           sector,
+          numEmpleados,
           body.contactoNombre.trim(),
           notasDetalle,
           consentimiento.avisoVersion,
@@ -1163,11 +1165,11 @@ export async function handleAfiliacionesApiRequest(
         .prepare(
           `INSERT INTO leads_ark_tools (
              id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
-             last_contact, contacto_nombre, notas, tenant_id, canonical_rfc,
+             last_contact, contacto_nombre, notas, tenant_id, canonical_rfc, num_empleados,
              consent_aviso_version, consent_accepted_at, consent_medium,
              arkangel_share_consent, origin, is_demo, created_at, updated_at
            ) VALUES (?, ?, ?, ?, ?, ?, 'Prospecto', 'prospecto', DATE('now'), ?, ?, ?,
-                     ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                     ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
            ON CONFLICT(tenant_id, canonical_rfc)
              WHERE canonical_rfc IS NOT NULL AND canonical_rfc != ''
            DO NOTHING`
@@ -1183,6 +1185,7 @@ export async function handleAfiliacionesApiRequest(
           notasDetalle,
           tenantId,
           rfcCanonical,
+          numEmpleados,
           consentimiento.avisoVersion,
           consentTimestamp,
           origin,

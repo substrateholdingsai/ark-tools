@@ -92,7 +92,7 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
     expect(result.url).toContain('conekta_simulated=1');
   });
 
-  it('rechaza un segundo checkout y reconoce el pago de la orden original', async () => {
+  it('cobra según empleados estructurados aunque las notas difieran y reconoce la orden original', async () => {
     const { publicKey, privateKey } = await generateRsaKeyPair();
     const pem = await exportPublicKeyPem(publicKey);
     const lead = {
@@ -106,17 +106,24 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
       lifecycle_stage: 'registrado',
       canonical_rfc: 'CPM2106158A1',
       contacto_nombre: 'Fernando Pech',
+      num_empleados: 15,
       notas:
-        'Razón Social: COMERCIALIZADORA DEL MAYAB | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Empleados: 15 | Cuota: $3,700 MXN',
+        'Razón Social: COMERCIALIZADORA DEL MAYAB | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Empleados: 5 | Cuota: $2,000 MXN',
     };
     const intentState: { current: Record<string, any> | null } = { current: null };
     let leadStage = 'registrado';
     let activated = false;
     let checkoutMetadata: Record<string, string> | null = null;
+    let checkoutPayload: {
+      line_items: Array<{ unit_price: number }>;
+      metadata: Record<string, string>;
+    } | null = null;
     const providerFetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
       const requestBody = JSON.parse(String(init?.body)) as {
+        line_items: Array<{ unit_price: number }>;
         metadata: Record<string, string>;
       };
+      checkoutPayload = requestBody;
       checkoutMetadata = requestBody.metadata;
       return Response.json({
         id: 'ord-original-checkout',
@@ -211,6 +218,10 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
       );
       expect(firstCheckout?.status).toBe(200);
       expect(await firstCheckout?.json()).toMatchObject({ orderId: 'ord-original-checkout' });
+      expect(checkoutPayload).toMatchObject({
+        metadata: { numEmpleados: '15' },
+        line_items: [{ unit_price: 370000 }],
+      });
 
       const repeatedCheckout = await handleCanacoConektaApiRequest(
         checkoutRequest(),
@@ -255,6 +266,65 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
       expect(paymentResponse?.status, await paymentResponse?.clone().text()).toBe(200);
       expect(await paymentResponse?.json()).toMatchObject({ status: 'Socio Activo' });
       expect(intentState.current?.status).toBe('paid');
+    } finally {
+      providerFetch.mockRestore();
+    }
+  });
+
+  it('no crea una orden cuando el registro carece de empleados estructurados aunque las notas los incluyan', async () => {
+    const lead = {
+      id: 'lead-without-structured-employees',
+      web: 'Empresa Demo',
+      email: 'demo@example.invalid',
+      ciudad: 'Mérida',
+      especialidad: 'comercio',
+      status: 'Registrado',
+      lifecycle_stage: 'registrado',
+      canonical_rfc: 'CPM2106158A1',
+      contacto_nombre: 'Contacto Demo',
+      num_empleados: null,
+      notas:
+        'Razón Social: EMPRESA DEMO | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Empleados: 15 | Cuota: $3,700 MXN',
+    };
+    const mockDb = {
+      prepare: vi.fn((query: string) => {
+        const statement = {
+          bind: vi.fn(() => statement),
+          first: vi.fn(async () => (query.includes('FROM leads_ark_tools') ? lead : null)),
+          run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
+        };
+        return statement;
+      }),
+      batch: vi.fn(async () => [{ meta: { changes: 1 } }]),
+    };
+    const providerFetch = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(Response.json({ id: 'ord-should-not-exist' }));
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+      CONEKTA_PRIVATE_KEY: 'test-private-key',
+      CONEKTA_ENVIRONMENT: 'production',
+      CANACO_PRICING_CONFIRMED: 'true',
+    } as unknown as Env;
+
+    try {
+      const response = await handleCanacoConektaApiRequest(
+        new Request('https://ledger.arksystems.site/api/canaco/conekta/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leadId: lead.id, metodoPago: 'tarjeta' }),
+        }),
+        env,
+        corsHeaders
+      );
+
+      expect(response?.status).toBe(409);
+      expect(await response?.json()).toMatchObject({
+        error: expect.stringContaining('número de empleados estructurado válido'),
+      });
+      expect(providerFetch).not.toHaveBeenCalled();
+      expect(mockDb.batch).not.toHaveBeenCalled();
     } finally {
       providerFetch.mockRestore();
     }
