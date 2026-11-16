@@ -15,6 +15,7 @@
  */
 
 import { CATALOGO_2026 } from './valores-vigentes/catalogo';
+import { CODIGOS_REGLA_VALIDADOR } from '../tools/xml-validador/types';
 
 export interface HerramientaSuite {
   /** Identificador de la herramienta; debe coincidir con el `ToolId` de `src/App.tsx`. */
@@ -38,7 +39,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
   {
     id: 'cierre-nomina',
     nombre: 'Cierre de Nómina Masivo (Batch DOF)',
-    categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
+    categoria: 'Fiscal y Laboral (Expediente Único + cédula imprimible)',
     descripcion:
       'Ingesta de plantillas CSV/Excel y módulo de Cruce Laboral-Fiscal (CFDI Nómina vs. Reloj Checador Art. 132 LFT). Determina simultáneamente por colaborador ISR Art. 96, Subsidio al Empleo, factor de integración, cuotas IMSS obrero e ISN estatal de las 32 entidades. Audita discrepancias de jornada y horas extras, emitiendo Cédula Concentradora y Cédula de Cruce con Folio de Integridad (hash determinista en navegador, no sellado fiscal) + QR descargable en PDF y Layout de Dispersión Bancaria.',
   },
@@ -47,14 +48,14 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Calculadora de Nómina Rápida 2026',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Cálculo de sueldo bruto a neto (periodicidad diaria, semanal, quincenal, mensual) con desglose de retención de ISR y cuotas obreras IMSS.',
+      'Cálculo de sueldo bruto a neto (diario, semanal, quincenal, mensual) con ISR y cuotas obreras IMSS. Sin cédula, sin folio, sin exportación.',
   },
   {
     id: 'sbc',
     nombre: 'Calculadora SBC (Salario Base de Cotización IMSS)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Factor de integración exacto conforme a Arts. 27 y 28 LSS considerando prestaciones de ley y la reforma de Vacaciones Dignas (Art. 76 LFT).',
+      'Factor de integración conforme a Arts. 27 y 28 LSS (tope 25 UMA, límite inferior por zona salarial: SMG general o ZLFN según área geográfica) y Vacaciones Dignas Art. 76 LFT. Herramienta de salario fijo + prestaciones; no calcula SBC variable/mixto ni exclusiones Art. 27/30.',
   },
   {
     id: 'isn',
@@ -74,7 +75,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Calculadora y Cédula RESICO 2026',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Determinador de pagos provisionales mensuales del Régimen Simplificado de Confianza: Persona Física (Arts. 113-E a 113-J LISR, tasas 1.0% a 2.5%, tope $3,500,000 MXN y retención 1.25% de personas morales) y Persona Moral (Arts. 206 a 215 LISR, flujo de efectivo al 30%). Liquida IVA neto con acreditamiento (Art. 5 LIVA) y emite Cédula Oficial Carta con Sello SHA-256 + QR verificable.',
+      'Determinador de pagos provisionales mensuales del Régimen Simplificado de Confianza: Persona Física (Arts. 113-E a 113-J LISR, tasas 1.0% a 2.5%, tope $3,500,000 MXN y retención 1.25% de personas morales) y Persona Moral (Arts. 206 a 215 LISR, flujo de efectivo al 30%). Liquida IVA neto con acreditamiento (Art. 5 LIVA) y emite Cédula Oficial Carta con Folio de Integridad Digital (token determinista, no constituye sellado fiscal) + QR verificable.',
   },
   {
     id: 'balance-general',
@@ -85,17 +86,16 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
   },
   {
     id: 'xml-excel',
-    nombre: 'Conversor XML a Excel (CFDI 4.0 / 3.3)',
-    categoria: 'SAT y Auditoría CFDI 4.0 (100% Local en Navegador)',
+    nombre: 'Conversor XML a CSV para Excel (CFDI 4.0 / 3.3)',
+    categoria: 'SAT y CFDI (extracción local)',
     descripcion:
-      'Extracción masiva cliente-side de hasta 200 XMLs a CSV con BOM UTF-8 (compatibilidad Excel). No envía archivos a servidores para garantizar confidencialidad bancaria y contable.',
+      'Extracción local de hasta 200 XMLs (10 MB por archivo) a CSV con BOM UTF-8, una fila por CFDI, compatible con Excel. La carga desde la interfaz no envía archivos al servidor; el Preview del conector sí envía el XML al Worker y no persiste el contenido. No valida cumplimiento SAT.',
   },
   {
     id: 'validador',
     nombre: 'Validador y Auditor de XMLs',
-    categoria: 'SAT y Auditoría CFDI 4.0 (100% Local en Navegador)',
-    descripcion:
-      'Motor de 8 reglas técnicas (Anexo 20 RMF), consistencia de régimen fiscal, cuadratura matemática y detección preventiva contra listas negras del SAT CFF Art. 69-B (EFOS/EDOS).',
+    categoria: 'SAT y Auditoría CFDI 4.0 (validación local / Preview en Worker)',
+    descripcion: `Revisión de XML bien formado para CFDI 4.0/3.3 con ${CODIGOS_REGLA_VALIDADOR.length} códigos de regla de formato y consistencia. Revisa RFC por formato y presencia de UUID, sellos y certificado; no consulta listas del SAT, no valida el XSD oficial ni verifica firmas criptográficas. La carga local en la UI no sube el XML; el Preview lo envía al Worker de Ark para validarlo y no persiste el contenido.`,
   },
   {
     id: 'timbrado',
@@ -165,14 +165,14 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Calculadora de Actualización y Recargos Fiscales (CFF)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Determinación de actualización por inflación (Art. 17-A CFF) y recargos por mora (Art. 21 CFF y LIF al 1.47% mensual). Motor cloud-native conectado a la serie de INPC del DOF, factor truncado a 4 decimales, desglose analítico mes a mes y emisión de Papel de Trabajo Oficial con Sello SHA-256 + QR.',
+      'Determinación de actualización por inflación (Art. 17-A CFF) y recargos por mora (Art. 21 CFF y LIF al 1.47% mensual). Motor cloud-native conectado a la serie de INPC del DOF, factor truncado a 4 decimales, desglose analítico mes a mes y emisión de Papel de Trabajo Oficial con Folio de Integridad (CSV con BOM UTF-8 y resumen para WhatsApp).',
   },
   {
     id: 'modalidad40',
     nombre: 'Simulador de Modalidad 40 (Criterio DOF 2026)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Proyección actuarial de pensión bajo el Régimen 1973 de la LSS conforme a los Arts. 167 y 218. Aplica la restricción del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026) que topa el nuevo registro al salario previo más 1 UMA diaria. Calcula cuota mensual (14.438% en 2026), retorno de inversión (ROI) y emite Papel de Trabajo Oficial con Sello SHA-256 + QR.',
+      'Proyección actuarial bajo el Régimen 1973 de la LSS. Para nuevas incorporaciones aplica la medida temporal del Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (aprobado 10/10/2026, DOF 21/10/2026, vigente desde 22/10/2026): último SBC o hasta último SBC + 1 UMA, sujeto al mínimo SMG general; conserva condiciones previamente contratadas y excluye trabajadores independientes Art. 13-I. El alcance frente a los Arts. 218 LSS y 65–66 del Reglamento es materia de discusión jurídica. Calcula cuota estimada (14.438% en 2026) y ROI. Emite una cédula imprimible; el Folio de Integridad es determinista, no constituye sello fiscal ni certificación IMSS. El QR solo referencia el sitio y no verifica previews no archivados. Fuente oficial: https://sidof.segob.gob.mx/notas/docFuente/5801708.',
   },
   {
     id: 'auditor-cfdi-atipico',

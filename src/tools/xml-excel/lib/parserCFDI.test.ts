@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { parsearCFDI, calcularResumenLote, formatearMXN } from './parserCFDI';
+import {
+  parsearCFDI,
+  calcularResumenLote,
+  filtrarDuplicadosPorUUID,
+  formatearMXN,
+} from './parserCFDI';
 import { generarCSVFacturas } from './exportarExcel';
 
 // XML Mock: Factura CFDI 4.0 de Ingreso
@@ -136,6 +141,16 @@ describe('Parser CFDI 4.0 / 3.3', () => {
     expect(factura.uuid).toBe('SIN UUID');
   });
 
+  it('debe rechazar XML mal formado y contenido vacío', () => {
+    const truncado = parsearCFDI('<cfdi:Comprobante Version="4.0">', 'truncado.xml');
+    const vacio = parsearCFDI('', 'vacio.xml');
+
+    expect(truncado.estado).toBe('error');
+    expect(truncado.mensajeError).toContain('XML mal formado');
+    expect(vacio.estado).toBe('error');
+    expect(vacio.mensajeError).toBe('No se encontró el nodo principal <Comprobante>');
+  });
+
   it('debe marcar advertencia si el comprobante no tiene timbre fiscal (sin UUID)', () => {
     const factura = parsearCFDI(XML_SIN_TIMBRE, 'sin-timbre.xml');
 
@@ -163,6 +178,22 @@ describe('Cálculo de Resumen de Lote', () => {
     expect(resumen.sumaDescuento).toBe(500);
     expect(resumen.sumaTotal).toBe(11020 + 21066.66 + 13200);
   });
+
+  it('debe omitir UUID repetidos dentro del lote y conservar los comprobantes sin UUID', () => {
+    const existente = parsearCFDI(XML_CFDI_INGRESO_40, 'existente.xml');
+    const repetida = parsearCFDI(XML_CFDI_INGRESO_40, 'repetida.xml');
+    const sinUuid = parsearCFDI(XML_SIN_TIMBRE, 'sin-uuid.xml');
+    const resultado = filtrarDuplicadosPorUUID(
+      [existente],
+      [repetida, parsearCFDI(XML_CFDI_RETENCIONES, 'unica.xml'), sinUuid]
+    );
+
+    expect(resultado.duplicadas).toEqual(['repetida.xml']);
+    expect(resultado.unicas.map((factura) => factura.fileName)).toEqual([
+      'unica.xml',
+      'sin-uuid.xml',
+    ]);
+  });
 });
 
 describe('Exportación CSV para Excel', () => {
@@ -181,6 +212,17 @@ describe('Exportación CSV para Excel', () => {
     expect(csv).toContain('EKU9003173C9');
     // Verificar fila de totales
     expect(csv).toContain('TOTALES CONSOLIDADOS');
+  });
+
+  it('excluye filas con error sin perderlas del conteo del lote', () => {
+    const valida = parsearCFDI(XML_CFDI_INGRESO_40, 'valida.xml');
+    const error = parsearCFDI('<cfdi:Comprobante Version="4.0">', 'truncada.xml');
+    const csv = generarCSVFacturas([valida, error]);
+
+    expect(csv).toContain('valida.xml');
+    expect(csv).not.toContain('truncada.xml');
+    expect(csv).toContain('Comprobantes: 1');
+    expect(csv).toContain('Total XMLs: 2');
   });
 
   it('formatea moneda correctamente', () => {

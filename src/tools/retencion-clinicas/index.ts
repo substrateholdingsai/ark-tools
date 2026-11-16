@@ -3,6 +3,7 @@ export { calcularRetencionClinicas, MENSAJE_SOLO_YUCATAN } from './lib/calcularR
 export type {
   RetencionClinicasInput,
   RetencionClinicasResultado,
+  TrimestreInformativo,
   DatosRetenedor,
   DatosPrestador,
   TipoPersonaRetencion,

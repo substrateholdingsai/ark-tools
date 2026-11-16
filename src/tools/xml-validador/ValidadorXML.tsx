@@ -2,12 +2,7 @@
  * ARK LEDGER — Validador de XMLs CFDI 4.0 & 3.3
  * Componente Principal
  *
- * Audita en tiempo real archivos XML de facturas electrónicas:
- *   - Verificación de esquema y versión vigente
- *   - Validación de timbrado digital y sellos SAT
- *   - Auditoría de RFC, Domicilio Fiscal y Régimen Receptor
- *   - Cuadratura aritmética contable entre subtotales, impuestos y total
- *   - Detección de inconsistencias PPD/PUE (Regla 2.7.1.32)
+ * Revisa en tiempo real el formato y algunas consistencias de archivos CFDI.
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
@@ -17,10 +12,11 @@ import { ResumenAuditoriaCard, ListaDictamenes } from './components';
 import { validarCFDI, validarArchivosXML, calcularResumenAuditoria } from './lib/validadorCFDI';
 import { descargarCSVDictamenes } from './lib/exportarDictamen';
 import type { DictamenCFDI } from './types';
+import { AVISO_SCORE_INTERNO, AVISO_TOLERANCIA_ARITMETICA, CODIGOS_REGLA_VALIDADOR } from './types';
 
 // XMLs de demostración para auditoría
 const EJEMPLOS_AUDITORIA = [
-  // 1. Factura CFDI 4.0 Válida
+  // 1. Ejemplo CFDI 4.0
   {
     nombre: 'cfdi-40-aprobado.xml',
     xml: `<?xml version="1.0" encoding="utf-8"?>
@@ -166,18 +162,18 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
         <div>
           <div className="flex items-center gap-2">
             <span className="orbitron font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold">
-              AUDITORÍA FISCAL SAT
+              REVISIÓN INTERNA CFDI
             </span>
             <span className="text-white/20">•</span>
-            <span className="text-xs text-muted">Anexo 20 RMF & CFF</span>
+            <span className="text-xs text-muted">Formato y consistencia</span>
           </div>
           <h1 className="mt-2 font-playfair text-3xl font-black tracking-tight text-ink md:text-5xl">
             Validador de XMLs CFDI
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted">
-            Inspecciona UUIDs, sellos criptográficos, obligatoriedad de datos en CFDI 4.0 (CP y
-            régimen receptor), y cuadratura aritmética para garantizar la deducibilidad de tus
-            comprobantes.
+            Revisa XML bien formado, UUID, campos fiscales y consistencia aritmética. Los RFC se
+            revisan por formato; los sellos y el certificado, solo por presencia. No es una
+            certificación ni garantiza deducibilidad.
           </p>
         </div>
 
@@ -191,6 +187,18 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
           </button>
         )}
       </div>
+
+      <aside
+        role="note"
+        className="space-y-2 rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-xs text-amber-100"
+      >
+        <p>
+          La carga desde esta pantalla se procesa localmente y no sube el XML. El Preview del
+          conector envía el XML al Worker de Ark para validarlo y no persiste el contenido.
+        </p>
+        <p>{AVISO_SCORE_INTERNO}</p>
+        <p>{AVISO_TOLERANCIA_ARITMETICA}</p>
+      </aside>
 
       {/* Zona Drag & Drop */}
       <section>
@@ -233,15 +241,15 @@ export function ValidadorXML({ onBack }: ValidadorXMLProps) {
       <div className="flex flex-wrap items-center justify-center gap-6 border-t border-white/5 pt-4 text-xs text-muted">
         <div className="flex items-center gap-2">
           <Lock className="h-4 w-4 text-emerald-400" />
-          <span>Auditoría Segura en Cliente (Zero Cloud Upload)</span>
+          <span>Carga y validación local en navegador (no sube el XML)</span>
         </div>
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-gold" />
-          <span>Reglas oficiales Anexo 20 RMF 2026</span>
+          <span>{CODIGOS_REGLA_VALIDADOR.length} códigos internos de formato y consistencia</span>
         </div>
         <div className="flex items-center gap-2">
           <FileSpreadsheet className="h-4 w-4 text-gold" />
-          <span>Exportación de Dictamen para Papeles de Trabajo</span>
+          <span>CSV con reglas evaluadas y aviso de alcance</span>
         </div>
       </div>
 

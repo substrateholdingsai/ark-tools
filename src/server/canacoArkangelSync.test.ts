@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   normalizarTelefonoE164,
-  extraerMontoDeNotas,
-  extraerRfcDeNotas,
   generarCsvCobranzaArkangel,
   despacharLoteArkangel,
   handleCanacoArkangelSyncApi,
@@ -23,17 +21,6 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       expect(normalizarTelefonoE164('+52 999 912 3456')).toBe('+529999123456');
       expect(normalizarTelefonoE164('')).toBe('');
       expect(normalizarTelefonoE164(null)).toBe('');
-    });
-
-    it('extrae el monto de la cuota desde las notas del socio', () => {
-      expect(extraerMontoDeNotas('Folio SIEM: 123 | Cuota: $3,700.00 MXN')).toBe(3700.0);
-      expect(extraerMontoDeNotas('Cuota: 2150')).toBe(2150.0);
-      expect(extraerMontoDeNotas('Sin cuota especificada')).toBe(1090.0);
-    });
-
-    it('extrae el RFC desde las notas del socio', () => {
-      expect(extraerRfcDeNotas('RFC: RMM120301AA1 | Folio SIEM: 123')).toBe('RMM120301AA1');
-      expect(extraerRfcDeNotas('Sin notas')).toBe('XAXX010101000');
     });
 
     it('genera un CSV bien estructurado para la ingesta de Arkangel', () => {
@@ -125,10 +112,14 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
 
   describe('Endpoints del Worker: handleCanacoArkangelSyncApi', () => {
     it('responde el estado del call center en GET /api/canaco/arkangel-status', async () => {
+      let candidateQuery = '';
       const env = {
         ARK_TOOLS_DB: {
-          prepare: vi.fn().mockReturnValue({
-            first: vi.fn().mockResolvedValue({ total: 4 }),
+          prepare: vi.fn((query: string) => {
+            candidateQuery = query;
+            return {
+              first: vi.fn().mockResolvedValue({ total: 4 }),
+            };
           }),
         } as any,
       } as Env;
@@ -144,6 +135,8 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       expect(json.status).toBe('ok');
       expect(json.tenantId).toBe('canaco_merida');
       expect(json.sociosPendientesCobro).toBe(4);
+      expect(candidateQuery).toContain("'Pago Pendiente'");
+      expect(candidateQuery).toContain("'Nuevo / Pendiente'");
     });
 
     it('rechaza la sincronización si el usuario no tiene permisos camerales', async () => {
@@ -163,60 +156,135 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       expect(res?.status).toBe(403);
     });
 
-    it('permite a horus.i2d@gmail.com disparar la sincronización hacia Arkangel', async () => {
+    it('previsualiza registros nuevos y solo despacha tras aprobar la vista previa', async () => {
+      const lead = {
+        id: 'lead-1',
+        web: 'Comercializadora del Mayab',
+        whatsapp: '9999123456',
+        email: 'demo@example.invalid',
+        ciudad: 'Mérida',
+        especialidad: 'comercio',
+        status: 'Pago Pendiente',
+        lifecycle_stage: 'pago_pendiente',
+        canonical_rfc: 'CPM2106158A1',
+        arkangel_share_consent: 1,
+        is_demo: 0,
+        notas:
+          'Razón Social: COMERCIALIZADORA DEL MAYAB | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $1 MXN',
+      };
+      let approval: Record<string, unknown> | null = null;
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ status: 'ingested' }),
+      });
       const mockDb = {
-        prepare: vi.fn().mockReturnValue({
-          all: vi.fn().mockResolvedValue({
-            results: [
-              {
-                id: 'lead-1',
-                web: 'Ferretería Peninsular',
-                whatsapp: '9999123456',
-                email: 'pagos@ferre.mx',
-                ciudad: 'Mérida',
-                especialidad: 'comercio',
-                status: 'Nuevo / Pendiente',
-                notas: 'RFC: FPE980415XYZ | Cuota: $2,150.00 MXN',
-              },
-            ],
-          }),
-          bind: vi.fn().mockReturnThis(),
-          run: vi.fn().mockResolvedValue({ success: true }),
+        prepare: vi.fn((query: string) => {
+          let values: unknown[] = [];
+          const statement = {
+            bind: vi.fn((...args: unknown[]) => {
+              values = args;
+              return statement;
+            }),
+            all: vi.fn(async () => ({
+              results: query.includes('SELECT id FROM leads_ark_tools')
+                ? [{ id: lead.id }]
+                : [lead],
+            })),
+            first: vi.fn(async () => {
+              if (query.includes('FROM canaco_arkangel_approvals')) return approval;
+              return null;
+            }),
+            run: vi.fn(async () => {
+              if (query.includes('INSERT INTO canaco_arkangel_approvals')) {
+                approval = {
+                  id: values[0],
+                  approver_id: values[2],
+                  approver_email: values[3],
+                  preview_json: values[5],
+                  expires_at: values[7],
+                  consumed_at: null,
+                };
+                return { success: true, meta: { changes: 1 } };
+              }
+              return { success: true, meta: { changes: 1 } };
+            }),
+          };
+          return statement;
         }),
       };
 
       const env = {
         ARK_TOOLS_DB: mockDb as any,
-      } as Env;
-
-      const req = new Request('https://ledger.arksystems.site/api/canaco/sync-arkangel', {
-        method: 'POST',
-      });
+        ARKANGEL: { fetch: mockFetch },
+      } as unknown as Env;
       const principal: AuthPrincipal = {
-        id: 'canaco-admin-1',
-        email: 'horus.i2d@gmail.com',
-        fullName: 'Admin CANACO Mérida',
-        platformRole: 'user',
+        id: 'pavel-1',
+        email: 'pavel@arksystems.site',
+        fullName: 'Pavel',
+        platformRole: 'super_admin',
       };
 
-      const res = await handleCanacoArkangelSyncApi(req, env, {}, principal);
-      expect(res).not.toBeNull();
-      expect(res?.status).toBe(200);
-      const json = (await res?.json()) as any;
-      expect(json.ok).toBe(true);
-      expect(json.socios_enviados).toBe(1);
-      expect(json.monto_total_cartera).toBe(2150);
+      const previewResponse = await handleCanacoArkangelSyncApi(
+        new Request('https://ledger.arksystems.site/api/canaco/sync-arkangel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'preview' }),
+        }),
+        env,
+        {},
+        principal
+      );
+      expect(previewResponse?.status).toBe(200);
+      const preview = (await previewResponse?.json()) as any;
+      expect(preview.preview.rows).toHaveLength(1);
+      expect(preview.preview.rows[0].status).toBeUndefined();
+      expect(preview.preview.rows[0].monto).toBe(3700);
+      expect(preview.preview.channels).toEqual(['arkangel_ingest_csv']);
+      expect(preview.preview.content).toContain('CPM2106158A1');
+      expect(mockFetch).not.toHaveBeenCalled();
+
+      const blockedResponse = await handleCanacoArkangelSyncApi(
+        new Request('https://ledger.arksystems.site/api/canaco/sync-arkangel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'dispatch' }),
+        }),
+        env,
+        {},
+        principal
+      );
+      expect(blockedResponse?.status).toBe(428);
+      expect(mockFetch).not.toHaveBeenCalled();
+
+      const dispatchResponse = await handleCanacoArkangelSyncApi(
+        new Request('https://ledger.arksystems.site/api/canaco/sync-arkangel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'dispatch', approvalId: preview.approvalId }),
+        }),
+        env,
+        {},
+        principal
+      );
+      expect(dispatchResponse?.status).toBe(200);
+      expect(mockFetch).toHaveBeenCalledOnce();
     });
 
-    it('procesa el webhook de pago recibido desde Arkangel y actualiza el socio a Activo', async () => {
+    it('no acepta pagos ni activa socios desde el webhook de Arkangel', async () => {
       const mockDb = {
         prepare: vi.fn().mockReturnValue({
           bind: vi.fn().mockReturnThis(),
           first: vi.fn().mockResolvedValue({
-            id: 'lead-1',
-            notas: 'RFC: FPE980415XYZ | Estrato: MICRO',
+            id: 'lead-demo-1',
+            email: 'demo@example.invalid',
+            web: 'Comercializadora del Mayab',
+            contacto_nombre: 'Fernando Pech',
+            status: 'Nuevo / Pendiente',
+            especialidad: 'comercio',
+            notas:
+              'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
           }),
-          run: vi.fn().mockResolvedValue({ success: true }),
+          run: vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } }),
         }),
       };
 
@@ -232,19 +300,15 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
           Authorization: 'Bearer secreto-arkangel',
         },
         body: JSON.stringify({
-          rfc: 'FPE980415XYZ',
-          folio_pago: 'SPEI-998822',
-          monto: 2150.0,
+          rfc: 'CPM2106158A1',
+          folio_pago: 'SPEI-DEMO-4242',
+          monto: 3700,
         }),
       });
 
       const res = await handleCanacoArkangelSyncApi(req, env, {}, null);
       expect(res).not.toBeNull();
-      expect(res?.status).toBe(200);
-      const json = (await res?.json()) as any;
-      expect(json.ok).toBe(true);
-      expect(json.estatus).toBe('Socio Activo');
-      expect(json.folioPago).toBe('SPEI-998822');
+      expect(res?.status).toBe(410);
     });
   });
 });

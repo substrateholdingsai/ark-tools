@@ -1,6 +1,6 @@
 /**
  * ARK LEDGER — Conversor XML a Excel (CFDI 4.0)
- * Exportador de datos a formato CSV compatible al 100% con Microsoft Excel y Google Sheets
+ * Exportador de datos a formato CSV compatible con Microsoft Excel y Google Sheets
  * Incluye BOM UTF-8 (\uFEFF) para visualización perfecta de caracteres en español.
  */
 
@@ -71,6 +71,8 @@ export function generarCSVFacturas(facturas: FacturaCFDI[]): string {
 
   // Filas de comprobantes
   for (const f of facturas) {
+    if (f.estado === 'error') continue;
+
     const fila = [
       f.uuid,
       f.fecha,

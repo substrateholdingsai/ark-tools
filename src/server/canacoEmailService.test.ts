@@ -8,14 +8,14 @@ import type { Env } from '../index';
 
 describe('CANACO Mérida — Servicio de Correos Transaccionales (Resend)', () => {
   const mockParams: CanacoConfirmacionPagoEmailParams = {
-    email: 'socio@mayab.mx',
-    contactoNombre: 'Lic. Fernando Pech',
-    razonSocial: 'Abarrotes y Comercializadora Mayab S.A. de C.V.',
-    rfc: 'ABM120301AA1',
-    folioSiem: 'SIEM-MID-2026-ABM1-MIC-4819',
-    folioPago: 'SPEI-ARK-20261028-9988',
-    monto: 2150.0,
-    selloDigitalSha256: 'SHA256:CANACO-MID-4819-2026-OFICIAL',
+    email: 'demo@example.invalid',
+    contactoNombre: 'Fernando Pech',
+    razonSocial: 'Comercializadora del Mayab',
+    rfc: 'CPM2106158A1',
+    folioSiem: 'SIEM-MID-2026-CPM2-PEQ-4242',
+    folioPago: 'SPEI-DEMO-4242',
+    monto: 3700,
+    folioIntegridad: 'CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
     metodo: 'SPEI Interbancario',
   };
 
@@ -25,14 +25,16 @@ describe('CANACO Mérida — Servicio de Correos Transaccionales (Resend)', () =
 
       expect(html).toContain('CÁMARA NACIONAL DE COMERCIO, SERVICIOS Y TURISMO DE MÉRIDA');
       expect(html).toContain('120 Años Impulsando a Yucatán');
-      expect(html).toContain('Lic. Fernando Pech');
-      expect(html).toContain('Abarrotes y Comercializadora Mayab S.A. de C.V.');
-      expect(html).toContain('ABM120301AA1');
-      expect(html).toContain('SIEM-MID-2026-ABM1-MIC-4819');
-      expect(html).toContain('$2,150.00 MXN');
-      expect(html).toContain('SPEI-ARK-20261028-9988');
-      expect(html).toContain('SHA256:CANACO-MID-4819-2026-OFICIAL');
-      expect(html).toContain('Ver y Descargar Cédula Oficial Carta con QR');
+      expect(html).toContain('Fernando Pech');
+      expect(html).toContain('Comercializadora del Mayab');
+      expect(html).toContain('CPM2106158A1');
+      expect(html).toContain('SIEM-MID-2026-CPM2-PEQ-4242');
+      expect(html).toContain('$3,700.00 MXN');
+      expect(html).toContain('SPEI-DEMO-4242');
+      expect(html).toContain('CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242');
+      expect(html).toContain('No es un sello criptográfico ni una constancia NOM-151.');
+      expect(html).not.toContain('SHA256');
+      expect(html).not.toContain('Cédula Oficial');
       expect(html).toContain('Desarrollado con tecnología de Ark Systems');
     });
 
@@ -42,9 +44,7 @@ describe('CANACO Mérida — Servicio de Correos Transaccionales (Resend)', () =
         contactoNombre: undefined,
       });
 
-      expect(html).toContain(
-        'Estimado(a) <strong>Abarrotes y Comercializadora Mayab S.A. de C.V.</strong>'
-      );
+      expect(html).toContain('Estimado(a) <strong>Comercializadora del Mayab</strong>');
     });
   });
 

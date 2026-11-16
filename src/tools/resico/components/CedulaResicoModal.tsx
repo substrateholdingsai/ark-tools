@@ -26,13 +26,14 @@ export function CedulaResicoModal({
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const printContainerRef = useRef<HTMLDivElement>(null);
 
-  const hash = hashExpediente || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-  const verifyUrl = `https://ledger.arksystems.site/?verify=${hash}`;
+  const hasHash = Boolean(hashExpediente);
+  const hash = hashExpediente || null;
+  const verifyUrl = hash ? `https://ledger.arksystems.site/?verify=${hash}` : '';
   const nombreMes = NOMBRES_MESES[resultado.mes];
   const esPF = resultado.tipoPersona === 'fisica';
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !hasHash) return;
     void QRCode.toDataURL(verifyUrl, {
       width: 130,
       margin: 1,
@@ -41,7 +42,7 @@ export function CedulaResicoModal({
         light: '#FFFFFF',
       },
     }).then(setQrDataUrl);
-  }, [isOpen, verifyUrl]);
+  }, [isOpen, verifyUrl, hasHash]);
 
   if (!isOpen) return null;
 
@@ -221,36 +222,56 @@ export function CedulaResicoModal({
           </div>
 
           {/* Certificación Criptográfica & QR */}
-          <div className="my-6 flex flex-col items-center justify-between gap-6 border-t border-line pt-6 sm:flex-row">
-            <div className="flex-1 space-y-1.5">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                <span className="font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy">
-                  Sello Digital de Autenticidad SHA-256
-                </span>
+          {hasHash ? (
+            <>
+              {/* Certificación Criptográfica & QR */}
+              <div className="my-6 flex flex-col items-center justify-between gap-6 border-t border-line pt-6 sm:flex-row">
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600" />
+                    <span className="font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy">
+                      Folio de Integridad Digital
+                    </span>
+                  </div>
+                  <div className="bg-canvas break-all rounded-[8px] border border-line p-2 font-mono text-[9px] text-muted">
+                    {hash}
+                  </div>
+                  <p className="text-[10px] italic text-muted">
+                    Este papel de trabajo fue elaborado bajo normas contables del CFF Art. 28 y
+                    verificado con la versión oficial DOF-2026. Escanee el código QR para validar su
+                    autenticidad.
+                  </p>
+                </div>
+
+                {qrDataUrl && (
+                  <div className="flex flex-shrink-0 flex-col items-center">
+                    <img
+                      src={qrDataUrl}
+                      alt="QR Verificación"
+                      className="h-24 w-24 rounded-[8px] border border-line bg-white p-1"
+                    />
+                    <span className="mt-1 font-mono text-[9px] text-muted">
+                      Verificación Pública
+                    </span>
+                  </div>
+                )}
               </div>
-              <div className="bg-canvas break-all rounded-[8px] border border-line p-2 font-mono text-[9px] text-muted">
-                {hash}
+            </>
+          ) : (
+            <div className="my-6 rounded-[16px] border border-line bg-amber-50 p-4 text-xs text-amber-900">
+              <span className="font-orbitron text-[10px] font-bold uppercase tracking-wider text-amber-700">
+                Folio de Integridad Digital
+              </span>
+              <div className="mt-1 font-mono text-xs">
+                RES-{resultado.ejercicio}-{String(resultado.mes).padStart(2, '0')}
               </div>
-              <p className="text-[10px] italic text-muted">
-                Este papel de trabajo fue elaborado bajo normas contables del CFF Art. 28 y
-                verificado con la versión oficial DOF-2026. Escanee el código QR para validar su
-                autenticidad.
+              <p className="mt-1 text-[10px] italic text-amber-700">
+                No se mostró sello/hash: no se recibió un folio de integridad calculado. El código
+                QR no se genera sin un token de verificación. Este es un papel de trabajo interno
+                (no constituye sellado fiscal ante SAT).
               </p>
             </div>
-
-            {qrDataUrl && (
-              <div className="flex flex-shrink-0 flex-col items-center">
-                <img
-                  src={qrDataUrl}
-                  alt="QR Verificación"
-                  className="h-24 w-24 rounded-[8px] border border-line bg-white p-1"
-                />
-                <span className="mt-1 font-mono text-[9px] text-muted">Verificación Pública</span>
-              </div>
-            )}
-          </div>
-
+          )}
           {/* Bloque de Firmas Autógrafas */}
           <div className="mt-12 grid grid-cols-2 gap-12 border-t border-line pt-8 text-center text-xs">
             <div>

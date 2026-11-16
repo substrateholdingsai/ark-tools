@@ -43,6 +43,13 @@ describe('GEO Engine — llms.txt & llms-full.txt', () => {
     expect(text).toContain('Balance General Comparativo');
     expect(text).toContain('Arts. 113-E a 113-J LISR');
     expect(text).toContain('A=P+C');
+
+    // RESICO cédula copy must use Folio de Integridad, not "Sello SHA-256"
+    expect(text).toContain('Folio de Integridad');
+    const resico = CATALOGO_HERRAMIENTAS.find((h) => h.id === 'resico')!;
+    expect(resico).toBeDefined();
+    expect(resico.descripcion).toContain('Folio de Integridad');
+    expect(resico.descripcion).not.toContain('Sello SHA-256');
   });
 
   it('genera /llms-full.txt con fundamentos matemáticos y legales exhaustivos', () => {

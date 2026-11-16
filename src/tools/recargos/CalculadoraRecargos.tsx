@@ -4,7 +4,8 @@
  * Módulo nativo en la nube para el cálculo exacto y determinista de:
  * - Efecto Inflacionario (INPC) conforme al Art. 17-A del Código Fiscal de la Federación (CFF)
  * - Recargos por mora en concepto de indemnización conforme al Art. 21 del CFF y Ley de Ingresos de la Federación (LIF)
- * - Papel de trabajo auditable con desglose mes a mes, Sello SHA-256 y Cédula Oficial Carta/QR
+ * - Papel de trabajo auditable con desglose mes a mes, Folio de Integridad y Cédula Oficial
+ *   (exportación CSV con BOM UTF-8 y resumen para WhatsApp)
  */
 
 import { useState, useMemo } from 'react';
@@ -116,7 +117,7 @@ export function CalculadoraRecargos({ onBack }: CalculadoraRecargosProps) {
         </div>
       </div>
 
-      {/* Modal de Cédula Oficial Imprimible (Carta / QR) */}
+      {/* Modal de Cédula Oficial Imprimible (Folio de Integridad) */}
       <CedulaRecargosModal
         isOpen={showCedulaModal}
         onClose={() => setShowCedulaModal(false)}

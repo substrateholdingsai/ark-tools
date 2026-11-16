@@ -134,7 +134,7 @@ export function ResultadoRecargosCard({
           className="flex w-full items-center justify-center gap-2 sm:w-auto"
         >
           <FileText size={16} />
-          <span>Ver Papel de Trabajo Oficial (PDF/QR)</span>
+          <span>Ver Papel de Trabajo Oficial (Folio de Integridad)</span>
           <ArrowRight size={14} />
         </GlassButton>
 

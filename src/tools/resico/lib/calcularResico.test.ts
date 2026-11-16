@@ -261,3 +261,134 @@ describe('Motor Matemático RESICO 2026 — Persona Moral (Art. 206 al 215 LISR)
     expect(res.advertencias.some((a) => a.includes('EXCESO DE TOPE PM'))).toBe(true);
   });
 });
+
+describe('Motor MatemÃ¡tico RESICO 2026 â€” lÃ­mites y casos borde (Must-fix 6)', () => {
+  // --- PF rate boundaries (monthly income) ---
+  const basePF = (ingresosMes: number, previos: number) =>
+    calcularResicoPF({
+      ingresosCobradosMes: ingresosMes,
+      ingresosAcumuladosPrevios: previos,
+      retencionISREfectuadaPM: 0,
+      ivaCobrado: 0,
+      ivaAcreditablePagado: 0,
+      retencionIVAEfectuadaPM: 0,
+      mes: 1,
+      ejercicio: 2026,
+    });
+
+  it('boundary $25,000 -> 1.0%', () => {
+    const r = basePF(25000, 0);
+    expect(r.tasaISRPct).toBe(1.0);
+    expect(r.isrCausado).toBe(250.0);
+  });
+  it('boundary $25,000.01 -> 1.1%', () => {
+    const r = basePF(25000.01, 0);
+    expect(r.tasaISRPct).toBe(1.1);
+    expect(r.isrCausado).toBe(275.0);
+  });
+  it('boundary $50,000 -> 1.1%', () => {
+    const r = basePF(50000, 0);
+    expect(r.tasaISRPct).toBe(1.1);
+    expect(r.isrCausado).toBe(550.0);
+  });
+  it('boundary $50,000.01 -> 1.5%', () => {
+    const r = basePF(50000.01, 0);
+    expect(r.tasaISRPct).toBe(1.5);
+    expect(r.isrCausado).toBe(750.0);
+  });
+  it('boundary $83,333.33 -> 1.5%', () => {
+    const r = basePF(83333.33, 0);
+    expect(r.tasaISRPct).toBe(1.5);
+    expect(r.isrCausado).toBe(1250.0);
+  });
+  it('boundary $83,333.34 -> 2.0%', () => {
+    const r = basePF(83333.34, 0);
+    expect(r.tasaISRPct).toBe(2.0);
+    expect(r.isrCausado).toBe(1666.67);
+  });
+  it('boundary $208,333.33 -> 2.0%', () => {
+    const r = basePF(208333.33, 0);
+    expect(r.tasaISRPct).toBe(2.0);
+    expect(r.isrCausado).toBe(4166.67);
+  });
+  it('boundary $208,333.34 -> 2.5%', () => {
+    const r = basePF(208333.34, 0);
+    expect(r.tasaISRPct).toBe(2.5);
+    expect(r.isrCausado).toBe(5208.33);
+  });
+
+  // --- Tope boundaries (PF) ---
+  it('tope exactly $3,500,000 -> rebaso false, alerta critico, 100.00%', () => {
+    const r = basePF(10000, 3500000 - 10000);
+    expect(r.rebasoTope).toBe(false);
+    expect(r.alertaTope).toBe('critico');
+    expect(r.porcentajeConsumoTope).toBe(100.0);
+  });
+  it('tope $3,500,001 -> rebaso true, alerta excedido', () => {
+    const r = basePF(10000, 3500001 - 10000);
+    expect(r.rebasoTope).toBe(true);
+    expect(r.alertaTope).toBe('excedido');
+    expect(r.advertencias.some((a) => a.includes('EXCESO DE TOPE'))).toBe(true);
+  });
+  it('tope 75% exactly ($2,625,000) -> alerta preventivo', () => {
+    const r = basePF(10000, 2625000 - 10000);
+    expect(r.porcentajeConsumoTope).toBe(75.0);
+    expect(r.alertaTope).toBe('preventivo');
+    expect(r.rebasoTope).toBe(false);
+  });
+  it('tope 90% exactly ($3,150,000) -> alerta critico', () => {
+    const r = basePF(10000, 3150000 - 10000);
+    expect(r.porcentajeConsumoTope).toBe(90.0);
+    expect(r.alertaTope).toBe('critico');
+    expect(r.rebasoTope).toBe(false);
+  });
+
+  // --- PM tope boundaries ---
+  it('PM tope exactly $35,000,000 -> rebaso false', () => {
+    const r = calcularResicoPM({
+      ingresosCobradosAcumulados: 35000000,
+      deduccionesAutorizadasAcumuladas: 0,
+      ptuPagada: 0,
+      perdidasFiscalesPendientes: 0,
+      pagosProvisionalesPrevios: 0,
+      retencionesISRAcumuladas: 0,
+      ivaCobrado: 0,
+      ivaAcreditablePagado: 0,
+      retencionIVAMes: 0,
+      mes: 1,
+      ejercicio: 2026,
+    });
+    expect(r.rebasoTope).toBe(false);
+  });
+  it('PM tope $35,000,001 -> rebaso true', () => {
+    const r = calcularResicoPM({
+      ingresosCobradosAcumulados: 35000001,
+      deduccionesAutorizadasAcumuladas: 0,
+      ptuPagada: 0,
+      perdidasFiscalesPendientes: 0,
+      pagosProvisionalesPrevios: 0,
+      retencionesISRAcumuladas: 0,
+      ivaCobrado: 0,
+      ivaAcreditablePagado: 0,
+      retencionIVAMes: 0,
+      mes: 1,
+      ejercicio: 2026,
+    });
+    expect(r.rebasoTope).toBe(true);
+  });
+
+  // --- Odd base ---
+  it('odd base $123,456.78 monthly at 2.0% -> ISR $2,469.14', () => {
+    const r = basePF(123456.78, 0);
+    expect(r.tasaISRPct).toBe(2.0);
+    expect(r.isrCausado).toBe(2469.14);
+  });
+
+  // --- Plazo / tasa IVA fields present ---
+  it('computes fechaLimitePago and tasaIVAPct', () => {
+    const r = basePF(50000, 100000);
+    expect(r.fechaLimitePago).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(r.tasaIVAPct).toBe(16);
+    expect(r.fechaLimitePagoNota).toContain('Art. 113-E');
+  });
+});

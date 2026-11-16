@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import { RegulatoryTicker } from './RegulatoryTicker';
+import { CATALOGO_2026, VALORES_POR_ID } from '@/data/valores-vigentes/catalogo';
+import { TOTAL_HERRAMIENTAS } from '@/data/catalogo-herramientas';
 
 describe('RegulatoryTicker Component (Wall Street Tape)', () => {
   const originalFetch = globalThis.fetch;
@@ -14,7 +16,7 @@ describe('RegulatoryTicker Component (Wall Street Tape)', () => {
     globalThis.fetch = originalFetch;
   });
 
-  it('renderiza la cinta, el pin de Radar RegTech y el estatus 21/21', async () => {
+  it('renderiza la cinta, el pin de Radar RegTech y el total canónico de herramientas', async () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({ ok: true, events: [] }),
@@ -26,8 +28,12 @@ describe('RegulatoryTicker Component (Wall Street Tape)', () => {
 
     expect(screen.getByText('RADAR REGTECH')).toBeInTheDocument();
     expect(screen.getByText('DOF · SAT EN VIVO')).toBeInTheDocument();
-    expect(screen.getByText('21/21')).toBeInTheDocument();
-    expect(screen.getByText('HERRAMIENTAS VIGENTES')).toBeInTheDocument();
+    expect(screen.getByText(String(TOTAL_HERRAMIENTAS))).toBeInTheDocument();
+    expect(screen.getByText('HERRAMIENTAS EN SUITE')).toBeInTheDocument();
+    expect(screen.getAllByText(`${CATALOGO_2026.length} VALORES`).length).toBeGreaterThan(0);
+    expect(screen.queryByText('8/8 DOF')).not.toBeInTheDocument();
+    const tasaRecargos = VALORES_POR_ID.get('TASA_RECARGOS_MORA_2026')?.valor;
+    expect(screen.getAllByText(new RegExp(`${tasaRecargos}%`)).length).toBeGreaterThan(0);
   });
 
   it('muestra las garantías normativas canónicas de la suite en la cinta', async () => {

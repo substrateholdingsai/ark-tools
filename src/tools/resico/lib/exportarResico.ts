@@ -20,16 +20,19 @@ export function exportarResicoCSV(
 ): string {
   const lineas: string[] = [];
   const nombreMes = NOMBRES_MESES[resultado.mes];
+  const folio = `RES-${resultado.ejercicio}-${String(resultado.mes).padStart(2, '0')}`;
 
   // 1. Encabezado institucional
   lineas.push('ARK LEDGER — PAPEL DE TRABAJO Y CÉDULA DE DETERMINACIÓN RESICO');
   lineas.push(`Contribuyente,${escaparCSV(clienteNombre)}`);
   lineas.push(`RFC,${escaparCSV(clienteRfc)}`);
+  lineas.push(`Folio,${escaparCSV(folio)}`);
   lineas.push(
     `Tipo de Persona,${resultado.tipoPersona === 'fisica' ? 'Persona Física (Art. 113-E LISR)' : 'Persona Moral (Art. 206 LISR)'}`
   );
   lineas.push(`Período Fiscal,${escaparCSV(`${nombreMes} ${resultado.ejercicio}`)}`);
   lineas.push(`Fundamento Legal,${escaparCSV(resultado.fundamentoLegal)}`);
+  lineas.push(`Fecha Límite de Pago (estimada),${escaparCSV(resultado.fechaLimitePago || '')}`);
   lineas.push('');
 
   // 2. Desglose de conceptos
@@ -60,6 +63,7 @@ export function exportarResicoCSV(
     lineas.push(`Límite Anual RESICO (Art. 113-E),${resultado.topeAnualLISR.toFixed(2)}`);
     lineas.push(`Porcentaje Consumido del Tope,${resultado.porcentajeConsumoTope.toFixed(2)}%`);
     lineas.push(`Estado del Límite,${escaparCSV(resultado.alertaTope.toUpperCase())}`);
+    lineas.push(`Tasa IVA aplicada,${resultado.tasaIVAPct.toFixed(0)}%`);
   }
 
   if (resultado.advertencias.length > 0) {
@@ -82,10 +86,12 @@ export function generarResumenWhatsApp(
 ): string {
   const nombreMes = NOMBRES_MESES[resultado.mes];
   const esPF = resultado.tipoPersona === 'fisica';
+  const folio = `RES-${resultado.ejercicio}-${String(resultado.mes).padStart(2, '0')}`;
 
   let msg = `🏛️ *ARK LEDGER | Liquidación Fiscal RESICO*\n`;
   msg += `*Cliente:* ${clienteNombre}\n`;
   msg += `*Período:* ${nombreMes} ${resultado.ejercicio}\n`;
+  msg += `*Folio:* ${folio}\n`;
   msg += `*Régimen:* ${esPF ? 'RESICO Persona Física' : 'RESICO Persona Moral (Flujo)'}\n\n`;
 
   if (esPF) {
@@ -104,14 +110,14 @@ export function generarResumenWhatsApp(
     msg += `📑 *IVA Saldo a Favor:* $${Math.abs(resultado.ivaNetoPagar).toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN\n`;
   }
 
-  msg += `\n🎯 *TOTAL A PAGAR:* $${resultado.totalImpuestosPagar.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN\n`;
+  msg += `\n🎯 *Tasa IVA aplicada:* ${resultado.tasaIVAPct.toFixed(0)}%\n\n*TOTAL A PAGAR:* $${resultado.totalImpuestosPagar.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN\n`;
   msg += `_${resultado.totalEnLetras}_\n\n`;
 
   if (esPF) {
     msg += `⚠️ *Monitoreo Tope 3.5M:* ${resultado.porcentajeConsumoTope}% ejercido.\n`;
   }
 
-  msg += `_Cédula oficial emitida con ARK LEDGER con sello digital verificable._`;
+  msg += `_Cédula oficial emitida con ARK LEDGER con Folio de Integridad (token determinista, no sellado fiscal ante SAT)._`;
   return msg;
 }
 

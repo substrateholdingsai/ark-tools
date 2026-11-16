@@ -52,7 +52,10 @@ function createMockDb() {
           if (query.includes('GROUP BY especialidad')) {
             return { results: [{ especialidad: 'Fiscal', count: 1 }] };
           }
-          if (query.includes('SELECT * FROM leads_ark_tools')) {
+          if (
+            query.includes('SELECT * FROM leads_ark_tools') ||
+            query.includes('FROM leads_ark_tools AS lead')
+          ) {
             return { results: [sampleLeadRow] };
           }
           return { results: [] };
@@ -145,6 +148,54 @@ describe('handleLeadsApiRequest', () => {
     expect(json.ok).toBe(true);
     expect(json.leads).toHaveLength(1);
     expect(json.leads[0]?.id).toBe('lead-1');
+  });
+
+  it('proyecta pago CANACO sólo desde una intención pagada de producción', async () => {
+    const paidLeadRow = {
+      ...sampleLeadRow,
+      canonical_rfc: 'CPM2106158A1',
+      verified_payment_amount_cents: 370000,
+      verified_payment_channel: 'conekta_card',
+      verified_payment_environment: 'production',
+      verified_payment_rfc: 'CPM2106158A1',
+      verified_payment_folio_siem: 'SIEM-TEST-1',
+      verified_payment_razon_social: 'COMERCIALIZADORA DEL MAYAB',
+      verified_payment_num_empleados: 15,
+      verified_payment_sector: 'comercio',
+    };
+    const prepare = vi.fn((_query: string) => ({
+      bind: vi.fn().mockReturnThis(),
+      all: vi.fn(async () => ({ results: [paidLeadRow] })),
+    }));
+    const db = { prepare } as unknown as D1Database;
+    const env = createEnv(db);
+
+    const response = await handleLeadsApiRequest(
+      new Request('https://ledger.arksystems.site/api/admin/leads?tenant=canaco_merida'),
+      env,
+      corsHeaders,
+      superAdminUser
+    );
+    const json = (await response?.json()) as {
+      leads: Array<{
+        verified_payment_amount_cents: number | null;
+        verified_payment_environment: string | null;
+        verified_payment_rfc: string | null;
+      }>;
+    };
+    const query = prepare.mock.calls[0]?.[0] as string;
+
+    expect(response?.status).toBe(200);
+    expect(json.leads[0]?.verified_payment_amount_cents).toBe(370000);
+    expect(json.leads[0]?.verified_payment_environment).toBe('production');
+    expect(json.leads[0]?.verified_payment_rfc).toBe('CPM2106158A1');
+    expect(query).toContain('LEFT JOIN canaco_payment_intents');
+    expect(query).toContain("payment.status = 'paid'");
+    expect(query).toContain("payment.environment = 'production'");
+    expect(query).toContain("lead.payment_environment = 'production'");
+    expect(query).toContain('payment.rfc = lead.canonical_rfc');
+    expect(query).toContain('payment.transaction_reference IS NOT NULL');
+    expect(query).toContain('HAVING COUNT(*) = 1');
   });
 
   it('obtiene un lead por ID en GET /api/admin/leads/:id', async () => {
@@ -353,5 +404,76 @@ describe('handleLeadsApiRequest', () => {
     expect(json.lead.status).toBe('WhatsApp_enviado');
     expect(json.lead.notas).toContain('💬 WhatsApp enviado vía wa.me [Ark Systems');
     expect(json.lead.whatsapp_link).toBe('https://wa.me/5219991234567');
+  });
+
+  it('rechaza cambiar el estado CANACO a Socio Activo desde log-whatsapp', async () => {
+    const run = vi.fn(async () => ({ success: true, meta: { changes: 1 } }));
+    const env = createEnv({
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () =>
+          query.includes('SELECT * FROM leads_ark_tools')
+            ? {
+                ...sampleLeadRow,
+                tenant_id: 'canaco_merida',
+                status: 'Pago Pendiente',
+                lifecycle_stage: 'pago_pendiente',
+              }
+            : null
+        ),
+        run,
+      })),
+    } as unknown as D1Database);
+    const req = new Request(
+      'https://ledger.arksystems.site/api/admin/leads/lead-1/log-whatsapp?tenant=canaco_merida',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Socio Activo', message: 'prueba' }),
+      }
+    );
+
+    const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
+
+    expect(res?.status).toBe(403);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('conserva el registro legítimo de WhatsApp para un prospecto CANACO sin cambiar su etapa', async () => {
+    const run = vi.fn(async () => ({ success: true, meta: { changes: 1 } }));
+    const env = createEnv({
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () =>
+          query.includes('SELECT * FROM leads_ark_tools')
+            ? {
+                ...sampleLeadRow,
+                tenant_id: 'canaco_merida',
+                status: 'Pago Pendiente',
+                lifecycle_stage: 'pago_pendiente',
+              }
+            : null
+        ),
+        run,
+      })),
+    } as unknown as D1Database);
+    const response = await handleLeadsApiRequest(
+      new Request(
+        'https://ledger.arksystems.site/api/admin/leads/lead-1/log-whatsapp?tenant=canaco_merida',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Seguimiento acordado' }),
+        }
+      ),
+      env,
+      corsHeaders,
+      superAdminUser
+    );
+
+    expect(response?.status).toBe(200);
+    const body = (await response?.json()) as { lead: { status: string } };
+    expect(body.lead.status).toBe('Pago Pendiente');
+    expect(run).toHaveBeenCalledOnce();
   });
 });

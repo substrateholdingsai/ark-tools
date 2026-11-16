@@ -43,6 +43,7 @@ export function ExpedienteToolBanner({
   const { activeClient, saveCalculoExpediente, loadDemoData, clearDemoData } = useExpediente();
   const auth = useOptionalAuth();
   const tenantName = auth?.tenantName || 'Despacho Contable Especializado';
+  const esModalidad40 = toolId === 'modalidad40';
   const [isSaving, setIsSaving] = useState(false);
   const [lastHash, setLastHash] = useState<string | null>(null);
   const [lastExpediente, setLastExpediente] = useState<ExpedienteRecord | null>(null);
@@ -59,7 +60,9 @@ export function ExpedienteToolBanner({
           <span>
             <strong className="font-semibold text-ink">Modo libre:</strong> Los cálculos no se
             guardarán en ningún expediente. Selecciona o crea un cliente en la barra superior para
-            archivar este papel de trabajo con sello SHA-256.
+            {esModalidad40
+              ? ' archivar esta proyección y consultar la integridad del registro (no es certificación del IMSS).'
+              : ' archivar este papel de trabajo con sello SHA-256.'}
           </span>
         </div>
         <button
@@ -145,12 +148,18 @@ export function ExpedienteToolBanner({
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-800">
                 <Check size={13} />
-                <span>{isDeduplicated ? 'Archivado y vigente' : 'Sellado con éxito'}</span>
+                <span>
+                  {esModalidad40
+                    ? 'Proyección archivada'
+                    : isDeduplicated
+                      ? 'Archivado y vigente'
+                      : 'Sellado con éxito'}
+                </span>
               </span>
               <button
                 type="button"
                 onClick={handleCopyHash}
-                title="Copiar sello SHA-256"
+                title={esModalidad40 ? 'Copiar folio del expediente' : 'Copiar sello SHA-256'}
                 className="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-line bg-white px-2 py-1 font-mono text-[10px] text-muted hover:border-navy hover:text-ink"
               >
                 <Copy size={11} />
@@ -176,7 +185,13 @@ export function ExpedienteToolBanner({
               className="shadow-2xs inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-navy px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-navy/90 disabled:opacity-50"
             >
               <Sparkles size={13} className="text-gold" />
-              <span>{isSaving ? 'Sellando...' : 'Archivar en Expediente'}</span>
+              <span>
+                {isSaving
+                  ? esModalidad40
+                    ? 'Guardando...'
+                    : 'Sellando...'
+                  : 'Archivar en Expediente'}
+              </span>
             </button>
           )}
         </div>

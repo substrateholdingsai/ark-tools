@@ -3,6 +3,8 @@ import type { RangoTarifaResicoPF, MesFiscal } from '../types';
 /**
  * Tabla mensual de ISR para Personas Físicas en RESICO.
  * Fundamento: Artículo 113-E de la Ley del Impuesto sobre la Renta (LISR).
+ * Los límites son ingresos del MES (equivalentes mensuales de los topes del régimen).
+ * Verificar contra publicación oficial DOF/RMF 2026 antes de cambios normativos.
  * Publicado en el Diario Oficial de la Federación.
  */
 export const TARIFA_RESICO_PF_MENSUAL: RangoTarifaResicoPF[] = [
@@ -61,6 +63,12 @@ export const TASA_ISR_RESICO_PM = 0.3;
  * Art. 206 LISR.
  */
 export const TOPE_ANUAL_RESICO_PM = 35000000.0;
+
+/**
+ * Tasas de IVA soportadas por la herramienta (seleccionadas por el usuario).
+ * 16% general, 8% region fronteriza, 0% tasa cero, 'exento' (tratado como 0% para el calculo).
+ */
+export const TASAS_IVA_RESICO: Array<0.16 | 0.08 | 0 | 'exento'> = [0.16, 0.08, 0];
 
 /**
  * Nombres de los meses fiscales.

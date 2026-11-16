@@ -117,7 +117,7 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 - Años 31 a 35: 32 días de vacaciones -> Factor = 1.0630
 
 ### Topes de Cotización IMSS (Art. 28 LSS)
-- Límite inferior: Salario Mínimo General de la zona del trabajador ($${fmt(SMG)} MXN o $${fmt(SMZLFN)} MXN).
+- Límite inferior (LSS Art. 28, área geográfica respectiva): Salario Mínimo General de zona general ($${fmt(SMG)} MXN) o ZLFN ($${fmt(SMZLFN)} MXN), según corresponda al trabajador. Se aplica al SBC integrado.
 - Límite superior: 25 veces el valor de la UMA diaria vigente ($25 * $${fmt(UMA_DIARIA)} = $${fmt(TOPE_SBC_25_UMA)} MXN diarios).
 
 ---
@@ -218,7 +218,7 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
 - Artículos 168 y Segundo Transitorio LSS (Reforma Pensiones).
 
 ### Reglas Deterministas de Cálculo
-1. **Tope de Registro Restringido:** \`min(Último SBC registrado + 1 UMA diaria, 25 UMAs)\`.
+1. **Límite aplicado en Modalidad 40:** Para nuevas incorporaciones, el Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (aprobado 10/10/2026, DOF 21/10/2026, vigente desde 22/10/2026) es una medida temporal: permite último SBC o hasta último SBC + 1 UMA, sujeto al mínimo SMG general; conserva condiciones previamente contratadas y excluye trabajadores independientes Art. 13-I. El alcance frente a Arts. 218 LSS y 65–66 del Reglamento es materia de discusión jurídica. Fuente oficial: https://sidof.segob.gob.mx/notas/docFuente/5801708.
 2. **Cuota Mensual 2026:** Tasa del 14.438% aplicada sobre el SBC pactado y base mensual de 30.4 días.
 3. **Pensión Ley 73:** Cuantía Básica + Incrementos Anuales (semanas > 500) ajustado por edad (Art. 171 LSS), asignación familiar (15%) y actualización Decreto Fox (11%).
 

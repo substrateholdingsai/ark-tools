@@ -3,8 +3,7 @@
  *
  * Muestra el estatus de acreditación del comercio, un Stepper visual de 4 etapas
  * ("Ruta del Afiliado") para orientar al usuario en todo momento, acceso directo a la
- * Ventanilla de Afiliación/SIEM, al Buzón Documental (Oficialía de Partes) y a la
- * Cédula Digital de Socio con QR.
+ * Ventanilla de Afiliación, al Buzón Documental y al resumen interno de pago.
  */
 
 import { useState } from 'react';
@@ -22,7 +21,9 @@ import {
 import { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
 import { ConstanciaSocioModal } from './ConstanciaSocioModal';
 import { BuzonDocumentalModal } from './BuzonDocumentalModal';
+import { LegalComplianceModal } from '../LegalComplianceModal';
 import { TOTAL_HERRAMIENTAS } from '@/data/catalogo-herramientas';
+import { CANACO_MERIDA_BRAND_CONFIG } from '@/config/brand/canacoMerida';
 import { getEstadoById } from '@/tools/isn/data/estados';
 import type { SocioCanacoRegistro } from './types';
 
@@ -30,23 +31,15 @@ interface CanacoPortalBannerProps {
   className?: string;
 }
 
-const STORAGE_SOCIO_KEY = 'canaco_socio_activo_v1';
 const STORAGE_BUZON_KEY = 'canaco_buzon_progreso_v1';
 
 export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) {
   const [modalAfiliacionOpen, setModalAfiliacionOpen] = useState(false);
   const [modalConstanciaOpen, setModalConstanciaOpen] = useState(false);
   const [modalBuzonOpen, setModalBuzonOpen] = useState(false);
+  const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(false);
 
-  const [socioActivo, setSocioActivo] = useState<SocioCanacoRegistro | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const saved = window.localStorage.getItem(STORAGE_SOCIO_KEY);
-      return saved ? (JSON.parse(saved) as SocioCanacoRegistro) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [socioActivo] = useState<SocioCanacoRegistro | null>(null);
 
   const [progresoBuzon, setProgresoBuzon] = useState<{ depositados: number; requeridos: number }>(
     () => {
@@ -59,15 +52,6 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
       }
     }
   );
-
-  const handleAfiliacionCompletada = (nuevoSocio: SocioCanacoRegistro) => {
-    setSocioActivo(nuevoSocio);
-    try {
-      window.localStorage.setItem(STORAGE_SOCIO_KEY, JSON.stringify(nuevoSocio));
-    } catch {
-      // ignore storage errors
-    }
-  };
 
   const handleProgresoBuzon = (depositados: number, requeridos: number) => {
     const next = { depositados, requeridos: requeridos || 7 };
@@ -99,7 +83,7 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
                 Portal del Afiliado · HENEQUÉN
               </span>
               <span className="font-mono text-[10px] text-henequen-piedra">
-                120 Años de Autoridad Comercial (1906–2026)
+                CANACO SERVYTUR Mérida · Ventanilla digital
               </span>
             </div>
 
@@ -116,14 +100,14 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
                 <>
                   Tu registro SIEM está vigente con folio{' '}
                   <strong className="font-mono text-henequen-anil">{socioActivo.folioSiem}</strong>.
-                  Dispones de acceso a las {TOTAL_HERRAMIENTAS} herramientas fiscales (12 esenciales
-                  PyME CANACO + 8 corporativas/PLD) y cédulas de trabajo.
+                  El catálogo de ARK LEDGER contiene {TOTAL_HERRAMIENTAS} herramientas.
                 </>
               ) : (
                 <>
-                  Cumple con el Registro Federal SIEM 2026, obtén tu Cédula Oficial con QR y accede
-                  a la Suite de Cálculo Tributario (RESICO, Nómina, Finiquitos, ISN Yucatán{' '}
-                  {tasaIsnYucatan}%).
+                  Solicita seguimiento de afiliación y explora herramientas de referencia de ARK
+                  LEDGER. Este portal no confirma el alta SIEM ni emite una Cédula o QR verificable.
+                  La tasa ISN mostrada en la herramienta es {tasaIsnYucatan}% y debe consultarse en
+                  su fuente vigente.
                 </>
               )}
             </p>
@@ -138,7 +122,7 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
                 className="inline-flex items-center gap-2 rounded-xl bg-henequen-anil px-4 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-henequen-anil-deep"
               >
                 <FileText size={14} className="text-henequen-sisal" />
-                <span>Ver Cédula Oficial SIEM</span>
+                <span>Ver resumen de registro</span>
               </button>
             ) : (
               <button
@@ -147,7 +131,7 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
                 className="inline-flex items-center gap-2 rounded-xl bg-henequen-terra px-5 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-henequen-terra-dark"
               >
                 <Building2 size={14} />
-                <span>Afiliarse / Refrendo SIEM</span>
+                <span>Solicitar seguimiento de afiliación</span>
                 <ArrowRight size={14} />
               </button>
             )}
@@ -209,7 +193,7 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-bold text-henequen-anil">1. Registro SIEM</span>
+                  <span className="text-xs font-bold text-henequen-anil">1. Solicitud</span>
                   <span
                     className={`rounded px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase ${
                       socioActivo
@@ -217,11 +201,13 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
                         : 'bg-amber-100 text-amber-800'
                     }`}
                   >
-                    {socioActivo ? 'Completado' : 'Iniciar aquí'}
+                    {socioActivo ? 'Pago confirmado' : 'Pendiente de confirmación'}
                   </span>
                 </div>
                 <p className="mt-0.5 truncate text-[11px] text-henequen-piedra">
-                  {socioActivo ? `Folio ${socioActivo.folioSiem}` : 'Alta o refrendo anual 2026'}
+                  {socioActivo
+                    ? `Referencia ${socioActivo.folioSiem}`
+                    : 'El portal no registra el SIEM'}
                 </p>
               </div>
             </button>
@@ -245,7 +231,7 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-bold text-henequen-anil">2. Buzón Oficialía</span>
+                  <span className="text-xs font-bold text-henequen-anil">2. Buzón documental</span>
                   <span className="rounded bg-henequen-sisal/70 px-1.5 py-0.5 font-mono text-[9px] font-bold text-henequen-anil">
                     {progresoBuzon.depositados}/{progresoBuzon.requeridos} docs
                   </span>
@@ -256,7 +242,7 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
               </div>
             </button>
 
-            {/* Etapa 3: Cédula Oficial QR */}
+            {/* Etapa 3: Resumen de pago */}
             <button
               type="button"
               onClick={() =>
@@ -279,13 +265,13 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
               </span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-1">
-                  <span className="text-xs font-bold text-henequen-anil">3. Cédula QR</span>
+                  <span className="text-xs font-bold text-henequen-anil">3. Resumen interno</span>
                   <span className="rounded bg-henequen-sisal/70 px-1.5 py-0.5 font-mono text-[9px] font-bold text-henequen-anil">
                     {socioActivo ? 'Disponible' : 'Requiere paso 1'}
                   </span>
                 </div>
                 <p className="mt-0.5 truncate text-[11px] text-henequen-piedra">
-                  Constancia Carta con Sello SHA-256
+                  Sin constancia SIEM ni QR verificable
                 </p>
               </div>
             </button>
@@ -303,7 +289,7 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
                   </span>
                 </div>
                 <p className="mt-0.5 truncate text-[11px] text-henequen-piedra">
-                  {TOTAL_HERRAMIENTAS} herramientas (12 PyME + 8 Pro) y pre-validación CFDI
+                  {TOTAL_HERRAMIENTAS} herramientas en el catálogo Ledger
                 </p>
               </div>
             </div>
@@ -315,7 +301,14 @@ export function CanacoPortalBanner({ className = '' }: CanacoPortalBannerProps) 
       <VentanillaAfiliacionModal
         isOpen={modalAfiliacionOpen}
         onClose={() => setModalAfiliacionOpen(false)}
-        onAfiliacionCompletada={handleAfiliacionCompletada}
+        onOpenPrivacyNotice={() => setPrivacyNoticeOpen(true)}
+      />
+
+      <LegalComplianceModal
+        isOpen={privacyNoticeOpen}
+        initialTab="privacidad"
+        onClose={() => setPrivacyNoticeOpen(false)}
+        brand={CANACO_MERIDA_BRAND_CONFIG}
       />
 
       <BuzonDocumentalModal

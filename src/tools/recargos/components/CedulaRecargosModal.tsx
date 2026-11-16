@@ -4,6 +4,21 @@ import { Printer, X, ShieldCheck } from 'lucide-react';
 import type { ResultadoRecargos } from '../types';
 import { BotonBovedaOffline } from '@/components/BotonBovedaOffline';
 
+const PRESENTACION_BOVEDA_RECARGOS = {
+  integrityLabel: 'Folio de Integridad (token determinista)',
+  integrityDescription:
+    'Folio de integridad del cálculo (token determinista). No constituye sellado fiscal SHA-256 ni certificación ante el SAT; el QR/ruta en línea requiere servicio disponible y no sustituye verificación de registro.',
+  jsonHashField: 'folio_integridad',
+  manifestHashLabel: 'Folio de Integridad',
+  manifestScope:
+    'Alcance: paquete de referencia/integridad de archivos; no acredita cumplimiento fiscal',
+  legalHeading: 'Alcance informativo',
+  legalText:
+    'Cálculo referencial generado por ARK LEDGER. No constituye resolución, acuse ni certificación fiscal del SAT. La integridad de archivos del paquete se verifica con manifest.sha256.',
+  qrCaption: 'Referencia en línea; no verifica el cálculo ni sustituye registro',
+  verifierMode: 'reference_only' as const,
+};
+
 interface Props {
   isOpen: boolean;
   onClose: () => void;
@@ -11,7 +26,6 @@ interface Props {
   clienteNombre?: string;
   clienteRfc?: string;
   despachoName?: string;
-  hashExpediente?: string;
 }
 
 export function CedulaRecargosModal({
@@ -21,14 +35,13 @@ export function CedulaRecargosModal({
   clienteNombre = 'Contribuyente General',
   clienteRfc = 'XAXX010101000',
   despachoName = 'Despacho Contable ARK',
-  hashExpediente,
 }: Props) {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const printContainerRef = useRef<HTMLDivElement>(null);
 
-  // Hash determinista de fallback si no viene guardado en D1
-  const hash = hashExpediente || 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-  const verifyUrl = `https://ledger.arksystems.site/?verify=${hash}`;
+  // Folio de Integridad derivado del payload del cálculo (token determinista, no sellado fiscal ante SAT)
+  const folio = resultado.folioDeIntegridad;
+  const verifyUrl = `https://ledger.arksystems.site/?verify=${folio}`;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -68,13 +81,14 @@ export function CedulaRecargosModal({
                 titulo: 'Actualización y Recargos Fiscales (CFF Art. 17-A y 21)',
                 toolId: 'recargos',
                 despachoName,
+                presentation: PRESENTACION_BOVEDA_RECARGOS,
                 client: {
                   nombre: clienteNombre,
                   rfc: clienteRfc,
                   tipo: 'persona_fisica',
                 },
-                folio: `REC-${hash.slice(0, 8).toUpperCase()}`,
-                inputHash: hash,
+                folio: folio,
+                inputHash: folio,
                 inputs: {
                   importeHistorico: resultado.importeHistorico,
                   fechaVencimiento: resultado.fechaVencimiento,
@@ -115,7 +129,7 @@ export function CedulaRecargosModal({
               className="flex items-center gap-1.5 rounded-[12px] bg-navy px-4 py-2 text-xs font-bold text-white transition hover:bg-navy/90"
             >
               <Printer className="h-4 w-4 text-gold" />
-              <span>Imprimir / Guardar PDF</span>
+              <span>Imprimir cédula</span>
             </button>
             <button
               type="button"
@@ -311,20 +325,20 @@ export function CedulaRecargosModal({
             </p>
           </div>
 
-          {/* Sello Digital SHA-256 y Código QR Oficial */}
+          {/* Folio de Integridad y Código QR Oficial */}
           <div className="mt-8 flex flex-col gap-6 rounded-2xl border border-line bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-gold-dark" />
                 <span className="font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
-                  Sello Digital de Integridad Criptográfica (SHA-256)
+                  Folio de Integridad (token determinista, no sellado fiscal ante SAT)
                 </span>
               </div>
-              <p className="break-all font-mono text-[9.5px] text-muted">{hash}</p>
+              <p className="break-all font-mono text-[9.5px] text-muted">{folio}</p>
               <p className="text-[10px] leading-relaxed text-muted">
-                Este papel de trabajo fue generado de forma determinista y sellado inmutablemente en
-                Cloudflare D1. El QR adjunto permite a cualquier auditor del SAT o perito contable
-                verificar la autenticidad e integridad del cálculo sin requerir contraseñas.
+                Este folio se deriva de forma determinista del payload del cálculo (fechas, importe,
+                factor, meses y montos). Cambiar cualquier entrada modifica el folio. No constituye
+                sellado fiscal ante el SAT.
               </p>
             </div>
 

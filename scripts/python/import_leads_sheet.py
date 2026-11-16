@@ -289,7 +289,7 @@ def main():
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     lines = []
     lines.append("-- Seed leads_ark_tools generado desde Google Sheet Ark-systems1")
-    lines.append("DELETE FROM leads_ark_tools;")
+    lines.append("DELETE FROM leads_ark_tools WHERE tenant_id = 'ark';")
     for web, wa, email, ciudad, esp, status, last, contacto, tab in rows_out:
         lid = str(uuid.uuid4())
         lines.append(

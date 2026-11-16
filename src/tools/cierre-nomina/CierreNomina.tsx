@@ -932,8 +932,8 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
                       <div className="mb-1 font-bold">⚠ Trabajadores sin NSS omitidos del IDSE</div>
                       <div className="text-[10px]">
-                        Omitidos del archivo (decisión de diseño Ledger, no regla oficial IMSS):
-                        {idseNssSkipped.join(', ')}
+                        Trabajadores sin NSS omitidos por decisión de Ledger, no por regla oficial
+                        IMSS confirmada: {idseNssSkipped.join(', ')}
                       </div>
                       <div className="mt-1 text-[9px] italic text-amber-600">
                         Agregar NSS a estos trabajadores y volver a generar el cierre para

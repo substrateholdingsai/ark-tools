@@ -1,27 +1,19 @@
-/**
- * ARK LEDGER — Calculadora SBC 2026
- * DesgloseTable
- *
- * Tabla con el desglose del factor de integración.
- * Muestra: Base (1.0), Vacaciones, Aguinaldo, Factor total.
- */
-
 import { formatearFactor, formatearMXN } from '../lib/calcularSBC';
+import { CONSTANTES_IMSS } from '../data/uma';
 import type { ParametrosSBC, ResultadoSBC } from '../types';
 
 interface DesgloseTableProps {
-  /** Parámetros de entrada */
   parametros: ParametrosSBC;
-  /** Resultado del cálculo */
   resultado: ResultadoSBC;
 }
 
 export function DesgloseTable({ parametros, resultado }: DesgloseTableProps) {
   const { desglose, factor } = resultado;
-
   return (
-    <div className="rounded-[20px] border border-line bg-surface p-5 md:p-6">
-      {/* Header */}
+    <div
+      className="rounded-[20px] border border-line bg-surface p-5 md:p-6"
+      data-testid="desglose-sbc"
+    >
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-[11px] font-bold uppercase tracking-[0.16em] text-muted">
           Desglose del factor
@@ -29,20 +21,14 @@ export function DesgloseTable({ parametros, resultado }: DesgloseTableProps) {
         <span className="font-mono text-[10px] text-muted">LSS Art. 27</span>
       </div>
 
-      {/* Tabla */}
       <div className="space-y-2.5">
-        {/* Renglón 1: Base */}
         <Renglon label="Base" valor={1.0} detalle="Salario diario" color="navy" />
-
-        {/* Renglón 2: Vacaciones */}
         <Renglon
           label="Vacaciones"
           valor={desglose.aporteVacaciones}
           detalle={`${parametros.diasVacaciones}d × ${parametros.primaVacacional}% ÷ 365`}
           color="gold"
         />
-
-        {/* Renglón 3: Aguinaldo */}
         <Renglon
           label="Aguinaldo"
           valor={desglose.aporteAguinaldo}
@@ -50,10 +36,8 @@ export function DesgloseTable({ parametros, resultado }: DesgloseTableProps) {
           color="navy"
         />
 
-        {/* Divisor */}
         <div className="my-3 h-px bg-line" />
 
-        {/* Renglón final: Factor total */}
         <div className="flex items-center justify-between gap-3 rounded-[12px] bg-navy p-3.5 text-white">
           <div>
             <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/60">
@@ -70,7 +54,6 @@ export function DesgloseTable({ parametros, resultado }: DesgloseTableProps) {
         </div>
       </div>
 
-      {/* Info adicional */}
       <div className="mt-4 rounded-[10px] border border-line bg-surface-2 p-3">
         <div className="grid grid-cols-2 gap-3 text-[11px]">
           <div>
@@ -92,9 +75,13 @@ export function DesgloseTable({ parametros, resultado }: DesgloseTableProps) {
             </div>
           </div>
           <div>
-            <div className="text-muted">UMA 2026</div>
-            <div className="mt-0.5 font-orbitron font-bold tabular-nums text-navy">
-              $113.14 × 25
+            <div className="text-muted">Tope 25 UMA (DOF)</div>
+            <div
+              className="mt-0.5 font-orbitron font-bold tabular-nums text-navy"
+              data-testid="uma-tope-display"
+            >
+              {formatearMXN(CONSTANTES_IMSS.umaDiaria)} × 25 ={' '}
+              {formatearMXN(CONSTANTES_IMSS.topePesos)}
             </div>
           </div>
         </div>
@@ -102,10 +89,6 @@ export function DesgloseTable({ parametros, resultado }: DesgloseTableProps) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────
-// SUBCOMPONENTE: Renglón
-// ─────────────────────────────────────────────────────────────────────
 
 interface RenglonProps {
   label: string;
@@ -115,11 +98,7 @@ interface RenglonProps {
 }
 
 function Renglon({ label, valor, detalle, color }: RenglonProps) {
-  const colorClasses = {
-    navy: 'text-navy',
-    gold: 'text-gold-dark',
-  };
-
+  const colorClasses = { navy: 'text-navy', gold: 'text-gold-dark' };
   return (
     <div className="flex items-center justify-between gap-3">
       <div className="min-w-0">

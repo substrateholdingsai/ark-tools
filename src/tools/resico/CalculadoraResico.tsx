@@ -5,7 +5,7 @@
  * - Personas Físicas: Arts. 113-E a 113-J LISR (Tasas 1.0% a 2.5%, retención 1.25%, IVA)
  * - Personas Morales: Arts. 206 a 215 LISR (Flujo de efectivo, tasa 30%, IVA)
  * - Control de tope legal de $3,500,000 MXN anuales
- * - Integrado con Expediente Único, Sello SHA-256 y Cédula Oficial Carta/QR
+ * - Cédula Oficial Carta/QR (Folio de Integridad: token determinista, no constituye sellado fiscal ante SAT)
  */
 
 import { useState, useMemo, useEffect } from 'react';
@@ -35,6 +35,7 @@ const ENTRADA_PF_INICIAL: EntradaResicoPF = {
   ivaCobrado: 10400,
   ivaAcreditablePagado: 3800,
   retencionIVAEfectuadaPM: 0,
+  tasaIVA: 0.16,
   mes: 3,
   ejercicio: 2026,
 };
@@ -49,6 +50,7 @@ const ENTRADA_PM_INICIAL: EntradaResicoPM = {
   ivaCobrado: 32000,
   ivaAcreditablePagado: 14000,
   retencionIVAMes: 0,
+  tasaIVA: 0.16,
   mes: 3,
   ejercicio: 2026,
 };

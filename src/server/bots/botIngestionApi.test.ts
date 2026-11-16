@@ -31,6 +31,33 @@ function createMockEnv(overrides: Partial<Env> = {}): Env {
   };
 }
 
+function createPaymentReviewEnv(
+  lead: Record<string, unknown>,
+  paymentIntents: Array<Record<string, unknown>>
+) {
+  const updatedNotes: string[] = [];
+  const queries: string[] = [];
+  const prepare = vi.fn((query: string) => {
+    queries.push(query);
+    let values: unknown[] = [];
+    const statement = {
+      bind: vi.fn((...args: unknown[]) => {
+        values = args;
+        return statement;
+      }),
+      first: vi.fn(async () => (query.includes('FROM leads_ark_tools') ? lead : null)),
+      all: vi.fn(async () => ({ results: paymentIntents })),
+      run: vi.fn(async () => {
+        if (query.includes('UPDATE leads_ark_tools')) updatedNotes.push(String(values[0]));
+        return { success: true };
+      }),
+    };
+    return statement;
+  });
+  const env = createMockEnv({ ARK_TOOLS_DB: { prepare } as any });
+  return { env, updatedNotes, queries };
+}
+
 describe('ARK LEDGER — Bot & Agent Ingestion Pipeline (Grok / Hermes)', () => {
   describe('Clasificador Determinista en el Edge', () => {
     it('calcula un sello SHA-256 inmutable con prefijo SHA256:', async () => {
@@ -144,6 +171,97 @@ describe('ARK LEDGER — Bot & Agent Ingestion Pipeline (Grok / Hermes)', () => 
       expect(json.success).toBe(true);
       expect(json.classification.categoria).toBe('datos_fiscales');
       expect(json.classification.datos_extraidos.rfc).toBe('HME201010AB2');
+    });
+
+    it('busca leads por RFC canónico y no inspecciona notas ni nombre comercial para enlazar bots', async () => {
+      const env = createMockEnv();
+      const prepare = vi.mocked(env.ARK_TOOLS_DB!.prepare);
+      const req = new Request('https://ledger.arksystems.site/api/bots/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'hermes',
+          tenant_id: 'canaco_merida',
+          text: 'Constancia de Situacion Fiscal SAT para RFC AMA920315AA1',
+        }),
+      });
+
+      const response = await botApp.fetch(req, env);
+      expect(response.status).toBe(201);
+      const leadLookup = prepare.mock.calls
+        .map(([query]) => String(query))
+        .find((query) => query.includes('FROM leads_ark_tools'));
+      expect(leadLookup).toContain('canonical_rfc = ?');
+      expect(leadLookup).not.toMatch(/notas\s+LIKE|web\s+LIKE/i);
+    });
+
+    it('no usa empleados en notas para decidir la disposición de evidencia sin intención estructurada', async () => {
+      const { env, updatedNotes, queries } = createPaymentReviewEnv(
+        {
+          id: 'lead-payment-review',
+          canonical_rfc: 'CPM2106158A1',
+          status: 'Pago Pendiente',
+          lifecycle_stage: 'pago_pendiente',
+          especialidad: 'comercio',
+          notas: 'RFC: CPM2106158A1 | Empleados: 15 | Cuota: $3,700 MXN',
+        },
+        []
+      );
+      const response = await botApp.fetch(
+        new Request('https://ledger.arksystems.site/api/bots/ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: 'hermes',
+            tenant_id: 'canaco_merida',
+            text: 'Comprobante de transferencia SPEI por $2,500.00 MXN con RFC CPM2106158A1 y folio SPEI-TEST-2026',
+          }),
+        }),
+        env
+      );
+
+      expect(response.status).toBe(201);
+      expect(updatedNotes).toHaveLength(1);
+      expect(updatedNotes[0]).toContain(
+        'Evidencia de pago recibida; pendiente de verificación del proveedor'
+      );
+      expect(updatedNotes[0]).not.toContain('en cuarentena');
+      const intentQuery = queries.find((query) => query.includes('FROM canaco_payment_intents'));
+      expect(intentQuery).toContain("environment = 'production'");
+      expect(intentQuery).not.toContain('notas');
+    });
+
+    it('usa el empleado estructurado de la intención aunque las notas indiquen otro monto', async () => {
+      const { env, updatedNotes } = createPaymentReviewEnv(
+        {
+          id: 'lead-payment-review',
+          canonical_rfc: 'CPM2106158A1',
+          status: 'Pago Pendiente',
+          lifecycle_stage: 'pago_pendiente',
+          especialidad: 'comercio',
+          notas: 'RFC: CPM2106158A1 | Empleados: 5 | Cuota: $2,000 MXN',
+        },
+        [{ num_empleados: 15, sector: 'comercio' }]
+      );
+      const response = await botApp.fetch(
+        new Request('https://ledger.arksystems.site/api/bots/ingest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            source: 'hermes',
+            tenant_id: 'canaco_merida',
+            text: 'Comprobante de transferencia SPEI por $2,000.00 MXN con RFC CPM2106158A1 y folio SPEI-TEST-2026',
+          }),
+        }),
+        env
+      );
+
+      expect(response.status).toBe(201);
+      expect(updatedNotes).toHaveLength(1);
+      expect(updatedNotes[0]).toContain('Evidencia de pago en cuarentena para revisión humana');
+      expect(updatedNotes[0]).not.toContain(
+        'Evidencia de pago recibida; pendiente de verificación del proveedor'
+      );
     });
 
     it('POST /api/bots/ingest rechaza cuando BOT_INGEST_SECRET es requerido y no coincide', async () => {

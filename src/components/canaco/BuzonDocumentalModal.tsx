@@ -1,5 +1,5 @@
 /**
- * CANACO SERVYTUR MÉRIDA — Buzón Documental (Oficialía de Partes Digital)
+ * CANACO SERVYTUR MÉRIDA — Buzón documental interno
  *
  * Ventana con metáfora de buzón físico institucional (Design System HENEQUÉN):
  * placa de latón, ranura de depósito y 7 casilleros numerados donde el socio
@@ -121,7 +121,7 @@ export function BuzonDocumentalModal({
         setExpediente(data as ExpedienteBuzon);
         onProgreso?.(data.depositados || 0, data.requeridos || 0);
       } catch {
-        setErrorAcceso('Sin conexión con la Oficialía de Partes. Intenta en unos momentos.');
+        setErrorAcceso('No hay conexión con el buzón documental. Intenta más tarde.');
       } finally {
         setAbriendo(false);
       }
@@ -253,7 +253,7 @@ export function BuzonDocumentalModal({
           {/* Placa de latón grabada */}
           <div className="mx-auto max-w-xl rounded-lg border-2 border-[#6B5414] bg-gradient-to-b from-[#E8D27A] via-[#C9A227] to-[#8A6F1A] px-4 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_4px_10px_rgba(0,0,0,0.35)]">
             <div className="font-mono text-[10px] font-bold uppercase tracking-[0.35em] text-[#3B2D06]">
-              Oficialía de Partes
+              Buzón documental CANACO
             </div>
             <div className="font-fraunces text-lg font-bold tracking-wide text-[#2A2004] sm:text-2xl">
               BUZÓN DE EXPEDIENTE CANACO

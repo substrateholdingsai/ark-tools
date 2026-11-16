@@ -1,9 +1,8 @@
 /**
- * CANACO SERVYTUR MÉRIDA — Consola de Afiliaciones y Padrón SIEM
+ * CANACO SERVYTUR MÉRIDA — Consola interna de registros de afiliación
  *
  * Panel de control para la Dirección de Afiliaciones y Tesorería de la Cámara.
- * Permite monitorear el padrón de socios de Yucatán, recuperar trámites pendientes,
- * emitir cédulas con Sello SHA-256 + QR y exportar a Excel para la Secretaría de Economía.
+ * Permite consultar los registros internos de CANACO y exportarlos para revisión.
  *
  * Usuario Administrador Designado: horus.i2d@gmail.com
  */
@@ -39,6 +38,12 @@ import { ConstanciaSocioModal } from './ConstanciaSocioModal';
 import { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
 import { AdminExpedienteModal } from './AdminExpedienteModal';
 import type { SocioCanacoRegistro } from './types';
+import {
+  calcularCuotaAfiliacion,
+  determinarEstrato,
+  extraerNumEmpleados,
+  generarFolioIntegridad,
+} from './calculoCuota';
 
 interface LeadRow {
   id: string;
@@ -48,9 +53,61 @@ interface LeadRow {
   ciudad: string | null;
   especialidad: string | null;
   status: string | null;
+  lifecycle_stage?: string | null;
+  is_demo?: number | null;
+  consent_aviso_version?: string | null;
+  consent_accepted_at?: string | null;
+  consent_medium?: string | null;
+  arkangel_share_consent?: number | null;
+  origin?: string | null;
+  payment_environment?: string | null;
+  canonical_rfc?: string | null;
+  verified_payment_amount_cents?: number | null;
+  verified_payment_channel?: string | null;
+  verified_payment_environment?: string | null;
+  verified_payment_rfc?: string | null;
+  verified_payment_folio_siem?: string | null;
+  verified_payment_razon_social?: string | null;
+  verified_payment_num_empleados?: number | null;
+  verified_payment_sector?: string | null;
   last_contact: string | null;
   contacto_nombre: string | null;
   notas: string | null;
+}
+
+interface ArcoRequestRow {
+  id: string;
+  requester_email: string;
+  right_requested: string;
+  status: string;
+  assigned_to: string;
+  response_due_at: string;
+  execution_due_at: string | null;
+}
+
+function getConfirmedPaymentAmount(lead: LeadRow): number | null {
+  const employees = lead.verified_payment_num_empleados;
+  const sector = lead.verified_payment_sector;
+  if (
+    lead.lifecycle_stage !== 'socio_activo' ||
+    lead.status !== 'Socio Activo' ||
+    lead.payment_environment !== 'production' ||
+    lead.verified_payment_environment !== 'production' ||
+    !lead.canonical_rfc ||
+    lead.verified_payment_rfc !== lead.canonical_rfc ||
+    !employees ||
+    !['comercio', 'servicios', 'turismo'].includes(sector || '') ||
+    lead.verified_payment_amount_cents == null ||
+    !Number.isInteger(lead.verified_payment_amount_cents)
+  ) {
+    return null;
+  }
+  const expected = calcularCuotaAfiliacion(
+    employees,
+    sector as SocioCanacoRegistro['sector']
+  ).totalAnual;
+  const amountCents = lead.verified_payment_amount_cents;
+  return amountCents === Math.round(expected * 100) ? amountCents / 100 : null;
 }
 
 interface CanacoAdminPadronProps {
@@ -60,6 +117,7 @@ interface CanacoAdminPadronProps {
 export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps = {}) {
   const auth = useOptionalAuth();
   const isSuperAdmin = auth?.platformRole === 'super_admin';
+  const isPavel = auth?.user?.email?.toLowerCase() === 'pavel@arksystems.site';
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
@@ -69,8 +127,25 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
   const [expedienteAdminSocio, setExpedienteAdminSocio] = useState<LeadRow | null>(null);
   const [modalAltaOpen, setModalAltaOpen] = useState(false);
   const [modalRecordatorioMasivoOpen, setModalRecordatorioMasivoOpen] = useState(false);
-  const [recordandoIndividualId, setRecordandoIndividualId] = useState<string | null>(null);
   const [syncingArkangel, setSyncingArkangel] = useState(false);
+  const [arkangelPreview, setArkangelPreview] = useState<{
+    approvalId: string;
+    expiresAt: string;
+    rows: Array<{
+      id: string;
+      nombre: string;
+      telefono: string;
+      email: string;
+      rfc: string;
+      monto: number;
+    }>;
+    excludedLeadIds: string[];
+    channels: string[];
+    content: string;
+  } | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [arcoRequests, setArcoRequests] = useState<ArcoRequestRow[]>([]);
+  const [arcoError, setArcoError] = useState<string | null>(null);
   const [showWelcomeGuide, setShowWelcomeGuide] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     try {
@@ -84,26 +159,32 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     mensaje: string;
   } | null>(null);
 
-  // Sincronizar socios pendientes con Arkangel Call Center (Voz AI María + WhatsApp)
+  // Enviar al proveedor solo los registros que pasen la validación del servidor.
   const handleSyncArkangel = async () => {
+    if (!isPavel) return;
     setSyncingArkangel(true);
     setSyncFeedback(null);
     try {
       const res = await fetch('/api/canaco/sync-arkangel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'preview' }),
       });
       const data = (await res.json()) as any;
-      if (res.ok && data.ok) {
-        setSyncFeedback({
-          tipo: 'success',
-          mensaje: `Lote sincronizado con Arkangel Call Center: ¡Campaña iniciada con éxito! Se enviaron recordatorios a ${data.socios_enviados} socio(s) ($${Number(data.monto_total_cartera || 0).toLocaleString('es-MX')} MXN en gestión). 'María' (Lada 999 925 3060) y WhatsApp oficial están contactando a los comercios.`,
+      if (res.ok && data.ok && data.approvalId && data.preview) {
+        setArkangelPreview({
+          approvalId: data.approvalId,
+          expiresAt: data.expiresAt,
+          rows: data.preview.rows,
+          excludedLeadIds: data.preview.excludedLeadIds,
+          channels: data.preview.channels,
+          content: data.preview.content,
         });
-        await cargarPadron();
+        return;
       } else {
         setSyncFeedback({
           tipo: 'error',
-          mensaje: data.error || data.mensaje || 'Error al conectar con Arkangel.',
+          mensaje: data.error || 'Error al preparar la vista previa de Arkangel.',
         });
       }
     } catch (err: any) {
@@ -116,17 +197,74 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     }
   };
 
-  // Disparo individual 1-click para Sarita
-  const handleRecordarIndividual = async (lead: LeadRow) => {
-    setRecordandoIndividualId(lead.id);
+  const handleDispatchArkangel = async () => {
+    if (!isPavel || !arkangelPreview) return;
+    setSyncingArkangel(true);
+    setSyncFeedback(null);
     try {
-      await new Promise((res) => setTimeout(res, 500));
+      const res = await fetch('/api/canaco/sync-arkangel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'dispatch',
+          approvalId: arkangelPreview.approvalId,
+        }),
+      });
+      const data = (await res.json()) as any;
+      if (res.ok && data.ok) {
+        setSyncFeedback({
+          tipo: 'success',
+          mensaje: data.simulated
+            ? `Validación simulada: ${data.socios_enviados} registro(s), $${Number(data.monto_total_cartera || 0).toLocaleString('es-MX')} MXN. No se envió ningún mensaje.`
+            : `Lote enviado al proveedor Arkangel: ${data.socios_enviados} registro(s), $${Number(data.monto_total_cartera || 0).toLocaleString('es-MX')} MXN. Esta respuesta no confirma la entrega de mensajes.`,
+        });
+        setArkangelPreview(null);
+        setModalRecordatorioMasivoOpen(false);
+        await cargarPadron();
+      } else {
+        setSyncFeedback({
+          tipo: 'error',
+          mensaje: data.error || data.mensaje || 'Error al conectar con Arkangel.',
+        });
+      }
+    } catch (err) {
       setSyncFeedback({
-        tipo: 'success',
-        mensaje: `¡Listo Sarita! 'María' (999 925 3060) está contactando a ${lead.web || 'Comercio'} y se le envió su estado de cuenta con CLABE SPEI por WhatsApp y correo.`,
+        tipo: 'error',
+        mensaje:
+          err instanceof Error
+            ? `Fallo de red al invocar Arkangel: ${err.message}`
+            : 'Fallo de red al invocar Arkangel.',
       });
     } finally {
-      setRecordandoIndividualId(null);
+      setSyncingArkangel(false);
+    }
+  };
+
+  const handleReverseAffiliation = async (lead: LeadRow) => {
+    const reason = window.prompt(
+      'Motivo documentado para revertir la afiliación (el reembolso se gestiona por separado):'
+    );
+    if (!reason?.trim()) return;
+
+    try {
+      const response = await fetch('/api/afiliaciones/reversar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: lead.id, reason: reason.trim() }),
+      });
+      const data = (await response.json()) as { error?: string; refundProcessed?: boolean };
+      if (!response.ok) throw new Error(data.error || 'No se pudo revertir la afiliación.');
+      setSyncFeedback({
+        tipo: 'success',
+        mensaje:
+          'Afiliación revertida en Ledger. El reembolso no se procesó y requiere gestión aparte.',
+      });
+      await cargarPadron();
+    } catch (error) {
+      setSyncFeedback({
+        tipo: 'error',
+        mensaje: error instanceof Error ? error.message : 'No se pudo revertir la afiliación.',
+      });
     }
   };
 
@@ -135,103 +273,105 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     setLoading(true);
     try {
       const res = await fetch('/api/admin/leads?tenant=canaco_merida');
-      if (res.ok) {
-        const data = (await res.json()) as { leads?: LeadRow[]; data?: LeadRow[] };
-        setLeads(data.leads || data.data || []);
+      if (!res.ok) {
+        throw new Error('No se pudo consultar el CRM de CANACO.');
       }
-    } catch {
-      // Fallback con datos de demostración si corre offline
-      setLeads([
-        {
-          id: 'lead-can-1',
-          web: 'Abarrotes y Comercializadora Mayab S.A. de C.V.',
-          whatsapp: '9999123456',
-          email: 'contacto@mayab.mx',
-          ciudad: 'Mérida',
-          especialidad: 'comercio',
-          status: 'Socio Activo',
-          last_contact: '2026-10-25',
-          contacto_nombre: 'Lic. Fernando Pech',
-          notas:
-            'Folio SIEM: SIEM-MID-2026-AMA2-MIC-4819 | Estrato: MICRO (4 emp.) | Cuota: $2,000 MXN | CFDI: Requerido | Sello: SHA256:CANACO-MID-4819-2026',
-        },
-        {
-          id: 'lead-can-2',
-          web: 'Restaurante y Mariscos Montejo',
-          whatsapp: '9999887766',
-          email: 'admon@montejo.com',
-          ciudad: 'Mérida',
-          especialidad: 'turismo',
-          status: 'Nuevo / Pendiente',
-          last_contact: '2026-10-27',
-          contacto_nombre: 'Chef Roberto Sosa',
-          notas:
-            'Folio SIEM: SIEM-MID-2026-RMM1-PEQ-7291 | Estrato: PEQUEÑA (18 emp.) | Cuota: $3,700 MXN | CFDI: Requerido',
-        },
-        {
-          id: 'lead-can-3',
-          web: 'Servicios Logísticos y Portuarios de Progreso',
-          whatsapp: '9699341200',
-          email: 'operaciones@puertoprogreso.mx',
-          ciudad: 'Progreso',
-          especialidad: 'servicios',
-          status: 'Socio Activo',
-          last_contact: '2026-10-20',
-          contacto_nombre: 'Ing. Alejandro Solís',
-          notas:
-            'Folio SIEM: SIEM-MID-2026-SLP0-MED-1845 | Estrato: MEDIANA (45 emp.) | Cuota: $6,500 MXN | Sello: SHA256:CANACO-MID-1845-2026',
-        },
-      ]);
+      const data = (await res.json()) as { leads?: LeadRow[]; data?: LeadRow[] };
+      setLeads(data.leads || data.data || []);
+      setLoadError(null);
+    } catch (error) {
+      setLeads([]);
+      setLoadError(error instanceof Error ? error.message : 'No se pudo cargar el CRM de CANACO.');
     } finally {
       setLoading(false);
     }
   };
 
+  const cargarSolicitudesArco = async () => {
+    try {
+      const response = await fetch('/api/afiliaciones/arco');
+      const data = (await response.json()) as {
+        requests?: ArcoRequestRow[];
+        error?: string;
+      };
+      if (!response.ok) throw new Error(data.error || 'No se pudo consultar la cola ARCO.');
+      setArcoRequests(data.requests || []);
+      setArcoError(null);
+    } catch (error) {
+      setArcoError(error instanceof Error ? error.message : 'No se pudo consultar la cola ARCO.');
+    }
+  };
+
+  const actualizarSolicitudArco = async (item: ArcoRequestRow, status: string) => {
+    const completionNotes =
+      status === 'completed' || status === 'rejected'
+        ? window.prompt('Nota de resolución y confirmación enviada al solicitante:')?.trim()
+        : undefined;
+    if ((status === 'completed' || status === 'rejected') && !completionNotes) return;
+    try {
+      const response = await fetch(`/api/afiliaciones/arco/${encodeURIComponent(item.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, completionNotes }),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(data.error || 'No se pudo actualizar la solicitud ARCO.');
+      await cargarSolicitudesArco();
+    } catch (error) {
+      setArcoError(
+        error instanceof Error ? error.message : 'No se pudo actualizar la solicitud ARCO.'
+      );
+    }
+  };
+
   useEffect(() => {
     void cargarPadron();
-  }, []);
+    if (isSuperAdmin || auth?.user?.email?.toLowerCase() === 'horus.i2d@gmail.com') {
+      void cargarSolicitudesArco();
+    }
+  }, [auth?.user?.email, isSuperAdmin]);
 
   // KPIs
   const kpis = useMemo(() => {
-    const total = leads.length;
-    const activos = leads.filter(
-      (l) => l.status === 'Socio Activo' || l.status === 'activo'
+    const reportableLeads = leads.filter((lead) => lead.is_demo !== 1);
+    const stageCounts = reportableLeads.reduce(
+      (counts, lead) => {
+        const stage = lead.lifecycle_stage || 'prospecto';
+        if (stage in counts) counts[stage as keyof typeof counts] += 1;
+        return counts;
+      },
+      { prospecto: 0, registrado: 0, pago_pendiente: 0, socio_activo: 0, cancelado: 0 }
+    );
+    const total = reportableLeads.length;
+    const activos = reportableLeads.filter(
+      (lead) => getConfirmedPaymentAmount(lead) !== null
     ).length;
-    const pendientes = leads.filter(
-      (l) =>
-        l.status === 'Nuevo / Pendiente' || l.status === 'pendiente_pago' || l.status === 'Nuevo'
-    ).length;
+    const pendientes = total - activos;
 
-    // Estimar recaudación a partir de las notas o cuota base
-    const recaudacion = leads.reduce((acc, l) => {
-      if (l.status === 'Socio Activo' || l.status === 'activo') {
-        const match = l.notas?.match(/\$([\d,]+)\s*MXN/);
-        if (match && match[1]) {
-          return acc + parseInt(match[1].replace(/,/g, ''), 10);
-        }
-        return acc + 2000;
-      }
-      return acc;
+    const recaudacion = reportableLeads.reduce((acc, l) => {
+      return acc + (getConfirmedPaymentAmount(l) || 0);
     }, 0);
 
     // Cartera pendiente de cobro
-    const carteraPendiente = leads.reduce((acc, l) => {
-      if (l.status !== 'Socio Activo' && l.status !== 'activo') {
-        const match = l.notas?.match(/\$([\d,]+)\s*MXN/);
-        if (match && match[1]) {
-          return acc + parseInt(match[1].replace(/,/g, ''), 10);
-        }
-        return acc + 2500;
-      }
-      return acc;
+    const carteraPendiente = reportableLeads.reduce((acc, l) => {
+      if (getConfirmedPaymentAmount(l) !== null) return acc;
+      const employees = extraerNumEmpleados(l.notas);
+      const sector = l.especialidad;
+      if (!employees || !['comercio', 'servicios', 'turismo'].includes(sector || '')) return acc;
+      const expected = calcularCuotaAfiliacion(
+        employees,
+        sector as SocioCanacoRegistro['sector']
+      ).totalAnual;
+      return acc + expected;
     }, 0);
 
-    return { total, activos, pendientes, recaudacion, carteraPendiente };
+    return { total, activos, pendientes, recaudacion, carteraPendiente, stageCounts };
   }, [leads]);
 
   // Filtros
   const comerciosFiltrados = useMemo(() => {
     return leads.filter((lead) => {
+      if (lead.is_demo === 1) return false;
       const matchTexto =
         !busqueda ||
         (lead.web && lead.web.toLowerCase().includes(busqueda.toLowerCase())) ||
@@ -243,12 +383,8 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
 
       const matchEstatus =
         filtroEstatus === 'todos' ||
-        (filtroEstatus === 'activos' &&
-          (lead.status === 'Socio Activo' || lead.status === 'activo')) ||
-        (filtroEstatus === 'pendientes' &&
-          (lead.status === 'Nuevo / Pendiente' ||
-            lead.status === 'pendiente_pago' ||
-            lead.status === 'Nuevo'));
+        (filtroEstatus === 'activos' && getConfirmedPaymentAmount(lead) !== null) ||
+        (filtroEstatus === 'pendientes' && getConfirmedPaymentAmount(lead) === null);
 
       const matchSector =
         filtroSector === 'todos' ||
@@ -295,29 +431,33 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `PADRON_SIEM_CANACO_MERIDA_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `REGISTROS_CANACO_MERIDA_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
-  // Abrir Cédula para imprimir
-  const verCedulaSocio = (lead: LeadRow) => {
-    const folioMatch = lead.notas?.match(/Folio SIEM:\s*([^\s|]+)/);
-    const folioSiem = folioMatch ? folioMatch[1] : 'SIEM-MID-2026-OFICIAL';
-    const selloMatch = lead.notas?.match(/Sello:\s*([^\s|]+)/);
-    const selloSha = selloMatch ? selloMatch[1] : `SHA256:CANACO-MID-${lead.id.slice(0, 8)}`;
+  const verResumenPago = (lead: LeadRow) => {
+    const montoPagadoValidado = getConfirmedPaymentAmount(lead);
+    if (montoPagadoValidado === null) return;
+    const folioSiem = lead.verified_payment_folio_siem;
+    const rfc = lead.verified_payment_rfc;
+    const razonSocial = lead.verified_payment_razon_social;
+    const numEmpleados = lead.verified_payment_num_empleados;
+    if (!folioSiem || !rfc || !razonSocial || !numEmpleados) return;
 
-    const rfcMatch = lead.notas?.match(/RFC:\s*([A-Z0-9]+)/i);
-    const rfc = rfcMatch && rfcMatch[1] ? rfcMatch[1] : 'XAXX010101000';
+    const sector = lead.verified_payment_sector as SocioCanacoRegistro['sector'];
+    const folioIntegridad =
+      lead.notas?.match(/Folio de Integridad:\s*([^\s|]+)/i)?.[1] ||
+      generarFolioIntegridad(folioSiem);
 
     const socioObj: SocioCanacoRegistro = {
-      folioSiem: folioSiem ?? 'SIEM-MID-2026-OFICIAL',
-      razonSocial: lead.web || 'Comercio Afiliado de Yucatán',
+      folioSiem,
+      razonSocial,
       nombreComercial: lead.web || '',
       rfc,
-      sector: (lead.especialidad as any) || 'comercio',
-      estrato: 'micro',
-      numEmpleados: 5,
+      sector,
+      estrato: determinarEstrato(numEmpleados),
+      numEmpleados,
       direccion: {
         calle: 'Calle Principal',
         colonia: 'Centro',
@@ -331,12 +471,13 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         telefono: lead.whatsapp || '9991234567',
       },
       fechaAfiliacion: lead.last_contact || '2026-10-27',
-      fechaVigencia: '2027-10-27',
-      estatus: lead.status === 'Socio Activo' ? 'activo' : 'pendiente_pago',
-      montoPagado: 2000,
-      metodoPago: 'tarjeta',
-      cfdiRequerido: true,
-      selloDigitalSha256: selloSha ?? `SHA256:CANACO-MID-${lead.id.slice(0, 8)}`,
+      fechaVigencia: '',
+      estatus: 'activo',
+      pagoConfirmado: true,
+      montoPagado: montoPagadoValidado,
+      metodoPago: lead.verified_payment_channel === 'conekta_spei' ? 'spei' : 'tarjeta',
+      cfdiRequerido: /CFDI:\s*Requerido/i.test(lead.notas || ''),
+      folioIntegridad,
     };
 
     setSocioSeleccionado(socioObj);
@@ -356,7 +497,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
           <span className="font-medium text-henequen-piedra">Dirección de Afiliaciones</span>
           <span className="text-henequen-arena">›</span>
           <span className="rounded-md bg-henequen-anil px-2 py-0.5 font-mono text-[11px] font-bold text-white">
-            Padrón SIEM & Oficialía de Partes
+            CRM interno CANACO
           </span>
         </div>
 
@@ -439,30 +580,30 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
           <div className="mt-3 grid grid-cols-1 gap-3 text-xs sm:grid-cols-3">
             <div className="rounded-xl border border-henequen-arena/80 bg-white p-3">
               <div className="font-mono text-[10px] font-bold uppercase text-henequen-terra">
-                1. Oficialía de Partes
+                1. Revisión documental
               </div>
               <p className="mt-1 text-[11px] text-henequen-piedra">
-                Pulsa <strong>Expediente</strong> en cualquier fila para revisar, aprobar o rechazar
-                los 7 documentos depositados por el socio en el Buzón Digital.
+                Pulsa <strong>Expediente</strong> para revisar los documentos que se hayan
+                depositado en el Buzón Digital.
               </p>
             </div>
             <div className="rounded-xl border border-henequen-arena/80 bg-white p-3">
               <div className="font-mono text-[10px] font-bold uppercase text-henequen-anil">
-                2. Cobranza IA (&ldquo;Modo Sarita&rdquo;)
+                2. Seguimiento de pagos
               </div>
               <p className="mt-1 text-[11px] text-henequen-piedra">
-                Usa <strong>Recordar con María</strong> (individual) o{' '}
-                <strong>Recordatorio Masivo</strong> para enviar llamadas de voz IA + WhatsApp con
-                referencia SPEI.
+                La sincronización masiva puede enviar un lote al proveedor configurado. No confirma
+                que se haya entregado una llamada o mensaje; el recordatorio individual no está
+                conectado.
               </p>
             </div>
             <div className="rounded-xl border border-henequen-arena/80 bg-white p-3">
               <div className="font-mono text-[10px] font-bold uppercase text-emerald-800">
-                3. Cédula Oficial QR
+                3. Resumen interno
               </div>
               <p className="mt-1 text-[11px] text-henequen-piedra">
-                Pulsa <strong>Cédula</strong> para generar la constancia tamaño Carta con Sello
-                SHA-256 verificable ante la Secretaría de Economía.
+                Tras una confirmación de pago, puedes consultar un resumen interno. No se genera una
+                constancia SIEM ni una verificación QR.
               </p>
             </div>
           </div>
@@ -476,7 +617,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="font-fraunces text-2xl font-bold tracking-tight text-henequen-anil">
-                Padrón de Afiliados & Control SIEM
+                Registros de afiliación CANACO
               </h1>
               <span className="rounded-full border border-henequen-terra/30 bg-henequen-terra/10 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-henequen-terra-dark">
                 Admin: horus.i2d@gmail.com
@@ -489,7 +630,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
               )}
             </div>
             <p className="font-mono text-xs text-henequen-piedra">
-              CANACO SERVYTUR MÉRIDA · Padrón Oficial ante Secretaría de Economía 2026
+              CANACO SERVYTUR MÉRIDA · CRM interno; no acredita el alta ante SIEM
             </p>
           </div>
         </div>
@@ -511,7 +652,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
             className="shadow-xs inline-flex items-center gap-1.5 rounded-lg border border-henequen-arena bg-white px-3.5 py-2 text-xs font-semibold text-henequen-anil transition hover:bg-henequen-sisal/50"
           >
             <Download size={13} />
-            <span>Exportar Excel (SIEM)</span>
+            <span>Exportar CSV del CRM</span>
           </button>
 
           <button
@@ -519,16 +660,14 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
             onClick={() => setModalRecordatorioMasivoOpen(true)}
             disabled={syncingArkangel}
             className="shadow-xs inline-flex items-center gap-1.5 rounded-lg border border-amber-300/80 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-100 disabled:opacity-50"
-            title="Despachar socios pendientes al Call Center Arkangel para llamadas Voice AI y WhatsApp — Modo Sarita"
-            aria-label="Sincronizar Call Center"
+            title="Sincronizar los registros que pasen validación con el proveedor Arkangel"
+            aria-label="Sincronizar registros"
           >
             <Radio
               size={13}
               className={syncingArkangel ? 'animate-pulse text-amber-600' : 'text-amber-700'}
             />
-            <span>
-              {syncingArkangel ? 'Conectando...' : '🚀 Recordatorio Masivo (Voz AI + WhatsApp)'}
-            </span>
+            <span>{syncingArkangel ? 'Sincronizando...' : 'Sincronizar registros'}</span>
           </button>
 
           <button
@@ -573,55 +712,155 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         <div className="rounded-xl border border-henequen-arena bg-henequen-muro p-4 shadow-tarjeta">
           <div className="flex items-center justify-between text-henequen-piedra">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
-              Total en Padrón
+              Registros en CRM
             </span>
             <Building2 size={16} className="text-henequen-anil" />
           </div>
           <div className="mt-2 font-mono text-2xl font-bold text-henequen-anil">{kpis.total}</div>
-          <div className="mt-0.5 text-[10px] text-henequen-piedra">
-            Establecimientos registrados
-          </div>
+          <div className="mt-0.5 text-[10px] text-henequen-piedra">Registros recibidos</div>
         </div>
 
         <div className="rounded-xl border border-henequen-arena bg-henequen-muro p-4 shadow-tarjeta">
           <div className="flex items-center justify-between text-henequen-piedra">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
-              Socios Activos
+              Pagos confirmados
             </span>
             <CheckCircle2 size={16} className="text-emerald-600" />
           </div>
           <div className="mt-2 font-mono text-2xl font-bold text-emerald-700">{kpis.activos}</div>
           <div className="mt-0.5 text-[10px] font-semibold text-emerald-800">
-            Con cuota y SIEM vigentes
+            Importe validado contra la cotización de referencia
           </div>
         </div>
 
         <div className="rounded-xl border border-henequen-arena bg-henequen-muro p-4 shadow-tarjeta">
           <div className="flex items-center justify-between text-henequen-piedra">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Por Liquidar</span>
+            <span className="text-[11px] font-semibold uppercase tracking-wider">Pendientes</span>
             <Clock size={16} className="text-amber-600" />
           </div>
           <div className="mt-2 font-mono text-2xl font-bold text-amber-700">{kpis.pendientes}</div>
           <div className="mt-0.5 text-[10px] font-semibold text-amber-800">
-            Trámites para seguimiento
+            Sin pago validado contra la cotización
           </div>
         </div>
 
         <div className="rounded-xl border border-henequen-arena bg-henequen-anil p-4 text-white shadow-tarjeta">
           <div className="flex items-center justify-between text-henequen-arena">
             <span className="text-[11px] font-semibold uppercase tracking-wider">
-              Recaudación Anual
+              Pagos marcados confirmados
             </span>
             <DollarSign size={16} className="text-henequen-sisal" />
           </div>
           <div className="mt-2 font-mono text-2xl font-bold">
             ${kpis.recaudacion.toLocaleString('es-MX')}
           </div>
-          <div className="mt-0.5 text-[10px] text-henequen-sisal">
-            Cuotas captadas para la Cámara
-          </div>
+          <div className="mt-0.5 text-[10px] text-henequen-sisal">Importe registrado en el CRM</div>
         </div>
       </div>
+
+      <div
+        aria-label="Registros por etapa del ciclo de vida"
+        className="flex flex-wrap gap-2 text-xs"
+      >
+        {Object.entries(kpis.stageCounts).map(([stage, count]) => (
+          <span
+            key={stage}
+            className="rounded-full border border-henequen-arena bg-white px-3 py-1.5"
+          >
+            {stage.replace('_', ' ')}: <strong>{count}</strong>
+          </span>
+        ))}
+        <a
+          href="https://github.com/substrateholdingsai/ark-tools/blob/main/docs/compliance/procedimiento-arco-canaco.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border border-henequen-arena bg-white px-3 py-1.5 font-semibold underline"
+        >
+          Procedimiento manual ARCO
+        </a>
+      </div>
+      {(isSuperAdmin || auth?.user?.email?.toLowerCase() === 'horus.i2d@gmail.com') && (
+        <details className="rounded-xl border border-henequen-arena bg-white p-4">
+          <summary className="cursor-pointer text-sm font-bold text-henequen-anil">
+            Solicitudes ARCO (
+            {arcoRequests.filter((item) => !['completed', 'rejected'].includes(item.status)).length}{' '}
+            abiertas)
+          </summary>
+          <div className="mt-3 space-y-3">
+            {arcoError && (
+              <p role="alert" className="text-xs text-red-700">
+                {arcoError}
+              </p>
+            )}
+            {arcoRequests.length === 0 && !arcoError && (
+              <p className="text-xs text-henequen-piedra">No hay solicitudes registradas.</p>
+            )}
+            {arcoRequests.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-2 border-t border-henequen-arena pt-3 text-xs"
+              >
+                <div>
+                  <strong>{item.right_requested}</strong> · {item.requester_email} · {item.status}
+                  <div className="text-henequen-piedra">
+                    Responsable: {item.assigned_to} · Respuesta antes de{' '}
+                    {new Date(item.response_due_at).toLocaleDateString('es-MX')}
+                    {item.execution_due_at &&
+                      ` · Ejecución antes de ${new Date(item.execution_due_at).toLocaleDateString('es-MX')}`}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {item.status === 'received' && (
+                    <button
+                      type="button"
+                      onClick={() => void actualizarSolicitudArco(item, 'identity_verified')}
+                      className="underline"
+                    >
+                      Identidad verificada
+                    </button>
+                  )}
+                  {item.status === 'identity_verified' && (
+                    <button
+                      type="button"
+                      onClick={() => void actualizarSolicitudArco(item, 'in_progress')}
+                      className="underline"
+                    >
+                      Iniciar atención
+                    </button>
+                  )}
+                  {['identity_verified', 'in_progress'].includes(item.status) && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void actualizarSolicitudArco(item, 'completed')}
+                        className="underline"
+                      >
+                        Completar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void actualizarSolicitudArco(item, 'rejected')}
+                        className="underline"
+                      >
+                        Rechazar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {loadError && (
+        <p
+          role="alert"
+          className="rounded-lg border border-red-200 bg-red-50 p-3 text-xs text-red-800"
+        >
+          {loadError} No se muestran datos de demostración como si fueran registros reales.
+        </p>
+      )}
 
       {/* ═══ BARRA DE FILTROS Y BÚSQUEDA ═══ */}
       <div className="flex flex-col gap-3 rounded-xl border border-henequen-arena bg-henequen-cal p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -687,7 +926,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
               <tr>
                 <th className="px-4 py-3">Establecimiento & RFC</th>
                 <th className="px-4 py-3">Sector & Estrato</th>
-                <th className="px-4 py-3">Folio SIEM</th>
+                <th className="px-4 py-3">Referencia</th>
                 <th className="px-4 py-3">Contacto Directo</th>
                 <th className="px-4 py-3">Estatus</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
@@ -704,12 +943,13 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                 comerciosFiltrados.map((lead) => {
                   const folioMatch = lead.notas?.match(/Folio SIEM:\s*([^\s|]+)/);
                   const folio = folioMatch ? folioMatch[1] : 'PENDIENTE';
-                  const esActivo = lead.status === 'Socio Activo' || lead.status === 'activo';
+                  const esActivo = getConfirmedPaymentAmount(lead) !== null;
+                  const etapa = esActivo ? 'socio_activo' : lead.lifecycle_stage || 'prospecto';
 
                   // Mensaje para WhatsApp institucional
                   const waNumber = (lead.whatsapp || '').replace(/\D/g, '');
                   const waMsg = encodeURIComponent(
-                    `Estimado/a ${lead.contacto_nombre || 'Socio/a'}: Le saludamos de CANACO SERVYTUR Mérida con relación a su registro en el Padrón Empresarial SIEM para "${lead.web || 'su establecimiento'}". ¿Desea que le apoyemos a concluir su refrendo oficial?`
+                    `Hola ${lead.contacto_nombre || ''}. Te contactamos de CANACO SERVYTUR Mérida sobre la solicitud de afiliación de "${lead.web || 'tu establecimiento'}". ¿Necesitas apoyo para continuar?`
                   );
                   const waUrl = waNumber ? `https://wa.me/52${waNumber}?text=${waMsg}` : null;
 
@@ -767,19 +1007,42 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                             </span>
                           )}
                         </div>
+                        <div className="mt-1 text-[9px] text-henequen-piedra">
+                          Origen: {lead.origin || 'legacy'} · Aviso:{' '}
+                          {lead.consent_accepted_at
+                            ? `${lead.consent_medium || 'sin medio'} · ${lead.consent_accepted_at}`
+                            : 'sin constancia — capturar en siguiente contacto'}
+                          {' · Arkangel: '}
+                          {lead.arkangel_share_consent === 1 ? 'autorizado' : 'no autorizado'}
+                        </div>
                       </td>
 
                       {/* Estatus */}
                       <td className="px-4 py-3.5">
-                        {esActivo ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                            <CheckCircle2 size={11} />
-                            Socio Activo
+                        {etapa === 'socio_activo' ? (
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                              <CheckCircle2 size={11} />
+                              Socio Activo
+                            </span>
+                            {lead.payment_environment && (
+                              <div className="mt-1 text-[9px] text-henequen-piedra">
+                                Pago: {lead.payment_environment}
+                              </div>
+                            )}
+                          </>
+                        ) : etapa === 'cancelado' ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">
+                            Cancelado
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-800">
                             <Clock size={11} />
-                            Pendiente Pago
+                            {etapa === 'registrado'
+                              ? 'Registrado'
+                              : etapa === 'pago_pendiente'
+                                ? 'Pago Pendiente'
+                                : 'Prospecto'}
                           </span>
                         )}
                       </td>
@@ -790,24 +1053,12 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                           {!esActivo && (
                             <button
                               type="button"
-                              onClick={() => handleRecordarIndividual(lead)}
-                              disabled={recordandoIndividualId === lead.id}
-                              className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-900 transition hover:bg-amber-100 disabled:opacity-50"
-                              title="Disparar recordatorio individual con María (Llamada Telnyx Lada 999 + WhatsApp con CLABE)"
+                              disabled
+                              className="shadow-2xs inline-flex cursor-not-allowed items-center gap-1 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] font-bold text-amber-900 opacity-70"
+                              title="El recordatorio individual no está conectado; no se envía ningún mensaje."
                             >
-                              <PhoneCall
-                                size={11}
-                                className={
-                                  recordandoIndividualId === lead.id
-                                    ? 'animate-bounce text-amber-600'
-                                    : 'text-amber-700'
-                                }
-                              />
-                              <span>
-                                {recordandoIndividualId === lead.id
-                                  ? 'Llamando...'
-                                  : 'Recordar con María'}
-                              </span>
+                              <PhoneCall size={11} className="text-amber-700" />
+                              <span>Recordatorio no conectado</span>
                             </button>
                           )}
 
@@ -835,13 +1086,25 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
 
                           <button
                             type="button"
-                            onClick={() => verCedulaSocio(lead)}
+                            onClick={() => verResumenPago(lead)}
+                            disabled={!esActivo}
                             className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-henequen-arena bg-white px-2.5 py-1 text-[11px] font-semibold text-henequen-anil transition hover:bg-henequen-sisal/40"
-                            title="Ver Cédula Oficial SIEM con QR"
+                            title="Ver resumen interno de pago confirmado"
                           >
                             <FileText size={12} />
-                            <span>Cédula</span>
+                            <span>Resumen</span>
                           </button>
+                          {esActivo && (
+                            <button
+                              type="button"
+                              onClick={() => void handleReverseAffiliation(lead)}
+                              className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-red-300 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-800 transition hover:bg-red-100"
+                              title="Revertir la afiliación con motivo auditado; no procesa un reembolso."
+                            >
+                              <X size={11} />
+                              <span>Revertir</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -853,7 +1116,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         </div>
       </div>
 
-      {/* Modal de Cédula Oficial con QR */}
+      {/* Resumen interno, disponible solo tras confirmación de pago */}
       {socioSeleccionado && (
         <ConstanciaSocioModal
           isOpen={!!socioSeleccionado}
@@ -867,9 +1130,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         <AdminExpedienteModal
           isOpen={!!expedienteAdminSocio}
           onClose={() => setExpedienteAdminSocio(null)}
-          rfc={
-            expedienteAdminSocio.notas?.match(/RFC:\s*([A-Z0-9]{12,13})/i)?.[1] || 'AMA200101AB1'
-          }
+          rfc={expedienteAdminSocio.canonical_rfc || ''}
           razonSocial={expedienteAdminSocio.web || 'Comercio Registrado'}
           whatsapp={expedienteAdminSocio.whatsapp}
           contactoNombre={expedienteAdminSocio.contacto_nombre}
@@ -883,12 +1144,13 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
       <VentanillaAfiliacionModal
         isOpen={modalAltaOpen}
         onClose={() => setModalAltaOpen(false)}
-        onAfiliacionCompletada={() => {
+        consentMedium="admin"
+        onRegistroGuardado={() => {
           void cargarPadron();
         }}
       />
 
-      {/* Modal de Confirmación: Recordatorio Masivo (Modo Sarita) */}
+      {/* Modal de confirmación de envío al proveedor */}
       {modalRecordatorioMasivoOpen && (
         <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="relative w-full max-w-lg rounded-2xl border border-henequen-arena bg-white p-6 shadow-2xl">
@@ -902,67 +1164,41 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
 
             <div className="flex items-center gap-2">
               <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-amber-900">
-                Modo Sarita · 1-Click
+                Integración de proveedor
               </span>
               <span className="rounded-full border border-henequen-anil/20 bg-henequen-cal px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-henequen-anil">
-                Telnyx + Arkangel Voice AI
+                Arkangel
               </span>
             </div>
 
             <h3 className="mt-2.5 font-fraunces text-xl font-bold text-henequen-anil">
-              🚀 Iniciar Recordatorio Masivo de Cobranza
+              Confirmar sincronización de registros
             </h3>
 
             <p className="mt-2 text-xs leading-relaxed text-henequen-grafito">
-              Hola Sarita. Vamos a contactar automáticamente a los{' '}
-              <strong>{kpis.pendientes} comercios con cuota pendiente</strong> (~$
-              {kpis.carteraPendiente.toLocaleString('es-MX')} MXN en cartera) sin que tengas que
-              hacer llamadas manuales.
+              {arkangelPreview
+                ? `Vista previa: ${arkangelPreview.rows.length} registro(s); expira ${new Date(arkangelPreview.expiresAt).toLocaleTimeString('es-MX')}.`
+                : `Primero se generará una vista previa sin enviar datos. La cartera de referencia es $${kpis.carteraPendiente.toLocaleString('es-MX')} MXN.`}
             </p>
 
-            <div className="mt-4 grid grid-cols-2 gap-2.5 rounded-xl border border-henequen-arena bg-henequen-muro p-3.5 text-xs">
-              <div className="flex items-start gap-2">
-                <PhoneCall size={14} className="mt-0.5 shrink-0 text-henequen-terra" />
-                <div>
-                  <div className="font-bold text-henequen-anil">
-                    Llamada con &ldquo;María&rdquo;
-                  </div>
-                  <div className="text-[11px] text-henequen-piedra">
-                    Desde el teléfono oficial Mérida (+52 999 925 3060)
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <MessageSquare size={14} className="mt-0.5 shrink-0 text-emerald-700" />
-                <div>
-                  <div className="font-bold text-henequen-anil">WhatsApp Oficial</div>
-                  <div className="text-[11px] text-henequen-piedra">
-                    Envío de estado de cuenta con botón de pago
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <DollarSign size={14} className="mt-0.5 shrink-0 text-amber-700" />
-                <div>
-                  <div className="font-bold text-henequen-anil">CLABE SPEI Única</div>
-                  <div className="text-[11px] text-henequen-piedra">
-                    Conciliación bancaria en 5 segundos sin comprobante
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <FileText size={14} className="mt-0.5 shrink-0 text-henequen-anil" />
-                <div>
-                  <div className="font-bold text-henequen-anil">Cédula Oficial Carta</div>
-                  <div className="text-[11px] text-henequen-piedra">
-                    Entrega automática con Sello SHA-256 + QR al liquidar
-                  </div>
-                </div>
-              </div>
-            </div>
+            <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">
+              {arkangelPreview ? (
+                <>
+                  <strong>Canal:</strong> {arkangelPreview.channels.join(', ')}
+                  <p className="mt-2">
+                    <strong>Filas:</strong>{' '}
+                    {arkangelPreview.rows
+                      .map((row) => `${row.nombre} (${row.email}, ${row.rfc}, $${row.monto})`)
+                      .join('; ') || 'ninguna'}
+                  </p>
+                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-[10px]">
+                    {arkangelPreview.content}
+                  </pre>
+                </>
+              ) : (
+                'La vista previa mostrará filas, canal y contenido exactos. Pavel debe revisar y aprobar antes de enviar. No se envían CLABEs ni constancias.'
+              )}
+            </p>
 
             <div className="mt-6 flex items-center justify-end gap-3 border-t border-henequen-arena pt-4">
               <button
@@ -975,14 +1211,30 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
               <button
                 type="button"
                 onClick={async () => {
-                  setModalRecordatorioMasivoOpen(false);
-                  await handleSyncArkangel();
+                  if (arkangelPreview) {
+                    await handleDispatchArkangel();
+                  } else {
+                    await handleSyncArkangel();
+                  }
                 }}
-                disabled={syncingArkangel}
+                disabled={syncingArkangel || !isPavel}
+                title={
+                  isPavel
+                    ? 'Requiere aprobación explícita; solo se incluirán registros con consentimiento de compartir.'
+                    : 'Solo Pavel puede aprobar envíos a Arkangel.'
+                }
                 className="inline-flex items-center gap-1.5 rounded-lg bg-henequen-anil px-4 py-2 text-xs font-bold text-white shadow transition hover:bg-henequen-anil/90 disabled:opacity-50"
               >
                 <Radio size={14} className={syncingArkangel ? 'animate-pulse' : ''} />
-                <span>{syncingArkangel ? 'Enviando...' : '🚀 Sí, Enviar Recordatorios Ahora'}</span>
+                <span>
+                  {syncingArkangel
+                    ? arkangelPreview
+                      ? 'Enviando...'
+                      : 'Preparando vista previa...'
+                    : arkangelPreview
+                      ? 'Pavel aprueba y envía'
+                      : 'Generar vista previa'}
+                </span>
               </button>
             </div>
           </div>

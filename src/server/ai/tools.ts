@@ -10,12 +10,20 @@ import type { Env } from '../../index';
 import type { AiToolFunction } from './types';
 import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
-import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
-import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
+import {
+  calcularRecargosYActualizacion,
+  validarEntradaRecargos,
+} from '../../tools/recargos/lib/calcularRecargos';
+import {
+  simularModalidad40,
+  validarParametrosModalidad40,
+} from '../../tools/modalidad40/lib/calcularModalidad40';
+import { VECTOR_REFERENCIA_MODALIDAD40 } from '../../tools/modalidad40/mensajes';
 import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
 import { calcularRetencionClinicas } from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
 import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
 import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
+import { PERIODOS } from '../../tools/nomina/data/periodos';
 import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import type { ParametrosNomina } from '../../tools/nomina/types';
@@ -26,8 +34,7 @@ import { parseStrictBoolean } from '../../lib/parseBoolean';
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calcular_modalidad_40',
-    description:
-      'Calcula la proyección actuarial de pensión Ley 73 y cuota mensual de Modalidad 40 conforme al Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026). Restringe el nuevo salario al último SBC + 1 UMA diaria (máx. 25 UMAs).',
+    description: `Calcula una proyección Ley 73 y cuota de Modalidad 40 con los seis campos obligatorios. La regla de registro se basa en una medida temporal del Acuerdo ACDO.AS2.HCT.101026/302.P.DG, cuyo alcance jurídico es materia de discusión. Vector de referencia: ${JSON.stringify(VECTOR_REFERENCIA_MODALIDAD40)}`,
     parameters: {
       type: 'object',
       properties: {
@@ -57,7 +64,14 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           description: 'Si cuenta con cónyuge o solicita ayuda asistencial por soledad (+15%).',
         },
       },
-      required: ['ultimoSbc', 'semanasPrevias'],
+      required: [
+        'ultimoSbc',
+        'sbcDeseado',
+        'semanasPrevias',
+        'mesesAportacion',
+        'edadJubilacion',
+        'asignacionFamiliar',
+      ],
     },
   },
   {
@@ -140,6 +154,12 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           description: 'Porcentaje de prima vacacional (default 25).',
         },
         diasAguinaldo: { type: 'number', description: 'Días de aguinaldo (default 15).' },
+        zona: {
+          type: 'string',
+          enum: ['general', 'frontera'],
+          description:
+            'Zona salarial para límite inferior LSS Art. 28. Default: general (resto del país). Use frontera solo para ZLFN.',
+        },
       },
       required: ['salarioDiario'],
     },
@@ -147,7 +167,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calcular_nomina_rapida',
     description:
-      'Calcula nómina rápida: ISR con subsidio al empleo, IMSS obrero por ramo y neto a pagar para un período (diario/semanal/quincenal/mensual).',
+      'Calcula nómina rápida: ISR con subsidio al empleo, cuotas obreras IMSS y neto a pagar por período (diario/semanal/quincenal/mensual). Obrero únicamente; sin cédula, sin folio, sin exportación. SBC diario sin aplicar topes/pisos de Tool 6 salvo que se proporcione.',
     parameters: {
       type: 'object',
       properties: {
@@ -162,7 +182,11 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           type: 'number',
           description: 'Días del período completo (ej. 30 para mensual).',
         },
-        sbcDiario: { type: 'number', description: 'SBC diario para IMSS obrero.' },
+        sbcDiario: {
+          type: 'number',
+          description:
+            'SBC diario para IMSS obrero. Si se omite, default = round((sueldoBruto/diasPeriodo)*1.0493, 2).',
+        },
       },
       required: ['periodo', 'sueldoBruto'],
     },
@@ -444,29 +468,30 @@ export async function executeAiTool(
   try {
     // 1. Herramientas de cálculo puro (no requieren base de datos)
     if (toolName === 'calcular_modalidad_40') {
-      const ultimoSbc = Number(args.ultimoSbc) || 315.04;
-      const sbcDeseado = Number(args.sbcDeseado) || 2932.75;
-      const semanasPrevias = Number(args.semanasPrevias) || 500;
-      const mesesAportacion = Number(args.mesesAportacion) || 36;
-      const edadJubilacion = Number(args.edadJubilacion) || 65;
-      const asignacionFamiliar = args.asignacionFamiliar !== false;
+      const validacion = validarParametrosModalidad40(args);
+      if (!validacion.ok) {
+        return { success: false, error: validacion.error };
+      }
 
-      const resultado = await simularModalidad40({
-        ultimoSbc,
-        sbcDeseado,
-        semanasPrevias,
-        mesesAportacion,
-        edadJubilacion,
-        asignacionFamiliar,
-      });
+      const resultado = await simularModalidad40(validacion.valor);
       return { success: true, data: resultado };
     }
 
     if (toolName === 'calcular_recargos_fiscales') {
+      const validacion = validarEntradaRecargos(args);
+      if (!validacion.ok) {
+        return {
+          success: false,
+          error:
+            'Campos requeridos faltantes o inválidos para Recargos: ' +
+            validacion.errores.join(' ') +
+            '. Campos requeridos: importeHistorico, fechaVencimiento, fechaPago.',
+        };
+      }
       const resultado = calcularRecargosYActualizacion({
-        importeHistorico: Number(args.importeHistorico || 0),
-        fechaVencimiento: String(args.fechaVencimiento || ''),
-        fechaPago: String(args.fechaPago || ''),
+        importeHistorico: Number(args.importeHistorico),
+        fechaVencimiento: String(args.fechaVencimiento),
+        fechaPago: String(args.fechaPago),
       });
       return { success: true, data: resultado };
     }
@@ -512,22 +537,89 @@ export async function executeAiTool(
     }
 
     if (toolName === 'calcular_sbc') {
+      const zonaRaw = args.zona ?? args.zonaSalarial ?? 'general';
+      const zona = zonaRaw === 'frontera' || zonaRaw === 'zlfn' ? 'frontera' : 'general';
       const parametros: ParametrosSBC = {
         salarioDiario: Number(args.salarioDiario || 0),
         diasVacaciones: Number(args.diasVacaciones ?? 12),
         primaVacacional: Number(args.primaVacacional ?? 25),
         diasAguinaldo: Number(args.diasAguinaldo ?? 15),
+        zona,
       } as ParametrosSBC;
       const resultado = calcularResultadoSBC(parametros);
       return { success: true, data: resultado };
     }
 
     if (toolName === 'calcular_nomina_rapida') {
-      const periodo = (args.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual') || 'mensual';
-      const sueldoBruto = Number(args.sueldoBruto || 0);
-      const diasTrabajados = Number(args.diasTrabajados ?? 30);
-      const diasPeriodo = Number(args.diasPeriodo ?? 30);
-      const sbcDiario = Number(args.sbcDiario ?? sueldoBruto / 30);
+      const NOMINA_CANONICAL_FIELDS = new Set([
+        'periodo',
+        'sueldoBruto',
+        'sbcDiario',
+        'diasTrabajados',
+        'diasPeriodo',
+      ]);
+      const NOMINA_KNOWN_UNKNOWN = new Set(['salarioMensual', 'periodicidad']);
+      const argKeys = Object.keys(args);
+      const unknownFields = argKeys.filter((k) => !NOMINA_CANONICAL_FIELDS.has(k));
+      if (unknownFields.length > 0) {
+        const knownBad = unknownFields.filter((k) => NOMINA_KNOWN_UNKNOWN.has(k));
+        const hint =
+          knownBad.length > 0
+            ? " Use nombres canónicos: 'sueldoBruto' (no 'salarioMensual') y 'periodo' (no 'periodicidad')."
+            : '';
+        return {
+          success: false,
+          error:
+            `Campos no permitidos para Nómina: ${unknownFields.join(', ')}.` +
+            hint +
+            " Campos canónicos: 'periodo', 'sueldoBruto', 'sbcDiario', 'diasTrabajados', 'diasPeriodo'.",
+        };
+      }
+
+      if (args.periodo == null || args.sueldoBruto == null) {
+        const missing: string[] = [];
+        if (args.periodo == null) missing.push('periodo');
+        if (args.sueldoBruto == null) missing.push('sueldoBruto');
+        return {
+          success: false,
+          error: `Campos requeridos faltantes para Nómina: ${missing.join(', ')}.`,
+        };
+      }
+
+      const periodo = args.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual';
+      if (!['diario', 'semanal', 'quincenal', 'mensual'].includes(periodo)) {
+        return {
+          success: false,
+          error:
+            "Campo 'periodo' inválido. Valores permitidos: diario, semanal, quincenal, mensual.",
+        };
+      }
+
+      const sueldoBruto = Number(args.sueldoBruto);
+      if (!Number.isFinite(sueldoBruto)) {
+        return { success: false, error: "Campo 'sueldoBruto' debe ser numérico." };
+      }
+
+      const diasPeriodo =
+        args.diasPeriodo == null ? (PERIODOS[periodo]?.dias ?? 30) : Number(args.diasPeriodo);
+      if (!Number.isFinite(diasPeriodo) || diasPeriodo <= 0) {
+        return { success: false, error: "Campo 'diasPeriodo' debe ser numérico y mayor a 0." };
+      }
+
+      const diasTrabajados =
+        args.diasTrabajados == null ? diasPeriodo : Number(args.diasTrabajados);
+      if (!Number.isFinite(diasTrabajados)) {
+        return { success: false, error: "Campo 'diasTrabajados' debe ser numérico." };
+      }
+
+      const sbcProporcionado = args.sbcDiario != null;
+      const sbcDiario = sbcProporcionado
+        ? Number(args.sbcDiario)
+        : Math.round((sueldoBruto / diasPeriodo) * 1.0493 * 100) / 100;
+      if (!Number.isFinite(sbcDiario)) {
+        return { success: false, error: "Campo 'sbcDiario' debe ser numérico." };
+      }
+
       const parametros: ParametrosNomina = {
         periodo,
         sueldoBruto,
@@ -536,7 +628,14 @@ export async function executeAiTool(
         sbcDiario,
       };
       const resultado = calcularNomina(parametros);
-      return { success: true, data: resultado };
+      return {
+        success: true,
+        data: {
+          ...resultado,
+          sbcDiarioEfectivo: sbcDiario,
+          sbcDiarioFuente: sbcProporcionado ? 'proporcionado' : 'default_1.0493',
+        },
+      };
     }
 
     if (toolName === 'calcular_finiquito_lft') {
@@ -565,9 +664,33 @@ export async function executeAiTool(
     }
 
     if (toolName === 'calcular_resico') {
+      // (a) reject unknown 'ingresos' field
+      if (Object.prototype.hasOwnProperty.call(args, 'ingresos')) {
+        return {
+          success: false,
+          error: "Campo 'ingresos' no es vÃ¡lido para RESICO. Use 'ingresosCobrados'.",
+        };
+      }
       const tipo = (args.tipoPersona as 'fisica' | 'moral') || 'fisica';
-      const mes = (Number(args.mes) || 1) as MesFiscal;
+      if (!tipo) {
+        return { success: false, error: "tipoPersona requerido ('fisica' | 'moral')." };
+      }
+      const mesRaw = Number(args.mes);
+      if (!args.mes || Number.isNaN(mesRaw) || mesRaw < 1 || mesRaw > 12) {
+        return { success: false, error: 'mes requerido (1 a 12).' };
+      }
+      const mes = mesRaw as MesFiscal;
+
+      let tasaIVA: number | 'exento' = (args.tasaIVA as number | 'exento') ?? 0.16;
+      if (typeof tasaIVA === 'string') {
+        const n = Number(tasaIVA);
+        tasaIVA = Number.isNaN(n) ? tasaIVA : n;
+      }
+
       if (tipo === 'moral') {
+        if (args.ingresosCobrados == null) {
+          return { success: false, error: 'ingresosCobrados requerido (acumulado PM).' };
+        }
         const resultado = calcularResicoPM({
           ingresosCobradosAcumulados: Number(args.ingresosCobrados || 0),
           deduccionesAutorizadasAcumuladas: Number(args.deduccionesCobros || 0),
@@ -577,19 +700,31 @@ export async function executeAiTool(
           retencionesISRAcumuladas: Number(args.retencionISR || 0),
           ivaCobrado: Number(args.ivaCobrado || 0),
           ivaAcreditablePagado: Number(args.ivaAcreditable || 0),
-          retencionIVAMes: 0,
+          retencionIVAMes: Number(args.retencionIVAMes ?? 0),
+          tasaIVA,
           mes,
           ejercicio: 2026,
         });
         return { success: true, data: resultado };
       } else {
+        if (args.ingresosCobrados == null) {
+          return { success: false, error: 'ingresosCobrados requerido (mes PF).' };
+        }
+        if (args.ingresosAcumuladosPrevios == null) {
+          return {
+            success: false,
+            error:
+              'ingresosAcumuladosPrevios requerido para Persona FÃ­sica (control de tope 3.5M).',
+          };
+        }
         const resultado = calcularResicoPF({
           ingresosCobradosMes: Number(args.ingresosCobrados || 0),
-          ingresosAcumuladosPrevios: 0,
+          ingresosAcumuladosPrevios: Number(args.ingresosAcumuladosPrevios || 0),
           retencionISREfectuadaPM: Number(args.retencionISR || 0),
           ivaCobrado: Number(args.ivaCobrado || 0),
           ivaAcreditablePagado: Number(args.ivaAcreditable || 0),
           retencionIVAEfectuadaPM: 0,
+          tasaIVA,
           mes,
           ejercicio: 2026,
         });

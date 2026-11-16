@@ -1,11 +1,3 @@
-/**
- * ARK LEDGER — Calculadora SBC 2026
- * ResultadoSBC
- *
- * Card dorada con el SBC final. Usa LiquidGlassDome + TextMagnified.
- * Es el componente más "Ark" de la herramienta.
- */
-
 import { Copy, Check, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { useState, useRef, useEffect } from 'react';
 import {
@@ -42,7 +34,6 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
       timerRef.current = window.setTimeout(() => setCopiado(false), 2000);
     } catch {
-      // Fallback si clipboard API no está disponible
       const textarea = document.createElement('textarea');
       textarea.value = texto;
       document.body.appendChild(textarea);
@@ -54,9 +45,10 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
     }
   };
 
+  const zonaLabel = resultado.zona === 'frontera' ? 'ZLFN' : 'zona general';
+
   return (
     <LiquidGlassDome padding="lg" radius="dome">
-      {/* Header */}
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
           <div className="font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-muted">
@@ -71,7 +63,6 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
 
       <GoldDivider spacing="md" />
 
-      {/* SBC bruto */}
       <div className="space-y-3 font-inter text-[13px]">
         <div className="flex items-baseline justify-between">
           <span className="text-muted">SBC bruto</span>
@@ -79,14 +70,12 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
             {formatearMXN(resultado.sbcBruto)}
           </span>
         </div>
-
         <div className="flex items-baseline justify-between">
           <span className="text-muted">Salario diario</span>
           <span className="font-orbitron font-semibold tabular-nums text-ink">
             {formatearMXN(parametros.salarioDiario)}
           </span>
         </div>
-
         <div className="flex items-baseline justify-between">
           <span className="text-muted">Factor</span>
           <span className="font-orbitron font-bold tabular-nums text-navy">
@@ -97,7 +86,6 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
 
       <GoldDivider spacing="md" />
 
-      {/* TOTAL — elemento más importante */}
       <div className="py-2 text-center">
         <div className="mb-3 font-orbitron text-[10px] font-bold uppercase tracking-[0.2em] text-gold-dark">
           SBC final IMSS
@@ -109,12 +97,11 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
           {resultado.tipoTope === null
             ? '✓ Dentro de rango IMSS'
             : resultado.tipoTope === 'max'
-              ? `⚑ Tope 25 UMAs aplicado`
-              : `⚑ Mínimo aplicado`}
+              ? '⚑ Tope 25 UMAs aplicado'
+              : `⚑ Mínimo de ${zonaLabel} aplicado`}
         </div>
       </div>
 
-      {/* Alertas según tope */}
       {resultado.tipoTope !== null && (
         <>
           <GoldDivider spacing="md" />
@@ -123,27 +110,27 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
               resultado.tipoTope === 'max'
                 ? 'border-amber-200 bg-amber-50'
                 : 'border-blue-200 bg-blue-50'
-            } `}
+            }`}
           >
             <AlertTriangle
               size={16}
               strokeWidth={2.5}
-              className={`mt-0.5 shrink-0 ${
-                resultado.tipoTope === 'max' ? 'text-amber-600' : 'text-blue-700'
-              }`}
+              className={`mt-0.5 shrink-0 ${resultado.tipoTope === 'max' ? 'text-amber-600' : 'text-blue-700'}`}
             />
             <div className="text-[11px] leading-[1.5]">
               {resultado.tipoTope === 'max' ? (
                 <>
                   <strong className="text-amber-700">Tope de 25 UMAs aplicado:</strong> El SBC bruto
                   ({formatearMXN(resultado.sbcBruto)}) supera el tope de{' '}
-                  {formatearMXN(CONSTANTES_IMSS.topePesos)}. El IMSS cotiza sobre el tope.
+                  {formatearMXN(CONSTANTES_IMSS.topePesos)}. El IMSS cotiza sobre el tope (LSS Art.
+                  28).
                 </>
               ) : (
                 <>
-                  <strong className="text-blue-700">Salario mínimo aplicado:</strong> El SBC bruto (
-                  {formatearMXN(resultado.sbcBruto)}) está por debajo del mínimo frontera (
-                  {formatearMXN(CONSTANTES_IMSS.salarioMinimo)}). Se ajusta al mínimo.
+                  <strong className="text-blue-700">Límite inferior aplicado:</strong> El SBC bruto
+                  ({formatearMXN(resultado.sbcBruto)}) es menor al salario mínimo de la {zonaLabel}{' '}
+                  ({formatearMXN(resultado.salarioMinimoAplicado)}). Se ajusta al mínimo de zona
+                  (LSS Art. 28).
                 </>
               )}
             </div>
@@ -151,7 +138,6 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
         </>
       )}
 
-      {/* Botón de copiar resumen */}
       <div className="mt-6">
         <GlassButton
           variant={copiado ? 'default' : 'primary'}
@@ -171,10 +157,9 @@ export function ResultadoSBC({ parametros, resultado }: ResultadoSBCProps) {
             </>
           )}
         </GlassButton>
-
         <div className="mt-3 flex items-center justify-center gap-1.5 text-center font-orbitron text-[10px] tracking-[0.12em] text-muted">
           <CheckCircle2 size={10} strokeWidth={2.5} />
-          Cálculo conforme LSS Art. 27
+          Cálculo conforme LSS Arts. 27 y 28
         </div>
       </div>
     </LiquidGlassDome>

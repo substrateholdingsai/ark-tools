@@ -61,7 +61,7 @@ export const ResumenLoteCard: React.FC<ResumenLoteCardProps> = ({
               className="shadow-lg shadow-gold/20"
             >
               <Download className="h-4 w-4 stroke-[2.2]" />
-              DESCARGAR EXCEL (CSV)
+              DESCARGAR CSV PARA EXCEL
             </GlassButton>
           </div>
         </div>

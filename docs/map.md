@@ -1,6 +1,6 @@
 # ARK LEDGER — Mapa del Proyecto y Estado Actual (map.md)
 
-**Versión:** 3.1 — Suite de 22 Herramientas + Bóveda Offline Criptográfica (Art. 30 CFF) + Motor de Marca Blanca (CANACO SERVYTUR MÉRIDA) + Workers AI / StayPuft + Facturapi v2 (CFDI 4.0) + GEO Engine (/llms.txt)  
+**Versión:** 3.1 — Suite de 22 Herramientas + Bóveda Offline Criptográfica (Art. 30 CFF) + Motor de Marca Blanca (CANACO SERVYTUR MÉRIDA) + Workers AI / StayPuft + Facturapi v2 (CFDI 4.0) + GEO Engine (/llms.txt)
 **Fecha:** Noviembre 2026  
 **Rama:** `main` @ `009634b` (`feat(canaco-tripartito): implementar afiliacion simultanea AAFY-SAT-IMSS con cedula AAFY y layout IDSE`)  
 **Worker:** `ark-tools-production` en `https://ledger.arksystems.site`  
@@ -216,7 +216,7 @@ ark-tools/
 │       ├── recargos/                ✅ Actualización y Recargos CFF (#18)
 │       ├── modalidad40/             ✅ Simulador Modalidad 40 DOF 2026 (#19)
 │       ├── auditor-cfdi-atipico/    ✅ Detector de Comportamientos Atípicos CFDI (#20)
-│       ├── xml-excel/               ✅ Conversor XML a Excel (CFDI 4.0/3.3)
+│       ├── xml-excel/               ✅ Conversor XML a CSV para Excel (CFDI 4.0/3.3)
 │       ├── xml-validador/           ✅ Validador y Auditor de XMLs
 │       ├── spei/                    ✅ Generador Enlaces de Pago Clip / SPEI
 │       ├── leasing/                 ✅ Simulador Fiscal: Leasing vs Crédito vs Contado
@@ -276,7 +276,7 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 | 5   | `resico`          | Calculadora y Cédula RESICO 2026                          | Fiscal y Laboral                  | active           |
 | 6   | `balance-general` | Balance General Comparativo                               | Patrimonial y Análisis Financiero | active           |
 | 7   | `cierre-nomina`   | Cierre de Nómina Masivo + Layout IDSE/DISPMAG (175 chars) | Fiscal y Laboral                  | active           |
-| 8   | `xml-excel`       | Conversor XML a Excel (CFDI 4.0/3.3)                      | SAT y Auditoría CFDI 4.0          | active           |
+| 8   | `xml-excel`       | Conversor XML a CSV para Excel (CFDI 4.0/3.3)             | SAT y CFDI (extracción local)     | active           |
 | 9   | `validador`       | Validador y Auditor de XMLs                               | SAT y Auditoría CFDI 4.0          | active           |
 | 10  | `spei`            | Generador de Enlaces de Pago Clip / SPEI                  | Cobros y Facturación Fiscal B2B   | active           |
 | 11  | `leasing`         | Simulador Fiscal: Leasing vs Crédito vs Contado           | Cobros y Facturación Fiscal B2B   | active           |
@@ -396,3 +396,10 @@ El detalle cronológico de **Sprints 1-34** (incluyendo el evolución de conteos
 ---
 
 **Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 22 herramientas (12 PyME + 8 corporativo/forense/PLD + 1 retención clínicas + 1 enlace externo CoDi), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 + Cédula Oficial AAFY, Cierre de Nómina + Layout IDSE/DISPMAG (175 chars, longitud Ledger no confirmada por manual oficial IMSS), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 16/16, pruebas 93 suites / 764 tests (100%).
+
+## Nota de alcance — Bóveda Offline (.zip) y verificación "2034 sin servidor"
+
+- La verificación **offline** del paquete Bóveda es válida únicamente para **integridad de archivos** mediante `manifest.sha256` (`sha256sum -c manifest.sha256` en Linux/macOS; procedimiento PowerShell en `offline-viewer.html`). Esto **no** sustituye el registro ni la autenticidad ante sistemas en línea de ARK.
+- Las rutas/QR de verificación en línea (`?verify=`) requieren que el servicio correspondiente esté disponible. **No presentar** "verificación en 2034 sin servidor" como prueba de autenticidad de registro; solo es aplicable a la integridad de los archivos del paquete descargado.
+- `crypto.subtle` (Web Crypto) requiere contexto seguro; `file://` suele funcionar en navegadores modernos pero depende del navegador/configuración.
+- Modalidad 40 y Recargos se exportan como **Folio de Integridad (reference_only)**: no presentan sello SHA-256 inmutable ni reclaman verificación de cálculo por QR.

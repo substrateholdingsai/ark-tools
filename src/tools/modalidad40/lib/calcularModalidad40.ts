@@ -25,6 +25,99 @@ import type {
   AnalisisRoi,
   ResultadoModalidad40,
 } from '../types';
+import { ADVERTENCIAS_MODALIDAD40, advertenciaSemanasMinimasModalidad40 } from '../mensajes';
+
+const CAMPOS_MODALIDAD40 = [
+  'ultimoSbc',
+  'sbcDeseado',
+  'semanasPrevias',
+  'mesesAportacion',
+  'edadJubilacion',
+  'asignacionFamiliar',
+] as const;
+
+export type ValidacionParametrosModalidad40 =
+  { ok: true; valor: ParametrosModalidad40 } | { ok: false; error: string };
+
+export function validarParametrosModalidad40(input: unknown): ValidacionParametrosModalidad40 {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return {
+      ok: false,
+      error: `Se requiere un objeto con estos campos: ${CAMPOS_MODALIDAD40.join(', ')}.`,
+    };
+  }
+
+  const record = input as Record<string, unknown>;
+  const desconocidos = Object.keys(record).filter(
+    (key) => !CAMPOS_MODALIDAD40.includes(key as (typeof CAMPOS_MODALIDAD40)[number])
+  );
+  const faltantes = CAMPOS_MODALIDAD40.filter(
+    (key) => !Object.prototype.hasOwnProperty.call(record, key)
+  );
+  const invalidos: string[] = [];
+
+  for (const key of ['ultimoSbc', 'sbcDeseado'] as const) {
+    const value = record[key];
+    if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+      invalidos.push(`${key} debe ser un número mayor a 0`);
+    }
+  }
+
+  const semanasPrevias = record.semanasPrevias;
+  if (
+    typeof semanasPrevias !== 'number' ||
+    !Number.isFinite(semanasPrevias) ||
+    semanasPrevias < 0
+  ) {
+    invalidos.push('semanasPrevias debe ser un número mayor o igual a 0');
+  }
+
+  const mesesAportacion = record.mesesAportacion;
+  if (
+    typeof mesesAportacion !== 'number' ||
+    !Number.isInteger(mesesAportacion) ||
+    mesesAportacion < 12 ||
+    mesesAportacion > 60
+  ) {
+    invalidos.push('mesesAportacion debe ser un entero de 12 a 60');
+  }
+
+  const edadJubilacion = record.edadJubilacion;
+  if (
+    typeof edadJubilacion !== 'number' ||
+    !Number.isInteger(edadJubilacion) ||
+    edadJubilacion < 60 ||
+    edadJubilacion > 65
+  ) {
+    invalidos.push('edadJubilacion debe ser un entero de 60 a 65');
+  }
+
+  if (typeof record.asignacionFamiliar !== 'boolean') {
+    invalidos.push('asignacionFamiliar debe ser boolean');
+  }
+
+  const errores = [
+    faltantes.length > 0 ? `Faltan campos requeridos: ${faltantes.join(', ')}.` : '',
+    desconocidos.length > 0 ? `Campos desconocidos: ${desconocidos.join(', ')}.` : '',
+    invalidos.length > 0 ? `Campos inválidos: ${invalidos.join('; ')}.` : '',
+  ].filter(Boolean);
+
+  if (errores.length > 0) {
+    return { ok: false, error: errores.join(' ') };
+  }
+
+  return {
+    ok: true,
+    valor: {
+      ultimoSbc: record.ultimoSbc as number,
+      sbcDeseado: record.sbcDeseado as number,
+      semanasPrevias: semanasPrevias as number,
+      mesesAportacion: mesesAportacion as number,
+      edadJubilacion: edadJubilacion as number,
+      asignacionFamiliar: record.asignacionFamiliar as boolean,
+    },
+  };
+}
 
 function obtenerValorCatalogo(id: string, fallback: number): number {
   const item = CATALOGO_2026.find((v) => v.id === id);
@@ -154,12 +247,12 @@ export function evaluarLimitesModalidad40(
   );
 
   const mensajeCriterio = excedeLimiteDof
-    ? `Conforme al Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026), el salario de registro queda topado a tu último salario ($${ultimoSbc.toFixed(
+    ? `Para esta proyección, el simulador aplica la medida temporal del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026): el salario de registro queda limitado a tu último salario ($${ultimoSbc.toFixed(
         2
-      )}) más 1 UMA ($${umaDiaria.toFixed(2)}), siendo el máximo legal $${limitePermitidoDof2026.toFixed(
+      )}) más 1 UMA ($${umaDiaria.toFixed(2)}), siendo el límite aplicado $${limitePermitidoDof2026.toFixed(
         2
       )} MXN diarios.`
-    : `Salario dentro del límite permitido por el nuevo criterio del IMSS (máx. $${limitePermitidoDof2026.toFixed(
+    : `SBC deseado dentro del límite aplicado por el simulador para esta proyección (máx. $${limitePermitidoDof2026.toFixed(
         2
       )} MXN diarios).`;
 
@@ -360,6 +453,11 @@ export async function generarSelloSha256(data: unknown): Promise<string> {
 export async function simularModalidad40(
   params: ParametrosModalidad40
 ): Promise<ResultadoModalidad40> {
+  const validacion = validarParametrosModalidad40(params);
+  if (!validacion.ok) {
+    throw new RangeError(validacion.error);
+  }
+
   const limites = evaluarLimitesModalidad40(params.ultimoSbc, params.sbcDeseado);
   const inversion = calcularInversionModalidad40(limites.sbcEfectivo, params.mesesAportacion);
 
@@ -382,6 +480,12 @@ export async function simularModalidad40(
   );
 
   const fechaCalculoIso = new Date().toISOString();
+  const advertencias = [
+    ...ADVERTENCIAS_MODALIDAD40,
+    ...(pension.semanasTotales < 500
+      ? [advertenciaSemanasMinimasModalidad40(pension.semanasTotales)]
+      : []),
+  ];
   const payloadSello = {
     params,
     limites: {
@@ -399,6 +503,7 @@ export async function simularModalidad40(
     roi: {
       mesesRecuperacionRoi: roi.mesesRecuperacionRoi,
     },
+    advertencias,
   };
 
   const selloSha256 = await generarSelloSha256(payloadSello);
@@ -409,6 +514,7 @@ export async function simularModalidad40(
     inversion,
     pension,
     roi,
+    advertencias,
     selloSha256,
     fechaCalculoIso,
   };

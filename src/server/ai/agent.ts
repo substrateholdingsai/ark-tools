@@ -26,7 +26,7 @@ const ALLOWED_MODELS = new Set<string>([DEFAULT_MODEL, FAST_MODEL]);
  */
 export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
   calcular_modalidad_40:
-    'Si te piden proyectar pensión Ley 73, calcular cuotas de Modalidad 40, evaluar el tope del Acuerdo DOF 21/10/2026 (último salario + 1 UMA) o retorno de inversión (ROI), invoca "calcular_modalidad_40".',
+    'Si te piden proyectar pensión Ley 73, estimar cuotas de Modalidad 40, evaluar el límite aplicado por el Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026) o ROI, invoca "calcular_modalidad_40" con sus seis campos obligatorios. Describe el Acuerdo como una medida temporal cuyo alcance frente a la LSS y su Reglamento es materia de discusión jurídica; no lo presentes como criterio definitivo ni como resolución IMSS.',
   calcular_recargos_fiscales:
     'Si te piden calcular actualización por inflación, INPC, recargos fiscales o adeudos tributarios en mora (CFF Arts. 17-A y 21), invoca "calcular_recargos_fiscales".',
   calcular_isn:
@@ -103,7 +103,7 @@ PARÁMETROS OFICIALES Y REGLAS PERICIALES VIGENTES:
 - Salario Mínimo General: $297.45 MXN/día (ZLFN: $440.92 MXN/día).
 - UMA (Unidad de Medida y Actualización): $117.31 MXN/día.
 - ISN Yucatán (LGHY Arts. 21 al 27, Art. 24, Decreto 138/2025 y Decreto 147/2025): Tasa oficial 2026 3.75% bruto, 3.0% neto MIPyME 1-50 empleados (Decreto 147/2025), ej. nómina $250,000, 15 empleados: $9,375 − $1,875 = $7,500 neto (2025 fue 3.0%; gobierno estatal +1% = 4.75% bruto).
-- Modalidad 40 (Acuerdo DOF 21/10/2026): El nuevo registro queda topado al último salario cotizado más 1 UMA diaria (máx. legal de 25 UMAs). Cuota 2026: 14.438%.
+- Modalidad 40: El Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (aprobado 10/10/2026, DOF 21/10/2026, vigente desde 22/10/2026) establece una medida temporal para nuevas incorporaciones (último SBC o hasta el último SBC + 1 UMA, sujeto al mínimo SMG general); conserva periodos contratados y excluye trabajadores independientes Art. 13-I. El alcance frente a los Arts. 218 LSS y 65–66 del Reglamento es materia de discusión jurídica, no lo presentes como derecho settled. Cuota estimada 2026: 14.438%.
 - Recargos Federales (LIF): Tasa por mora del 1.47% mensual calculada sobre el impuesto histórico actualizado por INPC (Art. 17-A CFF).
 - CFDI 4.0 & Timbrado: Integrado con PAC Facturapi (en Sandbox de prueba con CSD EKU9003173C9 o en Producción con CSD del contribuyente).
 
@@ -131,7 +131,7 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
 1. Conversor XML a Excel ('xml-excel'):
    - Extracción y procesamiento masivo de CFDIs 3.3 y 4.0 en el navegador con tablas consolidadas e impuestos retenidos y trasladados.
 2. Validador de XMLs ('validador'):
-   - Auditoría técnica conforme a XSD del SAT, verificación CSD y cruce contra lista negra EFOS del Art. 69-B CFF.
+   - Revisión de XML bien formado, campos y consistencia aritmética. RFC por formato; sellos y certificado solo por presencia. No consulta listas del SAT, no valida el XSD oficial ni verifica firmas criptográficas. El Preview envía XML al Worker de Ark y no lo persiste.
 3. Calculadora ISN 2026 ('isn'):
    - Determinación del Impuesto Sobre Nóminas para las 32 entidades federativas (incluyendo Yucatán 2026 al 3.75% bruto / 3.0% neto MIPyME bajo LGHY Arts. 21 al 27 y Decreto 147/2025).
 4. Calculadora SBC 2026 ('sbc'):

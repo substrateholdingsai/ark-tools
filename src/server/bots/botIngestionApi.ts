@@ -21,6 +21,9 @@ import type { Env } from '../../index';
 import { authenticateRequest } from '../auth';
 import { timingSafeEqual } from '../canacoConektaService';
 import { verifyStayPuftKey } from '../staypuft/staypuftConnector';
+import { calcularCuotaAfiliacion } from '@/components/canaco/calculoCuota';
+import type { SectorEconomico } from '@/components/canaco/types';
+import { canonicalizarRfc } from '../canacoLifecycle';
 
 export type BotSource = 'grok' | 'hermes' | 'nous_research' | 'generic_agent' | 'sarita_pipeline';
 
@@ -420,41 +423,80 @@ botApp.post('/ingest', async (c) => {
 
       // Si es un comprobante de pago o datos fiscales y detectó RFC, actualizar/enlazar en leads_ark_tools
       const rfc = classification.datos_extraidos.rfc;
+      const canonicalRfc = rfc ? canonicalizarRfc(rfc) : null;
       if (
-        rfc &&
+        canonicalRfc &&
         (classification.categoria === 'comprobante_pago' ||
           classification.categoria === 'datos_fiscales')
       ) {
         const leadExistente = await db
           .prepare(
-            `SELECT id, notas FROM leads_ark_tools WHERE tenant_id = ? AND (notas LIKE ? OR web LIKE ?)`
+            `SELECT id, notas, status, lifecycle_stage, especialidad
+             FROM leads_ark_tools WHERE tenant_id = ? AND canonical_rfc = ?`
           )
-          .bind(tenantId, `%${rfc}%`, `%${rfc}%`)
-          .first<{ id: string; notas: string | null }>();
+          .bind(tenantId, canonicalRfc)
+          .first<{
+            id: string;
+            notas: string | null;
+            status: string | null;
+            lifecycle_stage: string | null;
+            especialidad: string | null;
+          }>();
 
         if (leadExistente) {
-          const nuevaNota = `${leadExistente.notas || ''} | Bot ${botSource} [${classification.categoria}]: ${classification.resumen} (Sello ${selloSha256.slice(0, 18)})`;
-          // Solo acreditar estatus 'Socio Activo' si el bot presentó credencial verificada
-          const nuevoStatus =
-            classification.categoria === 'comprobante_pago' && isAuthenticatedBot
-              ? 'Socio Activo'
-              : undefined;
-
-          if (nuevoStatus) {
-            await db
+          let quotedAmount: number | null = null;
+          if (classification.categoria === 'comprobante_pago' && tenantId === 'canaco_merida') {
+            const { results: paymentIntents = [] } = await db
               .prepare(
-                `UPDATE leads_ark_tools SET status = ?, notas = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+                `SELECT num_empleados, sector
+                 FROM canaco_payment_intents
+                 WHERE lead_id = ? AND tenant_id = ? AND rfc = ? AND environment = 'production'
+                 ORDER BY created_at DESC LIMIT 1`
               )
-              .bind(nuevoStatus, nuevaNota, leadExistente.id)
-              .run();
-          } else {
-            await db
-              .prepare(
-                `UPDATE leads_ark_tools SET notas = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-              )
-              .bind(nuevaNota, leadExistente.id)
-              .run();
+              .bind(leadExistente.id, tenantId, canonicalRfc)
+              .all<{ num_empleados: number; sector: string }>();
+            const paymentIntent = paymentIntents[0];
+            const sector =
+              paymentIntent && ['comercio', 'servicios', 'turismo'].includes(paymentIntent.sector)
+                ? (paymentIntent.sector as SectorEconomico)
+                : null;
+            if (
+              paymentIntent &&
+              Number.isInteger(paymentIntent.num_empleados) &&
+              paymentIntent.num_empleados > 0 &&
+              sector &&
+              sector === leadExistente.especialidad
+            ) {
+              quotedAmount = calcularCuotaAfiliacion(
+                paymentIntent.num_empleados,
+                sector
+              ).totalAnual;
+            }
           }
+          const evidenceAmount = classification.datos_extraidos.monto;
+          const amountMismatch =
+            quotedAmount !== null &&
+            (typeof evidenceAmount !== 'number' ||
+              Math.round(evidenceAmount * 100) !== Math.round(quotedAmount * 100));
+          const quarantine =
+            classification.categoria === 'comprobante_pago' &&
+            (amountMismatch || leadExistente.lifecycle_stage !== 'pago_pendiente');
+          const reviewLabel =
+            classification.categoria === 'comprobante_pago'
+              ? quarantine
+                ? 'Evidencia de pago en cuarentena para revisión humana'
+                : 'Evidencia de pago recibida; pendiente de verificación del proveedor'
+              : classification.resumen;
+          const nuevaNota = `${leadExistente.notas || ''} | Bot ${botSource} [${classification.categoria}]: ${reviewLabel} (Sello ${selloSha256.slice(0, 18)})`;
+          await db
+            .prepare(
+              `UPDATE leads_ark_tools
+               SET notas = ?, origin = CASE WHEN origin = 'legacy' THEN 'bot' ELSE origin END,
+                   updated_at = CURRENT_TIMESTAMP
+               WHERE id = ? AND tenant_id = ?`
+            )
+            .bind(nuevaNota, leadExistente.id, tenantId)
+            .run();
         }
       }
 

@@ -37,9 +37,11 @@ Según las herramientas utilizadas dentro de la suite, se pueden tratar las sigu
 - **Datos de facturación y cobro:** información para generación de enlaces de cobro **SPEI / Clip** y datos de comprobantes **CFDI 4.0** (en modo _preview_only_ / Sandbox SAT con Facturapi v2).
 - **Datos de navegación y sesión:** tokens de sesión, marca de tiempo e identificadores técnicos necesarios para seguridad y aislamiento multi-tenant.
 
-### Procesamiento 100% local en navegador (_Client-Side_)
+### Procesamiento local en navegador (_Client-Side_)
 
-Las herramientas de **análisis masivo de XML/CFDI**, **Conversor XML a Excel**, **Validador CFDI (Anexo 20 y cruce preventivo Art. 69-B CFF)**, **Auditor de CFDI Atípico** y **Conciliación Anexo 24** ejecutan el análisis de tus archivos XML **directamente en tu navegador**. Los archivos XML procesados en estas herramientas locales **no se transfieren ni almacenan** en los servidores de la plataforma.
+La carga de archivos desde la interfaz del **Conversor XML a CSV para Excel** se procesa directamente en el navegador y no envía el XML al servidor. En cambio, su endpoint de Preview envía el contenido al Worker de Ark para extraer los datos; ese contenido no se persiste. El Preview es independiente de la carga local de la interfaz.
+
+El **Validador CFDI**, el **Auditor de CFDI Atípico** y **Conciliación Anexo 24** ejecutan sus análisis locales de XML directamente en el navegador.
 
 ---
 

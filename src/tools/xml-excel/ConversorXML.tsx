@@ -3,14 +3,19 @@
  * Componente Principal
  *
  * Permite cargar hasta 200 archivos XML de facturas electrónicas, procesarlas
- * en tiempo real en el cliente (sin enviar datos a ningún servidor) y exportar
- * una sábana contable en CSV compatible al 100% con Excel y Google Sheets.
+ * localmente en el cliente y exportar una sábana contable en CSV compatible con
+ * Excel y Google Sheets.
  */
 
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { ArrowLeft, FileSpreadsheet, Check, Sparkles, ShieldCheck, Cpu } from 'lucide-react';
 import { DropZoneXML, ResumenLoteCard, TablaFacturas } from './components';
-import { parsearCFDI, procesarArchivosXML, calcularResumenLote } from './lib/parserCFDI';
+import {
+  parsearCFDI,
+  procesarArchivosXML,
+  calcularResumenLote,
+  filtrarDuplicadosPorUUID,
+} from './lib/parserCFDI';
 import { descargarCSVFacturas } from './lib/exportarExcel';
 import type { FacturaCFDI } from './types';
 
@@ -78,6 +83,8 @@ interface ConversorXMLProps {
 
 export function ConversorXML({ onBack }: ConversorXMLProps) {
   const [facturas, setFacturas] = useState<FacturaCFDI[]>([]);
+  const [archivosDuplicados, setArchivosDuplicados] = useState<string[]>([]);
+  const [archivosExcedidos, setArchivosExcedidos] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
@@ -98,24 +105,35 @@ export function ConversorXML({ onBack }: ConversorXMLProps) {
   // Carga de archivos XML arrastrados o seleccionados
   const handleFilesSelected = useCallback(
     async (files: File[]) => {
+      if (files.length === 0) return;
       setIsLoading(true);
       try {
         const nuevasFacturas = await procesarArchivosXML(files);
-        setFacturas((prev) => {
-          // Filtrar duplicados por UUID si ya existe
-          const uuidsExistentes = new Set(prev.map((f) => f.uuid).filter((u) => u !== 'SIN UUID'));
-          const unicos = nuevasFacturas.filter((f) => !uuidsExistentes.has(f.uuid));
-          return [...prev, ...unicos];
-        });
-        showToast(`Se procesaron ${files.length} archivo(s) XML`);
-      } catch (err) {
-        showToast('Error al procesar los archivos');
+        const { unicas, duplicadas } = filtrarDuplicadosPorUUID(facturas, nuevasFacturas);
+
+        setFacturas((prev) => [...prev, ...unicas]);
+        if (duplicadas.length > 0) {
+          setArchivosDuplicados((prev) => [...prev, ...duplicadas]);
+          showToast(
+            `${unicas.length} archivo(s) agregados; ${duplicadas.length} duplicado(s) omitido(s)`
+          );
+        } else {
+          showToast(`Se procesaron ${unicas.length} archivo(s) XML`);
+        }
+      } catch {
+        showToast('Error al procesar los archivos XML');
       } finally {
         setIsLoading(false);
       }
     },
-    [showToast]
+    [facturas, showToast]
   );
+
+  const handleFilesRejected = useCallback((files: File[]) => {
+    if (files.length > 0) {
+      setArchivosExcedidos((prev) => [...prev, ...files.map((file) => file.name)]);
+    }
+  }, []);
 
   // Carga de demostración con 3 XMLs listos
   const handleCargarEjemplos = useCallback(() => {
@@ -126,16 +144,18 @@ export function ConversorXML({ onBack }: ConversorXMLProps) {
     showToast('3 comprobantes de demostración cargados');
   }, [showToast]);
 
-  // Descarga del reporte en Excel (CSV)
+  // Descarga del reporte CSV compatible con Excel
   const handleDescargarExcel = useCallback(() => {
     if (facturas.length === 0) return;
     descargarCSVFacturas(facturas);
-    showToast('Reporte Excel (CSV) generado con éxito');
+    showToast('Reporte CSV para Excel generado con éxito');
   }, [facturas, showToast]);
 
   // Limpiar todos los comprobantes
   const handleLimpiar = useCallback(() => {
     setFacturas([]);
+    setArchivosDuplicados([]);
+    setArchivosExcedidos([]);
     showToast('Lista de comprobantes limpiada');
   }, [showToast]);
 
@@ -175,11 +195,12 @@ export function ConversorXML({ onBack }: ConversorXMLProps) {
             <span className="text-xs text-muted">Procesamiento Masivo</span>
           </div>
           <h1 className="mt-2 font-playfair text-3xl font-black tracking-tight text-ink md:text-5xl">
-            Conversor XML → Excel
+            Conversor XML → CSV para Excel
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-muted">
-            Arrastra tus facturas electrónicas y extrae instantáneamente UUID, emisor, receptor,
-            impuestos y totales. 100% privado en tu navegador: ningún dato fiscal sale de tu equipo.
+            Extrae UUID, emisor, receptor, impuestos y totales de tus CFDI; exporta una fila por
+            comprobante a CSV para Excel. Es una herramienta de extracción, no una validación del
+            SAT.
           </p>
         </div>
 
@@ -187,6 +208,7 @@ export function ConversorXML({ onBack }: ConversorXMLProps) {
         {facturas.length === 0 && (
           <button
             onClick={handleCargarEjemplos}
+            disabled={isLoading}
             className="inline-flex items-center gap-2 self-start rounded-xl border border-gold/30 bg-gold/10 px-4 py-2.5 text-xs font-semibold text-gold transition-all hover:scale-[1.02] hover:bg-gold/20 md:self-auto"
           >
             <Sparkles className="h-4 w-4" />
@@ -199,10 +221,41 @@ export function ConversorXML({ onBack }: ConversorXMLProps) {
       <section>
         <DropZoneXML
           onFilesSelected={handleFilesSelected}
+          onFilesRejected={handleFilesRejected}
           isLoading={isLoading}
           totalCargados={facturas.length}
+          maxFileSizeBytes={10 * 1024 * 1024}
+          maxFileSizeLabel="10 MB"
         />
       </section>
+
+      <aside
+        role="note"
+        className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-xs text-amber-100"
+      >
+        La carga desde esta pantalla se procesa localmente y no sube el XML. El Preview del conector
+        envía el XML al Worker de Ark para extraer los datos y no persiste el contenido.
+      </aside>
+
+      {(archivosDuplicados.length > 0 || archivosExcedidos.length > 0) && (
+        <div
+          aria-live="polite"
+          className="rounded-xl border border-amber-500/30 bg-amber-950/20 p-4 text-sm text-amber-100"
+        >
+          <p className="font-semibold">Archivos omitidos</p>
+          {archivosDuplicados.length > 0 && (
+            <p className="mt-1">
+              {archivosDuplicados.length} duplicado(s) por UUID: {archivosDuplicados.join(', ')}.
+            </p>
+          )}
+          {archivosExcedidos.length > 0 && (
+            <p className="mt-1">
+              {archivosExcedidos.length} archivo(s) excedieron 10 MB: {archivosExcedidos.join(', ')}
+              .
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Si hay comprobantes cargados, mostrar Resumen y Tabla */}
       {facturas.length > 0 && (
@@ -236,7 +289,7 @@ export function ConversorXML({ onBack }: ConversorXMLProps) {
       <div className="flex flex-wrap items-center justify-center gap-6 border-t border-white/5 pt-4 text-xs text-muted">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-emerald-400" />
-          <span>Privacidad Absoluta (Cero Transferencia a Servidores)</span>
+          <span>La carga interactiva se procesa en el navegador</span>
         </div>
         <div className="flex items-center gap-2">
           <Cpu className="h-4 w-4 text-gold" />

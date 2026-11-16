@@ -31,17 +31,17 @@ export function generarCSVDictamenes(dictamenes: DictamenCFDI[]): string {
     'Total',
     'Errores Críticos',
     'Advertencias',
-    'Detalle de Observaciones y Fundamentos SAT',
+    'Reglas evaluadas (código, categoría, severidad, título, descripción y fundamento)',
+    'Aviso de alcance',
   ];
 
   lineas.push(encabezados.map(escaparCSV).join(','));
 
   for (const d of dictamenes) {
-    const observaciones = d.reglas
-      .filter((r) => r.severidad !== 'exito')
+    const reglas = d.reglas
       .map(
         (r) =>
-          `[${r.severidad.toUpperCase()}] ${r.codigo} - ${r.titulo}: ${r.descripcion}${
+          `[${r.severidad.toUpperCase()}] ${r.codigo} (${r.categoria}) - ${r.titulo}: ${r.descripcion}${
             r.fundamentoLegal ? ` (${r.fundamentoLegal})` : ''
           }`
       )
@@ -60,7 +60,8 @@ export function generarCSVDictamenes(dictamenes: DictamenCFDI[]): string {
       d.total.toFixed(2),
       d.erroresCount,
       d.advertenciasCount,
-      observaciones || 'Sin observaciones (Comprobante 100% íntegro)',
+      reglas || 'No se emitieron reglas.',
+      d.avisoAlcance,
     ];
 
     lineas.push(fila.map(escaparCSV).join(','));

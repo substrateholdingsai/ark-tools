@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FileText, Check, Share2 } from 'lucide-react';
 import { LiquidGlassDome, TextMagnified, GlassButton, BadgeGold } from '@/components/ui';
 import type { ResultadoModalidad40 } from '../types';
+import { CITACION_ACUERDO_MODALIDAD40, NOTA_FOLIO_INTEGRIDAD_MODALIDAD40 } from '../mensajes';
 
 interface Props {
   resultado: ResultadoModalidad40;
@@ -18,9 +19,10 @@ export function ResultadoPensionCard({
 }: Props) {
   const [copied, setCopied] = useState(false);
   const { pension, inversion, roi, limites } = resultado;
+  const folioDisponible = resultado.selloSha256.length > 0;
 
   const handleCopyWhatsApp = () => {
-    const texto = `🏛️ *ARK LEDGER — Dictamen de Pensión Ley 73 & Modalidad 40 (DOF 2026)*
+    const texto = `🏛️ *ARK LEDGER — Proyección de Pensión Ley 73 & Modalidad 40 (DOF 2026)*
 👤 *Asegurado:* ${nombreAsegurado}
 📋 *NSS:* ${nssAsegurado}
 ━━━━━━━━━━━━━━━━━━━━
@@ -32,8 +34,10 @@ export function ResultadoPensionCard({
 💵 *Inversión Total (${resultado.parametros.mesesAportacion} meses):* $${inversion.inversionTotal.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
 📈 *Ganancia Mensual Neta:* +$${roi.incrementoMensualPension.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN
 ⏱️ *Retorno de Inversión (ROI):* Recuperas el 100% de lo invertido en ${roi.tiempoRecuperacionFormateado}.
+⚖️ *Fundamento del límite aplicado:* ${CITACION_ACUERDO_MODALIDAD40}
+⚠️ *Alcance:* ${resultado.advertencias.join(' ')}
 ━━━━━━━━━━━━━━━━━━━━
-🔒 *Sello Criptográfico:* ${resultado.selloSha256.slice(0, 16)}...
+📌 *Folio de Integridad:* ${folioDisponible ? `${resultado.selloSha256.slice(0, 16)}...` : 'en cálculo'} (${NOTA_FOLIO_INTEGRIDAD_MODALIDAD40})
 🌐 *Generado con ARK LEDGER:* https://ledger.arksystems.site`;
 
     void navigator.clipboard.writeText(texto).then(() => {
@@ -148,6 +152,16 @@ export function ResultadoPensionCard({
         </div>
       </div>
 
+      <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-950">
+        <strong className="block">Advertencias de la proyección</strong>
+        <ul className="list-disc space-y-1 pl-5">
+          {resultado.advertencias.map((advertencia) => (
+            <li key={advertencia}>{advertencia}</li>
+          ))}
+        </ul>
+      </div>
+      <p className="text-[10px] text-muted">{NOTA_FOLIO_INTEGRIDAD_MODALIDAD40}</p>
+
       {/* Botones de Acción */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
         <button
@@ -162,10 +176,13 @@ export function ResultadoPensionCard({
         <GlassButton
           variant="primary"
           onClick={onVerCedula}
+          disabled={!folioDisponible}
           className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold"
         >
           <FileText size={16} />
-          Emitir Cédula Oficial SHA-256 + QR
+          {folioDisponible
+            ? 'Emitir cédula de proyección · Folio de Integridad'
+            : 'Preparando Folio de Integridad...'}
         </GlassButton>
       </div>
     </div>

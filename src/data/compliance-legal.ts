@@ -81,7 +81,7 @@ export function getComplianceDocuments(
           title: '3. Datos Personales y Procesamiento Local',
           paragraphs: [
             'De acuerdo con las herramientas utilizadas en la suite, se tratan datos de identificación y contacto, datos fiscales (RFC, régimen fiscal, REC estatal, NRP patronal, folio SIEM), datos laborales y de seguridad social (NSS, CURP, SBC, percepciones e incidencias), así como datos para enlaces de cobro SPEI/Clip y pre-validación CFDI 4.0.',
-            'Procesamiento 100% local en navegador (Client-Side): las herramientas de análisis XML/CFDI (Conversor XML a Excel, Validador Anexo 20 y Art. 69-B CFF, Auditor CFDI Atípico y Conciliación Anexo 24) procesan los archivos XML directamente en el navegador del usuario; dichos XML no se transfieren ni almacenan en servidores externos.',
+            'La carga interactiva del Conversor XML a CSV para Excel se procesa en el navegador y no envía el XML al servidor. Su Preview de conector envía el XML al Worker de Ark para extraer datos y no persiste su contenido. Validador Anexo 20 y Art. 69-B CFF, Auditor CFDI Atípico y Conciliación Anexo 24 procesan localmente sus archivos XML en los flujos de navegador.',
           ],
         },
         {
@@ -162,7 +162,7 @@ export function getComplianceDocuments(
             'La plataforma minimiza la exposición de datos fiscales sensibles separando el procesamiento local del almacenamiento en nube:',
           ],
           bullets: [
-            'Procesamiento 100% en navegador: Conversor XML → Excel, Validador CFDI (Anexo 20 y Art. 69-B CFF), Auditor CFDI Atípico y Anexo 24 procesan archivos XML localmente sin enviarlos al servidor.',
+            'La carga de XML desde la interfaz del Conversor XML a CSV para Excel se procesa localmente y no se envía al servidor. Su Preview del conector envía el XML al Worker de Ark para extracción y no persiste el contenido. Validador CFDI (Anexo 20 y Art. 69-B CFF), Auditor CFDI Atípico y Anexo 24 procesan localmente los XML de sus flujos de navegador.',
             'Persistencia en Cloudflare D1: solo se almacenan registros estructurados necesarios (cuentas, sesiones, invitaciones, expedientes, cédulas, leads y configuración de timbrado Sandbox/Facturapi).',
           ],
         },

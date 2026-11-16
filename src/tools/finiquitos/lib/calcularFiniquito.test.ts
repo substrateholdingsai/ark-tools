@@ -202,4 +202,76 @@ describe('Calculadora de Finiquitos y Liquidaciones (LFT)', () => {
       );
     });
   });
+
+  describe('Monday regression — ISR legend, aguinaldo label, prima vacacional warning', () => {
+    const golden: EntradaFiniquito = {
+      tipoBaja: 'liquidacion',
+      fechaIngreso: '2022-03-01',
+      fechaBaja: '2026-10-31',
+      salarioDiario: 750,
+      sdi: 789.15,
+      vacacionesPendientes: 4,
+      aguinaldoPendiente: 0,
+      primaVacacionalPct: 25,
+      incluirPrimaAntiguedad: true,
+      incluirIndem90Dias: true,
+      incluir20DiasAnio: false,
+    };
+
+    it('Fix 1 — ISR legend present in advertencias (label only, no ISR calculation)', () => {
+      const res = calcularFiniquito(golden);
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(res.valor.advertencias).toContain(
+        'Montos brutos, sin deducción de ISR; consultar tratamiento LISR Arts. 96/93.'
+      );
+      // No ISR line or amount is added to the result
+      expect(res.valor.totalLiquidacion).toBe(132038.65);
+    });
+
+    it('Fix 2 — aguinaldo label uses "días naturales del año de baja", amount unchanged', () => {
+      const res = calcularFiniquito(golden);
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      const aguinaldo = res.valor.desglose.find(
+        (d) => d.concepto === 'Aguinaldo Proporcional y Pendiente'
+      );
+      expect(aguinaldo).toBeDefined();
+      if (!aguinaldo) return;
+      expect(aguinaldo.formula).toContain('días naturales del año de baja');
+      expect(aguinaldo.formula).not.toContain('d laborados en el año');
+      expect(res.valor.importeAguinaldo).toBe(9369.86);
+    });
+
+    it('Fix 3 — prima vacacional 25% does NOT warn; ISR legend still present', () => {
+      const res = calcularFiniquito(golden);
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(res.valor.advertencias).not.toContain(
+        'La ley indica prima vacacional no menor al 25% (Art. 80 LFT).'
+      );
+      expect(res.valor.advertencias).toContain(
+        'Montos brutos, sin deducción de ISR; consultar tratamiento LISR Arts. 96/93.'
+      );
+    });
+
+    it('Fix 3 — prima vacacional 20% warns, calculation still runs with 20%', () => {
+      const res = calcularFiniquito({ ...golden, primaVacacionalPct: 20 });
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(res.valor.advertencias).toContain(
+        'La ley indica prima vacacional no menor al 25% (Art. 80 LFT).'
+      );
+      expect(res.valor.importePrimaVacacional).toBeCloseTo(res.valor.importeVacaciones * 0.2, 1);
+    });
+
+    it('Fix 3 — prima vacacional 0% warns', () => {
+      const res = calcularFiniquito({ ...golden, primaVacacionalPct: 0 });
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(res.valor.advertencias).toContain(
+        'La ley indica prima vacacional no menor al 25% (Art. 80 LFT).'
+      );
+    });
+  });
 });

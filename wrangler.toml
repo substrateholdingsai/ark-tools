@@ -109,8 +109,8 @@ migrations_dir = "migrations"
 binding = "AI"
 
 # ─────────────────────────────────────────────────────────────────────
-# CRON TRIGGERS (Health check Alegra cada 6 horas)
+# CRON TRIGGERS (Alegra health check and hourly CANACO intent expiry sweep)
 # ─────────────────────────────────────────────────────────────────────
 [triggers]
-crons = ["0 */6 * * *"]
+crons = ["0 * * * *", "0 */6 * * *"]
 

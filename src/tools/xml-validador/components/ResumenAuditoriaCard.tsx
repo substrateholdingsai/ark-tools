@@ -31,12 +31,12 @@ export const ResumenAuditoriaCard: React.FC<ResumenAuditoriaCardProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-playfair text-xl font-bold text-ink">
-                  Dictamen Global de Auditoría
+                  Resumen de revisión interna
                 </h3>
-                <BadgeGold size="sm">{resumen.totalAnalizados} CFDI AUDITADOS</BadgeGold>
+                <BadgeGold size="sm">{resumen.totalAnalizados} XML REVISADOS</BadgeGold>
               </div>
               <p className="text-xs text-muted">
-                Verificación de Anexo 20 RMF, sellos digitales, estructura y reglas CFF
+                Reglas internas de formato y consistencia; no es una certificación SAT
               </p>
             </div>
           </div>
@@ -67,7 +67,7 @@ export const ResumenAuditoriaCard: React.FC<ResumenAuditoriaCardProps> = ({
         <div className="flex flex-col justify-between gap-6 rounded-2xl border border-white/5 bg-surface/60 p-6 md:flex-row md:items-end">
           <div>
             <span className="text-[11px] font-bold uppercase tracking-wider text-muted">
-              Índice Promedio de Cumplimiento SAT
+              Score interno promedio
             </span>
             <TextMagnified size="2xl" className="mt-1">
               {resumen.promedioScore} / 100
@@ -89,7 +89,7 @@ export const ResumenAuditoriaCard: React.FC<ResumenAuditoriaCardProps> = ({
             {resumen.rechazados > 0 && (
               <span className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-950/40 px-3 py-1.5 text-xs font-medium text-red-300">
                 <XCircle className="h-3.5 w-3.5 text-red-400" />
-                {resumen.rechazados} No Deducibles / Error
+                {resumen.rechazados} Rechazados / Error
               </span>
             )}
           </div>
@@ -99,14 +99,14 @@ export const ResumenAuditoriaCard: React.FC<ResumenAuditoriaCardProps> = ({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-white/5 bg-surface/40 p-4">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-              Archivos Verificados
+              Archivos revisados
             </span>
             <p className="mt-1 text-lg font-semibold text-ink">{resumen.totalAnalizados}</p>
           </div>
 
           <div className="rounded-xl border border-white/5 bg-surface/40 p-4">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-              Tasa de Éxito
+              Dictámenes aprobados internamente
             </span>
             <p className="mt-1 text-lg font-semibold text-emerald-400">
               {resumen.totalAnalizados > 0
@@ -117,14 +117,14 @@ export const ResumenAuditoriaCard: React.FC<ResumenAuditoriaCardProps> = ({
 
           <div className="rounded-xl border border-white/5 bg-surface/40 p-4">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-              Errores Críticos
+              Errores de validación
             </span>
             <p className="mt-1 text-lg font-semibold text-red-400">{resumen.totalErrores}</p>
           </div>
 
           <div className="rounded-xl border border-white/5 bg-surface/40 p-4">
             <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
-              Advertencias Normativas
+              Advertencias del motor
             </span>
             <p className="mt-1 text-lg font-semibold text-amber-400">{resumen.totalAdvertencias}</p>
           </div>

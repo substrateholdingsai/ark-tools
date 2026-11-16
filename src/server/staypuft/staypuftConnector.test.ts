@@ -448,7 +448,11 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(data.tools).toHaveLength(22);
 
       for (const tool of data.tools) {
-        expect(tool.law_cited.length).toBeGreaterThan(0);
+        if (tool.id === 'xml-excel') {
+          expect(tool.law_cited).toEqual([]);
+        } else {
+          expect(tool.law_cited.length).toBeGreaterThan(0);
+        }
       }
     });
 
@@ -482,6 +486,213 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
     });
   });
 
+  const XML_VALIDADOR_PREVIEW = `<?xml version="1.0" encoding="UTF-8"?>
+  <cfdi:Comprobante Version="4.0" Serie="A" Folio="101" Fecha="2026-10-15T12:00:00" SubTotal="10000.00" Total="11600.00" Moneda="MXN" TipoDeComprobante="I" MetodoPago="PUE" FormaPago="03" LugarExpedicion="97000" xmlns:cfdi="http://www.sat.gob.mx/cfd/4" xmlns:tfd="http://www.sat.gob.mx/TimbreFiscalDigital">
+    <cfdi:Emisor Rfc="AAA010101AAA" Nombre="EMPRESA DEMO SA DE CV" RegimenFiscal="601"/>
+    <cfdi:Receptor Rfc="XAXX010101000" Nombre="PUBLICO EN GENERAL" UsoCFDI="S01" DomicilioFiscalReceptor="97000" RegimenFiscalReceptor="616"/>
+    <cfdi:Conceptos><cfdi:Concepto ClaveProdServ="84111506" Cantidad="1" ClaveUnidad="E48" Descripcion="Servicios contables" ValorUnitario="10000.00" Importe="10000.00" ObjetoImp="02"/></cfdi:Conceptos>
+    <cfdi:Impuestos TotalImpuestosTrasladados="1600.00"><cfdi:Traslados><cfdi:Traslado Base="10000.00" Impuesto="002" TipoFactor="Tasa" TasaOCuota="0.160000" Importe="1600.00"/></cfdi:Traslados></cfdi:Impuestos>
+    <cfdi:Complemento><tfd:TimbreFiscalDigital Version="1.1" UUID="11111111-2222-3333-4444-555555555555" FechaTimbrado="2026-10-15T12:01:00"/></cfdi:Complemento>
+  </cfdi:Comprobante>`;
+
+  describe('Validador XML Preview contract', () => {
+    beforeEach(() => {
+      resetStayPuftMemoryAuditForTests();
+    });
+
+    const postPreview = async (payload: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      const response = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/validador/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+            'X-Tenant-Id': 'tenant-alpha',
+          },
+          body: JSON.stringify(payload),
+        }),
+        env,
+        mockCtx
+      );
+      return { response, env };
+    };
+
+    it.each([
+      ['objeto vacío', {}],
+      ['XML vacío', { xmlContent: '  ' }],
+      ['XML no textual', { xmlContent: 42 }],
+      ['fileName no textual', { xmlContent: XML_VALIDADOR_PREVIEW, fileName: 9 }],
+      ['campo desconocido', { xmlContent: XML_VALIDADOR_PREVIEW, xml: 'demo' }],
+    ])('rechaza %s en vez de usar valores demo', async (_caso, payload) => {
+      const { response } = await postPreview(payload);
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('xmlContent');
+    });
+
+    it.each([
+      ['XML no CFDI', '<html><body>no es un CFDI</body></html>'],
+      ['XML mal formado', '<cfdi:Comprobante Version="4.0">'],
+    ])('rechaza %s con 400', async (_caso, xmlContent) => {
+      const { response } = await postPreview({ xmlContent });
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+    });
+
+    it('valida el XML, enmascara RFCs profundamente y registra solo metadatos', async () => {
+      const { response, env } = await postPreview({
+        xmlContent: XML_VALIDADOR_PREVIEW,
+        fileName: 'cfdi-validacion-preview.xml',
+      });
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as {
+        preview_notice: string;
+        result: {
+          rfcEmisor: string;
+          rfcReceptor: string;
+          reglas: unknown[];
+          avisoAlcance: string;
+        };
+      };
+      const responseText = JSON.stringify(body);
+
+      expect(body.preview_notice).toContain('Worker');
+      expect(body.result.rfcEmisor).toBe('[RFC_PREVIEW]');
+      expect(body.result.rfcReceptor).toBe('[RFC_PREVIEW]');
+      expect(body.result.avisoAlcance).toContain('no una certificación del SAT');
+      expect(responseText).not.toContain('AAA010101AAA');
+      expect(responseText).not.toContain('XAXX010101000');
+      expect(responseText).not.toContain(XML_VALIDADOR_PREVIEW);
+
+      const auditResponse = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/audit?tenantId=tenant-alpha', {
+          headers: { 'X-StayPuft-Key': TEST_STAYPUFT_KEY },
+        }),
+        env,
+        mockCtx
+      );
+      expect(auditResponse.status).toBe(200);
+      const auditBody = (await auditResponse.json()) as {
+        entries: Array<{ path: string; details: string | null }>;
+      };
+      const previewEntry = auditBody.entries.find(
+        (entry) => entry.path === '/api/internal/tools/validador/preview'
+      );
+      expect(previewEntry?.details).toBe('preview_validador');
+      const auditText = JSON.stringify(auditBody.entries);
+      expect(auditText).not.toContain('AAA010101AAA');
+      expect(auditText).not.toContain('XAXX010101000');
+      expect(auditText).not.toContain(XML_VALIDADOR_PREVIEW);
+      expect(auditText).not.toContain('xmlContent');
+    });
+  });
+
+  describe('XML a Excel Preview contract', () => {
+    beforeEach(() => {
+      resetStayPuftMemoryAuditForTests();
+    });
+
+    const postPreview = async (payload: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      const response = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/xml-excel/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+            'X-Tenant-Id': 'tenant-alpha',
+          },
+          body: JSON.stringify(payload),
+        }),
+        env,
+        mockCtx
+      );
+      return { response, env };
+    };
+
+    it.each([
+      ['objeto vacío', {}],
+      ['XML vacío', { xmlContent: '  ' }],
+      ['XML no textual', { xmlContent: 42 }],
+      ['fileName no textual', { xmlContent: XML_VALIDADOR_PREVIEW, fileName: 9 }],
+      ['campo desconocido', { xmlContent: XML_VALIDADOR_PREVIEW, xml: 'demo' }],
+    ])('rechaza %s en vez de usar valores demo', async (_caso, payload) => {
+      const { response } = await postPreview(payload);
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('xmlContent');
+    });
+
+    it.each([
+      ['XML no CFDI', '<html><body>no es un CFDI</body></html>'],
+      ['XML mal formado', '<cfdi:Comprobante Version="4.0">'],
+    ])('rechaza %s con 400', async (_caso, xmlContent) => {
+      const { response } = await postPreview({ xmlContent });
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('XML');
+    });
+
+    it('procesa el CFDI enviado, enmascara RFCs y registra solo metadatos', async () => {
+      const { response, env } = await postPreview({
+        xmlContent: XML_VALIDADOR_PREVIEW,
+        fileName: 'cfdi-extraccion-preview.xml',
+      });
+      expect(response.status).toBe(200);
+      const body = (await response.json()) as {
+        preview_notice: string;
+        result: {
+          fileName: string;
+          uuid: string;
+          rfcEmisor: string;
+          rfcReceptor: string;
+          subtotal: number;
+          iva16: number;
+          total: number;
+        };
+      };
+      const responseText = JSON.stringify(body);
+
+      expect(body.preview_notice).toContain('XML se envía al servidor');
+      expect(body.result.fileName).toBe('cfdi-extraccion-preview.xml');
+      expect(body.result.uuid).toBe('11111111-2222-3333-4444-555555555555');
+      expect(body.result.rfcEmisor).toBe('[RFC_PREVIEW]');
+      expect(body.result.rfcReceptor).toBe('[RFC_PREVIEW]');
+      expect(body.result.subtotal).toBe(10000);
+      expect(body.result.iva16).toBe(1600);
+      expect(body.result.total).toBe(11600);
+      expect(responseText).not.toContain('AAA010101AAA');
+      expect(responseText).not.toContain('XAXX010101000');
+      expect(responseText).not.toContain(XML_VALIDADOR_PREVIEW);
+
+      const auditResponse = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/audit?tenantId=tenant-alpha', {
+          headers: { 'X-StayPuft-Key': TEST_STAYPUFT_KEY },
+        }),
+        env,
+        mockCtx
+      );
+      expect(auditResponse.status).toBe(200);
+      const auditBody = (await auditResponse.json()) as {
+        entries: Array<{ path: string; details: string | null }>;
+      };
+      const previewEntry = auditBody.entries.find(
+        (entry) => entry.path === '/api/internal/tools/xml-excel/preview'
+      );
+      expect(previewEntry?.details).toBe('preview_xml-excel');
+      const auditText = JSON.stringify(auditBody.entries);
+      expect(auditText).not.toContain('AAA010101AAA');
+      expect(auditText).not.toContain('XAXX010101000');
+      expect(auditText).not.toContain(XML_VALIDADOR_PREVIEW);
+      expect(auditText).not.toContain('xmlContent');
+    });
+  });
+
   // ==========================================================================
   // 4. Preview Calculation Mode (Writes nothing, seals nothing, stamps nothing)
   // ==========================================================================
@@ -490,6 +701,36 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       const { env, store } = createIsolatedMockEnv(true);
 
       for (const tool of CATALOGO_HERRAMIENTAS) {
+        const payload =
+          tool.id === 'nomina'
+            ? {
+                periodo: 'mensual',
+                sueldoBruto: 18000,
+                diasTrabajados: 30,
+                diasPeriodo: 30,
+                sbcDiario: 629.58,
+              }
+            : tool.id === 'recargos'
+              ? {
+                  importeHistorico: 45000,
+                  fechaVencimiento: '2025-06-17',
+                  fechaPago: '2026-02-17',
+                }
+              : tool.id === 'modalidad40'
+                ? {
+                    ultimoSbc: 600,
+                    sbcDeseado: 2932.75,
+                    semanasPrevias: 1250,
+                    mesesAportacion: 24,
+                    edadJubilacion: 65,
+                    asignacionFamiliar: true,
+                  }
+                : tool.id === 'validador'
+                  ? { xmlContent: XML_VALIDADOR_PREVIEW }
+                  : tool.id === 'xml-excel'
+                    ? { xmlContent: XML_VALIDADOR_PREVIEW }
+                    : {};
+
         const res = await worker.fetch(
           new Request(`https://ledger.arksystems.site/api/internal/tools/${tool.id}/preview`, {
             method: 'POST',
@@ -497,7 +738,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
               'X-StayPuft-Key': TEST_STAYPUFT_KEY,
               'Content-Type': 'application/json',
             },
-            body: JSON.stringify({}),
+            body: JSON.stringify(payload),
           }),
           env,
           mockCtx
@@ -513,7 +754,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
           stamped: boolean;
           dictamen_issued: boolean;
           law_cited: string[];
-          result: Record<string, unknown>;
+          result: Record<string, any>;
         };
 
         expect(body.ok).toBe(true);
@@ -523,12 +764,196 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
         expect(body.saved).toBe(false);
         expect(body.stamped).toBe(false);
         expect(body.dictamen_issued).toBe(false);
-        expect(body.law_cited.length).toBeGreaterThan(0);
+        if (tool.id === 'xml-excel') {
+          expect(body.law_cited).toEqual([]);
+        } else {
+          expect(body.law_cited.length).toBeGreaterThan(0);
+        }
         expect(body.result).toBeDefined();
+
+        if (tool.id === 'nomina') {
+          expect(body.result.isr.isrFinal).toBe(2033.23);
+          expect(body.result.imss.total).toBe(427.73);
+          expect(body.result.neto).toBe(15539.04);
+        }
+        if (tool.id === 'recargos') {
+          // Vector dorado verificado: no silent defaults, importes exactos
+          expect(body.result.impuestoActualizado).toBe(46134);
+          expect(body.result.montoRecargos).toBe(5425.36);
+          expect(body.result.totalPagar).toBe(51559.36);
+          expect(body.result.mesesMora).toBe(8);
+          expect(body.result.tasaRecargosTotal).toBe(11.76);
+          expect(body.result.factorActualizacion).toBe(1.0252);
+          expect(body.result.folioDeIntegridad).toMatch(/^REC-[0-9a-f]{8}$/);
+          expect(body.result.folioDeIntegridad).not.toContain('e3b0c442');
+        }
       }
 
       // Ningún cálculo en preview puede insertar en expedientes
       expect(store.expedienteInserts).toBe(0);
+    });
+  });
+
+  describe('Modalidad 40 preview input contract', () => {
+    const postModalidad40Preview = async (payload: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      return worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/modalidad40/preview', {
+          method: 'POST',
+          headers: {
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        }),
+        env,
+        mockCtx
+      );
+    };
+
+    it('rejects an empty payload rather than silently using the demo vector', async () => {
+      const response = await postModalidad40Preview({});
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('Faltan campos requeridos');
+    });
+
+    it('rejects noncanonical fields and returns the calculation for the six canonical inputs', async () => {
+      const invalid = await postModalidad40Preview({
+        ultimoSbc: 600,
+        sbcDeseado: 2932.75,
+        semanasPrevias: 1250,
+        mesesAportacion: 24,
+        edadJubilacion: 65,
+        asignacionFamiliar: true,
+        mesesModalidad40: 24,
+      });
+      expect(invalid.status).toBe(400);
+      const invalidBody = (await invalid.json()) as { error: string };
+      expect(invalidBody.error).toContain('Campos desconocidos');
+
+      const valid = await postModalidad40Preview({
+        ultimoSbc: 600,
+        sbcDeseado: 2932.75,
+        semanasPrevias: 1250,
+        mesesAportacion: 24,
+        edadJubilacion: 65,
+        asignacionFamiliar: true,
+      });
+      expect(valid.status).toBe(200);
+      const body = (await valid.json()) as {
+        ok: boolean;
+        result: {
+          limites: { sbcEfectivo: number };
+          inversion: { cuotaMensual: number; inversionTotal: number };
+          pension: { pensionMensualEstimada: number };
+          roi: { mesesRecuperacionRoi: number };
+        };
+      };
+      expect(body.ok).toBe(true);
+      expect(body.result.limites.sbcEfectivo).toBe(717.31);
+      expect(body.result.inversion.cuotaMensual).toBe(3148.38);
+      expect(body.result.inversion.inversionTotal).toBe(75561.12);
+      expect(body.result.pension.pensionMensualEstimada).toBe(16783.17);
+      expect(body.result.roi.mesesRecuperacionRoi).toBe(55);
+    });
+  });
+
+  // ==========================================================================
+  // RESICO preview input contract (Must-fix 1 & 6)
+  // ==========================================================================
+  describe('RESICO preview input contract', () => {
+    const postPreview = async (body: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      const res = await worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/resico/preview', {
+          method: 'POST',
+          headers: {
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        }),
+        env,
+        mockCtx
+      );
+      return { env, res };
+    };
+
+    it('correct PF fields return the correct calculation (no silent defaults)', async () => {
+      const { res } = await postPreview({
+        tipoPersona: 'fisica',
+        ingresosCobrados: 75000,
+        ingresosAcumuladosAnio: 600000,
+        retencionISR: 937.5,
+        ivaCobrado: 12000,
+        ivaAcreditable: 4500,
+        mes: 10,
+      });
+      expect(res.status).toBe(200);
+      const json = (await res.json()) as {
+        ok: boolean;
+        statusCode: number;
+        error?: string;
+        result: Record<string, unknown>;
+      };
+      expect(json.ok).toBe(true);
+      const data = json.result;
+      expect(data.tasaISRPct).toBe(1.5);
+      expect(data.isrCausado).toBe(1125);
+      expect(data.isrNetoPagar).toBe(187.5);
+      expect(data.ivaNetoPagar).toBe(7500);
+      expect(data.totalImpuestosPagar).toBe(7687.5);
+      expect(data.ingresosCobradosMes).toBe(75000);
+      expect(data.ingresosAcumuladosTotal).toBe(675000);
+    });
+
+    it("unknown field 'ingresos' is rejected with 'use ingresosCobrados'", async () => {
+      const { res } = await postPreview({ ingresos: 100000 });
+      expect(res.status).toBe(400);
+      const json = (await res.json()) as {
+        ok: boolean;
+        statusCode: number;
+        error?: string;
+        result: Record<string, unknown>;
+      };
+      expect(json.ok).toBe(false);
+      expect(json.error).toContain('ingresosCobrados');
+    });
+
+    it('missing mes returns 400 (not default 10)', async () => {
+      const { res } = await postPreview({
+        tipoPersona: 'fisica',
+        ingresosCobrados: 75000,
+        ingresosAcumuladosAnio: 600000,
+      });
+      expect(res.status).toBe(400);
+      const json = (await res.json()) as {
+        ok: boolean;
+        statusCode: number;
+        error?: string;
+        result: Record<string, unknown>;
+      };
+      expect(json.ok).toBe(false);
+      expect(json.error).toContain('mes');
+    });
+
+    it('missing PF ingresosAcumuladosAnio returns 400 (not default 600,000)', async () => {
+      const { res } = await postPreview({
+        tipoPersona: 'fisica',
+        ingresosCobrados: 75000,
+        mes: 10,
+      });
+      expect(res.status).toBe(400);
+      const json = (await res.json()) as {
+        ok: boolean;
+        statusCode: number;
+        error?: string;
+        result: Record<string, unknown>;
+      };
+      expect(json.ok).toBe(false);
+      expect(json.error).toContain('ingresosAcumulados');
     });
   });
 

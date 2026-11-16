@@ -31,6 +31,14 @@ const getValor = (id: string): number => {
 export const SMG_VIGENTE = getValor('SALARIO_MINIMO_GENERAL_2026');
 export const TOPE_PRIMA_ANTIGUEDAD = 2 * SMG_VIGENTE;
 
+/** Guardrail: los importes son brutos, sin deducción de ISR (LISR Arts. 96/93 no implementados). */
+export const LEYENDA_ISR =
+  'Montos brutos, sin deducción de ISR; consultar tratamiento LISR Arts. 96/93.';
+
+/** Art. 80 LFT: prima vacacional no menor al 25%. */
+export const ADVERTENCIA_PRIMA_VACACIONAL_MIN =
+  'La ley indica prima vacacional no menor al 25% (Art. 80 LFT).';
+
 /**
  * Tabla de vacaciones dignas (LFT Art. 76 vigente a partir de 2023).
  * Año 1: 12 días
@@ -205,8 +213,13 @@ export function calcularFiniquito(entrada: EntradaFiniquito): ResultadoCalculo {
   const importeVacaciones = redondear(totalVacacionesDias * salarioDiario);
 
   // 4. Prima Vacacional (Art. 80 LFT)
+  const advertencias: string[] = [];
+  advertencias.push(LEYENDA_ISR);
   const pctPrima = (entrada.primaVacacionalPct ?? 25) / 100;
   const importePrimaVacacional = redondear(importeVacaciones * pctPrima);
+  if ((entrada.primaVacacionalPct ?? 25) < 25) {
+    advertencias.push(ADVERTENCIA_PRIMA_VACACIONAL_MIN);
+  }
 
   // 5. Aguinaldo (Art. 87 LFT - 15 días base)
   const aguinaldoProporcionalDias = (diasTrabajadosAguinaldo / 365) * 15;
@@ -240,7 +253,7 @@ export function calcularFiniquito(entrada: EntradaFiniquito): ResultadoCalculo {
   const desglose: DesgloseConcepto[] = [
     {
       concepto: 'Aguinaldo Proporcional y Pendiente',
-      formula: `${totalAguinaldoDias.toFixed(2)} días (${diasTrabajadosAguinaldo} d laborados en el año) × $${salarioDiario.toFixed(2)}`,
+      formula: `${totalAguinaldoDias.toFixed(2)} días (${diasTrabajadosAguinaldo} días naturales del año de baja) × $${salarioDiario.toFixed(2)}`,
       dias: redondear(totalAguinaldoDias),
       importe: importeAguinaldo,
       fundamento: 'Art. 87 LFT',
@@ -314,6 +327,7 @@ export function calcularFiniquito(entrada: EntradaFiniquito): ResultadoCalculo {
     importe20dias,
     totalFiniquito,
     totalLiquidacion,
+    advertencias,
     desglose,
   };
 

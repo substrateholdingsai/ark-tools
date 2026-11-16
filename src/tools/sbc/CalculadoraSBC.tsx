@@ -1,19 +1,3 @@
-/**
- * ARK LEDGER — Calculadora SBC 2026
- * Componente Principal
- *
- * Ensambla los 5 componentes del Día 3:
- *   1. ParametrosCard  — Inputs + sliders + presets
- *   2. RangoVisual     — Barra de posición en el rango IMSS
- *   3. DesgloseTable   — Tabla con factor y aportes
- *   4. ResultadoSBC    — Card dorada con SBC final
- *   5. ExplicacionSBC  — Card navy informativa
- *
- * Estado local:
- *   - parametros: ParametrosSBC (default del Día 1)
- *   - resultado: calculado con useMemo
- */
-
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useExpediente } from '@/context/ExpedienteContext';
@@ -25,74 +9,76 @@ import {
   ResultadoSBC,
   ExplicacionSBC,
 } from './components';
-import { PARAMETROS_DEFAULT } from './data/uma';
+import { PARAMETROS_DEFAULT, diasVacacionesPorAntiguedad } from './data/uma';
 import { calcularResultadoSBC } from './lib/calcularSBC';
-import type { ParametrosSBC } from './types';
+import type { ParametrosSBC, ZonaSalarial } from './types';
 
 interface CalculadoraSBCProps {
-  /** Callback al volver al dashboard (opcional) */
   onBack?: () => void;
 }
 
 export function CalculadoraSBC({ onBack }: CalculadoraSBCProps) {
-  // ─────────────────────────────────────────────────────────────
-  // ESTADO
-  // ─────────────────────────────────────────────────────────────
-  const [parametros, setParametros] = useState<ParametrosSBC>(PARAMETROS_DEFAULT);
+  const [parametros, setParametros] = useState<ParametrosSBC>({
+    ...PARAMETROS_DEFAULT,
+    aniosAntiguedad: 1,
+    menorDeUnAnio: false,
+  });
   const { activeClient } = useExpediente();
 
-  // Auto-hidratar con datos del cliente/trabajador activo
   useEffect(() => {
     if (activeClient && activeClient.salario_diario > 0) {
-      setParametros((prev) => ({
-        ...prev,
-        salarioDiario: activeClient.salario_diario,
-      }));
+      setParametros((prev) => ({ ...prev, salarioDiario: activeClient.salario_diario }));
     }
   }, [activeClient]);
 
-  // ─────────────────────────────────────────────────────────────
-  // CÁLCULOS DERIVADOS
-  // ─────────────────────────────────────────────────────────────
   const resultado = useMemo(() => calcularResultadoSBC(parametros), [parametros]);
 
-  // ─────────────────────────────────────────────────────────────
-  // HANDLERS
-  // ─────────────────────────────────────────────────────────────
+  const handleChange = useCallback(
+    (campo: keyof ParametrosSBC, valor: number | string | boolean) => {
+      setParametros((prev) => {
+        const next: ParametrosSBC = { ...prev };
+        switch (campo) {
+          case 'salarioDiario':
+            next.salarioDiario = Math.max(0, Number(valor) || 0);
+            break;
+          case 'diasVacaciones':
+            next.diasVacaciones = Math.max(0, Math.min(32, Number(valor) || 0));
+            break;
+          case 'primaVacacional':
+            next.primaVacacional = Math.max(0, Math.min(100, Number(valor) || 0));
+            break;
+          case 'diasAguinaldo':
+            next.diasAguinaldo = Math.max(0, Number(valor) || 0);
+            break;
+          case 'aniosAntiguedad': {
+            const anios = Math.max(0, Math.min(35, Math.floor(Number(valor) || 0)));
+            next.aniosAntiguedad = anios;
+            if (anios >= 1) {
+              next.menorDeUnAnio = false;
+              next.diasVacaciones = diasVacacionesPorAntiguedad(anios);
+            } else {
+              next.menorDeUnAnio = true;
+            }
+            break;
+          }
+          case 'zona':
+            next.zona = valor as ZonaSalarial;
+            break;
+          case 'menorDeUnAnio':
+            next.menorDeUnAnio = Boolean(valor);
+            if (next.menorDeUnAnio) next.aniosAntiguedad = 0;
+            break;
+          default:
+            (next as unknown as Record<string, unknown>)[campo] = valor;
+        }
+        return next;
+      });
+    },
+    []
+  );
 
-  /**
-   * Actualiza un campo de parámetros.
-   * Sanitiza el valor según el campo.
-   */
-  const handleChange = useCallback((campo: keyof ParametrosSBC, valor: number) => {
-    setParametros((prev) => {
-      let valorSanitizado = valor;
-
-      switch (campo) {
-        case 'salarioDiario':
-          valorSanitizado = Math.max(0, valor);
-          break;
-        case 'diasVacaciones':
-          valorSanitizado = Math.max(6, Math.min(32, valor));
-          break;
-        case 'primaVacacional':
-          valorSanitizado = Math.max(0, Math.min(100, valor));
-          break;
-        case 'diasAguinaldo':
-          valorSanitizado = Math.max(0, valor);
-          break;
-      }
-
-      return { ...prev, [campo]: valorSanitizado };
-    });
-  }, []);
-
-  // ─────────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────────
   return (
     <div className="mx-auto max-w-[1280px] px-6 py-10 md:px-10">
-      {/* Botón de volver */}
       {onBack && (
         <button
           type="button"
@@ -104,18 +90,16 @@ export function CalculadoraSBC({ onBack }: CalculadoraSBCProps) {
         </button>
       )}
 
-      {/* Header */}
       <header className="mb-6">
         <h1 className="font-playfair text-[36px] font-black leading-[0.95] tracking-[-0.03em] text-ink md:text-[44px]">
           Calculadora SBC 2026
         </h1>
         <p className="inter mt-3 max-w-[64ch] font-inter text-[14px] leading-[1.6] text-muted">
-          Salario Base de Cotización con factor de integración, tope de 25 UMAs ($2,932.75) y
-          salario mínimo frontera ($440.87). Cálculo conforme LSS Art. 27 y 28.
+          Salario Base de Cotización con factor de integración, tope 25 UMAs ($2,932.75) y límite
+          inferior por zona salarial (LSS Arts. 27 y 28). Zona general por defecto.
         </p>
       </header>
 
-      {/* Sincronización con Expediente Único (Sprint 9) */}
       <div className="mb-8">
         <ExpedienteToolBanner
           toolId="sbc"
@@ -125,31 +109,22 @@ export function CalculadoraSBC({ onBack }: CalculadoraSBCProps) {
         />
       </div>
 
-      {/* Grid de dos columnas: entrada + resultado */}
       <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
-        {/* COLUMNA IZQUIERDA: Entradas */}
         <div className="min-w-0 space-y-6">
           <ParametrosCard parametros={parametros} onChange={handleChange} resultado={resultado} />
-
           <RangoVisual resultado={resultado} />
-
           <DesgloseTable parametros={parametros} resultado={resultado} />
         </div>
-
-        {/* COLUMNA DERECHA: Resultado (sticky en desktop) */}
         <div className="space-y-4 lg:sticky lg:top-[88px]">
           <ResultadoSBC parametros={parametros} resultado={resultado} />
-
           <ExplicacionSBC />
         </div>
       </div>
 
-      {/* Nota al pie */}
       <div className="mt-8 max-w-[760px] rounded-[16px] border border-line bg-surface-2 p-4 text-[11px] leading-[1.5] text-muted">
-        <strong className="text-ink">Nota:</strong> Cálculo informativo conforme a la Ley del Seguro
-        Social. El SBC integra las prestaciones (vacaciones, prima vacacional, aguinaldo) al salario
-        diario. Los valores de UMA y salario mínimo son los vigentes a 2026. Verifica con tu área
-        contable antes de presentar ante el IMSS.
+        <strong className="text-ink">Nota:</strong> Cálculo informativo conforme a LSS Arts. 27 y
+        28, LFT Arts. 76, 80 y 87. UMA 2026 $117.31; SMG zona general $315.04; SMG ZLFN $440.87
+        (DOF). Verifica con tu área contable antes de presentar ante el IMSS.
       </div>
     </div>
   );

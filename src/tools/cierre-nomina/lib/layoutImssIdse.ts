@@ -131,7 +131,8 @@ export function calcularDigitoVerificadorIdse(lineaBase: string): string {
 
 /**
  * Genera una línea fija DISPMAG / IDSE para un trabajador.
- * Longitud total: exactamente 175 caracteres estándar IMSS.
+ * Longitud total: exactamente 175 caracteres (implementación Ledger; longitud NO confirmada en manual
+ * oficial IMSS — no hacer upload en vivo hasta validación).
  */
 export function generarLineaIdse(
   t: ResultadoTrabajadorNomina,

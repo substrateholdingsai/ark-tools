@@ -11,6 +11,7 @@
 import type { Env } from '../../index';
 import { runAiAgent, DEFAULT_MODEL, FAST_MODEL } from './agent';
 import { AI_TOOLS_CATALOG } from './tools';
+import { TOTAL_HERRAMIENTAS } from '@/data/catalogo-herramientas';
 import type { AiChatRequestBody } from './types';
 import { requireTenantMembership, type AuthPrincipal } from '../auth';
 import { FREE_AI_QUOTA, getProPaymentUrl } from '../../config/billing';
@@ -180,6 +181,9 @@ export async function handleAiApiRequest(
     return Response.json(
       {
         tools_count: AI_TOOLS_CATALOG.length,
+        ai_capabilities_count: AI_TOOLS_CATALOG.length,
+        ledger_tools_count: TOTAL_HERRAMIENTAS,
+        tools_scope: 'tools_count counts AI capabilities, not the full Ledger tool catalog',
         tools: AI_TOOLS_CATALOG,
       },
       { headers: corsHeaders }

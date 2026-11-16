@@ -95,7 +95,7 @@ export function generarResumenWhatsApp(
     `💵 *TOTAL A LIQUIDAR:* $${resultado.totalPagar.toLocaleString('es-MX', { minimumFractionDigits: 2 })} MXN`,
     `📝 _"${resultado.totalEnLetras}"_`,
     ``,
-    `🔒 _Documento sellado con SHA-256 conforme a CFF Arts. 17-A y 21._`,
+    `🔒 _Folio de Integridad derivado del cálculo (token determinista, no sellado fiscal ante SAT)._`,
   ];
 
   return lineas.join('\n');

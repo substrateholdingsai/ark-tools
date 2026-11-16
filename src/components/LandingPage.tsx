@@ -2,8 +2,7 @@
  * ARK LEDGER — Landing Pública
  *
  * Página de aterrizaje para usuarios no autenticados.
- * Explica las 22 herramientas de la suite y el beneficio de registrarse
- * para acceder a la funcionalidad completa.
+ * Presenta vistas previas de la suite y facilita el acceso al catálogo completo.
  */
 
 import { useEffect, useState } from 'react';
@@ -30,6 +29,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Logo } from './Logo';
 import { Footer } from './Footer';
 import { SimmpleReferralButton } from './SimmpleReferralButton';
+import { TOTAL_HERRAMIENTAS } from '@/data/catalogo-herramientas';
 
 interface ToolPreview {
   icon: typeof Calculator;
@@ -98,16 +98,16 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     category: 'Fiscal',
     title: 'Simulador Modalidad 40',
     description:
-      'Proyección de pensión Ley 73 con la restricción del Acuerdo DOF 21/10/2026 (Último SBC + 1 UMA), cuota 14.438%, ROI y Cédula QR.',
+      'Proyección de pensión Ley 73 con la restricción del Acuerdo DOF 21/10/2026 (Último SBC + 1 UMA), cálculo de cuota vigente, ROI y Cédula QR.',
     tag: 'DOF 21/10/2026',
   },
   // SAT
   {
     icon: FileSpreadsheet,
     category: 'SAT & CFDI',
-    title: 'Conversor XML → Excel',
+    title: 'Conversor XML → CSV para Excel',
     description:
-      'Arrastra lotes de CFDIs 3.3 y 4.0 (ingresos, nómina, gastos) y expórtalos en tablas organizadas de Excel/CSV listas para tu contabilidad.',
+      'Extrae CFDI 3.3 y 4.0 a CSV con una fila por comprobante: hasta 200 archivos de 10 MB cada uno.',
     tag: 'Hasta 200 archivos',
   },
   {
@@ -201,7 +201,7 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     category: 'Fiscal',
     title: 'Actualización y Recargos CFF',
     description:
-      'Cálculo determinista Art. 17-A CFF (factor INPC truncado a 4 decimales, no-deflación) y mora LIF 1.47% mensual. Desglose mes a mes y Cédula QR.',
+      'Cálculo determinista Art. 17-A CFF (factor INPC truncado a 4 decimales, no-deflación) y tasa mensual de mora vigente en LIF. Desglose mes a mes y Cédula QR.',
     tag: 'Art. 17-A CFF',
   },
 ];
@@ -457,21 +457,20 @@ export function LandingPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-cream/70 px-3.5 py-1.5 font-orbitron text-[11px] font-bold uppercase tracking-[0.14em] text-gold-dark">
             <ShieldCheck size={14} className="text-gold-dark" />
-            <span>Blindaje & Evidencia Fiscal 2026 · Cero Riesgo</span>
+            <span>Herramientas de cálculo fiscal y laboral</span>
           </div>
 
           {/* Headline */}
           <h1 className="font-playfair text-[42px] font-black leading-[0.96] tracking-[-0.03em] text-ink sm:text-[56px] md:text-[68px]">
-            Cálculos auditables. <br />
-            <span className="text-navy">Blindados</span> ante cualquier revisión.
+            Calcula y revisa. <br />
+            <span className="text-navy">Decide con contexto.</span>
           </h1>
 
           {/* Subtitle */}
           <p className="mx-auto max-w-[760px] font-inter text-[16px] leading-[1.55] text-muted md:text-[19px]">
-            La plataforma para despachos y fiscalistas en México. Realiza cálculos sin costo y
-            genera
-            <strong> Cédulas de Trabajo Formales con Sello Criptográfico SHA-256</strong> que
-            demuestran la trazabilidad de tus cifras ante el SAT y tribunales.
+            Herramientas de referencia para despachos y negocios en México. Revisa cada resultado
+            con tu asesor antes de presentarlo ante una autoridad. Los folios internos no son sellos
+            criptográficos ni constancias fiscales.
           </p>
 
           {/* Caja Freemium: Calculadoras Gratis + Trazabilidad Pro */}
@@ -480,13 +479,11 @@ export function LandingPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 font-orbitron text-[13px] font-bold uppercase text-navy">
                   <Fingerprint size={16} className="text-gold-dark" />
-                  <span>Modelo Transparente: Gratis para calcular, Pro para blindar</span>
+                  <span>Explora vistas previas; el acceso completo requiere cuenta</span>
                 </div>
                 <p className="text-[13px] leading-relaxed text-muted">
-                  Usa todas las calculadoras y conversores de forma{' '}
-                  <strong>100% gratuita e ilimitada</strong>. Solo pagas si requieres emitir
-                  dictámenes, timbrado masivo o sellar tu{' '}
-                  <strong>Expediente Único con validez pericial</strong>.
+                  Explora las vistas previas disponibles. Algunas funciones requieren iniciar sesión
+                  o contar con un plan. El portal no emite dictámenes ni sellos fiscales.
                 </p>
               </div>
 
@@ -508,11 +505,11 @@ export function LandingPage() {
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              <span>Cédulas con Hash SHA-256 y QR verificador</span>
+              <span>Folios internos; sin verificación QR oficial</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              <span>Tasas oficiales DOF 2026</span>
+              <span>Fuentes de vigencia visibles en el catálogo</span>
             </div>
           </div>
         </div>
@@ -528,11 +525,11 @@ export function LandingPage() {
               Catálogo de Herramientas
             </div>
             <h2 className="font-playfair text-[34px] font-black leading-[1.05] text-ink md:text-[46px]">
-              {visibleTools.length} utilidades indispensables para tu práctica contable
+              {visibleTools.length} vistas previas de herramientas
             </h2>
             <p className="mx-auto max-w-[580px] text-[15px] text-muted">
-              Cada herramienta fue diseñada para resolver un problema fiscal específico con cero
-              fricción y resultados inmediatos.
+              El catálogo canónico de Ledger contiene {TOTAL_HERRAMIENTAS} herramientas; esta
+              sección muestra un subconjunto que puede filtrarse por categoría.
             </p>
           </div>
 
@@ -732,12 +729,11 @@ export function LandingPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cream font-bold text-navy">
                 <Fingerprint size={20} className="text-gold-dark" />
               </div>
-              <h3 className="text-[16px] font-bold text-ink">
-                2. Expediente Único (Sello SHA-256)
-              </h3>
+              <h3 className="text-[16px] font-bold text-ink">2. Expediente Único</h3>
               <p className="text-[13px] leading-relaxed text-muted">
-                Cobramos micro-créditos por estampar la firma de tu despacho en PDFs formales con QR
-                pericial auditables por la autoridad.
+                Algunas funciones de archivo y generación de documentos pueden requerir un plan de
+                pago. El Folio de Integridad es una referencia interna; no es un sello SHA-256, una
+                constancia NOM-151 ni una certificación oficial.
               </p>
             </div>
 

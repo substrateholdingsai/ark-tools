@@ -23,6 +23,7 @@ import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './serve
 import { botApp } from './server/bots/botIngestionApi';
 import { handleBillingApiRequest } from './server/billing/billingWebhook';
 import { handleCanacoConektaApiRequest } from './server/canacoConektaService';
+import { expireCanacoPaymentIntents } from './server/canacoLifecycle';
 import { handleCanacoBuzonApiRequest } from './server/canacoBuzonApi';
 import { handleSentinelaApiRequest } from './server/sentinela/sentinelaWebhook';
 import {
@@ -57,6 +58,7 @@ export interface Env {
   CLIP_ENVIRONMENT?: string;
   CLIP_PAYMENT_URL?: string;
   PRO_PRICE_MXN?: string;
+  CANACO_PRICING_CONFIRMED?: string;
 
   // Email transaccional (Telnyx / Resend)
   EMAIL_PROVIDER?: 'telnyx' | 'resend';
@@ -188,12 +190,13 @@ export default {
     });
   },
 
-  async scheduled(
-    _controller: ScheduledController,
-    env: Env,
-    ctx: ExecutionContext
-  ): Promise<void> {
-    ctx.waitUntil(checkAlegraAccountsHealth(env));
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (controller.cron === '0 */6 * * *') {
+      ctx.waitUntil(checkAlegraAccountsHealth(env));
+    }
+    if (env.ARK_TOOLS_DB) {
+      ctx.waitUntil(expireCanacoPaymentIntents(env.ARK_TOOLS_DB, new Date().toISOString()));
+    }
   },
 } satisfies ExportedHandler<Env>;
 

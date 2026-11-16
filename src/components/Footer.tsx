@@ -203,7 +203,7 @@ export function Footer({ className, onSelectTool, brand = currentBrand }: Footer
                   onClick={() => onSelectTool?.('xml-excel')}
                   className="text-left transition hover:text-navy"
                 >
-                  Conversor Lotes XML → Excel
+                  Conversor XML → CSV para Excel
                 </button>
               </li>
               <li>

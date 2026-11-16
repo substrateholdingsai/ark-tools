@@ -10,8 +10,8 @@
 
 import type { Env } from '../index';
 import type { AuthPrincipal } from './auth';
-import { sendCanacoConfirmacionPagoEmail } from './canacoEmailService';
-import { timingSafeEqual } from './canacoConektaService';
+import { calcularCuotaAfiliacion, extraerNumEmpleados } from '@/components/canaco/calculoCuota';
+import type { SectorEconomico } from '@/components/canaco/types';
 
 export interface SocioCobranzaRecord {
   id: string;
@@ -56,31 +56,6 @@ export function normalizarTelefonoE164(tel: string | null | undefined): string {
     return `+52${cleaned.slice(1)}`;
   }
   return `+${cleaned}`;
-}
-
-/**
- * Extrae el importe de la cuota desde las notas del lead o asigna valor por estrato.
- */
-export function extraerMontoDeNotas(notas: string | null | undefined): number {
-  if (!notas) return 1090.0;
-  const match = notas.match(/Cuota:\s*\$?([\d,]+(\.\d+)?)/i);
-  if (match && match[1]) {
-    const parsed = parseFloat(match[1].replace(/,/g, ''));
-    if (!isNaN(parsed) && parsed > 0) return parsed;
-  }
-  return 1090.0;
-}
-
-/**
- * Extrae el RFC desde las notas del lead.
- */
-export function extraerRfcDeNotas(notas: string | null | undefined): string {
-  if (!notas) return 'XAXX010101000';
-  const match = notas.match(/RFC:\s*([A-Z0-9]+)/i);
-  if (match && match[1]) {
-    return match[1].toUpperCase();
-  }
-  return 'XAXX010101000';
 }
 
 /**
@@ -258,7 +233,13 @@ export async function handleCanacoArkangelSyncApi(
     if (db) {
       const row = await db
         .prepare(
-          "SELECT COUNT(*) AS total FROM leads_ark_tools WHERE tenant_id = 'canaco_merida' AND (status = 'Nuevo / Pendiente' OR status = 'pendiente_pago' OR status = 'Nuevo')"
+          `SELECT COUNT(*) AS total FROM leads_ark_tools
+           WHERE tenant_id = 'canaco_merida' AND arkangel_share_consent = 1
+             AND is_demo = 0 AND lifecycle_stage IN ('prospecto', 'registrado', 'pago_pendiente')
+             AND status IN (
+               'Prospecto', 'Registrado', 'Pago Pendiente',
+               'Nuevo / Pendiente', 'pendiente_pago', 'Nuevo'
+             )`
         )
         .first<{ total: number }>()
         .catch(() => null);
@@ -283,24 +264,22 @@ export async function handleCanacoArkangelSyncApi(
   // POST /api/canaco/sync-arkangel
   // ─────────────────────────────────────────────────────────────────
   if (path === '/api/canaco/sync-arkangel' && request.method === 'POST') {
-    // Verificación de autorización: super_admin, admin de canaco (horus.i2d@gmail.com) o CRON_SECRET dedicado
-    const cronSecret = (
-      request.headers.get('X-Cron-Key') ||
-      request.headers.get('x-cron-key') ||
-      ''
-    ).trim();
-    const expectedCronSecret = env.CRON_SECRET || env.ARKANGEL_WEBHOOK_SECRET || '';
-    const isAuthorizedCron = Boolean(
-      cronSecret && expectedCronSecret && timingSafeEqual(cronSecret, expectedCronSecret)
-    );
-    const isCanacoAdmin =
-      principal?.email.toLowerCase() === 'horus.i2d@gmail.com' ||
-      principal?.platformRole === 'super_admin';
-
-    if (!isCanacoAdmin && !isAuthorizedCron) {
+    if (principal?.email.toLowerCase() !== 'pavel@arksystems.site') {
       return Response.json(
-        { error: 'No autorizado para disparar la sincronización del Call Center.' },
+        { error: 'La sincronización requiere aprobación autenticada de Pavel.' },
         { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    const body = (await request.json().catch(() => ({}))) as {
+      action?: 'preview' | 'dispatch';
+      approvalId?: string;
+    };
+    const action = body.action || 'preview';
+    if (action !== 'preview' && action !== 'dispatch') {
+      return Response.json(
+        { error: 'Acción de sincronización no válida.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
       );
     }
 
@@ -312,12 +291,118 @@ export async function handleCanacoArkangelSyncApi(
     }
 
     try {
+      if (action === 'dispatch') {
+        if (!body.approvalId) {
+          return Response.json(
+            { error: 'Se requiere aprobar una vista previa vigente antes del envío.' },
+            { status: 428, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+        const approval = await db
+          .prepare(
+            `SELECT id, approver_id, approver_email, preview_json, expires_at, consumed_at
+             FROM canaco_arkangel_approvals
+             WHERE id = ? AND approver_id = ? AND approver_email = ? LIMIT 1`
+          )
+          .bind(body.approvalId, principal.id, principal.email)
+          .first<{
+            id: string;
+            approver_id: string;
+            approver_email: string;
+            preview_json: string;
+            expires_at: string;
+            consumed_at: string | null;
+          }>();
+        if (!approval || approval.consumed_at || Date.parse(approval.expires_at) <= Date.now()) {
+          return Response.json(
+            { error: 'La vista previa no existe, venció o ya fue utilizada.' },
+            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+
+        const preview = JSON.parse(approval.preview_json) as {
+          socios: SocioCobranzaRecord[];
+          excludedLeadIds: string[];
+        };
+        const eligible = await db
+          .prepare(
+            `SELECT id FROM leads_ark_tools
+             WHERE tenant_id = 'canaco_merida'
+               AND arkangel_share_consent = 1 AND is_demo = 0
+               AND lifecycle_stage IN ('prospecto', 'registrado', 'pago_pendiente')
+               AND status IN (
+                 'Prospecto', 'Registrado', 'Pago Pendiente',
+                 'Nuevo / Pendiente', 'pendiente_pago', 'Nuevo'
+               )`
+          )
+          .all<{ id: string }>();
+        const eligibleIds = new Set((eligible.results || []).map((row) => row.id));
+        if (preview.socios.some((socio) => !eligibleIds.has(socio.id))) {
+          return Response.json(
+            {
+              error:
+                'La elegibilidad o el consentimiento cambió desde la vista previa; genera otra.',
+            },
+            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+
+        const reservation = await db
+          .prepare(
+            `UPDATE canaco_arkangel_approvals SET consumed_at = ?
+             WHERE id = ? AND consumed_at IS NULL AND expires_at > ?`
+          )
+          .bind(new Date().toISOString(), approval.id, new Date().toISOString())
+          .run();
+        if (reservation.meta.changes !== 1) {
+          return Response.json(
+            { error: 'La vista previa ya fue aprobada por otra solicitud.' },
+            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+
+        const resultado = await despacharLoteArkangel(env, preview.socios);
+        await db
+          .prepare(
+            `INSERT INTO canaco_arkangel_sync_batches
+             (id, approval_id, approver_id, approver_email, sent_leads_json, excluded_leads_json,
+              simulated, provider_result_json)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          )
+          .bind(
+            approval.id,
+            approval.id,
+            principal.id,
+            principal.email,
+            JSON.stringify(
+              resultado.ok && !resultado.simulated ? preview.socios.map((socio) => socio.id) : []
+            ),
+            JSON.stringify(preview.excludedLeadIds),
+            resultado.simulated ? 1 : 0,
+            JSON.stringify({
+              ok: resultado.ok,
+              provider: resultado.arkangel_response || null,
+              message: resultado.mensaje,
+            })
+          )
+          .run();
+        return Response.json(resultado, {
+          headers: { ...corsHeaders, 'Cache-Control': 'no-store' },
+        });
+      }
+
       const rows = await db
         .prepare(
-          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, contacto_nombre, notas
+          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, contacto_nombre,
+                  notas, canonical_rfc
            FROM leads_ark_tools
            WHERE tenant_id = 'canaco_merida'
-             AND (status = 'Nuevo / Pendiente' OR status = 'pendiente_pago' OR status = 'Nuevo')`
+             AND arkangel_share_consent = 1 AND is_demo = 0
+             AND lifecycle_stage IN ('prospecto', 'registrado', 'pago_pendiente')
+             AND status IN (
+               'Prospecto', 'Registrado', 'Pago Pendiente',
+               'Nuevo / Pendiente', 'pendiente_pago', 'Nuevo'
+             )`
         )
         .all<{
           id: string;
@@ -329,45 +414,85 @@ export async function handleCanacoArkangelSyncApi(
           status: string | null;
           contacto_nombre: string | null;
           notas: string | null;
+          canonical_rfc: string | null;
         }>();
 
       const leads = rows.results || [];
       const fechaVencimiento =
         new Date(Date.now() + 15 * 86400000).toISOString().split('T')[0] || '';
 
-      const socios: SocioCobranzaRecord[] = leads.map((l) => ({
-        id: l.id,
-        nombre: l.web || 'Comercio Afiliado',
-        telefono: normalizarTelefonoE164(l.whatsapp),
-        email: l.email || '',
-        rfc: extraerRfcDeNotas(l.notas),
-        monto: extraerMontoDeNotas(l.notas),
-        concepto: 'Registro SIEM 2026 y Cuota Anual CANACO Mérida',
-        vencimiento: fechaVencimiento,
-        estrato: l.especialidad ? l.especialidad.toUpperCase() : 'COMERCIO',
-      }));
+      const socios: SocioCobranzaRecord[] = leads
+        .filter((lead) => {
+          const employees = extraerNumEmpleados(lead.notas);
+          const sector = lead.especialidad;
+          if (!employees || !['comercio', 'servicios', 'turismo'].includes(sector || '')) {
+            return false;
+          }
+          return Boolean(lead.canonical_rfc);
+        })
+        .map((l) => ({
+          id: l.id,
+          nombre: l.web || '',
+          telefono: normalizarTelefonoE164(l.whatsapp),
+          email: l.email || '',
+          rfc: l.canonical_rfc || '',
+          monto: calcularCuotaAfiliacion(
+            extraerNumEmpleados(l.notas),
+            l.especialidad as SectorEconomico
+          ).totalAnual,
+          concepto: 'Registro SIEM 2026 y Cuota Anual CANACO Mérida',
+          vencimiento: fechaVencimiento,
+          estrato: l.especialidad ? l.especialidad.toUpperCase() : '',
+        }))
+        .filter((socio) => socio.nombre && socio.email);
+      const includedIds = new Set(socios.map((socio) => socio.id));
+      const excludedLeadIds = leads
+        .filter((lead) => !includedIds.has(lead.id))
+        .map((lead) => lead.id);
 
-      // Despachar a Arkangel
-      const resultado = await despacharLoteArkangel(env, socios);
+      const approvalId = crypto.randomUUID();
+      const createdAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const preview = {
+        socios,
+        excludedLeadIds,
+        channels: ['arkangel_ingest_csv'],
+        content: generarCsvCobranzaArkangel(socios),
+      };
+      await db
+        .prepare(
+          `INSERT INTO canaco_arkangel_approvals
+           (id, batch_id, approver_id, approver_email, lead_ids_json, preview_json,
+            created_at, expires_at, consumed_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`
+        )
+        .bind(
+          approvalId,
+          approvalId,
+          principal.id,
+          principal.email,
+          JSON.stringify(socios.map((socio) => socio.id)),
+          JSON.stringify(preview),
+          createdAt,
+          expiresAt
+        )
+        .run();
 
-      // Si fue exitoso o simulado, actualizar fecha de contacto en D1
-      if (resultado.ok && leads.length > 0) {
-        const todayIso = new Date().toISOString().split('T')[0] || '';
-        await db
-          .prepare(
-            `UPDATE leads_ark_tools 
-             SET last_contact = ? 
-             WHERE tenant_id = 'canaco_merida' 
-               AND (status = 'Nuevo / Pendiente' OR status = 'pendiente_pago' OR status = 'Nuevo')`
-          )
-          .bind(todayIso)
-          .run()
-          .catch(() => null);
-      }
-
-      return Response.json(resultado, {
-        headers: { ...corsHeaders, 'Cache-Control': 'no-store' },
-      });
+      const resultado = await despacharLoteArkangel(env, socios, { dryRun: true });
+      return Response.json(
+        {
+          ...resultado,
+          approvalId,
+          expiresAt,
+          preview: {
+            rows: socios,
+            excludedLeadIds,
+            channels: preview.channels,
+            content: preview.content,
+          },
+        },
+        { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
     } catch (err: any) {
       return Response.json(
         { error: 'Error procesando la sincronización hacia Arkangel.', detalle: err.message },
@@ -381,161 +506,12 @@ export async function handleCanacoArkangelSyncApi(
   // POST /api/canaco/webhook-pago-arkangel
   // ─────────────────────────────────────────────────────────────────
   if (path === '/api/canaco/webhook-pago-arkangel' && request.method === 'POST') {
-    // Validación obligatoria de secreto de webhook (Fail-Closed)
-    if (!env.ARKANGEL_WEBHOOK_SECRET) {
-      return Response.json(
-        { error: 'Secreto de webhook Arkangel no configurado en el servidor.' },
-        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-      );
-    }
-    const authHeader = request.headers.get('Authorization') || '';
-    const expected = `Bearer ${env.ARKANGEL_WEBHOOK_SECRET}`;
-    if (!timingSafeEqual(authHeader, expected)) {
-      return Response.json(
-        { error: 'Secreto de webhook inválido.' },
-        { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-      );
-    }
-
-    if (!db) {
-      return Response.json(
-        { error: 'Base de datos D1 no disponible.' },
-        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-      );
-    }
-
-    try {
-      const body = (await request.json()) as {
-        rfc?: string;
-        folio_pago?: string;
-        monto?: number;
-        tenant_id?: string;
-        metodo?: string;
-        email?: string;
-      };
-
-      if (!body.rfc?.trim()) {
-        return Response.json(
-          { error: 'El RFC del socio es requerido.' },
-          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-        );
-      }
-
-      const rfcClean = body.rfc.trim().toUpperCase();
-      const folioPago = body.folio_pago || `SPEI-ARK-${Date.now().toString(36).toUpperCase()}`;
-      const nowIso = new Date().toISOString();
-      const todayIso = nowIso.split('T')[0] || '';
-
-      // Generar folio SIEM oficial y sellado
-      const folioSiem = `SIEM-MID-2026-${rfcClean.slice(0, 4)}-${Date.now().toString().slice(-4)}`;
-      const sello = `SHA256:CANACO-MID-${Date.now().toString(16)}`;
-
-      // Buscar si el socio existe por RFC en notas
-      const existing = await db
-        .prepare(
-          `SELECT id, email, web, contacto_nombre, notas FROM leads_ark_tools 
-           WHERE tenant_id = 'canaco_merida' 
-             AND (notas LIKE ? OR web LIKE ?)`
-        )
-        .bind(`%${rfcClean}%`, `%${rfcClean}%`)
-        .first<{
-          id: string;
-          email: string | null;
-          web: string | null;
-          contacto_nombre: string | null;
-          notas: string | null;
-        }>();
-
-      let razonSocialFinal = `Comercio Afiliado ${rfcClean}`;
-      let contactoNombreFinal = 'Representante Legal';
-      const emailDestino = body.email?.trim() || existing?.email?.trim();
-
-      if (existing) {
-        razonSocialFinal = existing.web || razonSocialFinal;
-        contactoNombreFinal = existing.contacto_nombre || contactoNombreFinal;
-        const notasActualizadas = `${existing.notas || ''} | Folio SIEM: ${folioSiem} | Pago Confirmado Call Center: ${folioPago} ($${body.monto || 0} MXN) | Sello: ${sello}`;
-        await db
-          .prepare(
-            `UPDATE leads_ark_tools 
-             SET status = 'Socio Activo', 
-                 last_contact = ?, 
-                 notas = ? 
-             WHERE id = ?`
-          )
-          .bind(todayIso, notasActualizadas, existing.id)
-          .run();
-      } else {
-        // Si no existía, lo insertamos como Socio Activo
-        const newId = `canaco-lead-${Date.now()}`;
-        const notasNuevas = `RFC: ${rfcClean} | Folio SIEM: ${folioSiem} | Pago Confirmado Call Center: ${folioPago} | Sello: ${sello}`;
-        await db
-          .prepare(
-            `INSERT INTO leads_ark_tools (
-              id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, tenant_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          )
-          .bind(
-            newId,
-            razonSocialFinal,
-            '',
-            emailDestino || '',
-            'Mérida',
-            'comercio',
-            'Socio Activo',
-            todayIso,
-            contactoNombreFinal,
-            notasNuevas,
-            'canaco_merida'
-          )
-          .run();
-      }
-
-      // ─────────────────────────────────────────────────────────────────
-      // Disparo de Correo Oficial Transaccional vía RESEND
-      // ─────────────────────────────────────────────────────────────────
-      let emailEnviado = false;
-      let emailId: string | undefined;
-
-      if (emailDestino && emailDestino.includes('@')) {
-        const emailRes = await sendCanacoConfirmacionPagoEmail(env, {
-          email: emailDestino,
-          contactoNombre: contactoNombreFinal,
-          razonSocial: razonSocialFinal,
-          rfc: rfcClean,
-          folioSiem,
-          folioPago,
-          monto: Number(body.monto || 2000),
-          selloDigitalSha256: sello,
-          metodo: body.metodo || 'SPEI (Arkangel)',
-        }).catch((err: any) => {
-          console.warn('[CANACO Webhook] Error no bloqueante al enviar correo Resend:', err);
-          return { success: false, error: err.message, id: undefined };
-        });
-
-        emailEnviado = emailRes.success;
-        emailId = emailRes.id;
-      }
-
-      return Response.json(
-        {
-          ok: true,
-          mensaje: 'Pago de cuota cameral acreditado exitosamente.',
-          rfc: rfcClean,
-          folioSiem,
-          folioPago,
-          estatus: 'Socio Activo',
-          emailEnviado,
-          emailId,
-          timestamp: nowIso,
-        },
-        { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-      );
-    } catch (err: any) {
-      return Response.json(
-        { error: 'Error procesando webhook de pago.', detalle: err.message },
-        { status: 500, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-      );
-    }
+    return Response.json(
+      {
+        error: 'Este webhook no puede confirmar pagos. Usa una confirmación verificada de Conekta.',
+      },
+      { status: 410, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
   }
 
   return null;

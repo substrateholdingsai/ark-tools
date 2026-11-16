@@ -10,6 +10,12 @@ function round2(num: number): number {
   return Math.round((num + Number.EPSILON) * 100) / 100;
 }
 
+/** Fecha límite: día 17 del mes siguiente (LISR Art. 113-E; RMF 2026 Reglas 3.13.2/3.13.3; si es inhábil, CFF Art. 12). */
+function fechaLimitePago(mes: number, ejercicio: number): string | null {
+  const sig = mes === 12 ? 1 : mes + 1;
+  const anio = mes === 12 ? ejercicio + 1 : ejercicio;
+  return anio + '-' + String(sig).padStart(2, '0') + '-17';
+}
 /**
  * Motor de cálculo mensual para Personas Morales en RESICO (Flujo de Efectivo).
  * Conforme a los Artículos 206 al 215 de la LISR y Artículos 1 y 5 de la LIVA.
@@ -34,9 +40,18 @@ export function calcularResicoPM(entrada: EntradaResicoPM): ResultadoResicoPM {
   const isrNetoPagar = Math.max(0, round2(isrCausadoAcumulado - pagosPrevios - retencionesAcum));
 
   // 4. IVA del mes
+  const tasaIVA: number | 'exento' = entrada.tasaIVA ?? 0.16;
+  const tasaIVAPct = (() => {
+    const n = Number(tasaIVA);
+    return Number.isNaN(n) ? 0 : n * 100;
+  })();
   const ivaCobrado = Math.max(0, entrada.ivaCobrado || 0);
   const ivaAcreditable = Math.max(0, entrada.ivaAcreditablePagado || 0);
   const retencionIVA = Math.max(0, entrada.retencionIVAMes || 0);
+  const ivaBaseCobrado =
+    typeof tasaIVA === 'number' && tasaIVA > 0 ? round2(ivaCobrado / tasaIVA) : 0;
+  const ivaBaseAcreditable =
+    typeof tasaIVA === 'number' && tasaIVA > 0 ? round2(ivaAcreditable / tasaIVA) : 0;
 
   const ivaNetoPagar = round2(ivaCobrado - ivaAcreditable - retencionIVA);
 
@@ -142,17 +157,17 @@ export function calcularResicoPM(entrada: EntradaResicoPM): ResultadoResicoPM {
       naturaleza: 'a_cargo',
     },
     {
-      concepto: 'IVA Trasladado Efectivamente Cobrado del Mes',
-      base: round2(ivaCobrado / 0.16),
-      tasaPct: 16.0,
+      concepto: `IVA Trasladado Efectivamente Cobrado del Mes (tasa ${tasaIVAPct.toFixed(0)}%)`,
+      base: ivaBaseCobrado,
+      tasaPct: tasaIVAPct,
       importe: ivaCobrado,
       fundamento: 'Art. 1 LIVA',
       naturaleza: 'a_cargo',
     },
     {
-      concepto: '(-) IVA Acreditable Efectivamente Pagado del Mes',
-      base: round2(ivaAcreditable / 0.16),
-      tasaPct: 16.0,
+      concepto: `(-) IVA Acreditable Efectivamente Pagado del Mes (tasa ${tasaIVAPct.toFixed(0)}%)`,
+      base: ivaBaseAcreditable,
+      tasaPct: tasaIVAPct,
       importe: ivaAcreditable,
       fundamento: 'Art. 5 LIVA',
       naturaleza: 'deduccion',
@@ -182,6 +197,7 @@ export function calcularResicoPM(entrada: EntradaResicoPM): ResultadoResicoPM {
     naturaleza: ivaNetoPagar >= 0 ? 'a_cargo' : 'a_favor',
   });
 
+  const fecha = fechaLimitePago(entrada.mes, entrada.ejercicio);
   return {
     tipoPersona: 'moral',
     mes: entrada.mes,
@@ -200,10 +216,15 @@ export function calcularResicoPM(entrada: EntradaResicoPM): ResultadoResicoPM {
     ivaAcreditable,
     retencionIVAAcreditada: retencionIVA,
     ivaNetoPagar,
+    tasaIVAPct,
     totalImpuestosPagar,
     totalEnLetras,
     topeAnualPM: TOPE_ANUAL_RESICO_PM,
     rebasoTope,
+    fechaLimitePago: fecha,
+    fechaLimitePagoNota: fecha
+      ? `Pago provisional a más tardar el día 17 del mes siguiente (LISR Art. 113-E; RMF 2026 Reglas 3.13.2/3.13.3). Si el día 17 es inhábil, se corre al hábil siguiente (CFF Art. 12).`
+      : 'Fecha límite de pago no calculada.',
     desglose,
     fundamentoLegal: FUNDAMENTOS_LEGALES.resicoPM,
     advertencias,

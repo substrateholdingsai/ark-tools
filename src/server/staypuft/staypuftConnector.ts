@@ -40,16 +40,28 @@ import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
 import type { ParametrosNomina } from '../../tools/nomina/types';
+import { PERIODOS } from '../../tools/nomina/data/periodos';
 import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
-import { calcularRecargosYActualizacion } from '../../tools/recargos/lib/calcularRecargos';
-import { simularModalidad40 } from '../../tools/modalidad40/lib/calcularModalidad40';
+import {
+  calcularRecargosYActualizacion,
+  validarEntradaRecargos,
+} from '../../tools/recargos/lib/calcularRecargos';
+import {
+  simularModalidad40,
+  validarParametrosModalidad40,
+} from '../../tools/modalidad40/lib/calcularModalidad40';
+import { VECTOR_REFERENCIA_MODALIDAD40 } from '../../tools/modalidad40/mensajes';
 import { procesarCierreNomina } from '../../tools/cierre-nomina/lib/calcularCierreNomina';
 import type { TrabajadorFilaInput } from '../../tools/cierre-nomina/types';
 import { analizarBalance, calcularTotales } from '../../tools/balance-general/lib/calcularBalance';
 import type { JerarquiaBalance } from '../../tools/balance-general/types';
 import { parsearCFDI } from '../../tools/xml-excel/lib/parserCFDI';
-import { validarCFDI } from '../../tools/xml-validador/lib/validadorCFDI';
+import {
+  enmascararRFCsPreview,
+  enmascararTextoRfcPreview,
+  validarCFDI,
+} from '../../tools/xml-validador/lib/validadorCFDI';
 import { calcularComisionClip } from '../../tools/spei/lib/clipClient';
 import {
   PARAMETROS_DEFAULT as LEASING_DEFAULT,
@@ -177,6 +189,7 @@ interface ToolInternalSpec {
   description: string;
   status: 'active' | 'preview_only';
   preview_supported: boolean;
+  preview_notice?: string;
   approval_gate_notes?: string;
   law_cited: string[];
   inputs: Record<string, string>;
@@ -743,7 +756,7 @@ const TOOL_SPECS_MAP: Record<
       sueldoBruto: 18000,
       diasTrabajados: 30,
       diasPeriodo: 30,
-      sbcDiario: 629.52,
+      sbcDiario: 629.58,
     },
   },
   sbc: {
@@ -752,7 +765,7 @@ const TOOL_SPECS_MAP: Record<
     preview_supported: true,
     law_cited: [
       'LSS Art. 27 (Integración del Salario Base de Cotización)',
-      'LSS Art. 28 (Límite superior de 25 UMAs e inferior de Salario Mínimo General)',
+      'LSS Art. 28 (Límite superior 25 UMAs e inferior: salario mínimo del área geográfica respectiva — general o ZLFN)',
       'LFT Arts. 76, 80 y 87 (Vacaciones Dignas, Prima Vacacional 25% y Aguinaldo 15 días)',
       `INEGI UMA 2026 ($${UMA_DIARIA_2026.toFixed(2)} diarios) y CONASAMI SMG 2026 ($${SMG_GENERAL_2026.toFixed(2)} diarios)`,
     ],
@@ -761,6 +774,7 @@ const TOOL_SPECS_MAP: Record<
       diasVacaciones: 'number (default 12)',
       primaVacacional: 'number (default 25)',
       diasAguinaldo: 'number (default 15)',
+      zona: "string ('general' | 'frontera', default 'general')",
     },
     outputs: {
       factor: 'number',
@@ -947,10 +961,9 @@ const TOOL_SPECS_MAP: Record<
     route: '/#xml-excel',
     status: 'active',
     preview_supported: true,
-    law_cited: [
-      'CFF Art. 29 y Art. 29-A (Comprobantes Fiscales Digitales por Internet CFDI 3.3 y 4.0)',
-      'Anexo 20 RMF 2026 (Extracción estructurada de impuestos, conceptos y Timbre Fiscal Digital)',
-    ],
+    preview_notice:
+      'El Preview ejecuta la extracción en el Worker de Ark: el XML se envía al servidor para procesarlo y no se persiste. La conversión de archivos desde el navegador no sube el XML.',
+    law_cited: [],
     inputs: {
       xmlContent: 'string (XML CFDI 4.0 o 3.3)',
       fileName: 'string (opcional)',
@@ -972,10 +985,12 @@ const TOOL_SPECS_MAP: Record<
     route: '/#validador',
     status: 'active',
     preview_supported: true,
+    preview_notice:
+      'El Preview ejecuta la validación en el Worker de Ark: el XML se envía al servidor para su validación y no se persiste. La validación local en el navegador (carga de archivos) no sube el XML.',
     law_cited: [
-      'CFF Art. 29-A (Requisitos fiscales de los CFDI 4.0)',
-      'CFF Art. 69-B (Presunción de inexistencia de operaciones — EFOS / Listas Negras SAT)',
-      'Anexo 20 RMF 2026 (Validación de 8 reglas técnicas, coherencia PUE/PPD y cuadratura aritmética)',
+      'CFF Art. 29-A (referencia declarada por reglas de campos; revisión interna parcial)',
+      'Anexo 20 RMF 2026 (referencia declarada; chequeos internos seleccionados)',
+      'Guía de llenado CFDI SAT (referencia declarada para PUE/PPD; chequeo interno)',
     ],
     inputs: {
       xmlContent: 'string (XML CFDI 4.0 / 3.3)',
@@ -1298,6 +1313,7 @@ const TOOL_SPECS_MAP: Record<
       'LSS 1997 Arts. 218 a 221 (Continuación Voluntaria en el Régimen Obligatorio — Modalidad 40)',
       'Reforma LSS Art. 168 y Segundo Transitorio (Cuota progresiva Modalidad 40 2026: 14.438%)',
       'LSS 1973 Arts. 167 y 171 (Cuantía básica, incrementos anuales y factor de edad 60-65 años)',
+      'Acuerdo ACDO.AS2.HCT.101026/302.P.DG, Punto Cuarto (medida temporal; alcance jurídico discutido), aprobado 10/10/2026, DOF 21/10/2026, vigente desde 22/10/2026',
     ],
     inputs: {
       ultimoSbc: 'number (MXN diario)',
@@ -1323,12 +1339,7 @@ const TOOL_SPECS_MAP: Record<
       mesesRecuperacion: 'number',
     },
     sample_preview_payload: {
-      ultimoSbc: 600,
-      sbcDeseado: 2932.75,
-      semanasPrevias: 1250,
-      mesesAportacion: 24,
-      edadJubilacion: 65,
-      asignacionFamiliar: true,
+      ...VECTOR_REFERENCIA_MODALIDAD40,
     },
   },
   'auditor-cfdi-atipico': {
@@ -1394,6 +1405,7 @@ export function buildLiveToolCatalog(): ToolInternalSpec[] {
       route: spec?.route ?? `/#${item.id}`,
       status: spec?.status ?? 'active',
       preview_supported: spec?.preview_supported ?? true,
+      ...(spec?.preview_notice ? { preview_notice: spec.preview_notice } : {}),
       approval_gate_notes: spec?.approval_gate_notes,
       law_cited: spec?.law_cited ?? ['CFF Art. 28 y LISR vigente 2026'],
       inputs: spec?.inputs ?? {},
@@ -1401,6 +1413,50 @@ export function buildLiveToolCatalog(): ToolInternalSpec[] {
       sample_preview_payload: spec?.sample_preview_payload ?? {},
     };
   });
+}
+
+const CAMPOS_PREVIEW_XML =
+  'Campos aceptados: xmlContent (string no vacío, requerido) y fileName (string, opcional).';
+
+function esObjetoRegistro(valor: unknown): valor is Record<string, unknown> {
+  return typeof valor === 'object' && valor !== null && !Array.isArray(valor);
+}
+
+function validarPayloadPreviewXml(
+  payload: unknown
+): { ok: true; payload: Record<string, unknown> } | { ok: false; error: string } {
+  if (!esObjetoRegistro(payload)) {
+    return {
+      ok: false,
+      error: `Se requiere un objeto JSON. ${CAMPOS_PREVIEW_XML}`,
+    };
+  }
+
+  const camposDesconocidos = Object.keys(payload).filter(
+    (campo) => campo !== 'xmlContent' && campo !== 'fileName'
+  );
+  if (camposDesconocidos.length > 0) {
+    return {
+      ok: false,
+      error: `Campos desconocidos: ${camposDesconocidos.join(', ')}. ${CAMPOS_PREVIEW_XML}`,
+    };
+  }
+
+  if (typeof payload.xmlContent !== 'string' || payload.xmlContent.trim().length === 0) {
+    return {
+      ok: false,
+      error: `xmlContent es obligatorio y debe ser una cadena no vacía. ${CAMPOS_PREVIEW_XML}`,
+    };
+  }
+
+  if (Object.hasOwn(payload, 'fileName') && typeof payload.fileName !== 'string') {
+    return {
+      ok: false,
+      error: `fileName debe ser una cadena cuando se proporciona. ${CAMPOS_PREVIEW_XML}`,
+    };
+  }
+
+  return { ok: true, payload };
 }
 
 // ============================================================================
@@ -1426,10 +1482,21 @@ export async function executeToolPreview(
   }
 
   const spec = TOOL_SPECS_MAP[toolId];
-  const payload =
-    rawPayload && Object.keys(rawPayload).length > 0
-      ? rawPayload
-      : (spec?.sample_preview_payload ?? {});
+  let payload: Record<string, unknown>;
+  if (toolId === 'validador' || toolId === 'xml-excel') {
+    const validacionPayload = validarPayloadPreviewXml(rawPayload);
+    if (!validacionPayload.ok) {
+      return { ok: false, statusCode: 400, error: validacionPayload.error };
+    }
+    payload = validacionPayload.payload;
+  } else {
+    payload =
+      toolId === 'modalidad40'
+        ? rawPayload
+        : rawPayload && Object.keys(rawPayload).length > 0
+          ? rawPayload
+          : (spec?.sample_preview_payload ?? {});
+  }
 
   try {
     let resultOutput: unknown;
@@ -1510,6 +1577,8 @@ export async function executeToolPreview(
       }
 
       case 'sbc': {
+        const zonaRaw = payload.zona ?? payload.zonaSalarial ?? 'general';
+        const zona = zonaRaw === 'frontera' || zonaRaw === 'zlfn' ? 'frontera' : 'general';
         const parametros: ParametrosSBC = {
           salarioDiario: Number(payload.salarioDiario ?? 650),
           diasVacaciones: Number(payload.diasVacaciones ?? 16),
@@ -1517,18 +1586,112 @@ export async function executeToolPreview(
             payload.primaVacacional ?? payload.porcentajePrimaVacacional ?? 25
           ),
           diasAguinaldo: Number(payload.diasAguinaldo ?? 15),
+          zona,
         };
         resultOutput = calcularResultadoSBC(parametros);
         break;
       }
 
       case 'nomina': {
-        const sueldoBruto = Number(payload.sueldoBruto ?? payload.sueldoMensual ?? 18000);
-        const periodo =
-          (payload.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual') ?? 'mensual';
-        const diasPeriodo = Number(payload.diasPeriodo ?? 30);
-        const diasTrabajados = Number(payload.diasTrabajados ?? diasPeriodo);
-        const sbcDiario = Number(payload.sbcDiario ?? sueldoBruto / 30);
+        const NOMINA_CANONICAL_FIELDS = new Set([
+          'periodo',
+          'sueldoBruto',
+          'sbcDiario',
+          'diasTrabajados',
+          'diasPeriodo',
+        ]);
+        const NOMINA_KNOWN_UNKNOWN = new Set(['salarioMensual', 'periodicidad']);
+        const rawKeys = rawPayload ? Object.keys(rawPayload) : [];
+
+        if (rawKeys.length === 0) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              "Payload vacío. Campos requeridos: 'periodo', 'sueldoBruto'. Opcionales: 'sbcDiario', 'diasTrabajados', 'diasPeriodo'. Use nombres canónicos; no se aplican defaults silenciosos.",
+          };
+        }
+
+        const unknownFields = rawKeys.filter((k) => !NOMINA_CANONICAL_FIELDS.has(k));
+        if (unknownFields.length > 0) {
+          const knownBad = unknownFields.filter((k) => NOMINA_KNOWN_UNKNOWN.has(k));
+          const hint =
+            knownBad.length > 0
+              ? " Use nombres canónicos: 'sueldoBruto' (no 'salarioMensual') y 'periodo' (no 'periodicidad')."
+              : '';
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              `Campos no permitidos para Nómina: ${unknownFields.join(', ')}.` +
+              hint +
+              " Campos canónicos: 'periodo', 'sueldoBruto', 'sbcDiario', 'diasTrabajados', 'diasPeriodo'.",
+          };
+        }
+
+        const missing: string[] = [];
+        if (payload.periodo == null) missing.push('periodo');
+        if (payload.sueldoBruto == null) missing.push('sueldoBruto');
+        if (missing.length > 0) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: `Campos requeridos faltantes para Nómina: ${missing.join(', ')}.`,
+          };
+        }
+
+        const periodo = payload.periodo as 'diario' | 'semanal' | 'quincenal' | 'mensual';
+        if (!['diario', 'semanal', 'quincenal', 'mensual'].includes(periodo)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              "Campo 'periodo' inválido. Valores permitidos: diario, semanal, quincenal, mensual.",
+          };
+        }
+
+        const sueldoBruto = Number(payload.sueldoBruto);
+        if (!Number.isFinite(sueldoBruto)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: "Campo 'sueldoBruto' debe ser numérico.",
+          };
+        }
+
+        const diasPeriodoRaw = payload.diasPeriodo;
+        const diasPeriodo =
+          diasPeriodoRaw == null ? (PERIODOS[periodo]?.dias ?? 30) : Number(diasPeriodoRaw);
+        if (!Number.isFinite(diasPeriodo) || diasPeriodo <= 0) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: "Campo 'diasPeriodo' debe ser numérico y mayor a 0.",
+          };
+        }
+
+        const diasTrabajadosRaw = payload.diasTrabajados;
+        const diasTrabajados = diasTrabajadosRaw == null ? diasPeriodo : Number(diasTrabajadosRaw);
+        if (!Number.isFinite(diasTrabajados)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: "Campo 'diasTrabajados' debe ser numérico.",
+          };
+        }
+
+        const sbcProporcionado = payload.sbcDiario != null;
+        const sbcDiario = sbcProporcionado
+          ? Number(payload.sbcDiario)
+          : Math.round((sueldoBruto / diasPeriodo) * 1.0493 * 100) / 100;
+        if (!Number.isFinite(sbcDiario)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: "Campo 'sbcDiario' debe ser numérico.",
+          };
+        }
+
         const parametros: ParametrosNomina = {
           periodo,
           sueldoBruto,
@@ -1536,7 +1699,12 @@ export async function executeToolPreview(
           diasPeriodo,
           sbcDiario,
         };
-        resultOutput = calcularNomina(parametros);
+        const nominaResultado = calcularNomina(parametros);
+        resultOutput = {
+          ...nominaResultado,
+          sbcDiarioEfectivo: sbcDiario,
+          sbcDiarioFuente: sbcProporcionado ? 'proporcionado' : 'default_1.0493',
+        };
         break;
       }
 
@@ -1577,36 +1745,84 @@ export async function executeToolPreview(
       }
 
       case 'resico': {
-        const tipoPersona = String(payload.tipoPersona ?? 'fisica').toLowerCase();
-        const mes = (Math.min(12, Math.max(1, Number(payload.mes ?? 10))) || 10) as MesFiscal;
+        const isDemo = rawPayload && Object.keys(rawPayload).length === 0;
+        const p = isDemo ? (spec?.sample_preview_payload ?? {}) : payload;
+        const tipoPersona = String(p.tipoPersona ?? 'fisica').toLowerCase();
+
+        if (!isDemo) {
+          // (a) 'ingresos' is NOT a valid RESICO field -> reject with correct name
+          if (Object.prototype.hasOwnProperty.call(rawPayload, 'ingresos')) {
+            return {
+              ok: false,
+              statusCode: 400,
+              error:
+                "Campo 'ingresos' no es vÃ¡lido para RESICO. Use 'ingresosCobrados' (mes PF / acumulado PM).",
+            };
+          }
+          // (b) mes missing -> error, not default 10
+          // (c) PF: ingresosAcumuladosAnio missing -> error, not default 600,000
+          const missing: string[] = [];
+          if (p.ingresosCobrados == null && p.ingresosMensuales == null) {
+            missing.push("'ingresosCobrados'");
+          }
+          if (p.mes == null) {
+            missing.push("'mes'");
+          }
+          if (tipoPersona !== 'moral' && tipoPersona !== 'pm') {
+            if (p.ingresosAcumuladosAnio == null) {
+              missing.push("'ingresosAcumuladosAnio' (ingresosAcumuladosPrevios)");
+            }
+          }
+          if (missing.length > 0) {
+            return {
+              ok: false,
+              statusCode: 400,
+              error:
+                'Campos requeridos faltantes para RESICO: ' +
+                missing.join(', ') +
+                '. Use los nombres de campo correctos del catÃ¡logo.',
+            };
+          }
+        }
+
+        let tasaIVA: number | 'exento' = (p.tasaIVA as number | 'exento') ?? 0.16;
+        if (typeof tasaIVA === 'string') {
+          const n = Number(tasaIVA);
+          tasaIVA = Number.isNaN(n) ? tasaIVA : n;
+        }
+
+        const mes = (Math.min(12, Math.max(1, Number(p.mes ?? (isDemo ? 10 : 1)))) ||
+          10) as MesFiscal;
         if (tipoPersona === 'moral' || tipoPersona === 'pm') {
           resultOutput = calcularResicoPM({
             ingresosCobradosAcumulados: Number(
-              payload.ingresosCobrados ?? payload.ingresosAcumulados ?? 1200000
+              p.ingresosCobrados ?? p.ingresosAcumulados ?? (isDemo ? 1200000 : 0)
             ),
             deduccionesAutorizadasAcumuladas: Number(
-              payload.deduccionesCobros ?? payload.deduccionesAutorizadas ?? 750000
+              p.deduccionesCobros ?? p.deduccionesAutorizadas ?? (isDemo ? 750000 : 0)
             ),
-            ptuPagada: Number(payload.ptuPagada ?? 0),
-            perdidasFiscalesPendientes: Number(payload.perdidasFiscales ?? 0),
-            pagosProvisionalesPrevios: Number(payload.pagosProvisionalesPrevios ?? 45000),
-            retencionesISRAcumuladas: Number(payload.retencionISR ?? 0),
-            ivaCobrado: Number(payload.ivaCobrado ?? 192000),
-            ivaAcreditablePagado: Number(payload.ivaAcreditable ?? 120000),
-            retencionIVAMes: 0,
+            ptuPagada: Number(p.ptuPagada ?? 0),
+            perdidasFiscalesPendientes: Number(p.perdidasFiscales ?? 0),
+            pagosProvisionalesPrevios: Number(p.pagosProvisionalesPrevios ?? (isDemo ? 45000 : 0)),
+            retencionesISRAcumuladas: Number(p.retencionISR ?? 0),
+            ivaCobrado: Number(p.ivaCobrado ?? (isDemo ? 192000 : 0)),
+            ivaAcreditablePagado: Number(p.ivaAcreditable ?? (isDemo ? 120000 : 0)),
+            retencionIVAMes: Number(p.retencionIVAMes ?? 0),
+            tasaIVA,
             mes,
             ejercicio: 2026,
           });
         } else {
           resultOutput = calcularResicoPF({
             ingresosCobradosMes: Number(
-              payload.ingresosCobrados ?? payload.ingresosMensuales ?? 75000
+              p.ingresosCobrados ?? p.ingresosMensuales ?? (isDemo ? 75000 : 0)
             ),
-            ingresosAcumuladosPrevios: Number(payload.ingresosAcumuladosAnio ?? 600000),
-            retencionISREfectuadaPM: Number(payload.retencionISR ?? 937.5),
-            ivaCobrado: Number(payload.ivaCobrado ?? 12000),
-            ivaAcreditablePagado: Number(payload.ivaAcreditable ?? 4500),
+            ingresosAcumuladosPrevios: Number(p.ingresosAcumuladosAnio ?? (isDemo ? 600000 : 0)),
+            retencionISREfectuadaPM: Number(p.retencionISR ?? (isDemo ? 937.5 : 0)),
+            ivaCobrado: Number(p.ivaCobrado ?? (isDemo ? 12000 : 0)),
+            ivaAcreditablePagado: Number(p.ivaAcreditable ?? (isDemo ? 4500 : 0)),
             retencionIVAEfectuadaPM: 0,
+            tasaIVA,
             mes,
             ejercicio: 2026,
           });
@@ -1615,31 +1831,46 @@ export async function executeToolPreview(
       }
 
       case 'recargos': {
+        // Fail-closed: sin valores por defecto silenciosos (misma guardia que Nómina).
+        // Preview requiere los tres campos; {} vacío o campo faltante/inválido -> 400.
+        const isDemo = rawPayload && Object.keys(rawPayload).length === 0;
+        if (isDemo) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              "Campos requeridos faltantes para Recargos: 'importeHistorico', 'fechaVencimiento', 'fechaPago'. Use los nombres de campo correctos del catálogo.",
+          };
+        }
+        const validacion = validarEntradaRecargos(payload);
+        if (!validacion.ok) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error:
+              'Campos requeridos faltantes o inválidos para Recargos: ' +
+              validacion.errores.join(' ') +
+              '. Use los nombres de campo correctos del catálogo (importeHistorico, fechaVencimiento, fechaPago).',
+          };
+        }
         resultOutput = calcularRecargosYActualizacion({
-          importeHistorico: Number(payload.importeHistorico ?? 45000),
-          fechaVencimiento: String(
-            payload.fechaVencimiento ??
-              (payload.mesObligacion ? `${String(payload.mesObligacion)}-17` : '2025-06-17')
-          ),
-          fechaPago: String(
-            payload.fechaPago ?? (payload.mesPago ? `${String(payload.mesPago)}-17` : '2026-02-17')
-          ),
+          importeHistorico: Number(payload.importeHistorico),
+          fechaVencimiento: String(payload.fechaVencimiento),
+          fechaPago: String(payload.fechaPago),
         });
         break;
       }
 
       case 'modalidad40': {
-        resultOutput = await simularModalidad40({
-          ultimoSbc: Number(payload.ultimoSbc ?? payload.sbcActualDiario ?? 600),
-          sbcDeseado: Number(payload.sbcDeseado ?? 2932.75),
-          semanasPrevias: Number(payload.semanasPrevias ?? payload.semanasActuales ?? 1250),
-          mesesAportacion: Number(payload.mesesAportacion ?? payload.mesesModalidad40 ?? 24),
-          edadJubilacion: Number(payload.edadJubilacion ?? payload.edadRetiro ?? 65),
-          asignacionFamiliar:
-            parseStrictBoolean(payload.asignacionFamiliar) ??
-            parseStrictBoolean(payload.tieneEsposa) ??
-            true,
-        });
+        const validacion = validarParametrosModalidad40(payload);
+        if (!validacion.ok) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: validacion.error,
+          };
+        }
+        resultOutput = await simularModalidad40(validacion.valor);
         break;
       }
 
@@ -1802,9 +2033,17 @@ export async function executeToolPreview(
       }
 
       case 'xml-excel': {
-        const xmlContent = String(payload.xmlContent ?? SAMPLE_CFDI_XML);
-        const fileName = String(payload.fileName ?? 'cfdi-preview.xml');
+        const xmlContent = payload.xmlContent as string;
+        const fileName =
+          typeof payload.fileName === 'string' ? payload.fileName : 'cfdi-preview.xml';
         const parsed = parsearCFDI(xmlContent, fileName);
+        if (parsed.estado === 'error') {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: 'xmlContent debe ser XML bien formado con raíz CFDI <Comprobante>.',
+          };
+        }
         resultOutput = {
           ...parsed,
           rfcEmisor: '[RFC_PREVIEW]',
@@ -1814,14 +2053,22 @@ export async function executeToolPreview(
       }
 
       case 'validador': {
-        const xmlContent = String(payload.xmlContent ?? SAMPLE_CFDI_XML);
-        const fileName = String(payload.fileName ?? 'cfdi-validacion-preview.xml');
+        const xmlContent = payload.xmlContent as string;
+        const fileName =
+          typeof payload.fileName === 'string' ? payload.fileName : 'cfdi-validacion-preview.xml';
         const validated = validarCFDI(xmlContent, fileName);
-        resultOutput = {
-          ...validated,
-          rfcEmisor: '[RFC_PREVIEW]',
-          rfcReceptor: '[RFC_PREVIEW]',
-        };
+        if (
+          validated.reglas.some(
+            (regla) => regla.codigo === 'ESTR-01' && regla.severidad === 'error'
+          )
+        ) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: 'xmlContent debe ser XML bien formado con raíz CFDI <Comprobante>.',
+          };
+        }
+        resultOutput = enmascararRFCsPreview(validated);
         break;
       }
 
@@ -2097,14 +2344,17 @@ export async function executeToolPreview(
         dictamen_issued: false,
         catalog_version: CURRENT_CATALOG_VERSION,
         law_cited: spec?.law_cited ?? [],
+        ...(spec?.preview_notice ? { preview_notice: spec.preview_notice } : {}),
         result: resultOutput,
       },
     };
   } catch (err) {
+    const errorMessage =
+      err instanceof Error ? err.message : 'Error al ejecutar cálculo en modo preview.';
     return {
       ok: false,
       statusCode: 400,
-      error: err instanceof Error ? err.message : 'Error al ejecutar cálculo en modo preview.',
+      error: toolId === 'validador' ? enmascararTextoRfcPreview(errorMessage) : errorMessage,
     };
   }
 }
@@ -3558,7 +3808,9 @@ export async function handleStayPuftInternalRequest(
   if (pathname === '/api/internal/diagnostics' && method === 'GET') {
     const toolDiagnostics = await Promise.all(
       CATALOGO_HERRAMIENTAS.map(async (tool) => {
-        const previewCheck = await executeToolPreview(tool.id, {});
+        const previewPayload =
+          tool.id === 'modalidad40' ? (TOOL_SPECS_MAP[tool.id]?.sample_preview_payload ?? {}) : {};
+        const previewCheck = await executeToolPreview(tool.id, previewPayload);
         const toolStatus = TOOL_SPECS_MAP[tool.id]?.status ?? 'active';
         return {
           id: tool.id,

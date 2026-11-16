@@ -111,6 +111,7 @@ describe('Workers AI — Tools Catalog & Executor', () => {
       {
         tipoPersona: 'fisica',
         ingresosCobrados: 50000,
+        ingresosAcumuladosPrevios: 0,
         retencionISR: 500,
         ivaCobrado: 8000,
         ivaAcreditable: 3000,
@@ -262,5 +263,37 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     }
     expect(isn!.parameters.required).toContain('baseGravable');
     expect(isn!.parameters.required).toContain('tasa');
+  });
+
+  it('Modalidad 40 requiere los seis campos canónicos y no aplica defaults silenciosos', async () => {
+    const tool = AI_TOOLS_CATALOG.find((item) => item.name === 'calcular_modalidad_40');
+    expect(tool?.parameters.required).toEqual([
+      'ultimoSbc',
+      'sbcDeseado',
+      'semanasPrevias',
+      'mesesAportacion',
+      'edadJubilacion',
+      'asignacionFamiliar',
+    ]);
+
+    const missing = await executeAiTool('calcular_modalidad_40', {}, {} as Env, 'tenant_test');
+    expect(missing.success).toBe(false);
+    expect(missing.error).toContain('Faltan campos requeridos');
+
+    const valid = await executeAiTool(
+      'calcular_modalidad_40',
+      {
+        ultimoSbc: 600,
+        sbcDeseado: 2932.75,
+        semanasPrevias: 1250,
+        mesesAportacion: 24,
+        edadJubilacion: 65,
+        asignacionFamiliar: true,
+      },
+      {} as Env,
+      'tenant_test'
+    );
+    expect(valid.success).toBe(true);
+    expect((valid.data as { limites: { sbcEfectivo: number } }).limites.sbcEfectivo).toBe(717.31);
   });
 });

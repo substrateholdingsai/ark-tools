@@ -26,20 +26,26 @@ describe('Modalidad40 Componente UI', () => {
     );
 
     // Por defecto el último SBC es 650 y el deseado es 2932.75, por lo que excede el límite
-    expect(screen.getByText(/Límite Excedido/i)).toBeInTheDocument();
+    expect(screen.getByText(/Supera límite aplicado/i)).toBeInTheDocument();
     expect(
-      screen.getByText(/Aviso Restrictivo — Acuerdo ACDO\.AS2\.HCT\.101026\/302\.P\.DG/i)
+      screen.getByText(
+        /Proyección — medida temporal del Acuerdo ACDO\.AS2\.HCT\.101026\/302\.P\.DG/i
+      )
     ).toBeInTheDocument();
   });
 
-  it('abre y cierra el modal de la Cédula Oficial SHA-256 + QR', async () => {
+  it('abre y cierra la cédula de proyección con folio y QR de referencia', async () => {
     render(
       <ExpedienteProvider>
         <Modalidad40 />
       </ExpedienteProvider>
     );
 
-    const btnCedula = screen.getByRole('button', { name: /Emitir Cédula Oficial SHA-256 \+ QR/i });
+    const btnCedula = await screen.findByRole(
+      'button',
+      { name: /Emitir cédula de proyección · Folio de Integridad/i },
+      { timeout: 5000 }
+    );
     fireEvent.click(btnCedula);
 
     expect(

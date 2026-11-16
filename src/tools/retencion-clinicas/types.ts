@@ -33,6 +33,15 @@ export interface RetencionClinicasInput {
   prestador: DatosPrestador;
 }
 
+export interface TrimestreInformativo {
+  /** Ej: 'Q1+Q2 2026', 'Q3 2026', 'Q4 2026' */
+  periodo: string;
+  /** Mes límite de presentación (sin día inventado: solo mes y año) */
+  mesLimite: string;
+  /** Etiqueta corta legible */
+  label: string;
+}
+
 export interface RetencionClinicasResultado {
   base: number;
   tasaRetencion: number; // 2.0
@@ -44,5 +53,5 @@ export interface RetencionClinicasResultado {
   fechaLimitePagoImpuesto: string; // YYYY-MM-DD
   fechaLimiteConstancia: string; // YYYY-MM-DD
   notaAcuerdoAafy2026: string;
-  trimestreInformativo: string;
+  trimestreInformativo: TrimestreInformativo;
 }

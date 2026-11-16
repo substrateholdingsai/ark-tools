@@ -53,10 +53,10 @@ export function generarHtmlSolicitudRegistro(datos: DatosAnexoCanaco): string {
 
   <div class="header">
     <div class="logo-text">CÁMARA NACIONAL DE COMERCIO, SERVICIOS Y TURISMO DE MÉRIDA</div>
-    <div class="sub-logo">Operador Autorizado del Sistema de Información Empresarial Mexicano (SIEM)</div>
+    <div class="sub-logo">Solicitud de seguimiento cameral · CANACO SERVYTUR Mérida</div>
   </div>
 
-  <div class="folio">Folio Oficial: <strong>${datos.folioSiem || 'SIEM-MID-2026-OFICIAL'}</strong> | Fecha: Mérida, Yucatán a ${fechaHoy}</div>
+  <div class="folio">Referencia interna del portal: <strong>${datos.folioSiem || 'PENDIENTE'}</strong> | Fecha: Mérida, Yucatán a ${fechaHoy}</div>
   <div class="title">SOLICITUD DE AFILIACIÓN CAMERAL Y REGISTRO AL SIEM 2026</div>
 
   <div class="section-title">1. Datos de Identificación del Establecimiento</div>
@@ -91,7 +91,7 @@ export function generarHtmlSolicitudRegistro(datos: DatosAnexoCanaco): string {
 
   <div class="footer">
     CANACO SERVYTUR Mérida — Av. Itzaes #272 x 31 y 33 Col. García Ginerés, C.P. 97070, Mérida, Yucatán.<br>
-    Documento oficial vinculado criptográficamente a la Cédula SIEM 2026.
+    Solicitud informativa; no acredita el alta ante el SIEM ni una afiliación activa.
   </div>
 </body>
 </html>`;
@@ -145,7 +145,7 @@ export function generarHtmlAvisoPrivacidad(datos: DatosAnexoCanaco): string {
   <p><strong>I. Finalidades del Tratamiento de Datos:</strong></p>
   <ul>
     <li>Integración del expediente oficial cameral, vinculación de datos de afiliación simultánea tripartita (AAFY–SAT–IMSS, incluyendo NRP y Registro Estatal de Contribuyentes) y cumplimiento del registro ante el SIEM (Secretaría de Economía).</li>
-    <li>Emisión de la Cédula Digital de Socio Activo con validación QR y sellos criptográficos SHA-256.</li>
+    <li>Gestión de solicitudes de afiliación. La confirmación de pago no acredita por sí sola el alta ante el SIEM; el folio del portal es una referencia interna y no constituye una firma criptográfica ni una verificación QR.</li>
     <li>Contacto institucional, provisión de servicios gremiales, asesoría fiscal, defensa jurídica y vinculación comercial.</li>
   </ul>
 

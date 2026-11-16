@@ -262,7 +262,7 @@ export function App() {
     finiquitos: 'Finiquitos y Liquidaciones',
     'cierre-nomina': 'Cierre de Nómina Masivo',
     resico: 'Calculadora RESICO',
-    'xml-excel': 'Conversor XML a Excel',
+    'xml-excel': 'Conversor XML a CSV para Excel',
     validador: 'Validador de XMLs',
     spei: 'Generador de Links de Pago',
     timbrado: 'Timbrado de Facturas CFDI 4.0',
@@ -802,8 +802,8 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
         >
           <ToolCard
             icon={FileSpreadsheet}
-            title="Conversor XML → Excel"
-            description="Arrastra tus CFDI y exporta CSV para contabilidad. Hasta 200 archivos."
+            title="Conversor XML → CSV para Excel"
+            description="Extrae datos y exporta una fila por CFDI. Hasta 200 archivos de 10 MB."
             badge="GRATIS"
             badgeVariant="neutral"
             onSelect={() => onSelectTool('xml-excel')}

@@ -39,8 +39,10 @@ export interface FactorActualizacionDetalle {
   esDeflacion: boolean;
   /** Factor aplicado final (mínimo 1.0000 según Art. 17-A sexto párrafo) */
   factorFinal: number;
-  /** Nota explicativa si se usó el último INPC disponible por falta de publicación */
+  /** Nota explicativa si se usó el último INPC disponible por falta de publicación (mes reciente) */
   notaPublicacion?: string;
+  /** Nota explicativa si se usó un INPC de respaldo por falta de publicación (mes antiguo/denominador) */
+  notaPublicacionAntiguo?: string;
 }
 
 export interface DesgloseMesRecargo {
@@ -75,18 +77,26 @@ export interface ResultadoRecargos {
   impuestoActualizado: number;
   /** Efecto inflacionario (Impuesto actualizado - Histórico) */
   montoActualizacion: number;
-  /** Número total de meses o fracción de mes de mora */
+  /** Número total de meses o fracción de mes de mora (bruto, antes del tope) */
   mesesMora: number;
   /** Tasa mensual de recargos aplicada (1.47%) */
   tasaRecargosMensual: number;
-  /** Tasa total acumulada de recargos (mesesMora × tasaRecargosMensual) */
+  /** Tasa total acumulada de recargos (mesesCobrados × tasaRecargosMensual, tope 88.2% a 60 meses) */
   tasaRecargosTotal: number;
+  /** Mesese efectivamente cobrados tras aplicar el tope de 60 meses (Art. 21 CFF) */
+  mesesCobrados: number;
+  /** Indica si el tope de 60 meses / 88.2% se aplicó */
+  recargosCapped: boolean;
   /** Monto total de recargos por mora */
   montoRecargos: number;
   /** Total de la deuda tributaria a liquidar (Impuesto actualizado + Recargos) */
   totalPagar: number;
   /** Total a pagar expresado en letra formal (ej. "CINCO MIL TRESCIENTOS...") */
   totalEnLetras: string;
+  /** Token determinista de integridad derivado del payload (Folio de Integridad, no sellado fiscal) */
+  folioDeIntegridad: string;
+  /** Advertencias del cálculo (tope de recargos, fallbacks de INPC, etc.) */
+  advertencias: string[];
   /** Tabla analítica mes a mes de los recargos causados */
   desgloseMeses: DesgloseMesRecargo[];
 }
