@@ -1,5 +1,5 @@
 -- Seed leads_ark_tools generado desde Google Sheet Ark-systems1
-DELETE FROM leads_ark_tools;
+DELETE FROM leads_ark_tools WHERE tenant_id = 'ark';
 INSERT INTO leads_ark_tools (id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, tenant_id, created_at, updated_at) VALUES ('38053dfa-822a-46b5-8fe8-fda7bf2fe3aa', 'http://econtablemexico.com/', '5212228367753', NULL, 'Merida', 'General', 'Nuevo', NULL, NULL, NULL, 'ark', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO leads_ark_tools (id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, tenant_id, created_at, updated_at) VALUES ('1102afd7-eea4-4232-9331-7baf37b35263', 'https://abaasesores.com/', '5219847450386', 'direccion@abaasesores.com', 'Merida', 'General', 'Mail_enviado_091026', '2026-10-09', NULL, NULL, 'ark', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 INSERT INTO leads_ark_tools (id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, tenant_id, created_at, updated_at) VALUES ('9938212f-8c59-4425-af6f-607da8f80f7d', 'https://contadoresdelacruz.com/', '5219996415281', 'julia@contadoresdelacruz.com', 'Merida', 'General', 'Mail_enviado_091026', '2026-10-09', NULL, NULL, 'ark', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

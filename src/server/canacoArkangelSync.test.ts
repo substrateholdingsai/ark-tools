@@ -163,26 +163,33 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       expect(res?.status).toBe(403);
     });
 
-    it('permite a horus.i2d@gmail.com disparar la sincronización hacia Arkangel', async () => {
+    it('solo permite a Pavel aprobar y despachar registros con consentimiento de compartir', async () => {
+      const queries: string[] = [];
       const mockDb = {
-        prepare: vi.fn().mockReturnValue({
-          all: vi.fn().mockResolvedValue({
-            results: [
-              {
-                id: 'lead-1',
-                web: 'Comercializadora del Mayab',
-                whatsapp: '0000000000',
-                email: 'demo@example.invalid',
-                ciudad: 'Mérida',
-                especialidad: 'comercio',
-                status: 'Nuevo / Pendiente',
-                notas:
-                  'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
-              },
-            ],
-          }),
-          bind: vi.fn().mockReturnThis(),
-          run: vi.fn().mockResolvedValue({ success: true }),
+        prepare: vi.fn((query: string) => {
+          queries.push(query);
+          return {
+            all: vi.fn().mockResolvedValue({
+              results: [
+                {
+                  id: 'lead-1',
+                  web: 'Comercializadora del Mayab',
+                  whatsapp: '0000000000',
+                  email: 'demo@example.invalid',
+                  ciudad: 'Mérida',
+                  especialidad: 'comercio',
+                  status: 'Nuevo / Pendiente',
+                  lifecycle_stage: 'prospecto',
+                  arkangel_share_consent: 1,
+                  is_demo: 0,
+                  notas:
+                    'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
+                },
+              ],
+            }),
+            bind: vi.fn().mockReturnThis(),
+            run: vi.fn().mockResolvedValue({ success: true }),
+          };
         }),
       };
 
@@ -192,12 +199,14 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
 
       const req = new Request('https://ledger.arksystems.site/api/canaco/sync-arkangel', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved: true }),
       });
       const principal: AuthPrincipal = {
-        id: 'canaco-admin-1',
-        email: 'horus.i2d@gmail.com',
-        fullName: 'Admin CANACO Mérida',
-        platformRole: 'user',
+        id: 'pavel-1',
+        email: 'pavel@arksystems.site',
+        fullName: 'Pavel',
+        platformRole: 'super_admin',
       };
 
       const res = await handleCanacoArkangelSyncApi(req, env, {}, principal);
@@ -207,9 +216,11 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
       expect(json.ok).toBe(true);
       expect(json.socios_enviados).toBe(1);
       expect(json.monto_total_cartera).toBe(3700);
+      expect(queries.join(' ')).toContain('arkangel_share_consent = 1 AND is_demo = 0');
+      expect(queries.join(' ')).toContain('INSERT INTO canaco_arkangel_approvals');
     });
 
-    it('procesa solo el pago exacto de un registro pendiente previamente guardado', async () => {
+    it('no acepta pagos ni activa socios desde el webhook de Arkangel', async () => {
       const mockDb = {
         prepare: vi.fn().mockReturnValue({
           bind: vi.fn().mockReturnThis(),
@@ -247,51 +258,7 @@ describe('CANACO Mérida — Sincronización Call Center & Cobranza con ARKANGEL
 
       const res = await handleCanacoArkangelSyncApi(req, env, {}, null);
       expect(res).not.toBeNull();
-      expect(res?.status).toBe(200);
-      const json = (await res?.json()) as any;
-      expect(json.ok).toBe(true);
-      expect(json.estatus).toBe('Socio Activo');
-      expect(json.folioPago).toBe('SPEI-DEMO-4242');
-    });
-
-    it('rechaza el webhook si el importe no coincide con la cuota guardada', async () => {
-      const mockRun = vi.fn().mockResolvedValue({ success: true, meta: { changes: 1 } });
-      const mockDb = {
-        prepare: vi.fn().mockReturnValue({
-          bind: vi.fn().mockReturnThis(),
-          first: vi.fn().mockResolvedValue({
-            id: 'lead-demo-1',
-            email: 'demo@example.invalid',
-            web: 'Comercializadora del Mayab',
-            contacto_nombre: 'Fernando Pech',
-            status: 'Nuevo / Pendiente',
-            especialidad: 'comercio',
-            notas:
-              'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
-          }),
-          run: mockRun,
-        }),
-      };
-      const env = {
-        ARK_TOOLS_DB: mockDb as any,
-        ARKANGEL_WEBHOOK_SECRET: 'secreto-arkangel',
-      } as Env;
-      const req = new Request('https://ledger.arksystems.site/api/canaco/webhook-pago-arkangel', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: 'Bearer secreto-arkangel',
-        },
-        body: JSON.stringify({
-          rfc: 'CPM2106158A1',
-          folio_pago: 'SPEI-DEMO-4242',
-          monto: 2000,
-        }),
-      });
-
-      const res = await handleCanacoArkangelSyncApi(req, env, {}, null);
-      expect(res?.status).toBe(409);
-      expect(mockRun).not.toHaveBeenCalled();
+      expect(res?.status).toBe(410);
     });
   });
 });

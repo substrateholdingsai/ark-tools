@@ -6,6 +6,7 @@
  */
 
 import type { Env } from '../index';
+import { COMPLIANCE_LAST_UPDATED } from '@/data/compliance-legal';
 import {
   calcularCuotaAfiliacion,
   determinarEstrato,
@@ -15,6 +16,7 @@ import {
   tienePagoConfirmado,
 } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico, SocioCanacoRegistro } from '@/components/canaco/types';
+import { canonicalizarRfc } from './canacoLifecycle';
 import {
   authenticateRequest,
   createSession,
@@ -59,6 +61,15 @@ interface AfiliacionPayload {
   registroEstatalAafy?: string;
   afiliacionSimultanea?: boolean;
   tramiteImssSolicitado?: boolean;
+  leadId?: string;
+  consentimiento?: {
+    aceptado?: boolean;
+    avisoVersion?: string;
+    fecha?: string;
+    medio?: 'ventanilla' | 'admin' | 'import';
+  };
+  consentimientoArkangel?: boolean;
+  isDemo?: boolean;
 }
 
 export interface MigrarALedgerPayload {
@@ -118,7 +129,8 @@ export async function handleAfiliacionesApiRequest(
 
     const row = await db
       .prepare(
-        `SELECT id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas
+        `SELECT id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
+                last_contact, contacto_nombre, notas
          FROM leads_ark_tools
          WHERE tenant_id = 'canaco_merida'
            AND (notas LIKE ? OR web LIKE ?)
@@ -133,6 +145,7 @@ export async function handleAfiliacionesApiRequest(
         ciudad: string | null;
         especialidad: string | null;
         status: string | null;
+        lifecycle_stage: string | null;
         last_contact: string | null;
         contacto_nombre: string | null;
         notas: string | null;
@@ -167,6 +180,7 @@ export async function handleAfiliacionesApiRequest(
         ? calcularCuotaAfiliacion(numEmpleados, sector).totalAnual
         : 0;
     const pagoConfirmado =
+      row.lifecycle_stage === 'socio_activo' &&
       row.status === 'Socio Activo' &&
       tienePagoConfirmado(row.notas) &&
       cuota > 0 &&
@@ -244,7 +258,8 @@ export async function handleAfiliacionesApiRequest(
       // 1. Buscar el registro canónico en el Padrón Cameral (leads_ark_tools)
       const leadRow = await db
         .prepare(
-          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, contacto_nombre, notas
+          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
+                  contacto_nombre, notas
            FROM leads_ark_tools
            WHERE tenant_id = 'canaco_merida'
              AND (
@@ -271,11 +286,17 @@ export async function handleAfiliacionesApiRequest(
           ciudad: string | null;
           especialidad: string | null;
           status: string | null;
+          lifecycle_stage: string | null;
           contacto_nombre: string | null;
           notas: string | null;
         }>();
 
-      if (!leadRow || leadRow.status !== 'Socio Activo' || !tienePagoConfirmado(leadRow.notas)) {
+      if (
+        !leadRow ||
+        leadRow.lifecycle_stage !== 'socio_activo' ||
+        leadRow.status !== 'Socio Activo' ||
+        !tienePagoConfirmado(leadRow.notas)
+      ) {
         return Response.json(
           {
             error:
@@ -608,7 +629,250 @@ export async function handleAfiliacionesApiRequest(
     }
   }
 
-  if (path !== '/api/afiliaciones/registro' || request.method !== 'POST') {
+  if (path === '/api/afiliaciones/arco' && request.method === 'POST') {
+    if (!db) {
+      return Response.json(
+        { error: 'Base de datos D1 no disponible.' },
+        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    try {
+      const body = (await request.json()) as {
+        rfc?: string;
+        requesterEmail?: string;
+        rightRequested?: string;
+      };
+      const rfc = body.rfc ? canonicalizarRfc(body.rfc) : null;
+      const requesterEmail = body.requesterEmail?.trim().toLowerCase() || '';
+      const rightRequested = body.rightRequested;
+      if (
+        !rfc ||
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requesterEmail) ||
+        !['acceso', 'rectificacion', 'cancelacion', 'oposicion'].includes(rightRequested || '')
+      ) {
+        return Response.json(
+          { error: 'RFC, correo de contacto y derecho ARCO válido son requeridos.' },
+          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const lead = await db
+        .prepare(
+          `SELECT id FROM leads_ark_tools
+           WHERE tenant_id = 'canaco_merida' AND canonical_rfc = ?
+             AND LOWER(TRIM(email)) = ? LIMIT 1`
+        )
+        .bind(rfc, requesterEmail)
+        .first<{ id: string }>();
+      const requestId = crypto.randomUUID();
+      await db
+        .prepare(
+          `INSERT INTO canaco_arco_requests
+           (id, lead_id, requester_email, right_requested, status)
+           VALUES (?, ?, ?, ?, 'received')`
+        )
+        .bind(requestId, lead?.id || null, requesterEmail, rightRequested)
+        .run();
+
+      return Response.json(
+        {
+          ok: true,
+          requestId,
+          status: 'received',
+          message:
+            'Solicitud recibida; la identidad y el alcance deben verificarse antes de actuar.',
+        },
+        { status: 202, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Error al registrar la solicitud ARCO.';
+      return Response.json(
+        { error: message },
+        { status: 500, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+  }
+
+  if (path === '/api/afiliaciones/arco' && request.method === 'GET') {
+    const canManageArco =
+      authPrincipal?.platformRole === 'super_admin' ||
+      authPrincipal?.email.toLowerCase() === 'horus.i2d@gmail.com';
+    if (!canManageArco) {
+      return Response.json(
+        { error: 'Autorización requerida para consultar solicitudes ARCO.' },
+        { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (!db) {
+      return Response.json(
+        { error: 'Base de datos D1 no disponible.' },
+        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const requests = await db
+      .prepare(
+        `SELECT id, lead_id, requester_email, right_requested, status, requested_at,
+                verified_by, verified_at, completed_by, completed_at, completion_notes
+         FROM canaco_arco_requests WHERE tenant_id = 'canaco_merida'
+         ORDER BY requested_at DESC LIMIT 100`
+      )
+      .all();
+    return Response.json(
+      { ok: true, requests: requests.results || [] },
+      { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+
+  const arcoDetailMatch = path.match(/^\/api\/afiliaciones\/arco\/([^/]+)$/);
+  if (arcoDetailMatch && request.method === 'PATCH') {
+    const canManageArco =
+      authPrincipal?.platformRole === 'super_admin' ||
+      authPrincipal?.email.toLowerCase() === 'horus.i2d@gmail.com';
+    if (!canManageArco) {
+      return Response.json(
+        { error: 'Autorización requerida para gestionar solicitudes ARCO.' },
+        { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (!db) {
+      return Response.json(
+        { error: 'Base de datos D1 no disponible.' },
+        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const requestId = decodeURIComponent(arcoDetailMatch[1] || '');
+    const body = (await request.json()) as { status?: string; completionNotes?: string };
+    if (
+      !requestId ||
+      !['identity_verified', 'in_progress', 'completed', 'rejected'].includes(body.status || '') ||
+      (body.status === 'completed' && !body.completionNotes?.trim())
+    ) {
+      return Response.json(
+        { error: 'Estado ARCO o nota de resolución no válida.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const now = new Date().toISOString();
+    const update = await db
+      .prepare(
+        `UPDATE canaco_arco_requests
+         SET status = ?,
+             verified_by = CASE WHEN ? = 'identity_verified' THEN ? ELSE verified_by END,
+             verified_at = CASE WHEN ? = 'identity_verified' THEN ? ELSE verified_at END,
+             completed_by = CASE WHEN ? IN ('completed', 'rejected') THEN ? ELSE completed_by END,
+             completed_at = CASE WHEN ? IN ('completed', 'rejected') THEN ? ELSE completed_at END,
+             completion_notes = CASE WHEN ? IN ('completed', 'rejected') THEN ? ELSE completion_notes END
+         WHERE id = ? AND tenant_id = 'canaco_merida'
+           AND (
+             (? = 'identity_verified' AND status = 'received') OR
+             (? = 'in_progress' AND status = 'identity_verified') OR
+             (? IN ('completed', 'rejected') AND status IN ('identity_verified', 'in_progress'))
+           )`
+      )
+      .bind(
+        body.status,
+        body.status,
+        authPrincipal?.email || '',
+        body.status,
+        now,
+        body.status,
+        authPrincipal?.email || '',
+        body.status,
+        now,
+        body.status,
+        body.completionNotes?.trim() || null,
+        body.status,
+        body.status,
+        body.status,
+        requestId
+      )
+      .run();
+    if (update.meta.changes !== 1) {
+      return Response.json(
+        { error: 'La solicitud no existe o ya fue cerrada.' },
+        { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    return Response.json(
+      { ok: true, requestId, status: body.status },
+      { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+
+  if (path === '/api/afiliaciones/reversar' && request.method === 'POST') {
+    const canReverse =
+      authPrincipal?.platformRole === 'super_admin' ||
+      authPrincipal?.email.toLowerCase() === 'horus.i2d@gmail.com';
+    if (!canReverse) {
+      return Response.json(
+        { error: 'Autorización requerida para revertir una afiliación.' },
+        { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (!db) {
+      return Response.json(
+        { error: 'Base de datos D1 no disponible.' },
+        { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const body = (await request.json()) as { leadId?: string; reason?: string };
+    const leadId = body.leadId?.trim() || '';
+    const reason = body.reason?.trim() || '';
+    if (!leadId || reason.length < 10 || reason.length > 500) {
+      return Response.json(
+        { error: 'Se requiere registro y motivo de reversión (10 a 500 caracteres).' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    const transition = db
+      .prepare(
+        `UPDATE leads_ark_tools
+         SET lifecycle_stage = 'cancelado', status = 'Cancelado', updated_at = CURRENT_TIMESTAMP
+         WHERE id = ? AND tenant_id = 'canaco_merida' AND lifecycle_stage = 'socio_activo'`
+      )
+      .bind(leadId);
+    const audit = db
+      .prepare(
+        `INSERT INTO canaco_lifecycle_audit
+         (id, lead_id, actor_id, actor_email, from_stage, to_stage, reason, payment_outcome)
+         SELECT ?, ?, ?, ?, 'socio_activo', 'cancelado', ?, 'refund_required'
+         WHERE EXISTS (
+           SELECT 1 FROM leads_ark_tools
+           WHERE id = ? AND tenant_id = 'canaco_merida' AND lifecycle_stage = 'cancelado'
+         )`
+      )
+      .bind(
+        crypto.randomUUID(),
+        leadId,
+        authPrincipal?.id || null,
+        authPrincipal?.email || null,
+        reason,
+        leadId
+      );
+    const results = await db.batch([transition, audit]);
+    if (results[0]?.meta.changes !== 1) {
+      return Response.json(
+        { error: 'El registro no existe o no está activo.' },
+        { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    return Response.json(
+      {
+        ok: true,
+        lifecycleStage: 'cancelado',
+        refundRequired: true,
+        refundProcessed: false,
+        message:
+          'La membresía se revirtió en Ledger; el reembolso debe gestionarse por separado con el procesador.',
+      },
+      { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+
+  const isCaptureRequest = path === '/api/afiliaciones/captura' && request.method === 'POST';
+  const isRegistrationRequest = path === '/api/afiliaciones/registro' && request.method === 'POST';
+  if (!isCaptureRequest && !isRegistrationRequest) {
     return null;
   }
 
@@ -621,6 +885,62 @@ export async function handleAfiliacionesApiRequest(
 
   try {
     const body = (await request.json()) as AfiliacionPayload;
+
+    if (isRegistrationRequest) {
+      if (!body.leadId?.trim()) {
+        return Response.json(
+          { error: 'El identificador del prospecto es requerido para validar el registro.' },
+          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+      const leadId = body.leadId.trim();
+      const lead = await db
+        .prepare(
+          `SELECT lifecycle_stage, status FROM leads_ark_tools
+           WHERE id = ? AND tenant_id = 'canaco_merida' LIMIT 1`
+        )
+        .bind(leadId)
+        .first<{ lifecycle_stage: string; status: string }>();
+      if (!lead || !['prospecto', 'registrado', 'pago_pendiente'].includes(lead.lifecycle_stage)) {
+        return Response.json(
+          { error: 'No se encontró un prospecto válido para registrar.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+      if (lead.lifecycle_stage === 'prospecto') {
+        const transition = await db
+          .prepare(
+            `UPDATE leads_ark_tools
+             SET lifecycle_stage = 'registrado', status = 'Registrado', updated_at = CURRENT_TIMESTAMP
+             WHERE id = ? AND tenant_id = 'canaco_merida' AND lifecycle_stage = 'prospecto'`
+          )
+          .bind(leadId)
+          .run();
+        if (transition.meta.changes !== 1) {
+          return Response.json(
+            { error: 'El prospecto cambió antes de validar el registro.' },
+            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+        await db
+          .prepare(
+            `INSERT INTO canaco_lifecycle_audit
+             (id, lead_id, actor_id, actor_email, from_stage, to_stage, reason)
+             VALUES (?, ?, ?, ?, 'prospecto', 'registrado', 'Validated Ventanilla registration')`
+          )
+          .bind(
+            crypto.randomUUID(),
+            leadId,
+            authPrincipal?.id || null,
+            authPrincipal?.email || null
+          )
+          .run();
+      }
+      return Response.json(
+        { success: true, ok: true, leadId, lifecycleStage: lead.lifecycle_stage },
+        { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
 
     if (
       !body.razonSocial?.trim() ||
@@ -635,6 +955,35 @@ export async function handleAfiliacionesApiRequest(
       );
     }
 
+    const consentimiento = body.consentimiento;
+    const fechaConsentimiento = consentimiento?.fecha ? Date.parse(consentimiento.fecha) : NaN;
+    if (
+      consentimiento?.aceptado !== true ||
+      consentimiento.avisoVersion !== COMPLIANCE_LAST_UPDATED ||
+      !Number.isFinite(fechaConsentimiento) ||
+      fechaConsentimiento > Date.now() + 60_000 ||
+      !['ventanilla', 'admin', 'import'].includes(consentimiento.medio || '')
+    ) {
+      return Response.json(
+        { error: 'Se requiere una aceptación válida y vigente del Aviso de Privacidad.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (consentimiento.medio !== 'ventanilla' && !authPrincipal) {
+      return Response.json(
+        { error: 'La captura administrativa o de importación requiere una sesión autorizada.' },
+        { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    const rfcCanonical = canonicalizarRfc(body.rfc);
+    if (!rfcCanonical) {
+      return Response.json(
+        { error: 'El RFC no tiene un formato válido.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
     const ip = request.headers.get('CF-Connecting-IP') || 'unknown';
     if (await rateLimit(env, 'afiliacion:registro', ip, 20, 3600)) {
       return Response.json(
@@ -643,10 +992,6 @@ export async function handleAfiliacionesApiRequest(
       );
     }
 
-    const isSuperOrCanacoAdmin =
-      authPrincipal?.platformRole === 'super_admin' ||
-      authPrincipal?.email?.toLowerCase() === 'horus.i2d@gmail.com';
-    const tenantId = isSuperOrCanacoAdmin && body.tenantId ? body.tenantId.trim() : 'canaco_merida';
     const sectorInput = body.sector || 'comercio';
     if (!['comercio', 'servicios', 'turismo'].includes(sectorInput)) {
       return Response.json(
@@ -664,18 +1009,17 @@ export async function handleAfiliacionesApiRequest(
     }
     const estrato = determinarEstrato(numEmpleados);
     const cotizacion = calcularCuotaAfiliacion(numEmpleados, sector);
-    const rfcUpper = body.rfc.trim().toUpperCase();
     const razonSocialUpper = body.razonSocial.trim().toUpperCase();
     const nombreComercial = (body.nombreComercial || body.razonSocial).trim();
     const municipio = (body.municipio || 'Mérida').trim();
-    const estatus = 'Nuevo / Pendiente';
-    const folioSiem = generarFolioSiem(rfcUpper, estrato);
+    const origin = consentimiento.medio;
+    const isDemo = body.isDemo === true && body.email.trim().toLowerCase().endsWith('.invalid');
     const fechaHoy = new Date().toISOString().split('T')[0] || '';
     const fechaVigencia =
       new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] || '';
 
+    const folioSiem = generarFolioSiem(rfcCanonical, estrato);
     const folioIntegridad = generarFolioIntegridad(folioSiem);
-
     const extraSimultanea = [
       body.afiliacionSimultanea ? 'Afiliación Simultánea AAFY-SAT-IMSS' : '',
       body.registroPatronalImss ? `NRP: ${body.registroPatronalImss.trim().toUpperCase()}` : '',
@@ -684,59 +1028,98 @@ export async function handleAfiliacionesApiRequest(
     ]
       .filter(Boolean)
       .join(' | ');
+    const notasDetalle = `Razón Social: ${razonSocialUpper} | RFC: ${rfcCanonical} | Folio SIEM: ${folioSiem} | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Empleados: ${numEmpleados} | Cuota: $${cotizacion.totalAnual.toLocaleString('es-MX')} MXN | Sector: ${sector} | CFDI: ${body.cfdiRequerido ? 'Requerido' : 'No'}${extraSimultanea ? ` | ${extraSimultanea}` : ''} | Folio de Integridad: ${folioIntegridad}`;
+    const tenantId = 'canaco_merida';
 
-    const notasDetalle = `Razón Social: ${razonSocialUpper} | RFC: ${rfcUpper} | Folio SIEM: ${folioSiem} | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Empleados: ${numEmpleados} | Cuota: $${cotizacion.totalAnual.toLocaleString('es-MX')} MXN | Sector: ${sector} | CFDI: ${body.cfdiRequerido ? 'Requerido' : 'No'}${extraSimultanea ? ` | ${extraSimultanea}` : ''} | Folio de Integridad: ${folioIntegridad}`;
-
-    // Verificar si el comercio ya existe registrado en este tenant por su RFC o Email
-    const existing = await db
+    const matches = await db
       .prepare(
-        'SELECT id, status FROM leads_ark_tools WHERE tenant_id = ? AND (email = ? OR notas LIKE ?) LIMIT 1'
+        `SELECT id, status, lifecycle_stage, canonical_rfc
+         FROM leads_ark_tools
+         WHERE tenant_id = ? AND (canonical_rfc = ? OR (canonical_rfc IS NULL AND notas LIKE ?))
+         ORDER BY created_at ASC, id ASC LIMIT 2`
       )
-      .bind(tenantId, body.email.trim(), `%${rfcUpper}%`)
-      .first<{ id: string; status: string }>();
+      .bind(tenantId, rfcCanonical, `%RFC: ${rfcCanonical}%`)
+      .all<{
+        id: string;
+        status: string;
+        lifecycle_stage: string;
+        canonical_rfc: string | null;
+      }>();
 
-    let leadId = existing?.id;
+    if ((matches.results || []).length > 1) {
+      return Response.json(
+        {
+          error:
+            'Hay registros heredados duplicados para este RFC; requiere conciliación administrativa.',
+        },
+        { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
 
+    const existing = matches.results?.[0];
+    if (existing?.lifecycle_stage === 'socio_activo' || existing?.status === 'Socio Activo') {
+      return Response.json(
+        {
+          error:
+            'Este RFC ya pertenece a un socio activo. Contacta a CANACO para actualizar sus datos.',
+        },
+        { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (existing?.lifecycle_stage === 'pago_pendiente') {
+      return Response.json(
+        {
+          error:
+            'El registro ya tiene una cotización pendiente; no se pueden cambiar sus datos durante el pago.',
+        },
+        { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+
+    const leadId = existing?.id || crypto.randomUUID();
+    const consentTimestamp = new Date().toISOString();
     if (existing) {
-      if (existing.status === 'Socio Activo' || existing.status === 'activo') {
-        return Response.json(
-          {
-            error:
-              'Este RFC o correo ya pertenece a un Socio Activo en el padrón. Contacta a CANACO para actualizar sus datos.',
-          },
-          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-        );
-      }
-      // Actualizar registro existente
       await db
         .prepare(
           `UPDATE leads_ark_tools
-           SET web = ?, whatsapp = ?, email = ?, ciudad = ?, especialidad = ?, status = ?,
-               last_contact = DATE('now'), contacto_nombre = ?, notas = ?, updated_at = CURRENT_TIMESTAMP
+           SET canonical_rfc = ?, web = ?, whatsapp = ?, email = ?, ciudad = ?, especialidad = ?,
+               lifecycle_stage = CASE WHEN lifecycle_stage = 'prospecto' THEN lifecycle_stage ELSE lifecycle_stage END,
+               status = CASE lifecycle_stage WHEN 'prospecto' THEN 'Prospecto' WHEN 'registrado' THEN 'Registrado' WHEN 'pago_pendiente' THEN 'Pago Pendiente' ELSE status END,
+               last_contact = DATE('now'), contacto_nombre = ?, notas = ?,
+               consent_aviso_version = ?, consent_accepted_at = ?, consent_medium = ?,
+               arkangel_share_consent = ?, origin = CASE WHEN origin = 'legacy' THEN ? ELSE origin END,
+               is_demo = MAX(is_demo, ?), updated_at = CURRENT_TIMESTAMP
            WHERE id = ? AND tenant_id = ?`
         )
         .bind(
+          rfcCanonical,
           nombreComercial,
           body.telefono.trim(),
           body.email.trim(),
           municipio,
           sector,
-          estatus,
           body.contactoNombre.trim(),
           notasDetalle,
-          existing.id,
+          consentimiento.avisoVersion,
+          consentTimestamp,
+          origin,
+          body.consentimientoArkangel === true ? 1 : 0,
+          origin,
+          isDemo ? 1 : 0,
+          leadId,
           tenantId
         )
         .run();
     } else {
-      // Insertar nuevo comercio en el CRM
-      leadId = crypto.randomUUID();
       await db
         .prepare(
           `INSERT INTO leads_ark_tools (
-             id, web, whatsapp, email, ciudad, especialidad, status,
-             last_contact, contacto_nombre, notas, tenant_id, created_at, updated_at
-           ) VALUES (?, ?, ?, ?, ?, ?, ?, DATE('now'), ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+             id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
+             last_contact, contacto_nombre, notas, tenant_id, canonical_rfc,
+             consent_aviso_version, consent_accepted_at, consent_medium,
+             arkangel_share_consent, origin, is_demo, created_at, updated_at
+           ) VALUES (?, ?, ?, ?, ?, ?, 'Prospecto', 'prospecto', DATE('now'), ?, ?, ?,
+                     ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
         )
         .bind(
           leadId,
@@ -745,11 +1128,25 @@ export async function handleAfiliacionesApiRequest(
           body.email.trim(),
           municipio,
           sector,
-          estatus,
           body.contactoNombre.trim(),
           notasDetalle,
-          tenantId
+          tenantId,
+          rfcCanonical,
+          consentimiento.avisoVersion,
+          consentTimestamp,
+          origin,
+          body.consentimientoArkangel === true ? 1 : 0,
+          origin,
+          isDemo ? 1 : 0
         )
+        .run();
+      await db
+        .prepare(
+          `INSERT INTO canaco_lifecycle_audit
+           (id, lead_id, actor_id, actor_email, from_stage, to_stage, reason)
+           VALUES (?, ?, ?, ?, NULL, 'prospecto', 'Consented CANACO lead capture')`
+        )
+        .bind(crypto.randomUUID(), leadId, authPrincipal?.id || null, authPrincipal?.email || null)
         .run();
     }
 
@@ -757,7 +1154,7 @@ export async function handleAfiliacionesApiRequest(
       folioSiem,
       razonSocial: razonSocialUpper,
       nombreComercial,
-      rfc: rfcUpper,
+      rfc: rfcCanonical,
       sector,
       estrato,
       numEmpleados,
@@ -796,11 +1193,12 @@ export async function handleAfiliacionesApiRequest(
         success: true,
         ok: true,
         leadId,
+        lifecycleStage: existing?.lifecycle_stage || 'prospecto',
         socio: socioRegistro,
         cotizacion,
         emailEnviado: false,
       },
-      { status: 201, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      { status: existing ? 200 : 201, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Error al registrar afiliación en CRM.';

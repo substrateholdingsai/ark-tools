@@ -23,6 +23,7 @@ import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './serve
 import { botApp } from './server/bots/botIngestionApi';
 import { handleBillingApiRequest } from './server/billing/billingWebhook';
 import { handleCanacoConektaApiRequest } from './server/canacoConektaService';
+import { expireCanacoPaymentIntents } from './server/canacoLifecycle';
 import { handleCanacoBuzonApiRequest } from './server/canacoBuzonApi';
 import { handleSentinelaApiRequest } from './server/sentinela/sentinelaWebhook';
 import {
@@ -195,6 +196,9 @@ export default {
     ctx: ExecutionContext
   ): Promise<void> {
     ctx.waitUntil(checkAlegraAccountsHealth(env));
+    if (env.ARK_TOOLS_DB) {
+      ctx.waitUntil(expireCanacoPaymentIntents(env.ARK_TOOLS_DB, new Date().toISOString()));
+    }
   },
 } satisfies ExportedHandler<Env>;
 

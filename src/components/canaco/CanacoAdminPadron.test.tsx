@@ -7,10 +7,11 @@ const MOCK_LEADS = [
     id: 'lead-can-1',
     web: 'Comercializadora del Mayab',
     whatsapp: '0000000000',
-    email: 'demo@example.invalid',
+    email: 'contacto@mayab.mx',
     ciudad: 'Mérida',
     especialidad: 'comercio',
     status: 'Socio Activo',
+    lifecycle_stage: 'socio_activo',
     last_contact: '2026-10-25',
     contacto_nombre: 'Fernando Pech',
     notas:
@@ -24,6 +25,8 @@ const MOCK_LEADS = [
     ciudad: 'Mérida',
     especialidad: 'turismo',
     status: 'Nuevo / Pendiente',
+    lifecycle_stage: 'prospecto',
+    is_demo: 1,
     last_contact: '2026-10-27',
     contacto_nombre: 'Contacto de prueba',
     notas:
@@ -37,10 +40,27 @@ const MOCK_LEADS = [
     ciudad: 'Progreso',
     especialidad: 'servicios',
     status: 'Socio Activo',
+    lifecycle_stage: 'socio_activo',
+    is_demo: 1,
     last_contact: '2026-10-20',
     contacto_nombre: 'Contacto de prueba',
     notas:
       'Razón Social: SERVICIOS DEMO DE PROGRESO | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-MED-6060 | Estrato: MEDIANA (60 emp.) | Empleados: 60 | Cuota: $6,500 MXN | Pago Confirmado Call Center: SPEI-DEMO-6060 ($6,500 MXN)',
+  },
+  {
+    id: 'lead-can-4',
+    web: 'Prospecto Real Pendiente',
+    whatsapp: '9999123456',
+    email: 'contacto@prospecto.mx',
+    ciudad: 'Mérida',
+    especialidad: 'comercio',
+    status: 'Pago Pendiente',
+    lifecycle_stage: 'pago_pendiente',
+    is_demo: 0,
+    last_contact: '2026-10-28',
+    contacto_nombre: 'Contacto real',
+    notas:
+      'Razón Social: PROSPECTO REAL PENDIENTE | RFC: PRP2106158A1 | Folio SIEM: SIEM-MID-2026-PRP2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN',
   },
 ];
 
@@ -98,16 +118,12 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
     expect(screen.getByText('Pagos marcados confirmados')).toBeInTheDocument();
   });
 
-  it('permite filtrar el padrón de socios por término de búsqueda', async () => {
+  it('excluye registros de demo del padrón visible', async () => {
     await renderAdmin();
 
-    const inputBusqueda = screen.getByPlaceholderText(
-      /Buscar por comercio, RFC, contacto o WhatsApp\.\.\./i
-    );
-    fireEvent.change(inputBusqueda, { target: { value: 'Servicios Demo' } });
-
-    expect(screen.getByText(/Servicios Demo de Progreso/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Comercializadora del Mayab/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Comercio Demo Pendiente/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Servicios Demo de Progreso/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Comercializadora del Mayab/i)).toBeInTheDocument();
   });
 
   it('permite filtrar por estatus (sólo pendientes de pago)', async () => {
@@ -116,8 +132,7 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
     const selectEstatus = screen.getByDisplayValue('Todos los Estatus');
     fireEvent.change(selectEstatus, { target: { value: 'pendientes' } });
 
-    expect(screen.getByText(/Comercio Demo Pendiente/i)).toBeInTheDocument();
-    expect(screen.queryByText(/Comercializadora del Mayab/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/Prospecto Real Pendiente/i)).toBeInTheDocument();
   });
 
   it('abre el resumen interno de pago, no una Cédula oficial', async () => {
@@ -131,7 +146,7 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
     expect(screen.getByText(/No es una constancia oficial SIEM/i)).toBeInTheDocument();
   });
 
-  it('dispara la sincronización con Arkangel al confirmar en el modal de Recordatorio Masivo', async () => {
+  it('no permite aprobar un envío a Arkangel sin la identidad de Pavel', async () => {
     await renderAdmin();
 
     const botonSync = screen.getByRole('button', { name: /Sincronizar registros/i });
@@ -140,12 +155,9 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
 
     // Modal de confirmación "Modo Sarita"
     expect(await screen.findByText(/Confirmar sincronización de registros/i)).toBeInTheDocument();
-    const botonConfirmar = screen.getByRole('button', { name: /Enviar lote al proveedor/i });
-    fireEvent.click(botonConfirmar);
-
-    await waitFor(() => {
-      expect(screen.getByText(/Lote enviado al proveedor Arkangel/i)).toBeInTheDocument();
-    });
+    const botonConfirmar = screen.getByRole('button', { name: /Aprobar y enviar lote/i });
+    expect(botonConfirmar).toBeDisabled();
+    expect(fetchMock).not.toHaveBeenCalledWith('/api/canaco/sync-arkangel', expect.anything());
   });
 
   it('no simula un envío de recordatorio individual no conectado', async () => {

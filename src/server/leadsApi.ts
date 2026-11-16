@@ -19,6 +19,13 @@ interface Lead {
   tenant_id: string;
   created_at?: string;
   updated_at?: string;
+  lifecycle_stage: string | null;
+  consent_aviso_version: string | null;
+  consent_accepted_at: string | null;
+  consent_medium: string | null;
+  arkangel_share_consent: number | null;
+  origin: string | null;
+  is_demo: number | null;
 }
 
 export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): string {
@@ -179,6 +186,15 @@ function rowToLead(row: Record<string, unknown>): Lead {
     tenant_id: String(row.tenant_id ?? 'ark'),
     created_at: row.created_at == null ? undefined : String(row.created_at),
     updated_at: row.updated_at == null ? undefined : String(row.updated_at),
+    lifecycle_stage: row.lifecycle_stage == null ? null : String(row.lifecycle_stage),
+    consent_aviso_version:
+      row.consent_aviso_version == null ? null : String(row.consent_aviso_version),
+    consent_accepted_at: row.consent_accepted_at == null ? null : String(row.consent_accepted_at),
+    consent_medium: row.consent_medium == null ? null : String(row.consent_medium),
+    arkangel_share_consent:
+      row.arkangel_share_consent == null ? null : Number(row.arkangel_share_consent),
+    origin: row.origin == null ? null : String(row.origin),
+    is_demo: row.is_demo == null ? null : Number(row.is_demo),
   };
 }
 
@@ -231,31 +247,45 @@ export async function handleLeadsApiRequest(
   try {
     // STATS
     if (path === '/api/admin/leads/stats' && request.method === 'GET') {
+      const demoFilter = tenantId === 'canaco_merida' ? ' AND COALESCE(is_demo, 0) = 0' : '';
       const totalRow = await db
-        .prepare('SELECT COUNT(*) AS total FROM leads_ark_tools WHERE tenant_id = ?')
+        .prepare(`SELECT COUNT(*) AS total FROM leads_ark_tools WHERE tenant_id = ?${demoFilter}`)
         .bind(tenantId)
         .first<{ total: number }>();
 
       const ciudadRows = await db
         .prepare(
-          'SELECT ciudad, COUNT(*) AS count FROM leads_ark_tools WHERE tenant_id = ? GROUP BY ciudad ORDER BY ciudad'
+          `SELECT ciudad, COUNT(*) AS count FROM leads_ark_tools WHERE tenant_id = ?${demoFilter} GROUP BY ciudad ORDER BY ciudad`
         )
         .bind(tenantId)
         .all<{ ciudad: string | null; count: number }>();
 
       const statusRows = await db
         .prepare(
-          'SELECT status, COUNT(*) AS count FROM leads_ark_tools WHERE tenant_id = ? GROUP BY status ORDER BY status'
+          `SELECT status, COUNT(*) AS count FROM leads_ark_tools WHERE tenant_id = ?${demoFilter} GROUP BY status ORDER BY status`
         )
         .bind(tenantId)
         .all<{ status: string | null; count: number }>();
 
       const espRows = await db
         .prepare(
-          'SELECT especialidad, COUNT(*) AS count FROM leads_ark_tools WHERE tenant_id = ? GROUP BY especialidad ORDER BY especialidad'
+          `SELECT especialidad, COUNT(*) AS count FROM leads_ark_tools WHERE tenant_id = ?${demoFilter} GROUP BY especialidad ORDER BY especialidad`
         )
         .bind(tenantId)
         .all<{ especialidad: string | null; count: number }>();
+
+      const stageRows =
+        tenantId === 'canaco_merida'
+          ? await db
+              .prepare(
+                `SELECT lifecycle_stage, COUNT(*) AS count
+                 FROM leads_ark_tools
+                 WHERE tenant_id = ?${demoFilter}
+                 GROUP BY lifecycle_stage ORDER BY lifecycle_stage`
+              )
+              .bind(tenantId)
+              .all<{ lifecycle_stage: string | null; count: number }>()
+          : { results: [] };
 
       const porCiudad = (ciudadRows.results || []).map((r) => ({
         ciudad: r.ciudad,
@@ -283,6 +313,10 @@ export async function handleLeadsApiRequest(
         por_ciudad: porCiudad,
         por_status: porStatus,
         por_especialidad: porEspecialidad,
+        por_etapa: (stageRows.results || []).map((r) => ({
+          etapa: r.lifecycle_stage,
+          count: r.count,
+        })),
       };
       return Response.json(body, {
         headers: { ...corsHeaders, 'Cache-Control': 'no-store' },
@@ -305,6 +339,9 @@ export async function handleLeadsApiRequest(
 
       let query = 'SELECT * FROM leads_ark_tools WHERE tenant_id = ?';
       const binds: unknown[] = [tenantId];
+      if (tenantId === 'canaco_merida' && url.searchParams.get('include_demo') !== 'true') {
+        query += ' AND COALESCE(is_demo, 0) = 0';
+      }
 
       if (ciudad) {
         query += ' AND ciudad = ?';
@@ -376,8 +413,7 @@ export async function handleLeadsApiRequest(
     // CREATE
     if (path === '/api/admin/leads' && request.method === 'POST') {
       const body = (await request.json()) as Record<string, unknown>;
-      const id =
-        typeof body.id === 'string' && body.id.trim() ? body.id.trim() : crypto.randomUUID();
+      const id = crypto.randomUUID();
       const web = body.web == null ? null : String(body.web).trim() || null;
       const rawWa = body.whatsapp == null ? null : String(body.whatsapp).trim() || null;
       const whatsapp = rawWa ? normalizeMexicanPhone(rawWa) || rawWa : null;
@@ -396,10 +432,32 @@ export async function handleLeadsApiRequest(
           ? String(body.tenant_id).trim() || tenantId
           : tenantId;
 
+      if (
+        ['socio activo', 'activo', 'socio_activo'].includes(status.toLowerCase()) ||
+        /Pago Confirmado (?:Conekta|Call Center):/i.test(notas || '')
+      ) {
+        return Response.json(
+          {
+            error:
+              'El estado activo y la evidencia de pago solo se escriben desde el flujo de pago verificado.',
+          },
+          { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+      if (tId === 'canaco_merida') {
+        return Response.json(
+          {
+            error:
+              'Captura CANACO requiere Aviso de Privacidad y debe usar la Ventanilla de Afiliación.',
+          },
+          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
       await db
         .prepare(
-          `INSERT INTO leads_ark_tools (id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, tenant_id, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+          `INSERT INTO leads_ark_tools (id, web, whatsapp, email, ciudad, especialidad, status, last_contact, contacto_nombre, notas, tenant_id, origin, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
         )
         .bind(
           id,
@@ -458,6 +516,46 @@ export async function handleLeadsApiRequest(
         return Response.json(
           { error: 'Lead no encontrado.' },
           { status: 404, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const requestedStatus = body.status == null ? '' : String(body.status).trim().toLowerCase();
+      const requestedNotes = body.notas == null ? '' : String(body.notas).trim();
+      if (
+        ['socio activo', 'activo', 'socio_activo'].includes(requestedStatus) ||
+        /Pago Confirmado (?:Conekta|Call Center):/i.test(requestedNotes)
+      ) {
+        return Response.json(
+          {
+            error:
+              'El estado activo y la evidencia de pago solo se escriben desde el flujo de pago verificado.',
+          },
+          { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+      if (
+        existing.lifecycle_stage === 'socio_activo' &&
+        body.status !== undefined &&
+        String(body.status) !== String(existing.status)
+      ) {
+        return Response.json(
+          {
+            error:
+              'Los cambios de estado de un socio activo requieren el flujo de reversión auditada.',
+          },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+      if (
+        existing.lifecycle_stage === 'socio_activo' &&
+        body.notas !== undefined &&
+        String(body.notas ?? '') !== String(existing.notas ?? '')
+      ) {
+        return Response.json(
+          {
+            error: 'Las notas de pago de un socio activo requieren el flujo de reversión auditada.',
+          },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
 
@@ -573,6 +671,21 @@ export async function handleLeadsApiRequest(
       if (!id || id === 'stats') {
         return null;
       }
+      const existing = await db
+        .prepare(
+          'SELECT status, lifecycle_stage FROM leads_ark_tools WHERE id = ? AND tenant_id = ? LIMIT 1'
+        )
+        .bind(id, tenantId)
+        .first<{ status: string | null; lifecycle_stage: string | null }>();
+      if (
+        existing &&
+        (existing.lifecycle_stage === 'socio_activo' || existing.status === 'Socio Activo')
+      ) {
+        return Response.json(
+          { error: 'No se puede eliminar un socio activo sin completar la reversión auditada.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
       await db
         .prepare('DELETE FROM leads_ark_tools WHERE id = ? AND tenant_id = ?')
         .bind(id, tenantId)
@@ -602,6 +715,15 @@ export async function handleLeadsApiRequest(
       }
 
       const lead = rowToLead(row);
+      if (tenantId === 'canaco_merida') {
+        return Response.json(
+          {
+            error:
+              'El envío de propuestas desde el CRM CANACO está deshabilitado; requiere un flujo de comunicación consentido.',
+          },
+          { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
       const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
       const targetEmail =
         typeof body.test_email === 'string' && body.test_email.trim()
@@ -716,6 +838,14 @@ export async function handleLeadsApiRequest(
       }
 
       const lead = rowToLead(row);
+      if (tenantId === 'canaco_merida' && lead.lifecycle_stage === 'socio_activo') {
+        return Response.json(
+          {
+            error: 'El estado de un socio activo no puede cambiarse desde el registro de WhatsApp.',
+          },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
       const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
       const rawPhone =
         typeof body.phone === 'string' && body.phone.trim() ? body.phone.trim() : lead.whatsapp;

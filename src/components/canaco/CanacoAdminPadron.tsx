@@ -54,13 +54,26 @@ interface LeadRow {
   ciudad: string | null;
   especialidad: string | null;
   status: string | null;
+  lifecycle_stage?: string | null;
+  is_demo?: number | null;
+  consent_aviso_version?: string | null;
+  consent_accepted_at?: string | null;
+  consent_medium?: string | null;
+  arkangel_share_consent?: number | null;
+  origin?: string | null;
   last_contact: string | null;
   contacto_nombre: string | null;
   notas: string | null;
 }
 
 function getConfirmedPaymentAmount(lead: LeadRow): number | null {
-  if (lead.status !== 'Socio Activo' || !tienePagoConfirmado(lead.notas)) return null;
+  if (
+    lead.lifecycle_stage !== 'socio_activo' ||
+    lead.status !== 'Socio Activo' ||
+    !tienePagoConfirmado(lead.notas)
+  ) {
+    return null;
+  }
   const employees = extraerNumEmpleados(lead.notas);
   const sector = lead.especialidad;
   const amountMatch = lead.notas?.match(/Pago Confirmado [^(]+\(\$([\d,]+(?:\.\d+)?)\s*MXN\)/i);
@@ -93,6 +106,7 @@ interface CanacoAdminPadronProps {
 export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps = {}) {
   const auth = useOptionalAuth();
   const isSuperAdmin = auth?.platformRole === 'super_admin';
+  const isPavel = auth?.user?.email?.toLowerCase() === 'pavel@arksystems.site';
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
@@ -119,12 +133,19 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
 
   // Enviar al proveedor solo los registros que pasen la validación del servidor.
   const handleSyncArkangel = async () => {
+    if (
+      !isPavel ||
+      !window.confirm('¿Apruebas enviar a Arkangel los registros con consentimiento vigente?')
+    ) {
+      return;
+    }
     setSyncingArkangel(true);
     setSyncFeedback(null);
     try {
       const res = await fetch('/api/canaco/sync-arkangel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approved: true }),
       });
       const data = (await res.json()) as any;
       if (res.ok && data.ok) {
@@ -148,6 +169,34 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
       });
     } finally {
       setSyncingArkangel(false);
+    }
+  };
+
+  const handleReverseAffiliation = async (lead: LeadRow) => {
+    const reason = window.prompt(
+      'Motivo documentado para revertir la afiliación (el reembolso se gestiona por separado):'
+    );
+    if (!reason?.trim()) return;
+
+    try {
+      const response = await fetch('/api/afiliaciones/reversar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId: lead.id, reason: reason.trim() }),
+      });
+      const data = (await response.json()) as { error?: string; refundProcessed?: boolean };
+      if (!response.ok) throw new Error(data.error || 'No se pudo revertir la afiliación.');
+      setSyncFeedback({
+        tipo: 'success',
+        mensaje:
+          'Afiliación revertida en Ledger. El reembolso no se procesó y requiere gestión aparte.',
+      });
+      await cargarPadron();
+    } catch (error) {
+      setSyncFeedback({
+        tipo: 'error',
+        mensaje: error instanceof Error ? error.message : 'No se pudo revertir la afiliación.',
+      });
     }
   };
 
@@ -176,17 +225,20 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
 
   // KPIs
   const kpis = useMemo(() => {
-    const total = leads.length;
-    const activos = leads.filter((lead) => getConfirmedPaymentAmount(lead) !== null).length;
+    const reportableLeads = leads.filter((lead) => lead.is_demo !== 1);
+    const total = reportableLeads.length;
+    const activos = reportableLeads.filter(
+      (lead) => getConfirmedPaymentAmount(lead) !== null
+    ).length;
     const pendientes = total - activos;
 
     // Estimar recaudación a partir de las notas o cuota base
-    const recaudacion = leads.reduce((acc, l) => {
+    const recaudacion = reportableLeads.reduce((acc, l) => {
       return acc + (getConfirmedPaymentAmount(l) || 0);
     }, 0);
 
     // Cartera pendiente de cobro
-    const carteraPendiente = leads.reduce((acc, l) => {
+    const carteraPendiente = reportableLeads.reduce((acc, l) => {
       if (getConfirmedPaymentAmount(l) !== null) return acc;
       const employees = extraerNumEmpleados(l.notas);
       const sector = l.especialidad;
@@ -206,6 +258,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
   // Filtros
   const comerciosFiltrados = useMemo(() => {
     return leads.filter((lead) => {
+      if (lead.is_demo === 1) return false;
       const matchTexto =
         !busqueda ||
         (lead.web && lead.web.toLowerCase().includes(busqueda.toLowerCase())) ||
@@ -685,6 +738,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                   const folioMatch = lead.notas?.match(/Folio SIEM:\s*([^\s|]+)/);
                   const folio = folioMatch ? folioMatch[1] : 'PENDIENTE';
                   const esActivo = getConfirmedPaymentAmount(lead) !== null;
+                  const etapa = esActivo ? 'socio_activo' : lead.lifecycle_stage || 'prospecto';
 
                   // Mensaje para WhatsApp institucional
                   const waNumber = (lead.whatsapp || '').replace(/\D/g, '');
@@ -747,19 +801,35 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                             </span>
                           )}
                         </div>
+                        <div className="mt-1 text-[9px] text-henequen-piedra">
+                          Origen: {lead.origin || 'legacy'} · Aviso:{' '}
+                          {lead.consent_accepted_at
+                            ? `${lead.consent_medium || 'sin medio'} · ${lead.consent_accepted_at}`
+                            : 'sin constancia'}
+                          {' · Arkangel: '}
+                          {lead.arkangel_share_consent === 1 ? 'autorizado' : 'no autorizado'}
+                        </div>
                       </td>
 
                       {/* Estatus */}
                       <td className="px-4 py-3.5">
-                        {esActivo ? (
+                        {etapa === 'socio_activo' ? (
                           <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
                             <CheckCircle2 size={11} />
                             Socio Activo
                           </span>
+                        ) : etapa === 'cancelado' ? (
+                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">
+                            Cancelado
+                          </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-800">
                             <Clock size={11} />
-                            Pendiente Pago
+                            {etapa === 'registrado'
+                              ? 'Registrado'
+                              : etapa === 'pago_pendiente'
+                                ? 'Pago Pendiente'
+                                : 'Prospecto'}
                           </span>
                         )}
                       </td>
@@ -811,6 +881,17 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                             <FileText size={12} />
                             <span>Resumen</span>
                           </button>
+                          {esActivo && (
+                            <button
+                              type="button"
+                              onClick={() => void handleReverseAffiliation(lead)}
+                              className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-red-300 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-800 transition hover:bg-red-100"
+                              title="Revertir la afiliación con motivo auditado; no procesa un reembolso."
+                            >
+                              <X size={11} />
+                              <span>Revertir</span>
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -852,6 +933,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
       <VentanillaAfiliacionModal
         isOpen={modalAltaOpen}
         onClose={() => setModalAltaOpen(false)}
+        consentMedium="admin"
         onRegistroGuardado={() => {
           void cargarPadron();
         }}
@@ -909,11 +991,16 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                   setModalRecordatorioMasivoOpen(false);
                   await handleSyncArkangel();
                 }}
-                disabled={syncingArkangel}
+                disabled={syncingArkangel || !isPavel}
+                title={
+                  isPavel
+                    ? 'Requiere aprobación explícita; solo se incluirán registros con consentimiento de compartir.'
+                    : 'Solo Pavel puede aprobar envíos a Arkangel.'
+                }
                 className="inline-flex items-center gap-1.5 rounded-lg bg-henequen-anil px-4 py-2 text-xs font-bold text-white shadow transition hover:bg-henequen-anil/90 disabled:opacity-50"
               >
                 <Radio size={14} className={syncingArkangel ? 'animate-pulse' : ''} />
-                <span>{syncingArkangel ? 'Sincronizando...' : 'Enviar lote al proveedor'}</span>
+                <span>{syncingArkangel ? 'Sincronizando...' : 'Aprobar y enviar lote'}</span>
               </button>
             </div>
           </div>

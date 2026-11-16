@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { handleAfiliacionesApiRequest } from './afiliacionesApi';
 import type { Env } from '../index';
+import type { AuthPrincipal } from './auth';
+import { COMPLIANCE_LAST_UPDATED } from '@/data/compliance-legal';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://ledger.arksystems.site',
@@ -24,6 +26,7 @@ function createMockDb() {
           }
           return null;
         }),
+        all: vi.fn(async () => ({ results: existingLead ? [existingLead] : [] })),
         run: vi.fn(async () => ({ success: true })),
       };
     }),
@@ -31,7 +34,7 @@ function createMockDb() {
 }
 
 describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
-  it('registra un comercio nuevo en D1 con estatus "Nuevo / Pendiente" y cuota calculada', async () => {
+  it('captura un prospecto consentido con cuota calculada y sin pago confirmado', async () => {
     const mockDb = createMockDb();
     const env = {
       ARK_TOOLS_DB: mockDb as any,
@@ -49,9 +52,15 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       email: 'demo@example.invalid',
       telefono: '0000000000',
       estatus: 'pendiente_pago',
+      consentimiento: {
+        aceptado: true,
+        avisoVersion: COMPLIANCE_LAST_UPDATED,
+        fecha: new Date().toISOString(),
+        medio: 'ventanilla',
+      },
     };
 
-    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/registro', {
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -82,7 +91,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(json.socio.folioSiem).toContain('SIEM-MID-2026-CPM2-MIC');
   });
 
-  it('ignora el estatus activo enviado por el cliente y deja el registro pendiente', async () => {
+  it('ignora el estatus activo enviado por el cliente y deja el prospecto sin pago', async () => {
     const mockDb = createMockDb();
     const env = {
       ARK_TOOLS_DB: mockDb as any,
@@ -101,9 +110,15 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       metodoPago: 'tarjeta',
       cfdiRequerido: true,
       estatus: 'activo',
+      consentimiento: {
+        aceptado: true,
+        avisoVersion: COMPLIANCE_LAST_UPDATED,
+        fecha: new Date().toISOString(),
+        medio: 'ventanilla',
+      },
     };
 
-    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/registro', {
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -133,9 +148,14 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(json.socio.cfdiRequerido).toBe(true);
   });
 
-  it('actualiza un lead existente en lugar de duplicar cuando el comercio ya existía en D1', async () => {
+  it('actualiza un prospecto existente en lugar de insertar otro registro para el RFC', async () => {
     const mockDb = createMockDb();
-    mockDb.setExisting({ id: 'lead-existente-1', status: 'Nuevo / Pendiente' });
+    mockDb.setExisting({
+      id: 'lead-existente-1',
+      status: 'Prospecto',
+      lifecycle_stage: 'prospecto',
+      canonical_rfc: 'AMA200101AB1',
+    });
     const env = {
       ARK_TOOLS_DB: mockDb as any,
       APP_URL: 'https://ledger.arksystems.site',
@@ -150,18 +170,170 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       email: 'pech@mayab.mx',
       telefono: '9999123456',
       estatus: 'activo',
+      consentimiento: {
+        aceptado: true,
+        avisoVersion: COMPLIANCE_LAST_UPDATED,
+        fecha: new Date().toISOString(),
+        medio: 'ventanilla',
+      },
     };
 
-    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/registro', {
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
 
     const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
-    expect(response?.status).toBe(201);
+    expect(response?.status).toBe(200);
     const json = (await response?.json()) as { success: boolean; leadId: string };
     expect(json.leadId).toBe('lead-existente-1');
+  });
+
+  it('rechaza la captura sin aceptación del Aviso y no escribe en D1', async () => {
+    const mockDb = createMockDb();
+    const env = { ARK_TOOLS_DB: mockDb as any } as unknown as Env;
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        razonSocial: 'Comercializadora del Mayab',
+        rfc: 'CPM2106158A1',
+        sector: 'comercio',
+        numEmpleados: 15,
+        contactoNombre: 'Fernando Pech',
+        email: 'demo@example.invalid',
+        telefono: '9999123456',
+      }),
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response?.status).toBe(400);
+    expect(mockDb.prepare).not.toHaveBeenCalled();
+  });
+
+  it('rechaza cambiar datos de un RFC mientras ya existe una intención de pago pendiente', async () => {
+    const mockDb = createMockDb();
+    mockDb.setExisting({
+      id: 'lead-payment-pending',
+      status: 'Pago Pendiente',
+      lifecycle_stage: 'pago_pendiente',
+      canonical_rfc: 'CPM2106158A1',
+    });
+    const env = { ARK_TOOLS_DB: mockDb as any } as unknown as Env;
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        razonSocial: 'Comercializadora del Mayab',
+        rfc: 'CPM2106158A1',
+        sector: 'comercio',
+        numEmpleados: 15,
+        contactoNombre: 'Fernando Pech',
+        email: 'demo@example.invalid',
+        telefono: '9999123456',
+        consentimiento: {
+          aceptado: true,
+          avisoVersion: COMPLIANCE_LAST_UPDATED,
+          fecha: new Date().toISOString(),
+          medio: 'ventanilla',
+        },
+      }),
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response?.status).toBe(409);
+    expect(mockDb.prepare).not.toHaveBeenCalledWith(
+      expect.stringContaining('INSERT INTO leads_ark_tools')
+    );
+  });
+
+  it('rechaza RFC con espacios internos aunque el formato sin espacios parezca válido', async () => {
+    const mockDb = createMockDb();
+    const env = { ARK_TOOLS_DB: mockDb as any } as unknown as Env;
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        razonSocial: 'Comercializadora del Mayab',
+        rfc: 'CPM 2106158A1',
+        sector: 'comercio',
+        numEmpleados: 15,
+        contactoNombre: 'Fernando Pech',
+        email: 'demo@example.invalid',
+        telefono: '9999123456',
+        consentimiento: {
+          aceptado: true,
+          avisoVersion: COMPLIANCE_LAST_UPDATED,
+          fecha: new Date().toISOString(),
+          medio: 'ventanilla',
+        },
+      }),
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response?.status).toBe(400);
+    expect(mockDb.prepare).not.toHaveBeenCalled();
+  });
+
+  it('recibe una solicitud ARCO sin revelar si el RFC y correo coinciden', async () => {
+    const run = vi.fn(async () => ({ success: true }));
+    const mockDb = {
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () => (query.includes('SELECT id FROM leads_ark_tools') ? null : null)),
+        run,
+      })),
+    };
+    const env = { ARK_TOOLS_DB: mockDb as any } as unknown as Env;
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/arco', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rfc: 'CPM2106158A1',
+        requesterEmail: 'demo@example.invalid',
+        rightRequested: 'acceso',
+      }),
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
+    expect(response?.status).toBe(202);
+    expect(await response?.json()).toMatchObject({ ok: true, status: 'received' });
+    expect(run).toHaveBeenCalledOnce();
+  });
+
+  it('revierte un socio activo con motivo y auditoría, sin afirmar que hubo reembolso', async () => {
+    const principal: AuthPrincipal = {
+      id: 'admin-1',
+      email: 'admin@example.com',
+      fullName: 'Super Admin',
+      platformRole: 'super_admin',
+    };
+    const statements: string[] = [];
+    const mockDb = {
+      prepare: vi.fn((query: string) => {
+        statements.push(query);
+        return { bind: vi.fn().mockReturnThis() };
+      }),
+      batch: vi.fn(async () => [{ meta: { changes: 1 } }, { meta: { changes: 1 } }]),
+    };
+    const env = { ARK_TOOLS_DB: mockDb as any } as unknown as Env;
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/reversar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ leadId: 'lead-paid-1', reason: 'Solicitud de baja documentada.' }),
+    });
+
+    const response = await handleAfiliacionesApiRequest(request, env, corsHeaders, principal);
+    expect(response?.status).toBe(200);
+    expect(await response?.json()).toMatchObject({
+      lifecycleStage: 'cancelado',
+      refundRequired: true,
+      refundProcessed: false,
+    });
+    expect(statements.join(' ')).toContain("lifecycle_stage = 'cancelado'");
+    expect(statements.join(' ')).toContain("'refund_required'");
+    expect(mockDb.batch).toHaveBeenCalledOnce();
   });
 
   it('rechaza con 400 cuando faltan campos requeridos como razón social o RFC', async () => {
@@ -171,7 +343,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       APP_URL: 'https://ledger.arksystems.site',
     } as unknown as Env;
 
-    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/registro', {
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ rfc: 'XAXX010101000' }), // Sin razonSocial ni email
@@ -212,6 +384,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
           ciudad: 'Mérida',
           especialidad: 'comercio',
           status: 'Socio Activo',
+          lifecycle_stage: 'socio_activo',
           last_contact: '2026-10-25',
           contacto_nombre: 'Fernando Pech',
           notas:
@@ -273,6 +446,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       ciudad: 'Mérida',
       especialidad: 'comercio',
       status: 'Socio Activo',
+      lifecycle_stage: 'socio_activo',
       contacto_nombre: 'Fernando Pech',
       notas:
         'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
@@ -329,6 +503,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       ciudad: 'Mérida',
       especialidad: 'comercio',
       status: 'Socio Activo',
+      lifecycle_stage: 'socio_activo',
       contacto_nombre: 'Fernando Pech',
       notas:
         'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
@@ -400,6 +575,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       ciudad: 'Mérida',
       especialidad: 'comercio',
       status: 'Socio Activo',
+      lifecycle_stage: 'socio_activo',
       contacto_nombre: 'Fernando Pech',
       notas:
         'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN) | Folio de Integridad: CANACO-FI-SIEM-MID-2026-CPM2-PEQ-4242',
@@ -529,6 +705,7 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       ciudad: 'Mérida',
       especialidad: 'comercio',
       status: 'Socio Activo',
+      lifecycle_stage: 'socio_activo',
       contacto_nombre: 'Fernando Pech',
       notas:
         'Razón Social: COMERCIALIZADORA DEL MAYAB | RFC: CPM2106158A1 | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Estrato: PEQUEÑA (15 emp.) | Empleados: 15 | Cuota: $3,700 MXN | Pago Confirmado Conekta: ord_demo_1 ($3,700 MXN)',
@@ -630,9 +807,15 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
       registroPatronalImss: 'Y9876543101',
       registroEstatalAafy: 'REC-AAFY-2026-99',
       tramiteImssSolicitado: false,
+      consentimiento: {
+        aceptado: true,
+        avisoVersion: COMPLIANCE_LAST_UPDATED,
+        fecha: new Date().toISOString(),
+        medio: 'ventanilla',
+      },
     };
 
-    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/registro', {
+    const request = new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),

@@ -11,13 +11,9 @@
 import type { Env } from '../index';
 import { sendCanacoConfirmacionPagoEmail } from './canacoEmailService';
 import { rateLimit } from './auth';
-import {
-  calcularCuotaAfiliacion,
-  determinarEstrato,
-  extraerNumEmpleados,
-  generarFolioIntegridad,
-} from '@/components/canaco/calculoCuota';
+import { calcularCuotaAfiliacion, extraerNumEmpleados } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico } from '@/components/canaco/types';
+import { activateCanacoSocioByPayment, canonicalizarRfc } from './canacoLifecycle';
 
 export interface CanacoCheckoutParams {
   razonSocial: string;
@@ -29,6 +25,8 @@ export interface CanacoCheckoutParams {
   municipio?: string;
   telefono?: string;
   leadId: string;
+  paymentIntentId: string;
+  metodoPago: 'tarjeta' | 'spei';
   cfdiRequerido?: boolean;
 }
 
@@ -104,6 +102,7 @@ export async function createCanacoConektaCheckout(
     !params.razonSocial?.trim() ||
     !params.rfc?.trim() ||
     !params.folioSiem?.trim() ||
+    !params.paymentIntentId?.trim() ||
     !params.email?.trim() ||
     !Number.isInteger(empleados) ||
     empleados < 1
@@ -153,6 +152,8 @@ export async function createCanacoConektaCheckout(
         municipio: params.municipio || 'Mérida',
         totalCentavos: String(totalCentavos),
         leadId: params.leadId || '',
+        paymentIntentId: params.paymentIntentId,
+        environment: env.CONEKTA_ENVIRONMENT === 'production' ? 'production' : 'sandbox',
         email: params.email.trim(),
         cfdiRequerido: params.cfdiRequerido ? '1' : '0',
       },
@@ -161,7 +162,7 @@ export async function createCanacoConektaCheckout(
         name: 'Afiliación CANACO SERVYTUR Mérida',
         success_url: `${appUrl}/?brand=canaco&conekta_success=1`,
         failure_url: `${appUrl}/?brand=canaco&conekta_cancel=1`,
-        allowed_payment_methods: ['card', 'bank_transfer'],
+        allowed_payment_methods: [params.metodoPago === 'spei' ? 'bank_transfer' : 'card'],
         expires_at: Math.floor(Date.now() / 1000) + 3600,
       },
     };
@@ -251,11 +252,14 @@ export async function handleCanacoConektaApiRequest(
         );
       }
 
-      const body = (await request.json()) as CanacoCheckoutParams;
+      const body = (await request.json()) as {
+        leadId?: string;
+        metodoPago?: 'tarjeta' | 'spei';
+      };
 
-      if (!body.leadId?.trim()) {
+      if (!body.leadId?.trim() || (body.metodoPago !== 'tarjeta' && body.metodoPago !== 'spei')) {
         return Response.json(
-          { error: 'El identificador del registro es requerido para generar el checkout.' },
+          { error: 'Se requieren el registro y un método de pago Conekta válido.' },
           { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
@@ -269,7 +273,8 @@ export async function handleCanacoConektaApiRequest(
 
       const lead = await db
         .prepare(
-          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, contacto_nombre, notas
+          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
+                  canonical_rfc, contacto_nombre, notas
            FROM leads_ark_tools
            WHERE id = ? AND tenant_id = 'canaco_merida'
            LIMIT 1`
@@ -283,6 +288,8 @@ export async function handleCanacoConektaApiRequest(
           ciudad: string | null;
           especialidad: string | null;
           status: string | null;
+          lifecycle_stage: string | null;
+          canonical_rfc: string | null;
           contacto_nombre: string | null;
           notas: string | null;
         }>();
@@ -293,8 +300,9 @@ export async function handleCanacoConektaApiRequest(
       const sector = lead?.especialidad;
       if (
         !lead ||
-        lead.status !== 'Nuevo / Pendiente' ||
+        !['registrado', 'pago_pendiente'].includes(lead.lifecycle_stage || '') ||
         !rfc ||
+        canonicalizarRfc(rfc) !== lead.canonical_rfc ||
         !folioSiem ||
         !razonSocial ||
         !numEmpleados ||
@@ -302,11 +310,12 @@ export async function handleCanacoConektaApiRequest(
         !['comercio', 'servicios', 'turismo'].includes(sector || '')
       ) {
         return Response.json(
-          { error: 'No se encontró un registro pendiente válido para iniciar el pago.' },
+          { error: 'No se encontró un registro validado para iniciar el pago.' },
           { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
 
+      const intentId = crypto.randomUUID();
       const checkoutResult = await createCanacoConektaCheckout(env, {
         razonSocial,
         rfc,
@@ -317,12 +326,111 @@ export async function handleCanacoConektaApiRequest(
         sector: sector as SectorEconomico,
         municipio: lead.ciudad || 'Mérida',
         leadId: lead.id,
+        paymentIntentId: intentId,
+        metodoPago: body.metodoPago,
       });
 
       if (!checkoutResult.ok) {
         return Response.json(
           { error: checkoutResult.error || 'Error al generar checkout Conekta.' },
           { status: 502, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      if (!checkoutResult.orderId) {
+        return Response.json(
+          { error: 'Conekta no devolvió una referencia de orden válida.' },
+          { status: 502, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const totalAnual = calcularCuotaAfiliacion(
+        numEmpleados,
+        sector as SectorEconomico
+      ).totalAnual;
+      const amountCents = Math.round(totalAnual * 100);
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
+      const environment =
+        checkoutResult.simulated || env.CONEKTA_ENVIRONMENT !== 'production'
+          ? 'sandbox'
+          : 'production';
+      const channel = body.metodoPago === 'spei' ? 'conekta_spei' : 'conekta_card';
+
+      await db
+        .prepare(
+          `UPDATE canaco_payment_intents SET status = 'expired'
+           WHERE lead_id = ? AND status = 'created' AND expires_at <= ?`
+        )
+        .bind(lead.id, now.toISOString())
+        .run();
+      await db
+        .prepare(
+          `UPDATE canaco_payment_intents SET status = 'superseded'
+           WHERE lead_id = ? AND status = 'created'`
+        )
+        .bind(lead.id)
+        .run();
+
+      const intentInsert = db
+        .prepare(
+          `INSERT INTO canaco_payment_intents
+           (id, lead_id, tenant_id, rfc, folio_siem, razon_social, email, num_empleados,
+            sector, channel, environment, amount_cents, status, order_id, created_at, expires_at)
+           SELECT ?, ?, 'canaco_merida', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'created', ?, ?, ?
+           WHERE EXISTS (
+             SELECT 1 FROM leads_ark_tools
+             WHERE id = ? AND tenant_id = 'canaco_merida'
+               AND canonical_rfc = ? AND lifecycle_stage IN ('registrado', 'pago_pendiente')
+           )`
+        )
+        .bind(
+          intentId,
+          lead.id,
+          rfc,
+          folioSiem,
+          razonSocial,
+          lead.email,
+          numEmpleados,
+          sector,
+          channel,
+          environment,
+          amountCents,
+          checkoutResult.orderId,
+          now.toISOString(),
+          expiresAt,
+          lead.id,
+          rfc
+        );
+      const stageUpdate = db
+        .prepare(
+          `UPDATE leads_ark_tools
+           SET lifecycle_stage = 'pago_pendiente', status = 'Pago Pendiente',
+               updated_at = CURRENT_TIMESTAMP
+           WHERE id = ? AND tenant_id = 'canaco_merida'
+             AND lifecycle_stage IN ('registrado', 'pago_pendiente')
+             AND EXISTS (
+               SELECT 1 FROM canaco_payment_intents
+               WHERE id = ? AND lead_id = ? AND status = 'created'
+             )`
+        )
+        .bind(lead.id, intentId, lead.id);
+      const auditInsert = db
+        .prepare(
+          `INSERT INTO canaco_lifecycle_audit
+           (id, lead_id, from_stage, to_stage, reason, evidence_reference)
+           SELECT ?, ?, ?, 'pago_pendiente', 'Conekta payment intent created', ?
+           WHERE EXISTS (
+             SELECT 1 FROM leads_ark_tools
+             WHERE id = ? AND tenant_id = 'canaco_merida' AND lifecycle_stage = 'pago_pendiente'
+           )`
+        )
+        .bind(crypto.randomUUID(), lead.id, lead.lifecycle_stage, intentId, lead.id);
+      const batchResults = await db.batch([intentInsert, stageUpdate, auditInsert]);
+      if (batchResults[0]?.meta.changes !== 1 || batchResults[1]?.meta.changes !== 1) {
+        return Response.json(
+          { error: 'El registro cambió antes de crear la intención de pago.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
 
@@ -400,15 +508,14 @@ export async function handleCanacoConektaApiRequest(
 
       const orderObj = event.data?.object || {};
       const metadata = orderObj.metadata || {};
-      const folioSiem = metadata.folioSiem || '';
       const leadId = metadata.leadId || '';
-      const rfc = (metadata.rfc || '').trim().toUpperCase();
-      const email = (metadata.email || orderObj.customer_info?.email || '').trim().toLowerCase();
-      const razonSocial = (
-        metadata.razonSocial ||
-        orderObj.customer_info?.name ||
-        ''
-      ).toUpperCase();
+      const intentId = metadata.paymentIntentId || '';
+      const folioSiem = metadata.folioSiem || '';
+      const rfc = canonicalizarRfc(metadata.rfc || '');
+      const email = (metadata.email || '').trim().toLowerCase();
+      const razonSocial = (metadata.razonSocial || '').trim().toUpperCase();
+      const orderId = orderObj.id || '';
+      const eventId = event.id || '';
       const montoCentavos = Number(orderObj.amount);
       const totalEsperadoCentavos = Number(metadata.totalCentavos);
       const numEmpleados = Number(metadata.numEmpleados);
@@ -417,7 +524,12 @@ export async function handleCanacoConektaApiRequest(
         ? Math.round(calcularCuotaAfiliacion(numEmpleados, sector).totalAnual * 100)
         : 0;
       if (
+        env.CONEKTA_ENVIRONMENT !== 'production' ||
+        metadata.environment !== 'production' ||
         !leadId ||
+        !intentId ||
+        !orderId ||
+        !eventId ||
         !folioSiem ||
         !rfc ||
         !Number.isInteger(numEmpleados) ||
@@ -435,14 +547,60 @@ export async function handleCanacoConektaApiRequest(
         );
       }
 
-      const montoPagado = montoCentavos / 100;
-      const conektaOrderId = orderObj.id || event.id || 'CONEKTA-PAYMENT';
-      const estrato = determinarEstrato(numEmpleados);
-      const folioIntegridad = generarFolioIntegridad(folioSiem);
+      const intent = await db
+        .prepare(
+          `SELECT id, lead_id, rfc, folio_siem, razon_social, email, num_empleados,
+                  sector, amount_cents, channel, environment, order_id, status, expires_at
+           FROM canaco_payment_intents
+           WHERE id = ? AND lead_id = ? AND tenant_id = 'canaco_merida'
+           LIMIT 1`
+        )
+        .bind(intentId, leadId)
+        .first<{
+          id: string;
+          lead_id: string;
+          rfc: string;
+          folio_siem: string;
+          razon_social: string;
+          email: string;
+          num_empleados: number;
+          sector: string;
+          amount_cents: number;
+          channel: string;
+          environment: string;
+          order_id: string | null;
+          status: string;
+          expires_at: string;
+        }>();
+      if (
+        !intent ||
+        intent.status === 'expired' ||
+        intent.status === 'cancelled' ||
+        intent.status === 'superseded' ||
+        intent.status === 'failed' ||
+        (intent.status !== 'paid' && Date.parse(intent.expires_at) <= Date.now()) ||
+        intent.environment !== 'production' ||
+        !['conekta_card', 'conekta_spei'].includes(intent.channel) ||
+        intent.order_id !== orderId ||
+        intent.rfc !== rfc ||
+        intent.folio_siem !== folioSiem ||
+        intent.razon_social.toUpperCase() !== razonSocial ||
+        intent.email.trim().toLowerCase() !== email ||
+        intent.num_empleados !== numEmpleados ||
+        intent.sector !== sector ||
+        intent.amount_cents !== montoCentavos ||
+        montoCentavos !== totalEsperadoCentavos ||
+        montoCentavos !== totalCalculadoCentavos
+      ) {
+        return Response.json(
+          { error: 'El pago no coincide con la intención y la cotización almacenadas.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
 
       const existing = await db
         .prepare(
-          `SELECT id, web, email, status, notas, contacto_nombre, especialidad
+          `SELECT id, canonical_rfc, lifecycle_stage, status, contacto_nombre
            FROM leads_ark_tools
            WHERE id = ? AND tenant_id = 'canaco_merida'
            LIMIT 1`
@@ -450,76 +608,48 @@ export async function handleCanacoConektaApiRequest(
         .bind(leadId)
         .first<{
           id: string;
-          web: string | null;
-          email: string | null;
+          canonical_rfc: string | null;
+          lifecycle_stage: string | null;
           status: string | null;
-          notas: string | null;
           contacto_nombre: string | null;
-          especialidad: string | null;
         }>();
-
-      const rfcRegistrado = existing?.notas?.match(/RFC:\s*([A-Z0-9]+)/i)?.[1]?.toUpperCase();
-      const folioRegistrado = existing?.notas?.match(/Folio SIEM:\s*([^\s|]+)/i)?.[1];
-      const razonSocialRegistrada = existing?.notas?.match(/Razón Social:\s*([^|]+)/i)?.[1]?.trim();
-      const empleadosRegistrados = extraerNumEmpleados(existing?.notas);
       if (
         !existing ||
-        rfcRegistrado !== rfc ||
-        folioRegistrado !== folioSiem ||
-        empleadosRegistrados !== numEmpleados ||
-        razonSocialRegistrada?.toUpperCase() !== razonSocial ||
-        existing.email?.trim().toLowerCase() !== email ||
-        existing.especialidad !== sector
+        existing.canonical_rfc !== rfc ||
+        !['pago_pendiente', 'socio_activo'].includes(existing.lifecycle_stage || '')
       ) {
         return Response.json(
-          { error: 'El pago no coincide con los datos del registro almacenado.' },
+          { error: 'La intención no coincide con un registro CANACO en etapa de pago.' },
           { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
 
-      if (existing.status === 'Socio Activo') {
-        if (existing.notas?.includes(`Pago Confirmado Conekta: ${conektaOrderId}`)) {
-          return Response.json(
-            { ok: true, received: true, folioSiem, status: 'Socio Activo' },
-            { status: 200, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-          );
-        }
-        return Response.json(
-          { error: 'El registro ya fue activado con otra confirmación de pago.' },
-          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-        );
-      }
-
-      const notasConekta = `Pago Confirmado Conekta: ${conektaOrderId} ($${montoPagado.toLocaleString('es-MX')} MXN) | Estrato: ${estrato.toUpperCase()} (${numEmpleados} emp.) | Empleados: ${numEmpleados} | Sector: ${sector} | Folio de Integridad: ${folioIntegridad}`;
-
-      const notasActualizadas = `${existing.notas || ''} | ${notasConekta}`;
-      const update = await db
-        .prepare(
-          `UPDATE leads_ark_tools
-           SET status = 'Socio Activo', notas = ?, last_contact = DATE('now'), updated_at = CURRENT_TIMESTAMP
-           WHERE id = ? AND status = 'Nuevo / Pendiente' AND tenant_id = 'canaco_merida'`
-        )
-        .bind(notasActualizadas, existing.id)
-        .run();
-      if (update.meta.changes !== 1) {
-        return Response.json(
-          { error: 'El registro cambió antes de aplicar la confirmación de pago.' },
-          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-        );
-      }
+      const activation = await activateCanacoSocioByPayment(db, {
+        provider: 'conekta',
+        signatureVerified: true,
+        eventType: event.type,
+        leadId,
+        intentId,
+        transactionReference: orderId,
+        eventId,
+        amountCents: montoCentavos,
+        currency: 'MXN',
+        environment: 'production',
+        paidAt: new Date().toISOString(),
+      });
 
       // Enviar confirmación por correo electrónico vía Resend
-      if (email && email.includes('@')) {
+      if (!activation.replay && email && email.includes('@')) {
         await sendCanacoConfirmacionPagoEmail(env, {
           email,
           contactoNombre: orderObj.customer_info?.name || razonSocial,
           razonSocial,
           rfc: rfc || 'XAXX010101000',
           folioSiem,
-          folioPago: conektaOrderId,
-          monto: montoPagado,
-          folioIntegridad,
-          metodo: 'Tarjeta Bancaria / SPEI (Conekta)',
+          folioPago: orderId,
+          monto: montoCentavos / 100,
+          folioIntegridad: `CANACO-FI-${folioSiem}`,
+          metodo: intent.channel === 'conekta_spei' ? 'SPEI (Conekta)' : 'Tarjeta (Conekta)',
         }).catch((err) => {
           console.warn('[Conekta Webhook] No se pudo enviar correo Resend:', err);
         });
@@ -531,7 +661,7 @@ export async function handleCanacoConektaApiRequest(
           received: true,
           folioSiem,
           status: 'Socio Activo',
-          folioIntegridad,
+          replay: activation.replay,
         },
         { status: 200, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
       );

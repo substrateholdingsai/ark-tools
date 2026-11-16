@@ -22,6 +22,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
+import { COMPLIANCE_LAST_UPDATED } from '@/data/compliance-legal';
 import {
   calcularCuotaAfiliacion,
   determinarEstrato,
@@ -37,6 +38,7 @@ interface VentanillaAfiliacionModalProps {
   onClose: () => void;
   onRegistroGuardado?: (registro: SocioCanacoRegistro) => void;
   onOpenPrivacyNotice?: () => void;
+  consentMedium?: 'ventanilla' | 'admin' | 'import';
 }
 
 export function VentanillaAfiliacionModal({
@@ -44,6 +46,7 @@ export function VentanillaAfiliacionModal({
   onClose,
   onRegistroGuardado,
   onOpenPrivacyNotice,
+  consentMedium = 'ventanilla',
 }: VentanillaAfiliacionModalProps) {
   const razonSocialId = useId();
   const nombreComercialId = useId();
@@ -88,6 +91,8 @@ export function VentanillaAfiliacionModal({
   const [telefono, setTelefono] = useState('');
   const [metodoPago, setMetodoPago] = useState<'tarjeta' | 'spei' | 'clip'>('tarjeta');
   const [cfdiRequerido, setCfdiRequerido] = useState(true);
+  const [avisoAceptado, setAvisoAceptado] = useState(false);
+  const [consentimientoArkangel, setConsentimientoArkangel] = useState(false);
 
   // Datos opcionales para que CANACO pueda orientar sobre trámites relacionados.
   const [afiliacionSimultanea, setAfiliacionSimultanea] = useState(true);
@@ -187,10 +192,20 @@ export function VentanillaAfiliacionModal({
       tramiteImssSolicitado,
     };
 
-    const res = await fetch('/api/afiliaciones/registro', {
+    const res = await fetch('/api/afiliaciones/captura', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        consentimiento: {
+          aceptado: avisoAceptado,
+          avisoVersion: COMPLIANCE_LAST_UPDATED,
+          fecha: new Date().toISOString(),
+          medio: consentMedium,
+        },
+        consentimientoArkangel,
+        isDemo: isDemoMode && rfc === CANACO_WALKTHROUGH_SOCIO_DEMO.rfc,
+      }),
     });
     const data = (await res.json().catch(() => ({}))) as {
       error?: string;
@@ -213,6 +228,10 @@ export function VentanillaAfiliacionModal({
       !telefono.trim()
     ) {
       setErrorVentanilla('Completa razón social, RFC, contacto, correo y teléfono para continuar.');
+      return;
+    }
+    if (!isDemoMode && !avisoAceptado) {
+      setErrorVentanilla('Acepta el Aviso de Privacidad para guardar tu solicitud.');
       return;
     }
     if (!isDemoMode) {
@@ -256,6 +275,16 @@ export function VentanillaAfiliacionModal({
         setLeadIdRegistrado(leadId);
       }
 
+      const registroRes = await fetch('/api/afiliaciones/registro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId }),
+      });
+      const registroData = (await registroRes.json().catch(() => ({}))) as { error?: string };
+      if (!registroRes.ok) {
+        throw new Error(registroData.error || 'No se pudo validar el registro.');
+      }
+
       if (metodoPago === 'clip') {
         setMensajePendiente(
           'Clip no está conectado a una confirmación de pago en este portal. El registro sigue pendiente y no se emitirá una Cédula hasta confirmar el pago.'
@@ -269,6 +298,7 @@ export function VentanillaAfiliacionModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           leadId,
+          metodoPago,
         }),
       });
       const conektaData = (await conektaRes.json().catch(() => ({}))) as {
@@ -373,6 +403,8 @@ export function VentanillaAfiliacionModal({
     setTramiteImssSolicitado(false);
     setRegistroEstatalAafy('');
     setAfiliacionSimultanea(true);
+    setAvisoAceptado(false);
+    setConsentimientoArkangel(false);
     onClose();
   };
 
@@ -795,6 +827,34 @@ export function VentanillaAfiliacionModal({
                   </button>
                 </div>
 
+                <div className="space-y-2 rounded-lg border border-henequen-arena bg-white p-3 text-[11px]">
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={avisoAceptado}
+                      onChange={(event) => setAvisoAceptado(event.target.checked)}
+                      aria-describedby="canaco-privacy-consent-help"
+                    />
+                    <span>
+                      He leído y acepto el Aviso de Privacidad (versión {COMPLIANCE_LAST_UPDATED}).
+                    </span>
+                  </label>
+                  <p id="canaco-privacy-consent-help" className="text-henequen-piedra">
+                    La aceptación se registra con fecha y medio de captura.
+                  </p>
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={consentimientoArkangel}
+                      onChange={(event) => setConsentimientoArkangel(event.target.checked)}
+                    />
+                    <span>
+                      Autorizo compartir mis datos de contacto con el proveedor de seguimiento
+                      Arkangel para recibir comunicaciones sobre esta solicitud. Es opcional.
+                    </span>
+                  </label>
+                </div>
+
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div>
                     <label
@@ -996,7 +1056,7 @@ export function VentanillaAfiliacionModal({
                     <button
                       type="button"
                       onClick={() => void handleAvanzarPaso2()}
-                      disabled={isSaving}
+                      disabled={isSaving || (!isDemoMode && !avisoAceptado)}
                       className="inline-flex items-center gap-2 rounded-lg bg-henequen-terra px-5 py-2.5 text-xs font-semibold text-white shadow transition hover:bg-henequen-terra-dark disabled:opacity-50"
                     >
                       <span>

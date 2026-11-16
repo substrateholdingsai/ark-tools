@@ -21,6 +21,8 @@ import type { Env } from '../../index';
 import { authenticateRequest } from '../auth';
 import { timingSafeEqual } from '../canacoConektaService';
 import { verifyStayPuftKey } from '../staypuft/staypuftConnector';
+import { calcularCuotaAfiliacion, extraerNumEmpleados } from '@/components/canaco/calculoCuota';
+import type { SectorEconomico } from '@/components/canaco/types';
 
 export type BotSource = 'grok' | 'hermes' | 'nous_research' | 'generic_agent' | 'sarita_pipeline';
 
@@ -427,34 +429,49 @@ botApp.post('/ingest', async (c) => {
       ) {
         const leadExistente = await db
           .prepare(
-            `SELECT id, notas FROM leads_ark_tools WHERE tenant_id = ? AND (notas LIKE ? OR web LIKE ?)`
+            `SELECT id, notas, status, lifecycle_stage, especialidad
+             FROM leads_ark_tools WHERE tenant_id = ? AND (notas LIKE ? OR web LIKE ?)`
           )
           .bind(tenantId, `%${rfc}%`, `%${rfc}%`)
-          .first<{ id: string; notas: string | null }>();
+          .first<{
+            id: string;
+            notas: string | null;
+            status: string | null;
+            lifecycle_stage: string | null;
+            especialidad: string | null;
+          }>();
 
         if (leadExistente) {
-          const nuevaNota = `${leadExistente.notas || ''} | Bot ${botSource} [${classification.categoria}]: ${classification.resumen} (Sello ${selloSha256.slice(0, 18)})`;
-          // Solo acreditar estatus 'Socio Activo' si el bot presentó credencial verificada
-          const nuevoStatus =
-            classification.categoria === 'comprobante_pago' && isAuthenticatedBot
-              ? 'Socio Activo'
-              : undefined;
-
-          if (nuevoStatus) {
-            await db
-              .prepare(
-                `UPDATE leads_ark_tools SET status = ?, notas = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-              )
-              .bind(nuevoStatus, nuevaNota, leadExistente.id)
-              .run();
-          } else {
-            await db
-              .prepare(
-                `UPDATE leads_ark_tools SET notas = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
-              )
-              .bind(nuevaNota, leadExistente.id)
-              .run();
-          }
+          const employees = extraerNumEmpleados(leadExistente.notas);
+          const sector = leadExistente.especialidad as SectorEconomico | null;
+          const quotedAmount =
+            employees && sector && ['comercio', 'servicios', 'turismo'].includes(sector)
+              ? calcularCuotaAfiliacion(employees, sector).totalAnual
+              : null;
+          const evidenceAmount = classification.datos_extraidos.monto;
+          const amountMatches =
+            quotedAmount !== null &&
+            typeof evidenceAmount === 'number' &&
+            Math.round(evidenceAmount * 100) === Math.round(quotedAmount * 100);
+          const quarantine =
+            classification.categoria === 'comprobante_pago' &&
+            (!amountMatches || leadExistente.lifecycle_stage !== 'pago_pendiente');
+          const reviewLabel =
+            classification.categoria === 'comprobante_pago'
+              ? quarantine
+                ? 'Evidencia de pago en cuarentena para revisión humana'
+                : 'Evidencia de pago recibida; pendiente de verificación del proveedor'
+              : classification.resumen;
+          const nuevaNota = `${leadExistente.notas || ''} | Bot ${botSource} [${classification.categoria}]: ${reviewLabel} (Sello ${selloSha256.slice(0, 18)})`;
+          await db
+            .prepare(
+              `UPDATE leads_ark_tools
+               SET notas = ?, origin = CASE WHEN origin = 'legacy' THEN 'bot' ELSE origin END,
+                   updated_at = CURRENT_TIMESTAMP
+               WHERE id = ? AND tenant_id = ?`
+            )
+            .bind(nuevaNota, leadExistente.id, tenantId)
+            .run();
         }
       }
 

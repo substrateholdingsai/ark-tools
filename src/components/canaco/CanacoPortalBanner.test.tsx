@@ -59,6 +59,7 @@ describe('CANACO SERVYTUR Mérida — Componentes de Ventanilla & Banner HENEQU�
     fireEvent.change(screen.getByLabelText(/Teléfono \/ WhatsApp/i), {
       target: { value: '0000000000' },
     });
+    fireEvent.click(screen.getAllByRole('checkbox')[0]!);
 
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(
