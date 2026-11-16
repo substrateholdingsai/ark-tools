@@ -190,12 +190,10 @@ export default {
     });
   },
 
-  async scheduled(
-    _controller: ScheduledController,
-    env: Env,
-    ctx: ExecutionContext
-  ): Promise<void> {
-    ctx.waitUntil(checkAlegraAccountsHealth(env));
+  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    if (controller.cron === '0 */6 * * *') {
+      ctx.waitUntil(checkAlegraAccountsHealth(env));
+    }
     if (env.ARK_TOOLS_DB) {
       ctx.waitUntil(expireCanacoPaymentIntents(env.ARK_TOOLS_DB, new Date().toISOString()));
     }

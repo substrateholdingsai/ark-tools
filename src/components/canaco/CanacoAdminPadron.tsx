@@ -61,9 +61,20 @@ interface LeadRow {
   consent_medium?: string | null;
   arkangel_share_consent?: number | null;
   origin?: string | null;
+  payment_environment?: string | null;
   last_contact: string | null;
   contacto_nombre: string | null;
   notas: string | null;
+}
+
+interface ArcoRequestRow {
+  id: string;
+  requester_email: string;
+  right_requested: string;
+  status: string;
+  assigned_to: string;
+  response_due_at: string;
+  execution_due_at: string | null;
 }
 
 function getConfirmedPaymentAmount(lead: LeadRow): number | null {
@@ -117,7 +128,24 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
   const [modalAltaOpen, setModalAltaOpen] = useState(false);
   const [modalRecordatorioMasivoOpen, setModalRecordatorioMasivoOpen] = useState(false);
   const [syncingArkangel, setSyncingArkangel] = useState(false);
+  const [arkangelPreview, setArkangelPreview] = useState<{
+    approvalId: string;
+    expiresAt: string;
+    rows: Array<{
+      id: string;
+      nombre: string;
+      telefono: string;
+      email: string;
+      rfc: string;
+      monto: number;
+    }>;
+    excludedLeadIds: string[];
+    channels: string[];
+    content: string;
+  } | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [arcoRequests, setArcoRequests] = useState<ArcoRequestRow[]>([]);
+  const [arcoError, setArcoError] = useState<string | null>(null);
   const [showWelcomeGuide, setShowWelcomeGuide] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     try {
@@ -133,19 +161,54 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
 
   // Enviar al proveedor solo los registros que pasen la validación del servidor.
   const handleSyncArkangel = async () => {
-    if (
-      !isPavel ||
-      !window.confirm('¿Apruebas enviar a Arkangel los registros con consentimiento vigente?')
-    ) {
-      return;
-    }
+    if (!isPavel) return;
     setSyncingArkangel(true);
     setSyncFeedback(null);
     try {
       const res = await fetch('/api/canaco/sync-arkangel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ approved: true }),
+        body: JSON.stringify({ action: 'preview' }),
+      });
+      const data = (await res.json()) as any;
+      if (res.ok && data.ok && data.approvalId && data.preview) {
+        setArkangelPreview({
+          approvalId: data.approvalId,
+          expiresAt: data.expiresAt,
+          rows: data.preview.rows,
+          excludedLeadIds: data.preview.excludedLeadIds,
+          channels: data.preview.channels,
+          content: data.preview.content,
+        });
+        return;
+      } else {
+        setSyncFeedback({
+          tipo: 'error',
+          mensaje: data.error || 'Error al preparar la vista previa de Arkangel.',
+        });
+      }
+    } catch (err: any) {
+      setSyncFeedback({
+        tipo: 'error',
+        mensaje: `Fallo de red al invocar Arkangel: ${err.message}`,
+      });
+    } finally {
+      setSyncingArkangel(false);
+    }
+  };
+
+  const handleDispatchArkangel = async () => {
+    if (!isPavel || !arkangelPreview) return;
+    setSyncingArkangel(true);
+    setSyncFeedback(null);
+    try {
+      const res = await fetch('/api/canaco/sync-arkangel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'dispatch',
+          approvalId: arkangelPreview.approvalId,
+        }),
       });
       const data = (await res.json()) as any;
       if (res.ok && data.ok) {
@@ -155,6 +218,8 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
             ? `Validación simulada: ${data.socios_enviados} registro(s), $${Number(data.monto_total_cartera || 0).toLocaleString('es-MX')} MXN. No se envió ningún mensaje.`
             : `Lote enviado al proveedor Arkangel: ${data.socios_enviados} registro(s), $${Number(data.monto_total_cartera || 0).toLocaleString('es-MX')} MXN. Esta respuesta no confirma la entrega de mensajes.`,
         });
+        setArkangelPreview(null);
+        setModalRecordatorioMasivoOpen(false);
         await cargarPadron();
       } else {
         setSyncFeedback({
@@ -162,10 +227,13 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
           mensaje: data.error || data.mensaje || 'Error al conectar con Arkangel.',
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       setSyncFeedback({
         tipo: 'error',
-        mensaje: `Fallo de red al invocar Arkangel: ${err.message}`,
+        mensaje:
+          err instanceof Error
+            ? `Fallo de red al invocar Arkangel: ${err.message}`
+            : 'Fallo de red al invocar Arkangel.',
       });
     } finally {
       setSyncingArkangel(false);
@@ -219,13 +287,61 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     }
   };
 
+  const cargarSolicitudesArco = async () => {
+    try {
+      const response = await fetch('/api/afiliaciones/arco');
+      const data = (await response.json()) as {
+        requests?: ArcoRequestRow[];
+        error?: string;
+      };
+      if (!response.ok) throw new Error(data.error || 'No se pudo consultar la cola ARCO.');
+      setArcoRequests(data.requests || []);
+      setArcoError(null);
+    } catch (error) {
+      setArcoError(error instanceof Error ? error.message : 'No se pudo consultar la cola ARCO.');
+    }
+  };
+
+  const actualizarSolicitudArco = async (item: ArcoRequestRow, status: string) => {
+    const completionNotes =
+      status === 'completed' || status === 'rejected'
+        ? window.prompt('Nota de resolución y confirmación enviada al solicitante:')?.trim()
+        : undefined;
+    if ((status === 'completed' || status === 'rejected') && !completionNotes) return;
+    try {
+      const response = await fetch(`/api/afiliaciones/arco/${encodeURIComponent(item.id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, completionNotes }),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(data.error || 'No se pudo actualizar la solicitud ARCO.');
+      await cargarSolicitudesArco();
+    } catch (error) {
+      setArcoError(
+        error instanceof Error ? error.message : 'No se pudo actualizar la solicitud ARCO.'
+      );
+    }
+  };
+
   useEffect(() => {
     void cargarPadron();
-  }, []);
+    if (isSuperAdmin || auth?.user?.email?.toLowerCase() === 'horus.i2d@gmail.com') {
+      void cargarSolicitudesArco();
+    }
+  }, [auth?.user?.email, isSuperAdmin]);
 
   // KPIs
   const kpis = useMemo(() => {
     const reportableLeads = leads.filter((lead) => lead.is_demo !== 1);
+    const stageCounts = reportableLeads.reduce(
+      (counts, lead) => {
+        const stage = lead.lifecycle_stage || 'prospecto';
+        if (stage in counts) counts[stage as keyof typeof counts] += 1;
+        return counts;
+      },
+      { prospecto: 0, registrado: 0, pago_pendiente: 0, socio_activo: 0, cancelado: 0 }
+    );
     const total = reportableLeads.length;
     const activos = reportableLeads.filter(
       (lead) => getConfirmedPaymentAmount(lead) !== null
@@ -252,7 +368,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
       return Math.round(amount * 100) === Math.round(expected * 100) ? acc + amount : acc;
     }, 0);
 
-    return { total, activos, pendientes, recaudacion, carteraPendiente };
+    return { total, activos, pendientes, recaudacion, carteraPendiente, stageCounts };
   }, [leads]);
 
   // Filtros
@@ -647,6 +763,101 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         </div>
       </div>
 
+      <div
+        aria-label="Registros por etapa del ciclo de vida"
+        className="flex flex-wrap gap-2 text-xs"
+      >
+        {Object.entries(kpis.stageCounts).map(([stage, count]) => (
+          <span
+            key={stage}
+            className="rounded-full border border-henequen-arena bg-white px-3 py-1.5"
+          >
+            {stage.replace('_', ' ')}: <strong>{count}</strong>
+          </span>
+        ))}
+        <a
+          href="https://github.com/substrateholdingsai/ark-tools/blob/main/docs/compliance/procedimiento-arco-canaco.md"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border border-henequen-arena bg-white px-3 py-1.5 font-semibold underline"
+        >
+          Procedimiento manual ARCO
+        </a>
+      </div>
+      {(isSuperAdmin || auth?.user?.email?.toLowerCase() === 'horus.i2d@gmail.com') && (
+        <details className="rounded-xl border border-henequen-arena bg-white p-4">
+          <summary className="cursor-pointer text-sm font-bold text-henequen-anil">
+            Solicitudes ARCO (
+            {arcoRequests.filter((item) => !['completed', 'rejected'].includes(item.status)).length}{' '}
+            abiertas)
+          </summary>
+          <div className="mt-3 space-y-3">
+            {arcoError && (
+              <p role="alert" className="text-xs text-red-700">
+                {arcoError}
+              </p>
+            )}
+            {arcoRequests.length === 0 && !arcoError && (
+              <p className="text-xs text-henequen-piedra">No hay solicitudes registradas.</p>
+            )}
+            {arcoRequests.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-2 border-t border-henequen-arena pt-3 text-xs"
+              >
+                <div>
+                  <strong>{item.right_requested}</strong> · {item.requester_email} · {item.status}
+                  <div className="text-henequen-piedra">
+                    Responsable: {item.assigned_to} · Respuesta antes de{' '}
+                    {new Date(item.response_due_at).toLocaleDateString('es-MX')}
+                    {item.execution_due_at &&
+                      ` · Ejecución antes de ${new Date(item.execution_due_at).toLocaleDateString('es-MX')}`}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {item.status === 'received' && (
+                    <button
+                      type="button"
+                      onClick={() => void actualizarSolicitudArco(item, 'identity_verified')}
+                      className="underline"
+                    >
+                      Identidad verificada
+                    </button>
+                  )}
+                  {item.status === 'identity_verified' && (
+                    <button
+                      type="button"
+                      onClick={() => void actualizarSolicitudArco(item, 'in_progress')}
+                      className="underline"
+                    >
+                      Iniciar atención
+                    </button>
+                  )}
+                  {['identity_verified', 'in_progress'].includes(item.status) && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void actualizarSolicitudArco(item, 'completed')}
+                        className="underline"
+                      >
+                        Completar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void actualizarSolicitudArco(item, 'rejected')}
+                        className="underline"
+                      >
+                        Rechazar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
       {loadError && (
         <p
           role="alert"
@@ -805,7 +1016,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                           Origen: {lead.origin || 'legacy'} · Aviso:{' '}
                           {lead.consent_accepted_at
                             ? `${lead.consent_medium || 'sin medio'} · ${lead.consent_accepted_at}`
-                            : 'sin constancia'}
+                            : 'sin constancia — capturar en siguiente contacto'}
                           {' · Arkangel: '}
                           {lead.arkangel_share_consent === 1 ? 'autorizado' : 'no autorizado'}
                         </div>
@@ -814,10 +1025,17 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                       {/* Estatus */}
                       <td className="px-4 py-3.5">
                         {etapa === 'socio_activo' ? (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                            <CheckCircle2 size={11} />
-                            Socio Activo
-                          </span>
+                          <>
+                            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
+                              <CheckCircle2 size={11} />
+                              Socio Activo
+                            </span>
+                            {lead.payment_environment && (
+                              <div className="mt-1 text-[9px] text-henequen-piedra">
+                                Pago: {lead.payment_environment}
+                              </div>
+                            )}
+                          </>
                         ) : etapa === 'cancelado' ? (
                           <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold text-slate-700">
                             Cancelado
@@ -965,16 +1183,28 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
             </h3>
 
             <p className="mt-2 text-xs leading-relaxed text-henequen-grafito">
-              Se enviarán los registros que pasen la validación al proveedor Arkangel. El importe
-              agregado de referencia es ${kpis.carteraPendiente.toLocaleString('es-MX')} MXN; la
-              operación no confirma entrega de llamadas o mensajes.
+              {arkangelPreview
+                ? `Vista previa: ${arkangelPreview.rows.length} registro(s); expira ${new Date(arkangelPreview.expiresAt).toLocaleTimeString('es-MX')}.`
+                : `Primero se generará una vista previa sin enviar datos. La cartera de referencia es $${kpis.carteraPendiente.toLocaleString('es-MX')} MXN.`}
             </p>
 
             <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">
-              Se transmiten razón social, teléfono, correo, RFC, importe, concepto, vencimiento y
-              sector al proveedor configurado. No se envían CLABEs ni constancias. Continúa solo si
-              cuentas con autorización para compartir esos datos; si el proveedor no está
-              configurado, la operación será simulada y no se enviarán mensajes.
+              {arkangelPreview ? (
+                <>
+                  <strong>Canal:</strong> {arkangelPreview.channels.join(', ')}
+                  <p className="mt-2">
+                    <strong>Filas:</strong>{' '}
+                    {arkangelPreview.rows
+                      .map((row) => `${row.nombre} (${row.email}, ${row.rfc}, $${row.monto})`)
+                      .join('; ') || 'ninguna'}
+                  </p>
+                  <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-white p-2 text-[10px]">
+                    {arkangelPreview.content}
+                  </pre>
+                </>
+              ) : (
+                'La vista previa mostrará filas, canal y contenido exactos. Pavel debe revisar y aprobar antes de enviar. No se envían CLABEs ni constancias.'
+              )}
             </p>
 
             <div className="mt-6 flex items-center justify-end gap-3 border-t border-henequen-arena pt-4">
@@ -988,8 +1218,11 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
               <button
                 type="button"
                 onClick={async () => {
-                  setModalRecordatorioMasivoOpen(false);
-                  await handleSyncArkangel();
+                  if (arkangelPreview) {
+                    await handleDispatchArkangel();
+                  } else {
+                    await handleSyncArkangel();
+                  }
                 }}
                 disabled={syncingArkangel || !isPavel}
                 title={
@@ -1000,7 +1233,15 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                 className="inline-flex items-center gap-1.5 rounded-lg bg-henequen-anil px-4 py-2 text-xs font-bold text-white shadow transition hover:bg-henequen-anil/90 disabled:opacity-50"
               >
                 <Radio size={14} className={syncingArkangel ? 'animate-pulse' : ''} />
-                <span>{syncingArkangel ? 'Sincronizando...' : 'Aprobar y enviar lote'}</span>
+                <span>
+                  {syncingArkangel
+                    ? arkangelPreview
+                      ? 'Enviando...'
+                      : 'Preparando vista previa...'
+                    : arkangelPreview
+                      ? 'Pavel aprueba y envía'
+                      : 'Generar vista previa'}
+                </span>
               </button>
             </div>
           </div>

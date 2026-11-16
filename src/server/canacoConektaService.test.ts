@@ -4,6 +4,7 @@ import {
   createCanacoConektaCheckout,
   handleCanacoConektaApiRequest,
 } from './canacoConektaService';
+import { canonicalizarRfc } from './canacoLifecycle';
 import type { Env } from '../index';
 
 const corsHeaders = {
@@ -40,6 +41,14 @@ async function signPayload(payload: string, privateKey: CryptoKey): Promise<stri
 }
 
 describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
+  it('valida fecha calendario y la forma de tres caracteres de la homoclave RFC', () => {
+    expect(canonicalizarRfc('CPM2106158A1')).toBe('CPM2106158A1');
+    expect(canonicalizarRfc('CPM2102308A1')).toBeNull();
+    expect(canonicalizarRfc('CPM0102298A1')).toBeNull();
+    expect(canonicalizarRfc('CPM0002298A1')).toBe('CPM0002298A1');
+    expect(canonicalizarRfc('CPM210615A1')).toBeNull();
+  });
+
   it('verifica exitosamente una firma RSA válida de Conekta (DIGEST)', async () => {
     const { publicKey, privateKey } = await generateRsaKeyPair();
     const pem = await exportPublicKeyPem(publicKey);
@@ -83,6 +92,174 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
     expect(result.url).toContain('conekta_simulated=1');
   });
 
+  it('rechaza un segundo checkout y reconoce el pago de la orden original', async () => {
+    const { publicKey, privateKey } = await generateRsaKeyPair();
+    const pem = await exportPublicKeyPem(publicKey);
+    const lead = {
+      id: 'lead-repeat-checkout',
+      web: 'Comercializadora del Mayab',
+      whatsapp: '9999123456',
+      email: 'demo@example.invalid',
+      ciudad: 'Mérida',
+      especialidad: 'comercio',
+      status: 'Registrado',
+      lifecycle_stage: 'registrado',
+      canonical_rfc: 'CPM2106158A1',
+      contacto_nombre: 'Fernando Pech',
+      notas:
+        'Razón Social: COMERCIALIZADORA DEL MAYAB | Folio SIEM: SIEM-MID-2026-CPM2-PEQ-4242 | Empleados: 15 | Cuota: $3,700 MXN',
+    };
+    const intentState: { current: Record<string, any> | null } = { current: null };
+    let leadStage = 'registrado';
+    let activated = false;
+    let checkoutMetadata: Record<string, string> | null = null;
+    const providerFetch = vi.spyOn(globalThis, 'fetch').mockImplementation(async (_input, init) => {
+      const requestBody = JSON.parse(String(init?.body)) as {
+        metadata: Record<string, string>;
+      };
+      checkoutMetadata = requestBody.metadata;
+      return Response.json({
+        id: 'ord-original-checkout',
+        checkout: { url: 'https://checkout.test/original' },
+      });
+    });
+    const mockDb = {
+      prepare: vi.fn((query: string) => {
+        const statement = {
+          bind: vi.fn(() => statement),
+          first: vi.fn(async () => {
+            if (query.includes('FROM canaco_payment_intents')) {
+              if (query.includes('WHERE transaction_reference = ?')) {
+                return intentState.current?.status === 'paid'
+                  ? {
+                      id: intentState.current.id,
+                      lead_id: intentState.current.lead_id,
+                      transaction_reference: intentState.current.transaction_reference,
+                      status: intentState.current.status,
+                    }
+                  : null;
+              }
+              return intentState.current;
+            }
+            if (query.includes('FROM leads_ark_tools')) {
+              return activated
+                ? { ...lead, status: 'Socio Activo', lifecycle_stage: 'socio_activo' }
+                : {
+                    ...lead,
+                    status: leadStage === 'pago_pendiente' ? 'Pago Pendiente' : 'Registrado',
+                    lifecycle_stage: leadStage,
+                  };
+            }
+            return null;
+          }),
+          run: vi.fn(async () => ({ success: true, meta: { changes: 0 } })),
+        };
+        return statement;
+      }),
+      batch: vi.fn(async (statements: unknown[]) => {
+        if (statements.length === 3 && !intentState.current) {
+          const metadata = checkoutMetadata!;
+          intentState.current = {
+            id: metadata.paymentIntentId,
+            lead_id: lead.id,
+            rfc: metadata.rfc,
+            folio_siem: metadata.folioSiem,
+            razon_social: (metadata.razonSocial || '').toUpperCase(),
+            email: metadata.email,
+            num_empleados: Number(metadata.numEmpleados),
+            sector: metadata.sector,
+            amount_cents: 370000,
+            channel: 'conekta_card',
+            environment: 'production',
+            order_id: 'ord-original-checkout',
+            checkout_url: 'https://checkout.test/original',
+            transaction_reference: null,
+            status: 'created',
+            expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+          };
+          leadStage = 'pago_pendiente';
+          return [{ meta: { changes: 1 } }, { meta: { changes: 1 } }, { meta: { changes: 1 } }];
+        }
+        activated = true;
+        if (intentState.current) {
+          intentState.current.status = 'paid';
+          intentState.current.transaction_reference = 'ord-original-checkout';
+        }
+        return [{ meta: { changes: 1 } }, { meta: { changes: 1 } }, { meta: { changes: 1 } }];
+      }),
+    };
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+      CONEKTA_PRIVATE_KEY: 'test-private-key',
+      CONEKTA_ENVIRONMENT: 'production',
+      CANACO_PRICING_CONFIRMED: 'true',
+      CONEKTA_WEBHOOK_PUBLIC_KEY: pem,
+    } as unknown as Env;
+
+    try {
+      const checkoutRequest = () =>
+        new Request('https://ledger.arksystems.site/api/canaco/conekta/create-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ leadId: lead.id, metodoPago: 'tarjeta' }),
+        });
+      const firstCheckout = await handleCanacoConektaApiRequest(
+        checkoutRequest(),
+        env,
+        corsHeaders
+      );
+      expect(firstCheckout?.status).toBe(200);
+      expect(await firstCheckout?.json()).toMatchObject({ orderId: 'ord-original-checkout' });
+
+      const repeatedCheckout = await handleCanacoConektaApiRequest(
+        checkoutRequest(),
+        env,
+        corsHeaders
+      );
+      expect(repeatedCheckout?.status).toBe(200);
+      expect(await repeatedCheckout?.json()).toMatchObject({
+        ok: true,
+        reused: true,
+        orderId: 'ord-original-checkout',
+        url: 'https://checkout.test/original',
+      });
+      expect(intentState.current?.status).toBe('created');
+      expect(providerFetch).toHaveBeenCalledOnce();
+
+      const metadata = checkoutMetadata!;
+      const payload = {
+        id: 'evt-original-order-paid',
+        type: 'order.paid',
+        data: {
+          object: {
+            id: 'ord-original-checkout',
+            amount: 370000,
+            currency: 'MXN',
+            customer_info: { email: metadata.email, name: metadata.razonSocial },
+            metadata,
+          },
+        },
+      };
+      const rawBody = JSON.stringify(payload);
+      const digest = await signPayload(rawBody, privateKey);
+      const paymentResponse = await handleCanacoConektaApiRequest(
+        new Request('https://ledger.arksystems.site/api/canaco/conekta/webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', digest },
+          body: rawBody,
+        }),
+        env,
+        corsHeaders
+      );
+      expect(paymentResponse?.status, await paymentResponse?.clone().text()).toBe(200);
+      expect(await paymentResponse?.json()).toMatchObject({ status: 'Socio Activo' });
+      expect(intentState.current?.status).toBe('paid');
+    } finally {
+      providerFetch.mockRestore();
+    }
+  });
+
   it('procesa el webhook order.paid y actualiza el socio a "Socio Activo" en D1', async () => {
     const { publicKey, privateKey } = await generateRsaKeyPair();
     const pem = await exportPublicKeyPem(publicKey);
@@ -118,8 +295,10 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
       expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     };
     let activated = false;
+    const preparedQueries: string[] = [];
     const mockDb = {
       prepare: vi.fn((query: string) => {
+        preparedQueries.push(query);
         const statement = {
           bind: vi.fn(() => statement),
           first: vi.fn(async () => {
@@ -212,6 +391,7 @@ describe('CANACO SERVYTUR Mérida — Conekta Service', () => {
     expect(json.status).toBe('Socio Activo');
     expect(json.folioSiem).toBe('SIEM-MID-2026-CPM2-PEQ-4242');
     expect(mockDb.batch).toHaveBeenCalledOnce();
+    expect(preparedQueries.some((query) => query.includes('payment_environment = ?'))).toBe(true);
 
     const replayRequest = new Request('https://ledger.arksystems.site/api/canaco/conekta/webhook', {
       method: 'POST',

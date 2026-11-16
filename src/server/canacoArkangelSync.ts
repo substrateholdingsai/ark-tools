@@ -72,18 +72,6 @@ export function extraerMontoDeNotas(notas: string | null | undefined): number {
 }
 
 /**
- * Extrae el RFC desde las notas del lead.
- */
-export function extraerRfcDeNotas(notas: string | null | undefined): string {
-  if (!notas) return 'XAXX010101000';
-  const match = notas.match(/RFC:\s*([A-Z0-9]+)/i);
-  if (match && match[1]) {
-    return match[1].toUpperCase();
-  }
-  return 'XAXX010101000';
-}
-
-/**
  * Genera el archivo CSV con la cabecera estándar de ingesta que espera Arkangel:
  * nombre,telefono,email,rfc,monto,concepto,vencimiento,estrato
  */
@@ -261,7 +249,10 @@ export async function handleCanacoArkangelSyncApi(
           `SELECT COUNT(*) AS total FROM leads_ark_tools
            WHERE tenant_id = 'canaco_merida' AND arkangel_share_consent = 1
              AND is_demo = 0 AND lifecycle_stage IN ('prospecto', 'registrado', 'pago_pendiente')
-             AND (status = 'Nuevo / Pendiente' OR status = 'pendiente_pago' OR status = 'Nuevo')`
+             AND status IN (
+               'Prospecto', 'Registrado', 'Pago Pendiente',
+               'Nuevo / Pendiente', 'pendiente_pago', 'Nuevo'
+             )`
         )
         .first<{ total: number }>()
         .catch(() => null);
@@ -293,11 +284,15 @@ export async function handleCanacoArkangelSyncApi(
       );
     }
 
-    const body = (await request.json().catch(() => ({}))) as { approved?: boolean };
-    if (body.approved !== true) {
+    const body = (await request.json().catch(() => ({}))) as {
+      action?: 'preview' | 'dispatch';
+      approvalId?: string;
+    };
+    const action = body.action || 'preview';
+    if (action !== 'preview' && action !== 'dispatch') {
       return Response.json(
-        { error: 'Se requiere una aprobación explícita para enviar el lote a Arkangel.' },
-        { status: 428, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        { error: 'Acción de sincronización no válida.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
       );
     }
 
@@ -309,14 +304,118 @@ export async function handleCanacoArkangelSyncApi(
     }
 
     try {
+      if (action === 'dispatch') {
+        if (!body.approvalId) {
+          return Response.json(
+            { error: 'Se requiere aprobar una vista previa vigente antes del envío.' },
+            { status: 428, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+        const approval = await db
+          .prepare(
+            `SELECT id, approver_id, approver_email, preview_json, expires_at, consumed_at
+             FROM canaco_arkangel_approvals
+             WHERE id = ? AND approver_id = ? AND approver_email = ? LIMIT 1`
+          )
+          .bind(body.approvalId, principal.id, principal.email)
+          .first<{
+            id: string;
+            approver_id: string;
+            approver_email: string;
+            preview_json: string;
+            expires_at: string;
+            consumed_at: string | null;
+          }>();
+        if (!approval || approval.consumed_at || Date.parse(approval.expires_at) <= Date.now()) {
+          return Response.json(
+            { error: 'La vista previa no existe, venció o ya fue utilizada.' },
+            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+
+        const preview = JSON.parse(approval.preview_json) as {
+          socios: SocioCobranzaRecord[];
+          excludedLeadIds: string[];
+        };
+        const eligible = await db
+          .prepare(
+            `SELECT id FROM leads_ark_tools
+             WHERE tenant_id = 'canaco_merida'
+               AND arkangel_share_consent = 1 AND is_demo = 0
+               AND lifecycle_stage IN ('prospecto', 'registrado', 'pago_pendiente')
+               AND status IN (
+                 'Prospecto', 'Registrado', 'Pago Pendiente',
+                 'Nuevo / Pendiente', 'pendiente_pago', 'Nuevo'
+               )`
+          )
+          .all<{ id: string }>();
+        const eligibleIds = new Set((eligible.results || []).map((row) => row.id));
+        if (preview.socios.some((socio) => !eligibleIds.has(socio.id))) {
+          return Response.json(
+            {
+              error:
+                'La elegibilidad o el consentimiento cambió desde la vista previa; genera otra.',
+            },
+            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+
+        const reservation = await db
+          .prepare(
+            `UPDATE canaco_arkangel_approvals SET consumed_at = ?
+             WHERE id = ? AND consumed_at IS NULL AND expires_at > ?`
+          )
+          .bind(new Date().toISOString(), approval.id, new Date().toISOString())
+          .run();
+        if (reservation.meta.changes !== 1) {
+          return Response.json(
+            { error: 'La vista previa ya fue aprobada por otra solicitud.' },
+            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+
+        const resultado = await despacharLoteArkangel(env, preview.socios);
+        await db
+          .prepare(
+            `INSERT INTO canaco_arkangel_sync_batches
+             (id, approval_id, approver_id, approver_email, sent_leads_json, excluded_leads_json,
+              simulated, provider_result_json)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          )
+          .bind(
+            approval.id,
+            approval.id,
+            principal.id,
+            principal.email,
+            JSON.stringify(
+              resultado.ok && !resultado.simulated ? preview.socios.map((socio) => socio.id) : []
+            ),
+            JSON.stringify(preview.excludedLeadIds),
+            resultado.simulated ? 1 : 0,
+            JSON.stringify({
+              ok: resultado.ok,
+              provider: resultado.arkangel_response || null,
+              message: resultado.mensaje,
+            })
+          )
+          .run();
+        return Response.json(resultado, {
+          headers: { ...corsHeaders, 'Cache-Control': 'no-store' },
+        });
+      }
+
       const rows = await db
         .prepare(
-          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, contacto_nombre, notas
+          `SELECT id, web, whatsapp, email, ciudad, especialidad, status, contacto_nombre,
+                  notas, canonical_rfc
            FROM leads_ark_tools
            WHERE tenant_id = 'canaco_merida'
              AND arkangel_share_consent = 1 AND is_demo = 0
              AND lifecycle_stage IN ('prospecto', 'registrado', 'pago_pendiente')
-             AND (status = 'Nuevo / Pendiente' OR status = 'pendiente_pago' OR status = 'Nuevo')`
+             AND status IN (
+               'Prospecto', 'Registrado', 'Pago Pendiente',
+               'Nuevo / Pendiente', 'pendiente_pago', 'Nuevo'
+             )`
         )
         .all<{
           id: string;
@@ -328,6 +427,7 @@ export async function handleCanacoArkangelSyncApi(
           status: string | null;
           contacto_nombre: string | null;
           notas: string | null;
+          canonical_rfc: string | null;
         }>();
 
       const leads = rows.results || [];
@@ -342,17 +442,14 @@ export async function handleCanacoArkangelSyncApi(
             return false;
           }
           const quote = calcularCuotaAfiliacion(employees, sector as SectorEconomico).totalAnual;
-          return (
-            extraerMontoDeNotas(lead.notas) === quote &&
-            extraerRfcDeNotas(lead.notas) !== 'XAXX010101000'
-          );
+          return extraerMontoDeNotas(lead.notas) === quote && Boolean(lead.canonical_rfc);
         })
         .map((l) => ({
           id: l.id,
           nombre: l.web || '',
           telefono: normalizarTelefonoE164(l.whatsapp),
           email: l.email || '',
-          rfc: extraerRfcDeNotas(l.notas),
+          rfc: l.canonical_rfc || '',
           monto: extraerMontoDeNotas(l.notas),
           concepto: 'Registro SIEM 2026 y Cuota Anual CANACO Mérida',
           vencimiento: fechaVencimiento,
@@ -365,59 +462,48 @@ export async function handleCanacoArkangelSyncApi(
         .map((lead) => lead.id);
 
       const approvalId = crypto.randomUUID();
-      if (socios.length > 0) {
-        await db
-          .prepare(
-            `INSERT INTO canaco_arkangel_approvals
-             (id, batch_id, approver_id, approver_email, lead_ids_json, created_at, expires_at, consumed_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-          )
-          .bind(
-            approvalId,
-            approvalId,
-            principal.id,
-            principal.email,
-            JSON.stringify(socios.map((socio) => socio.id)),
-            new Date().toISOString(),
-            new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-            new Date().toISOString()
-          )
-          .run();
-      }
+      const createdAt = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const preview = {
+        socios,
+        excludedLeadIds,
+        channels: ['arkangel_ingest_csv'],
+        content: generarCsvCobranzaArkangel(socios),
+      };
+      await db
+        .prepare(
+          `INSERT INTO canaco_arkangel_approvals
+           (id, batch_id, approver_id, approver_email, lead_ids_json, preview_json,
+            created_at, expires_at, consumed_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`
+        )
+        .bind(
+          approvalId,
+          approvalId,
+          principal.id,
+          principal.email,
+          JSON.stringify(socios.map((socio) => socio.id)),
+          JSON.stringify(preview),
+          createdAt,
+          expiresAt
+        )
+        .run();
 
-      // Despachar a Arkangel
-      const resultado = await despacharLoteArkangel(env, socios);
-
-      if (socios.length > 0) {
-        await db
-          .prepare(
-            `INSERT INTO canaco_arkangel_sync_batches
-             (id, approval_id, approver_id, approver_email, sent_leads_json, excluded_leads_json,
-              simulated, provider_result_json)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-          )
-          .bind(
-            approvalId,
-            approvalId,
-            principal.id,
-            principal.email,
-            JSON.stringify(
-              resultado.ok && !resultado.simulated ? socios.map((socio) => socio.id) : []
-            ),
-            JSON.stringify(excludedLeadIds),
-            resultado.simulated ? 1 : 0,
-            JSON.stringify({
-              ok: resultado.ok,
-              provider: resultado.arkangel_response || null,
-              message: resultado.mensaje,
-            })
-          )
-          .run();
-      }
-
-      return Response.json(resultado, {
-        headers: { ...corsHeaders, 'Cache-Control': 'no-store' },
-      });
+      const resultado = await despacharLoteArkangel(env, socios, { dryRun: true });
+      return Response.json(
+        {
+          ...resultado,
+          approvalId,
+          expiresAt,
+          preview: {
+            rows: socios,
+            excludedLeadIds,
+            channels: preview.channels,
+            content: preview.content,
+          },
+        },
+        { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
     } catch (err: any) {
       return Response.json(
         { error: 'Error procesando la sincronización hacia Arkangel.', detalle: err.message },

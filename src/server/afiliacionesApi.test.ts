@@ -27,7 +27,7 @@ function createMockDb() {
           return null;
         }),
         all: vi.fn(async () => ({ results: existingLead ? [existingLead] : [] })),
-        run: vi.fn(async () => ({ success: true })),
+        run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
       };
     }),
   };
@@ -89,6 +89,97 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
     expect(json.socio.pagoConfirmado).toBe(false);
     expect(json.cotizacion.totalAnual).toBe(2000);
     expect(json.socio.folioSiem).toContain('SIEM-MID-2026-CPM2-MIC');
+  });
+
+  it('rechaza UUID de lead enviado por el cliente durante la captura', async () => {
+    const mockDb = createMockDb();
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+    const response = await handleAfiliacionesApiRequest(
+      new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'caller-supplied-uuid',
+          leadId: 'caller-supplied-lead-id',
+          razonSocial: 'Empresa de prueba',
+          rfc: 'CPM2106158A1',
+          sector: 'comercio',
+          numEmpleados: 5,
+          contactoNombre: 'Contacto',
+          email: 'demo@example.invalid',
+          telefono: '9999123456',
+          consentimiento: {
+            aceptado: true,
+            avisoVersion: COMPLIANCE_LAST_UPDATED,
+            fecha: new Date().toISOString(),
+            medio: 'ventanilla',
+          },
+        }),
+      }),
+      env,
+      corsHeaders
+    );
+
+    expect(response?.status).toBe(400);
+    expect(await response?.json()).toMatchObject({
+      error: 'El identificador del prospecto lo asigna el servidor durante la captura.',
+    });
+  });
+
+  it('responde conflicto si el índice único detecta una captura simultánea del mismo RFC', async () => {
+    const executed: string[] = [];
+    const mockDb = {
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn().mockResolvedValue(null),
+        all: vi.fn().mockResolvedValue({ results: [] }),
+        run: vi.fn(async () => {
+          executed.push(query);
+          return {
+            success: true,
+            meta: { changes: query.includes('INSERT INTO leads_ark_tools') ? 0 : 1 },
+          };
+        }),
+      })),
+    };
+    const env = {
+      ARK_TOOLS_DB: mockDb as any,
+      APP_URL: 'https://ledger.arksystems.site',
+    } as unknown as Env;
+    const response = await handleAfiliacionesApiRequest(
+      new Request('https://ledger.arksystems.site/api/afiliaciones/captura', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          razonSocial: 'Empresa de prueba',
+          rfc: 'CPM2106158A1',
+          sector: 'comercio',
+          numEmpleados: 5,
+          contactoNombre: 'Contacto',
+          email: 'demo@example.invalid',
+          telefono: '9999123456',
+          consentimiento: {
+            aceptado: true,
+            avisoVersion: COMPLIANCE_LAST_UPDATED,
+            fecha: new Date().toISOString(),
+            medio: 'ventanilla',
+          },
+        }),
+      }),
+      env,
+      corsHeaders
+    );
+
+    expect(response?.status).toBe(409);
+    expect(await response?.json()).toMatchObject({
+      error: 'Ya existe un registro con este RFC; no se creó un socio duplicado.',
+    });
+    expect(executed.some((query) => query.includes('INSERT INTO canaco_lifecycle_audit'))).toBe(
+      false
+    );
   });
 
   it('ignora el estatus activo enviado por el cliente y deja el prospecto sin pago', async () => {
@@ -278,12 +369,18 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
 
   it('recibe una solicitud ARCO sin revelar si el RFC y correo coinciden', async () => {
     const run = vi.fn(async () => ({ success: true }));
+    let insertQuery = '';
     const mockDb = {
-      prepare: vi.fn((query: string) => ({
-        bind: vi.fn().mockReturnThis(),
-        first: vi.fn(async () => (query.includes('SELECT id FROM leads_ark_tools') ? null : null)),
-        run,
-      })),
+      prepare: vi.fn((query: string) => {
+        insertQuery = query;
+        return {
+          bind: vi.fn().mockReturnThis(),
+          first: vi.fn(async () =>
+            query.includes('SELECT id FROM leads_ark_tools') ? null : null
+          ),
+          run,
+        };
+      }),
     };
     const env = { ARK_TOOLS_DB: mockDb as any } as unknown as Env;
     const request = new Request('https://ledger.arksystems.site/api/afiliaciones/arco', {
@@ -298,7 +395,19 @@ describe('CANACO SERVYTUR Mérida — API de Afiliaciones & CRM D1', () => {
 
     const response = await handleAfiliacionesApiRequest(request, env, corsHeaders);
     expect(response?.status).toBe(202);
-    expect(await response?.json()).toMatchObject({ ok: true, status: 'received' });
+    const json = (await response?.json()) as {
+      ok: boolean;
+      status: string;
+      assignedTo: string;
+      responseDueAt: string;
+    };
+    expect(json).toMatchObject({
+      ok: true,
+      status: 'received',
+      assignedTo: 'horus.i2d@gmail.com',
+    });
+    expect(Date.parse(json.responseDueAt)).toBeGreaterThan(Date.now());
+    expect(insertQuery).toContain('response_due_at');
     expect(run).toHaveBeenCalledOnce();
   });
 

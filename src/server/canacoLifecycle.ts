@@ -81,9 +81,20 @@ export function canonicalizarRfc(value: string): string | null {
   if (!/^[A-Z&Ñ]{3,4}\d{6}[A-Z0-9]{3}$/.test(trimmed)) return null;
 
   const datePart = trimmed.slice(trimmed.length - 9, trimmed.length - 3);
+  const year = 2000 + Number(datePart.slice(0, 2));
   const month = Number(datePart.slice(2, 4));
   const day = Number(datePart.slice(4, 6));
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
   return trimmed;
 }
 
@@ -203,6 +214,7 @@ export async function activateCanacoSocioByPayment(
       .prepare(
         `UPDATE leads_ark_tools
          SET status = 'Socio Activo', lifecycle_stage = 'socio_activo',
+             payment_environment = ?,
              notas = COALESCE(notas, '') || ' | Pago Confirmado Conekta: '
                || ? || ' ($' || ? || ' MXN)',
              last_contact = DATE('now'), updated_at = CURRENT_TIMESTAMP
@@ -214,6 +226,7 @@ export async function activateCanacoSocioByPayment(
            )`
       )
       .bind(
+        evidence.environment,
         evidence.transactionReference,
         (evidence.amountCents / 100).toLocaleString('es-MX'),
         evidence.leadId,

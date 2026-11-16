@@ -23,6 +23,7 @@ import { timingSafeEqual } from '../canacoConektaService';
 import { verifyStayPuftKey } from '../staypuft/staypuftConnector';
 import { calcularCuotaAfiliacion, extraerNumEmpleados } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico } from '@/components/canaco/types';
+import { canonicalizarRfc } from '../canacoLifecycle';
 
 export type BotSource = 'grok' | 'hermes' | 'nous_research' | 'generic_agent' | 'sarita_pipeline';
 
@@ -422,17 +423,18 @@ botApp.post('/ingest', async (c) => {
 
       // Si es un comprobante de pago o datos fiscales y detectó RFC, actualizar/enlazar en leads_ark_tools
       const rfc = classification.datos_extraidos.rfc;
+      const canonicalRfc = rfc ? canonicalizarRfc(rfc) : null;
       if (
-        rfc &&
+        canonicalRfc &&
         (classification.categoria === 'comprobante_pago' ||
           classification.categoria === 'datos_fiscales')
       ) {
         const leadExistente = await db
           .prepare(
             `SELECT id, notas, status, lifecycle_stage, especialidad
-             FROM leads_ark_tools WHERE tenant_id = ? AND (notas LIKE ? OR web LIKE ?)`
+             FROM leads_ark_tools WHERE tenant_id = ? AND canonical_rfc = ?`
           )
-          .bind(tenantId, `%${rfc}%`, `%${rfc}%`)
+          .bind(tenantId, canonicalRfc)
           .first<{
             id: string;
             notas: string | null;

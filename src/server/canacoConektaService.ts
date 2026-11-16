@@ -293,7 +293,7 @@ export async function handleCanacoConektaApiRequest(
           contacto_nombre: string | null;
           notas: string | null;
         }>();
-      const rfc = lead?.notas?.match(/RFC:\s*([A-Z0-9]+)/i)?.[1]?.toUpperCase();
+      const rfc = lead?.canonical_rfc;
       const folioSiem = lead?.notas?.match(/Folio SIEM:\s*([^\s|]+)/i)?.[1];
       const razonSocial = lead?.notas?.match(/Razón Social:\s*([^|]+)/i)?.[1]?.trim();
       const numEmpleados = extraerNumEmpleados(lead?.notas);
@@ -302,7 +302,7 @@ export async function handleCanacoConektaApiRequest(
         !lead ||
         !['registrado', 'pago_pendiente'].includes(lead.lifecycle_stage || '') ||
         !rfc ||
-        canonicalizarRfc(rfc) !== lead.canonical_rfc ||
+        canonicalizarRfc(rfc) !== rfc ||
         !folioSiem ||
         !razonSocial ||
         !numEmpleados ||
@@ -311,6 +311,47 @@ export async function handleCanacoConektaApiRequest(
       ) {
         return Response.json(
           { error: 'No se encontró un registro validado para iniciar el pago.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const now = new Date();
+      const openIntent = await db
+        .prepare(
+          `SELECT id, order_id, checkout_url, expires_at
+           FROM canaco_payment_intents
+           WHERE lead_id = ? AND tenant_id = 'canaco_merida'
+             AND status = 'created' AND expires_at > ?
+           ORDER BY created_at DESC LIMIT 1`
+        )
+        .bind(lead.id, now.toISOString())
+        .first<{
+          id: string;
+          order_id: string;
+          checkout_url: string | null;
+          expires_at: string;
+        }>();
+      if (openIntent) {
+        if (openIntent.checkout_url) {
+          return Response.json(
+            {
+              ok: true,
+              url: openIntent.checkout_url,
+              orderId: openIntent.order_id,
+              expiresAt: openIntent.expires_at,
+              reused: true,
+              simulated: openIntent.order_id.startsWith('ord_sim_'),
+            },
+            { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+        return Response.json(
+          {
+            error:
+              'Ya existe un checkout vigente para este registro. Usa el checkout que ya recibiste; no se creó otra orden.',
+            existingOrderId: openIntent.order_id,
+            expiresAt: openIntent.expires_at,
+          },
           { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
         );
       }
@@ -349,7 +390,6 @@ export async function handleCanacoConektaApiRequest(
         sector as SectorEconomico
       ).totalAnual;
       const amountCents = Math.round(totalAnual * 100);
-      const now = new Date();
       const expiresAt = new Date(now.getTime() + 60 * 60 * 1000).toISOString();
       const environment =
         checkoutResult.simulated || env.CONEKTA_ENVIRONMENT !== 'production'
@@ -364,20 +404,14 @@ export async function handleCanacoConektaApiRequest(
         )
         .bind(lead.id, now.toISOString())
         .run();
-      await db
-        .prepare(
-          `UPDATE canaco_payment_intents SET status = 'superseded'
-           WHERE lead_id = ? AND status = 'created'`
-        )
-        .bind(lead.id)
-        .run();
 
       const intentInsert = db
         .prepare(
           `INSERT INTO canaco_payment_intents
            (id, lead_id, tenant_id, rfc, folio_siem, razon_social, email, num_empleados,
-            sector, channel, environment, amount_cents, status, order_id, created_at, expires_at)
-           SELECT ?, ?, 'canaco_merida', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'created', ?, ?, ?
+            sector, channel, environment, amount_cents, status, order_id, checkout_url,
+            created_at, expires_at)
+           SELECT ?, ?, 'canaco_merida', ?, ?, ?, ?, ?, ?, ?, ?, ?, 'created', ?, ?, ?, ?
            WHERE EXISTS (
              SELECT 1 FROM leads_ark_tools
              WHERE id = ? AND tenant_id = 'canaco_merida'
@@ -397,6 +431,7 @@ export async function handleCanacoConektaApiRequest(
           environment,
           amountCents,
           checkoutResult.orderId,
+          checkoutResult.url,
           now.toISOString(),
           expiresAt,
           lead.id,

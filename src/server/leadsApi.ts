@@ -26,6 +26,7 @@ interface Lead {
   arkangel_share_consent: number | null;
   origin: string | null;
   is_demo: number | null;
+  payment_environment: string | null;
 }
 
 export function buildProposalEmailHtml(nombreSocio: string, logoUrl: string): string {
@@ -195,6 +196,7 @@ function rowToLead(row: Record<string, unknown>): Lead {
       row.arkangel_share_consent == null ? null : Number(row.arkangel_share_consent),
     origin: row.origin == null ? null : String(row.origin),
     is_demo: row.is_demo == null ? null : Number(row.is_demo),
+    payment_environment: row.payment_environment == null ? null : String(row.payment_environment),
   };
 }
 
@@ -870,12 +872,40 @@ export async function handleLeadsApiRequest(
         typeof body.message === 'string' && body.message.trim() ? body.message.trim() : '';
 
       const todayIso = new Date().toISOString().slice(0, 10);
+      const requestedStatus =
+        typeof body.status === 'string' ? body.status.trim().toLowerCase() : '';
+      if (
+        tenantId === 'canaco_merida' &&
+        [
+          'prospecto',
+          'registrado',
+          'pago pendiente',
+          'pago_pendiente',
+          'pendiente_pago',
+          'nuevo / pendiente',
+          'nuevo',
+          'socio activo',
+          'socio_activo',
+          'activo',
+          'cancelado',
+        ].includes(requestedStatus)
+      ) {
+        return Response.json(
+          {
+            error:
+              'Los estados del ciclo CANACO solo cambian mediante sus transiciones verificadas.',
+          },
+          { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
       const newStatus =
-        typeof body.status === 'string' && body.status.trim()
-          ? body.status.trim()
-          : lead.status === 'Respondio_2_whats'
-            ? 'Respondio_2_whats'
-            : 'WhatsApp_enviado';
+        tenantId === 'canaco_merida'
+          ? lead.status
+          : typeof body.status === 'string' && body.status.trim()
+            ? body.status.trim()
+            : lead.status === 'Respondio_2_whats'
+              ? 'Respondio_2_whats'
+              : 'WhatsApp_enviado';
 
       const auditEntry = `💬 WhatsApp enviado vía wa.me [${tenantProfile} · ${todayIso}]: ${templateName}`;
       const updatedNotas = lead.notas ? `${lead.notas} | ${auditEntry}` : auditEntry;

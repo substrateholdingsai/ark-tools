@@ -146,6 +146,28 @@ describe('ARK LEDGER — Bot & Agent Ingestion Pipeline (Grok / Hermes)', () => 
       expect(json.classification.datos_extraidos.rfc).toBe('HME201010AB2');
     });
 
+    it('busca leads por RFC canónico y no inspecciona notas ni nombre comercial para enlazar bots', async () => {
+      const env = createMockEnv();
+      const prepare = vi.mocked(env.ARK_TOOLS_DB!.prepare);
+      const req = new Request('https://ledger.arksystems.site/api/bots/ingest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'hermes',
+          tenant_id: 'canaco_merida',
+          text: 'Constancia de Situacion Fiscal SAT para RFC AMA920315AA1',
+        }),
+      });
+
+      const response = await botApp.fetch(req, env);
+      expect(response.status).toBe(201);
+      const leadLookup = prepare.mock.calls
+        .map(([query]) => String(query))
+        .find((query) => query.includes('FROM leads_ark_tools'));
+      expect(leadLookup).toContain('canonical_rfc = ?');
+      expect(leadLookup).not.toMatch(/notas\s+LIKE|web\s+LIKE/i);
+    });
+
     it('POST /api/bots/ingest rechaza cuando BOT_INGEST_SECRET es requerido y no coincide', async () => {
       const env = createMockEnv({ BOT_INGEST_SECRET: 'secreto-super-seguro' });
       const req = new Request('https://ledger.arksystems.site/api/bots/ingest', {

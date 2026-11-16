@@ -42,7 +42,19 @@ function maskPhone(phone: string | null | undefined): string {
   return `******${digits.slice(-4)}`;
 }
 
+function addBusinessDays(value: Date, businessDays: number): string {
+  const date = new Date(value);
+  let added = 0;
+  while (added < businessDays) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    const weekday = date.getUTCDay();
+    if (weekday !== 0 && weekday !== 6) added += 1;
+  }
+  return date.toISOString();
+}
+
 interface AfiliacionPayload {
+  id?: string;
   razonSocial: string;
   nombreComercial?: string;
   rfc: string;
@@ -104,8 +116,9 @@ export async function handleAfiliacionesApiRequest(
   // GET /api/afiliaciones/consulta?rfc=XYZ
   // ─────────────────────────────────────────────────────────────────
   if (path === '/api/afiliaciones/consulta' && request.method === 'GET') {
-    const qRfc = url.searchParams.get('rfc')?.trim().toUpperCase();
-    if (!qRfc) {
+    const rawRfc = url.searchParams.get('rfc') || '';
+    const qRfc = canonicalizarRfc(rawRfc);
+    if (!rawRfc.trim()) {
       return Response.json(
         { error: 'El RFC es requerido para consultar la afiliación.' },
         { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
@@ -120,7 +133,7 @@ export async function handleAfiliacionesApiRequest(
     }
 
     // Evitar enumeración con prefijos cortos (ej. ?rfc=A)
-    if (qRfc.length < 12 || qRfc.length > 13 || !/^[A-Z&Ñ0-9]+$/.test(qRfc)) {
+    if (!qRfc) {
       return Response.json(
         { encontrado: false, mensaje: 'No se encontró registro para este RFC en el Padrón 2026.' },
         { status: 404, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
@@ -132,11 +145,10 @@ export async function handleAfiliacionesApiRequest(
         `SELECT id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
                 last_contact, contacto_nombre, notas
          FROM leads_ark_tools
-         WHERE tenant_id = 'canaco_merida'
-           AND (notas LIKE ? OR web LIKE ?)
+         WHERE tenant_id = 'canaco_merida' AND canonical_rfc = ?
          LIMIT 1`
       )
-      .bind(`%${qRfc}%`, `%${qRfc}%`)
+      .bind(qRfc)
       .first<{
         id: string;
         web: string | null;
@@ -244,7 +256,7 @@ export async function handleAfiliacionesApiRequest(
 
     try {
       const body = (await request.json().catch(() => ({}))) as MigrarALedgerPayload;
-      const qRfc = body.rfc?.trim().toUpperCase();
+      const qRfc = body.rfc ? canonicalizarRfc(body.rfc) : null;
       const qFolio = body.folioSiem?.trim();
       const qEmail = body.email?.trim().toLowerCase();
 
@@ -264,7 +276,7 @@ export async function handleAfiliacionesApiRequest(
            WHERE tenant_id = 'canaco_merida'
              AND (
                (? IS NOT NULL AND notas LIKE ?) OR
-               (? IS NOT NULL AND (notas LIKE ? OR web LIKE ?)) OR
+               (? IS NOT NULL AND canonical_rfc = ?) OR
                (? IS NOT NULL AND email = ?)
              )
            LIMIT 1`
@@ -273,8 +285,7 @@ export async function handleAfiliacionesApiRequest(
           qFolio || null,
           qFolio ? `%${qFolio}%` : '',
           qRfc || null,
-          qRfc ? `%${qRfc}%` : '',
-          qRfc ? `%${qRfc}%` : '',
+          qRfc,
           qEmail || null,
           qEmail || ''
         )
@@ -666,13 +677,15 @@ export async function handleAfiliacionesApiRequest(
         .bind(rfc, requesterEmail)
         .first<{ id: string }>();
       const requestId = crypto.randomUUID();
+      const receivedAt = new Date();
+      const responseDueAt = addBusinessDays(receivedAt, 20);
       await db
         .prepare(
           `INSERT INTO canaco_arco_requests
-           (id, lead_id, requester_email, right_requested, status)
-           VALUES (?, ?, ?, ?, 'received')`
+           (id, lead_id, requester_email, right_requested, status, response_due_at)
+           VALUES (?, ?, ?, ?, 'received', ?)`
         )
-        .bind(requestId, lead?.id || null, requesterEmail, rightRequested)
+        .bind(requestId, lead?.id || null, requesterEmail, rightRequested, responseDueAt)
         .run();
 
       return Response.json(
@@ -680,6 +693,8 @@ export async function handleAfiliacionesApiRequest(
           ok: true,
           requestId,
           status: 'received',
+          assignedTo: 'horus.i2d@gmail.com',
+          responseDueAt,
           message:
             'Solicitud recibida; la identidad y el alcance deben verificarse antes de actuar.',
         },
@@ -713,6 +728,7 @@ export async function handleAfiliacionesApiRequest(
     const requests = await db
       .prepare(
         `SELECT id, lead_id, requester_email, right_requested, status, requested_at,
+                assigned_to, assigned_at, response_due_at, execution_due_at,
                 verified_by, verified_at, completed_by, completed_at, completion_notes
          FROM canaco_arco_requests WHERE tenant_id = 'canaco_merida'
          ORDER BY requested_at DESC LIMIT 100`
@@ -746,7 +762,7 @@ export async function handleAfiliacionesApiRequest(
     if (
       !requestId ||
       !['identity_verified', 'in_progress', 'completed', 'rejected'].includes(body.status || '') ||
-      (body.status === 'completed' && !body.completionNotes?.trim())
+      (['completed', 'rejected'].includes(body.status || '') && !body.completionNotes?.trim())
     ) {
       return Response.json(
         { error: 'Estado ARCO o nota de resolución no válida.' },
@@ -758,6 +774,7 @@ export async function handleAfiliacionesApiRequest(
       .prepare(
         `UPDATE canaco_arco_requests
          SET status = ?,
+             execution_due_at = CASE WHEN ? = 'in_progress' THEN ? ELSE execution_due_at END,
              verified_by = CASE WHEN ? = 'identity_verified' THEN ? ELSE verified_by END,
              verified_at = CASE WHEN ? = 'identity_verified' THEN ? ELSE verified_at END,
              completed_by = CASE WHEN ? IN ('completed', 'rejected') THEN ? ELSE completed_by END,
@@ -773,6 +790,8 @@ export async function handleAfiliacionesApiRequest(
       .bind(
         body.status,
         body.status,
+        body.status === 'in_progress' ? addBusinessDays(new Date(), 15) : null,
+        body.status,
         authPrincipal?.email || '',
         body.status,
         now,
@@ -782,10 +801,10 @@ export async function handleAfiliacionesApiRequest(
         now,
         body.status,
         body.completionNotes?.trim() || null,
+        requestId,
         body.status,
         body.status,
-        body.status,
-        requestId
+        body.status
       )
       .run();
     if (update.meta.changes !== 1) {
@@ -885,6 +904,13 @@ export async function handleAfiliacionesApiRequest(
 
   try {
     const body = (await request.json()) as AfiliacionPayload;
+
+    if (isCaptureRequest && (body.id?.trim() || body.leadId?.trim())) {
+      return Response.json(
+        { error: 'El identificador del prospecto lo asigna el servidor durante la captura.' },
+        { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
 
     if (isRegistrationRequest) {
       if (!body.leadId?.trim()) {
@@ -1035,10 +1061,10 @@ export async function handleAfiliacionesApiRequest(
       .prepare(
         `SELECT id, status, lifecycle_stage, canonical_rfc
          FROM leads_ark_tools
-         WHERE tenant_id = ? AND (canonical_rfc = ? OR (canonical_rfc IS NULL AND notas LIKE ?))
+         WHERE tenant_id = ? AND canonical_rfc = ?
          ORDER BY created_at ASC, id ASC LIMIT 2`
       )
-      .bind(tenantId, rfcCanonical, `%RFC: ${rfcCanonical}%`)
+      .bind(tenantId, rfcCanonical)
       .all<{
         id: string;
         status: string;
@@ -1111,7 +1137,7 @@ export async function handleAfiliacionesApiRequest(
         )
         .run();
     } else {
-      await db
+      const insert = await db
         .prepare(
           `INSERT INTO leads_ark_tools (
              id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
@@ -1119,7 +1145,10 @@ export async function handleAfiliacionesApiRequest(
              consent_aviso_version, consent_accepted_at, consent_medium,
              arkangel_share_consent, origin, is_demo, created_at, updated_at
            ) VALUES (?, ?, ?, ?, ?, ?, 'Prospecto', 'prospecto', DATE('now'), ?, ?, ?,
-                     ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`
+                     ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+           ON CONFLICT(tenant_id, canonical_rfc)
+             WHERE canonical_rfc IS NOT NULL AND canonical_rfc != ''
+           DO NOTHING`
         )
         .bind(
           leadId,
@@ -1140,6 +1169,12 @@ export async function handleAfiliacionesApiRequest(
           isDemo ? 1 : 0
         )
         .run();
+      if (insert.meta.changes !== 1) {
+        return Response.json(
+          { error: 'Ya existe un registro con este RFC; no se creó un socio duplicado.' },
+          { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
       await db
         .prepare(
           `INSERT INTO canaco_lifecycle_audit

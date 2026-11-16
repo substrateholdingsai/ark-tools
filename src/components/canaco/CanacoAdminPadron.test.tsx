@@ -12,6 +12,7 @@ const MOCK_LEADS = [
     especialidad: 'comercio',
     status: 'Socio Activo',
     lifecycle_stage: 'socio_activo',
+    payment_environment: 'production',
     last_contact: '2026-10-25',
     contacto_nombre: 'Fernando Pech',
     notas:
@@ -96,6 +97,7 @@ async function renderAdmin() {
   render(<CanacoAdminPadron />);
   await waitFor(() => {
     expect(screen.getByText(/Comercializadora del Mayab/i)).toBeInTheDocument();
+    expect(screen.getByText('Pago: production')).toBeInTheDocument();
   });
 }
 
@@ -116,6 +118,15 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
     expect(screen.getByText('Pagos confirmados')).toBeInTheDocument();
     expect(screen.getByText('Pendientes')).toBeInTheDocument();
     expect(screen.getByText('Pagos marcados confirmados')).toBeInTheDocument();
+  });
+
+  it('muestra el conteo por etapa sin incluir registros de demo', async () => {
+    await renderAdmin();
+
+    const stageCounts = screen.getByLabelText('Registros por etapa del ciclo de vida');
+    expect(stageCounts).toHaveTextContent('prospecto: 0');
+    expect(stageCounts).toHaveTextContent('socio activo: 1');
+    expect(stageCounts).toHaveTextContent('pago pendiente: 1');
   });
 
   it('excluye registros de demo del padrón visible', async () => {
@@ -155,7 +166,7 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
 
     // Modal de confirmación "Modo Sarita"
     expect(await screen.findByText(/Confirmar sincronización de registros/i)).toBeInTheDocument();
-    const botonConfirmar = screen.getByRole('button', { name: /Aprobar y enviar lote/i });
+    const botonConfirmar = screen.getByRole('button', { name: /Generar vista previa/i });
     expect(botonConfirmar).toBeDisabled();
     expect(fetchMock).not.toHaveBeenCalledWith('/api/canaco/sync-arkangel', expect.anything());
   });

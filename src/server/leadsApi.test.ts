@@ -354,4 +354,75 @@ describe('handleLeadsApiRequest', () => {
     expect(json.lead.notas).toContain('💬 WhatsApp enviado vía wa.me [Ark Systems');
     expect(json.lead.whatsapp_link).toBe('https://wa.me/5219991234567');
   });
+
+  it('rechaza cambiar el estado CANACO a Socio Activo desde log-whatsapp', async () => {
+    const run = vi.fn(async () => ({ success: true, meta: { changes: 1 } }));
+    const env = createEnv({
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () =>
+          query.includes('SELECT * FROM leads_ark_tools')
+            ? {
+                ...sampleLeadRow,
+                tenant_id: 'canaco_merida',
+                status: 'Pago Pendiente',
+                lifecycle_stage: 'pago_pendiente',
+              }
+            : null
+        ),
+        run,
+      })),
+    } as unknown as D1Database);
+    const req = new Request(
+      'https://ledger.arksystems.site/api/admin/leads/lead-1/log-whatsapp?tenant=canaco_merida',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'Socio Activo', message: 'prueba' }),
+      }
+    );
+
+    const res = await handleLeadsApiRequest(req, env, corsHeaders, superAdminUser);
+
+    expect(res?.status).toBe(403);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('conserva el registro legítimo de WhatsApp para un prospecto CANACO sin cambiar su etapa', async () => {
+    const run = vi.fn(async () => ({ success: true, meta: { changes: 1 } }));
+    const env = createEnv({
+      prepare: vi.fn((query: string) => ({
+        bind: vi.fn().mockReturnThis(),
+        first: vi.fn(async () =>
+          query.includes('SELECT * FROM leads_ark_tools')
+            ? {
+                ...sampleLeadRow,
+                tenant_id: 'canaco_merida',
+                status: 'Pago Pendiente',
+                lifecycle_stage: 'pago_pendiente',
+              }
+            : null
+        ),
+        run,
+      })),
+    } as unknown as D1Database);
+    const response = await handleLeadsApiRequest(
+      new Request(
+        'https://ledger.arksystems.site/api/admin/leads/lead-1/log-whatsapp?tenant=canaco_merida',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: 'Seguimiento acordado' }),
+        }
+      ),
+      env,
+      corsHeaders,
+      superAdminUser
+    );
+
+    expect(response?.status).toBe(200);
+    const body = (await response?.json()) as { lead: { status: string } };
+    expect(body.lead.status).toBe('Pago Pendiente');
+    expect(run).toHaveBeenCalledOnce();
+  });
 });

@@ -1,4 +1,7 @@
 -- CANACO CRM lifecycle, consent, payment attempts, approvals, and ARCO tracking.
+-- Apply through `wrangler d1 migrations apply`; SQLite has no
+-- `ALTER TABLE ... ADD COLUMN IF NOT EXISTS`, and Wrangler's migration ledger
+-- prevents already-applied DDL from running again.
 ALTER TABLE leads_ark_tools ADD COLUMN canonical_rfc TEXT;
 ALTER TABLE leads_ark_tools ADD COLUMN lifecycle_stage TEXT NOT NULL DEFAULT 'prospecto';
 ALTER TABLE leads_ark_tools ADD COLUMN consent_aviso_version TEXT;
@@ -7,35 +10,8 @@ ALTER TABLE leads_ark_tools ADD COLUMN consent_medium TEXT;
 ALTER TABLE leads_ark_tools ADD COLUMN arkangel_share_consent INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE leads_ark_tools ADD COLUMN origin TEXT NOT NULL DEFAULT 'legacy';
 ALTER TABLE leads_ark_tools ADD COLUMN is_demo INTEGER NOT NULL DEFAULT 0;
-
-UPDATE leads_ark_tools
-SET canonical_rfc = UPPER(TRIM(SUBSTR(
-  notas,
-  INSTR(UPPER(notas), 'RFC:') + 4,
-  INSTR(SUBSTR(notas, INSTR(UPPER(notas), 'RFC:') + 4), '|') - 1
-)))
-WHERE notas IS NOT NULL
-  AND INSTR(UPPER(notas), 'RFC:') > 0
-  AND INSTR(SUBSTR(notas, INSTR(UPPER(notas), 'RFC:') + 4), '|') > 0;
-
--- Preserve legacy duplicate rows for review; only one row per tenant/RFC remains canonical.
-UPDATE leads_ark_tools AS lead
-SET canonical_rfc = NULL
-WHERE canonical_rfc IS NOT NULL
-  AND EXISTS (
-    SELECT 1
-    FROM leads_ark_tools AS preferred
-    WHERE preferred.tenant_id = lead.tenant_id
-      AND preferred.canonical_rfc = lead.canonical_rfc
-      AND (
-        (preferred.status = 'Socio Activo' AND lead.status != 'Socio Activo')
-        OR (
-          (preferred.status = 'Socio Activo') = (lead.status = 'Socio Activo')
-          AND (preferred.created_at < lead.created_at
-            OR (preferred.created_at = lead.created_at AND preferred.id < lead.id))
-        )
-      )
-  );
+ALTER TABLE leads_ark_tools ADD COLUMN payment_environment TEXT
+  CHECK (payment_environment IN ('sandbox', 'production'));
 
 CREATE UNIQUE INDEX IF NOT EXISTS idx_leads_tenant_canonical_rfc
   ON leads_ark_tools(tenant_id, canonical_rfc)
@@ -60,6 +36,7 @@ CREATE TABLE IF NOT EXISTS canaco_payment_intents (
   status TEXT NOT NULL DEFAULT 'created'
     CHECK (status IN ('created', 'paid', 'expired', 'cancelled', 'failed', 'superseded')),
   order_id TEXT,
+  checkout_url TEXT,
   transaction_reference TEXT,
   payment_event_id TEXT,
   evidence_json TEXT,
@@ -98,6 +75,7 @@ CREATE TABLE IF NOT EXISTS canaco_arkangel_approvals (
   approver_id TEXT NOT NULL,
   approver_email TEXT NOT NULL,
   lead_ids_json TEXT NOT NULL,
+  preview_json TEXT NOT NULL,
   created_at TEXT NOT NULL,
   expires_at TEXT NOT NULL,
   consumed_at TEXT
@@ -120,6 +98,10 @@ CREATE TABLE IF NOT EXISTS canaco_arco_requests (
   tenant_id TEXT NOT NULL DEFAULT 'canaco_merida',
   lead_id TEXT,
   requester_email TEXT NOT NULL,
+  assigned_to TEXT NOT NULL DEFAULT 'horus.i2d@gmail.com',
+  assigned_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  response_due_at TEXT NOT NULL,
+  execution_due_at TEXT,
   right_requested TEXT NOT NULL CHECK (right_requested IN ('acceso', 'rectificacion', 'cancelacion', 'oposicion')),
   status TEXT NOT NULL DEFAULT 'received'
     CHECK (status IN ('received', 'identity_verified', 'in_progress', 'completed', 'rejected')),
