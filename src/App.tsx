@@ -144,7 +144,7 @@ export type ToolId =
   | 'admin';
 
 export type ToolRoute = ToolId;
-export type NavFilter = 'dashboard' | 'fiscal' | 'sat' | 'cobros' | 'compliance';
+export type NavFilter = 'dashboard' | 'fiscal' | 'sat' | 'cobros' | 'compliance' | 'dof';
 
 const navItems: NavItem[] = [
   { id: 'dashboard', label: 'TODAS' },
@@ -152,6 +152,7 @@ const navItems: NavItem[] = [
   { id: 'sat', label: 'SAT' },
   { id: 'cobros', label: 'COBROS' },
   { id: 'compliance', label: 'COMPLIANCE' },
+  { id: 'dof', label: 'DOF' },
 ];
 
 // ═════════════════════════════════════════════════════════════════
@@ -248,7 +249,8 @@ export function App() {
       id === 'fiscal' ||
       id === 'sat' ||
       id === 'cobros' ||
-      id === 'compliance'
+      id === 'compliance' ||
+      id === 'dof'
     ) {
       setActiveNavFilter(id);
       navigateTo('dashboard');
@@ -420,9 +422,11 @@ export function App() {
           {activeTool !== 'admin' && (
             <div className="w-full">
               <ExpedienteSelector />
-              <div className="mx-auto max-w-[1280px] px-6 md:px-10">
-                <AlertasVigencia />
-              </div>
+              {!(activeTool === 'dashboard' && activeNavFilter === 'dof') && (
+                <div className="mx-auto max-w-[1280px] px-6 md:px-10">
+                  <AlertasVigencia onVerTodos={() => handleNavigate('dof')} />
+                </div>
+              )}
             </div>
           )}
 
@@ -522,7 +526,12 @@ export function App() {
           )}
 
           <main>
-            {activeTool === 'dashboard' ? (
+            {activeTool === 'dashboard' && activeNavFilter === 'dof' ? (
+              <section className="mx-auto max-w-[1280px] px-6 py-8 md:px-10">
+                <h1 className="font-playfair text-3xl font-bold text-ink">Avisos DOF</h1>
+                <AlertasVigencia />
+              </section>
+            ) : activeTool === 'dashboard' ? (
               <Dashboard
                 onSelectTool={navigateTo}
                 navFilter={activeNavFilter}

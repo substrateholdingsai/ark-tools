@@ -16,6 +16,8 @@ import {
   MessageSquare,
   Crown,
   Users,
+  Menu,
+  X,
 } from 'lucide-react';
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/cn';
@@ -69,6 +71,7 @@ export function Header({
 
   const [orgOpen, setOrgOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
   const [isCreatingTenant, setIsCreatingTenant] = useState(false);
   const [newTenantName, setNewTenantName] = useState('');
   const [actionError, setActionError] = useState('');
@@ -157,17 +160,17 @@ export function Header({
       )}
       style={{ paddingTop: 'var(--safe-area-inset-top)' }}
     >
-      <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between gap-2 px-4 md:h-[68px] md:gap-4 md:px-10">
+      <div className="mx-auto flex min-h-[64px] max-w-[1280px] items-center justify-between gap-2 px-4 md:min-h-[68px] md:gap-4 md:px-10 2xl:max-w-[1536px]">
         {/* Logo + Nombre */}
         <button
           type="button"
-          className="flex shrink-0 items-center gap-2 text-left md:gap-4"
+          className="flex min-w-0 items-center gap-2 text-left md:gap-4"
           onClick={() => onNavigate?.('dashboard')}
           aria-label={`${currentBrand.brandName}: volver al catálogo`}
         >
           <BrandLogo size={32} />
-          <div className="leading-none">
-            <div className="orbitron font-orbitron text-[12px] font-black tracking-[0.14em] text-navy sm:text-[14px] sm:tracking-[0.18em]">
+          <div className="min-w-0 leading-none">
+            <div className="orbitron font-orbitron text-[10px] font-black tracking-[0.08em] text-navy sm:text-[14px] sm:tracking-[0.18em]">
               {currentBrand.brandName}
             </div>
             <div className="mt-[2px] hidden text-[8.5px] font-bold uppercase tracking-[0.22em] text-muted sm:block">
@@ -179,7 +182,7 @@ export function Header({
         {/* Nav (desktop) */}
         <nav
           aria-label="Categorías de herramientas"
-          className="hidden items-center gap-4 text-[11px] font-semibold tracking-[0.14em] text-muted lg:flex xl:gap-7"
+          className="hidden items-center gap-3 text-[11px] font-semibold tracking-[0.14em] text-muted 2xl:flex"
         >
           {navItems.map((item) => (
             <button
@@ -218,12 +221,22 @@ export function Header({
         </nav>
 
         {/* Auth & Multi-tenant (Desktop & Mobile) */}
-        <div className="flex items-center gap-1.5 sm:gap-2.5">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
+          <button
+            type="button"
+            onClick={() => setNavOpen(!navOpen)}
+            aria-label={navOpen ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
+            aria-expanded={navOpen}
+            aria-controls="header-mobile-nav"
+            className="rounded-lg border border-line p-2 text-navy 2xl:hidden"
+          >
+            {navOpen ? <X size={16} /> : <Menu size={16} />}
+          </button>
           <a
             href={currentBrand.whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100/70 sm:inline-flex"
+            className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-3 py-1.5 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100/70 xl:inline-flex"
             title={`Soporte y atención directa por WhatsApp (${currentBrand.supportPhone})`}
           >
             <MessageSquare size={13} className="text-emerald-600" />
@@ -250,7 +263,7 @@ export function Header({
               {/* Plan Badge Pro/Gratis */}
               <div
                 className={cn(
-                  'hidden items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold sm:flex',
+                  'hidden items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold xl:flex',
                   billingStatus?.isPro
                     ? 'border border-gold/40 bg-gold/10 text-navy'
                     : 'border border-line bg-surface-2 text-muted'
@@ -269,7 +282,7 @@ export function Header({
                 <span>{billingStatus?.isPro ? 'PRO' : 'GRATIS'}</span>
               </div>
               {/* D1 Cloud Status */}
-              <div className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 sm:flex">
+              <div className="hidden items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-800 xl:flex">
                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
                 <span>D1 Nube Activa</span>
               </div>
@@ -281,10 +294,11 @@ export function Header({
                   onClick={() => setOrgOpen(!orgOpen)}
                   className="flex max-w-[110px] items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] font-semibold text-navy transition hover:bg-cream/40 sm:max-w-[200px] sm:gap-2 sm:px-3 sm:text-[12px]"
                   title="Cambiar de despacho o crear nuevo"
+                  aria-label="Cambiar de despacho o crear nuevo"
                   aria-expanded={orgOpen}
                 >
                   <Building2 size={14} className="shrink-0 text-gold-dark" />
-                  <span className="truncate">{tenantName || 'Mi Despacho'}</span>
+                  <span className="hidden truncate sm:inline">{tenantName || 'Mi Despacho'}</span>
                   <ChevronDown
                     size={13}
                     className={cn('text-muted transition-transform', orgOpen && 'rotate-180')}
@@ -292,7 +306,7 @@ export function Header({
                 </button>
 
                 {orgOpen && (
-                  <div className="absolute right-0 z-50 mt-2 w-64 rounded-xl border border-line bg-white p-2 shadow-dome">
+                  <div className="fixed inset-x-4 top-[64px] z-50 mt-2 rounded-xl border border-line bg-white p-2 shadow-dome sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:w-64">
                     {actionError && (
                       <p
                         role="alert"
@@ -404,7 +418,7 @@ export function Header({
                   }
                 >
                   <Crown size={13} className="text-gold" />
-                  <span className="hidden font-orbitron text-[10px] font-black tracking-wider sm:inline">
+                  <span className="font-orbitron text-[10px] font-black tracking-wider">
                     {currentBrand.id === 'canaco_merida' ||
                     user?.email?.toLowerCase() === 'horus.i2d@gmail.com'
                       ? 'PADRÓN'
@@ -490,37 +504,46 @@ export function Header({
           </SignedIn>
         </div>
       </div>
-      <nav
-        aria-label="Categorías de herramientas"
-        className="flex items-center gap-2 overflow-x-auto whitespace-nowrap border-t border-line/70 px-4 py-2.5 lg:hidden"
-      >
-        {currentToolLabel && (
-          <button
-            type="button"
-            onClick={() => onNavigate?.('back')}
-            className="inline-flex items-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
-          >
-            <ArrowLeft size={13} />
-            Catálogo
-          </button>
-        )}
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onNavigate?.(item.id)}
-            className={cn(
-              'rounded-full border px-3 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold',
-              activeTool === item.id
-                ? 'border-navy bg-navy/5 text-navy'
-                : 'border-line bg-white text-muted'
-            )}
-            aria-pressed={activeTool === item.id}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+      {navOpen && (
+        <nav
+          id="header-mobile-nav"
+          aria-label="Menú de categorías de herramientas"
+          className="flex flex-wrap items-center gap-2 border-t border-line/70 px-4 py-2.5 2xl:hidden"
+        >
+          {currentToolLabel && (
+            <button
+              type="button"
+              onClick={() => {
+                onNavigate?.('back');
+                setNavOpen(false);
+              }}
+              className="inline-flex items-center gap-1 rounded-full bg-navy px-3 py-1.5 text-[11px] font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold"
+            >
+              <ArrowLeft size={13} />
+              Catálogo
+            </button>
+          )}
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => {
+                onNavigate?.(item.id);
+                setNavOpen(false);
+              }}
+              className={cn(
+                'rounded-full border px-3 py-1.5 text-[11px] font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold',
+                activeTool === item.id
+                  ? 'border-navy bg-navy/5 text-navy'
+                  : 'border-line bg-white text-muted'
+              )}
+              aria-pressed={activeTool === item.id}
+            >
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {/* Modal de Equipo y Colaboradores */}
       <TeamModal isOpen={teamModalOpen} onClose={() => setTeamModalOpen(false)} />

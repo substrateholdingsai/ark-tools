@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { AlertasVigencia } from './AlertasVigencia';
 
 // Mock del hook para controlar el estado del catálogo
@@ -112,5 +113,46 @@ describe('AlertasVigencia', () => {
     expect(items[0]).toHaveTextContent('Critico');
     expect(items[1]).toHaveTextContent('Vencido');
     expect(items[2]).toHaveTextContent('Proximo');
+  });
+
+  it('resume las tres fechas de vencimiento más próximas sin duplicados y permite ver todas', async () => {
+    const crear = (id: string, fin: string | null) => ({
+      ...baseValor,
+      id,
+      nombre: `Aviso ${id}`,
+      vigencia: { ...baseValor.vigencia, fin },
+    });
+    const primero = crear('primero', '2026-01-01');
+    const segundo = crear('segundo', '2026-02-01');
+    const tercero = crear('tercero', '2026-03-01');
+    const cuarto = crear('cuarto', '2026-04-01');
+    const sinFecha = crear('sin fecha', null);
+    vi.mocked(useEstadoCatalogo).mockReturnValue({
+      vigentes: [],
+      criticos: [cuarto],
+      vencidos: [cuarto, segundo, primero],
+      proximosAVencer: [sinFecha, tercero],
+    });
+    vi.mocked(evaluarVigencia).mockReturnValue({
+      estado: 'vencido',
+      diasRestantes: -1,
+      mensaje: 'Aviso',
+      requiereAtencion: true,
+    });
+    const onVerTodos = vi.fn();
+
+    const { rerender } = render(<AlertasVigencia onVerTodos={onVerTodos} />);
+    expect(screen.getAllByRole('link', { name: 'Ver DOF' })).toHaveLength(3);
+    expect(screen.getByText(/Aviso primero/)).toBeInTheDocument();
+    expect(screen.getByText(/Aviso segundo/)).toBeInTheDocument();
+    expect(screen.getByText(/Aviso tercero/)).toBeInTheDocument();
+    expect(screen.queryByText(/Aviso cuarto/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Ver todos los avisos' }));
+    expect(onVerTodos).toHaveBeenCalledOnce();
+
+    rerender(<AlertasVigencia />);
+    expect(screen.getAllByRole('link', { name: 'Ver DOF' })).toHaveLength(5);
+    expect(screen.getByText(/Aviso cuarto/)).toBeInTheDocument();
+    expect(screen.getByText(/Aviso sin fecha/)).toBeInTheDocument();
   });
 });
