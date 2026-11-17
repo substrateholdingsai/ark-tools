@@ -112,5 +112,5 @@ binding = "AI"
 # CRON TRIGGERS (Alegra health check and hourly CANACO intent expiry sweep)
 # ─────────────────────────────────────────────────────────────────────
 [triggers]
-crons = ["0 * * * *", "0 */6 * * *"]
+crons = ["0 * * * *"]
 

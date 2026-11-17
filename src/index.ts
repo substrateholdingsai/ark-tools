@@ -18,7 +18,6 @@ import { handleAfiliacionesApiRequest } from './server/afiliacionesApi';
 import { handleCanacoArkangelSyncApi } from './server/canacoArkangelSync';
 import { handleInvitationsApiRequest } from './server/invitationsApi';
 import { handleAlegraApiRequest } from './server/alegra/alegraApi';
-import { checkAlegraAccountsHealth } from './server/alegra/cron';
 import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './server/llmsTxt';
 import { botApp } from './server/bots/botIngestionApi';
 import { handleBillingApiRequest } from './server/billing/billingWebhook';
@@ -190,10 +189,11 @@ export default {
     });
   },
 
-  async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
-    if (controller.cron === '0 */6 * * *') {
-      ctx.waitUntil(checkAlegraAccountsHealth(env));
-    }
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext
+  ): Promise<void> {
     if (env.ARK_TOOLS_DB) {
       ctx.waitUntil(expireCanacoPaymentIntents(env.ARK_TOOLS_DB, new Date().toISOString()));
     }
