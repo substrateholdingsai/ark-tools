@@ -371,7 +371,7 @@ export function LandingPage() {
           NAVBAR PÚBLICA
       ───────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 border-b border-line bg-white/85 backdrop-blur-xl">
-        <div className="mx-auto flex h-[64px] max-w-[1280px] items-center justify-between gap-2 px-4 sm:gap-4 md:h-[68px] md:px-10">
+        <div className="mx-auto flex min-h-[64px] max-w-[1280px] flex-wrap items-center justify-between gap-2 px-4 py-2 sm:gap-4 md:min-h-[68px] md:px-10">
           <div className="flex shrink-0 items-center gap-2 sm:gap-4">
             <Logo size={34} />
             <div className="leading-none">
@@ -384,7 +384,7 @@ export function LandingPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className="flex items-center gap-1 sm:gap-3">
             <a
               href="https://wa.me/525657062511?text=Hola,%20solicito%20atenci%C3%B3n%20sobre%20ARK%20TOOLS"
               target="_blank"
@@ -686,7 +686,7 @@ export function LandingPage() {
 
             <button
               onClick={() => openAuth('register')}
-              className="flex shrink-0 items-center gap-2 whitespace-nowrap rounded-xl bg-gold px-6 py-3.5 font-orbitron text-[12px] font-bold tracking-wider text-navy-dark shadow-sm transition hover:bg-gold-light"
+              className="flex max-w-full items-center justify-center gap-2 rounded-xl bg-gold px-4 py-3.5 text-center font-orbitron text-[12px] font-bold tracking-wider text-navy-dark shadow-sm transition hover:bg-gold-light sm:shrink-0 sm:whitespace-nowrap sm:px-6"
             >
               <span>PROBAR HERRAMIENTAS GRATIS</span>
               <ArrowRight size={15} />
@@ -800,7 +800,7 @@ export function LandingPage() {
       ───────────────────────────────────────────────────────────── */}
       {modalOpen && (
         <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm duration-150">
-          <div className="relative w-full max-w-md space-y-6 rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
+          <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md space-y-6 overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-8">
             {/* Close button */}
             <button
               onClick={() => setModalOpen(false)}

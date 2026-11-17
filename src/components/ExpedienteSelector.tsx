@@ -206,7 +206,7 @@ export function ExpedienteSelector() {
       {/* ═══ MODAL 1: BÚSQUEDA Y SELECCIÓN DE CLIENTE ═══ */}
       {isSearchOpen && (
         <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="animate-in fade-in zoom-in-95 flex max-h-[90vh] w-full max-w-lg flex-col space-y-4 rounded-2xl border border-line bg-white p-6 shadow-2xl duration-150">
+          <div className="animate-in fade-in zoom-in-95 flex max-h-[calc(100dvh-2rem)] w-full max-w-lg flex-col space-y-4 overflow-y-auto rounded-2xl border border-line bg-white p-6 shadow-2xl duration-150">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="font-playfair text-xl font-black text-ink">
@@ -239,7 +239,7 @@ export function ExpedienteSelector() {
             </div>
 
             {/* Filtros por tipo */}
-            <div className="flex items-center gap-1.5 text-xs">
+            <div className="flex flex-wrap items-center gap-1.5 text-xs">
               {(['todos', 'trabajador', 'empresa', 'persona_fisica'] as const).map((tipo) => (
                 <button
                   key={tipo}
@@ -263,7 +263,7 @@ export function ExpedienteSelector() {
             </div>
 
             {/* Lista de resultados */}
-            <div className="max-h-[340px] min-h-[220px] flex-1 space-y-1.5 divide-y divide-line/40 overflow-y-auto pr-1">
+            <div className="max-h-[340px] min-h-0 flex-1 space-y-1.5 divide-y divide-line/40 overflow-y-auto pr-1">
               {isLoadingClients ? (
                 <div className="py-12 text-center text-xs text-muted">Cargando catálogo...</div>
               ) : filteredClients.length === 0 ? (

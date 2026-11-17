@@ -175,12 +175,12 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
       )}
 
       {exportGuard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-sm"
             onClick={() => setExportGuard(null)}
           />
-          <div className="relative w-full max-w-md rounded-[24px] border border-line bg-surface p-6 shadow-2xl">
+          <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[24px] border border-line bg-surface p-6 shadow-2xl">
             <div className="mb-3 font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
               Datos de identidad incompletos
             </div>
@@ -191,7 +191,7 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
                 ? 'Confirma para exportar con los campos en blanco.'
                 : ''}
             </p>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <button
                 type="button"
                 onClick={() => setExportGuard(null)}
@@ -236,7 +236,7 @@ export function RetencionClinicas({ onBack }: RetencionClinicasProps) {
         />
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-8">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.15fr_0.85fr] lg:gap-8">
         {/* Entradas */}
         <div className="min-w-0 space-y-6">
           <div className="rounded-[20px] border border-line bg-surface p-5 shadow-sm">

@@ -77,7 +77,7 @@ export function OnboardingQuickstartModal({
       />
 
       {/* Contenedor Modal */}
-      <div className="relative z-10 max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-surface shadow-2xl">
+      <div className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-3xl overflow-y-auto rounded-2xl border border-line bg-surface shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
         {/* Barra superior de acento */}
         <div className="h-1.5 w-full bg-gradient-to-r from-navy via-gold to-navy" />
 

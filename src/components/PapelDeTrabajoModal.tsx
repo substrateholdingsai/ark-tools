@@ -322,9 +322,9 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
   };
 
   return (
-    <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-2 sm:p-4">
+    <div className="backdrop-blur-xs fixed inset-0 z-50 overflow-y-auto bg-black/60 p-2 sm:p-4">
       {/* ═══ BARRA FLOTANTE DE ACCIONES (NO IMPRIME) ═══ */}
-      <div className="fixed right-4 top-4 z-50 flex items-center gap-2 print:hidden">
+      <div className="sticky top-0 z-50 flex flex-wrap items-center justify-end gap-2 print:hidden">
         <BotonBovedaOffline
           params={{
             titulo: expediente.titulo || 'Papel de Trabajo Oficial',
@@ -368,7 +368,7 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
       <div
         ref={printContainerRef}
         id="papel-de-trabajo-print"
-        className="my-8 w-full max-w-[850px] rounded-2xl border border-line bg-white p-8 font-inter text-[12px] leading-relaxed text-black shadow-2xl sm:p-12 print:m-0 print:w-full print:max-w-none print:border-none print:p-8 print:shadow-none"
+        className="mx-auto my-6 w-full max-w-[850px] rounded-2xl border border-line bg-white p-4 font-inter text-[12px] leading-relaxed text-black shadow-2xl sm:p-12 print:m-0 print:w-full print:max-w-none print:border-none print:p-8 print:shadow-none"
       >
         {/* ENCABEZADO INSTITUCIONAL */}
         <div className="mb-6 flex flex-col justify-between gap-4 border-b-2 border-navy pb-4 sm:flex-row sm:items-start">

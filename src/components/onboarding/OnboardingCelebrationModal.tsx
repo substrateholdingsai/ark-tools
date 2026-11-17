@@ -61,7 +61,7 @@ export function OnboardingCelebrationModal({
       />
 
       {/* Contenedor Modal */}
-      <div className="relative z-10 w-full max-w-xl overflow-hidden rounded-2xl border border-gold/50 bg-surface shadow-2xl">
+      <div className="relative z-10 max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-gold/50 bg-surface shadow-2xl sm:max-h-[calc(100dvh-3rem)]">
         {/* Barra superior dorada */}
         <div className="h-2 w-full bg-gradient-to-r from-gold via-amber-300 to-gold" />
 

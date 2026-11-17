@@ -266,7 +266,7 @@ export function CalculadoraISN({ onBack }: CalculadoraISNProps) {
       </div>
 
       {/* Grid de dos columnas: entrada + resultado */}
-      <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
         {/* COLUMNA IZQUIERDA: Entradas */}
         <div className="min-w-0 space-y-6">
           <EstadoSelector value={estado} onChange={handleEstadoChange} />

@@ -411,8 +411,8 @@ export function VentanillaAfiliacionModal({
   };
 
   return (
-    <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-6">
-      <div className="relative my-8 w-full max-w-2xl rounded-2xl border border-henequen-arena bg-henequen-cal p-6 font-inter text-henequen-grafito shadow-2xl sm:p-8">
+    <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6">
+      <div className="relative my-auto w-full max-w-2xl rounded-2xl border border-henequen-arena bg-henequen-cal p-4 font-inter text-henequen-grafito shadow-2xl sm:p-8">
         {/* Cabecera institucional HENEQUÉN */}
         <div className="flex items-start justify-between border-b border-henequen-arena pb-5">
           <div className="flex items-center gap-3">

@@ -338,7 +338,7 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="relative w-full max-w-lg space-y-4 rounded-2xl border border-gold/40 bg-surface p-6 text-ink shadow-2xl"
+            className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg space-y-4 overflow-y-auto rounded-2xl border border-gold/40 bg-surface p-6 text-ink shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Cabecera del Modal */}

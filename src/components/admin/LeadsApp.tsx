@@ -1180,7 +1180,7 @@ export default function LeadsApp() {
       {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
       {leadToDelete && (
         <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-7">
+          <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-line bg-white p-6 shadow-2xl sm:p-7">
             <div className="flex items-start gap-3.5">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-rose-50 text-rose-600">
                 <AlertTriangle size={22} />

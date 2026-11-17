@@ -124,15 +124,15 @@ export function AdminExpedienteModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-3 sm:p-6"
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-3 sm:p-6"
       role="dialog"
       aria-modal="true"
     >
-      <div className="relative my-6 w-full max-w-3xl rounded-2xl border border-henequen-arena bg-white p-6 font-inter text-henequen-grafito shadow-2xl sm:p-8">
+      <div className="relative my-auto w-full max-w-3xl rounded-2xl border border-henequen-arena bg-white p-4 font-inter text-henequen-grafito shadow-2xl sm:p-8">
         {/* Cabecera */}
         <div className="flex items-start justify-between border-b border-henequen-arena/80 pb-4">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-henequen-anil/10 px-2.5 py-0.5 font-mono text-[10px] font-bold uppercase text-henequen-anil">
                 Oficialía de Partes · Cotejo
               </span>

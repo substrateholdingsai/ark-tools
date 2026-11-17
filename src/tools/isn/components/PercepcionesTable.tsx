@@ -56,9 +56,9 @@ export function PercepcionesTable({
         </div>
 
         {/* Tabla */}
-        <div className="overflow-hidden rounded-[14px] border border-line">
+        <div className="overflow-x-auto rounded-[14px] border border-line">
           {/* Header de tabla */}
-          <div className="grid grid-cols-[1fr_90px_90px_36px] bg-navy text-[9px] font-bold uppercase tracking-[0.16em] text-white">
+          <div className="grid min-w-[400px] grid-cols-[1fr_90px_90px_36px] bg-navy text-[9px] font-bold uppercase tracking-[0.16em] text-white">
             <div className="px-3 py-2.5">Concepto</div>
             <div className="px-3 py-2.5 text-right">Gravado</div>
             <div className="px-3 py-2.5 text-right">Exento</div>
@@ -74,7 +74,7 @@ export function PercepcionesTable({
             conceptos.map((c, index) => (
               <div
                 key={c.id}
-                className={`grid grid-cols-[1fr_90px_90px_36px] items-center border-t border-line ${index % 2 === 0 ? 'bg-surface' : 'bg-surface-2/60'} `}
+                className={`grid min-w-[400px] grid-cols-[1fr_90px_90px_36px] items-center border-t border-line ${index % 2 === 0 ? 'bg-surface' : 'bg-surface-2/60'} `}
               >
                 {/* Concepto */}
                 <div className="min-w-0 px-3 py-2">
@@ -136,7 +136,7 @@ export function PercepcionesTable({
           )}
 
           {/* Footer de la tabla: totales */}
-          <div className="grid grid-cols-[1fr_90px_90px_36px] items-center border-t-2 border-gold/40 bg-cream">
+          <div className="grid min-w-[400px] grid-cols-[1fr_90px_90px_36px] items-center border-t-2 border-gold/40 bg-cream">
             <div className="px-3 py-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-navy">
               Total
             </div>

@@ -56,7 +56,7 @@ export function CedulaModalidad40Modal({
 
   return (
     <div className="animate-fadeIn fixed inset-0 z-50 flex items-center justify-center bg-navy/60 p-4 backdrop-blur-sm print:static print:bg-white print:p-0">
-      <div className="relative flex max-h-[95vh] w-full max-w-4xl flex-col rounded-[24px] border border-line bg-surface shadow-2xl print:max-h-none print:w-full print:rounded-none print:border-none print:shadow-none">
+      <div className="relative flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-y-auto rounded-[24px] border border-line bg-surface shadow-2xl print:max-h-none print:w-full print:overflow-visible print:rounded-none print:border-none print:shadow-none">
         {/* Barra superior de acciones (Oculta al imprimir) */}
         <div className="flex items-center justify-between border-b border-line px-6 py-4 print:hidden">
           <div className="flex items-center gap-2">

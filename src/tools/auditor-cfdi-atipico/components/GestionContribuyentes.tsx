@@ -66,16 +66,16 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
       {/* Selector de Contribuyente Activo y Carga Demo */}
       <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-sky-800 bg-sky-950/80 text-sky-400">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sky-800 bg-sky-950/80 text-sky-400">
               <Building2 className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
                 Contribuyente en Auditoría
               </div>
               <h2 className="text-lg font-bold text-white">{contribuyenteActivo.razonSocial}</h2>
-              <div className="mt-0.5 flex items-center gap-3 text-xs">
+              <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs">
                 <span className="font-mono font-semibold text-sky-400">
                   {contribuyenteActivo.rfc}
                 </span>
@@ -87,14 +87,14 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex max-w-full flex-wrap items-center gap-2">
             <select
               value={contribuyenteActivo.rfc}
               onChange={(e) => {
                 const found = todosContribuyentes.find((c) => c.rfc === e.target.value);
                 if (found) onSeleccionarContribuyente(found);
               }}
-              className="rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-white focus:border-sky-500 focus:outline-none"
+              className="max-w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-white focus:border-sky-500 focus:outline-none"
             >
               {todosContribuyentes.map((c) => (
                 <option key={c.rfc} value={c.rfc}>
@@ -165,7 +165,7 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
       {/* Modal para crear nuevo RFC */}
       {modalNuevo && (
         <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
             <h3 className="mb-4 text-base font-bold text-white">Registrar Nuevo Contribuyente</h3>
             <form onSubmit={handleCrear} className="space-y-4 text-xs">
               <div>

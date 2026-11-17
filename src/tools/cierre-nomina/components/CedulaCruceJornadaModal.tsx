@@ -125,7 +125,7 @@ export function CedulaCruceJornadaModal({
         }
       `}</style>
 
-      <div className="relative flex max-h-[95vh] w-full max-w-[1240px] flex-col rounded-2xl border border-line bg-surface shadow-2xl">
+      <div className="relative flex max-h-[calc(100dvh-1rem)] w-full max-w-[1240px] flex-col overflow-y-auto rounded-2xl border border-line bg-surface shadow-2xl sm:max-h-[calc(100dvh-2rem)]">
         {/* ═══ BARRA SUPERIOR DE ACCIONES (NO IMPRIMIR) ═══ */}
         <div className="no-imprimir flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface-2 px-6 py-4">
           <div className="flex items-center gap-3">
@@ -133,7 +133,7 @@ export function CedulaCruceJornadaModal({
               <Scale size={18} />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
                   Cédula de Cruce Laboral-Fiscal
                 </span>
@@ -190,7 +190,7 @@ export function CedulaCruceJornadaModal({
         <div
           id="cedula-cruce-jornada-oficial"
           ref={printContainerRef}
-          className="flex-1 space-y-6 overflow-y-auto p-6 sm:p-10"
+          className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4 sm:p-10"
         >
           {/* ENCABEZADO INSTITUCIONAL */}
           <div className="flex flex-wrap items-start justify-between gap-6 border-b-2 border-navy pb-5">

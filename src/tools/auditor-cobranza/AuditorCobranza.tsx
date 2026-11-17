@@ -162,7 +162,7 @@ export default function AuditorCobranza({ onBack }: AuditorCobranzaProps) {
       </header>
 
       {/* Grid principal */}
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         {/* Columna izquierda: Resumen + Datos + Acciones */}
         <div className="space-y-6">
           {/* Datos del auditor */}

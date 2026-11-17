@@ -109,7 +109,7 @@ export function CalculadoraSBC({ onBack }: CalculadoraSBCProps) {
         />
       </div>
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8">
         <div className="min-w-0 space-y-6">
           <ParametrosCard parametros={parametros} onChange={handleChange} resultado={resultado} />
           <RangoVisual resultado={resultado} />

@@ -399,7 +399,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
       )}
 
       {/* HERO */}
-      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
         <div className="min-w-0">
           <div className="flex flex-wrap gap-2">
             <span className="rounded-full border border-line bg-surface px-3 py-1 font-inter text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
@@ -638,7 +638,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
       </section>
 
       {/* DETALLE DEL PASO + SIDEBAR */}
-      <section className="mt-8 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+      <section className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1.15fr_0.85fr]">
         <article className="liquid-glass-dome rounded-dome p-6 shadow-dome">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -916,7 +916,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           {filtro !== 'IMSS' && actosSat.length > 0 ? (
             <div className="rounded-dome border border-line bg-surface p-5 sm:p-6">
               <div className="flex items-center justify-between gap-4">
@@ -984,7 +984,7 @@ export function GuiaSATIMSS({ onBack }: GuiaSATIMSSProps) {
       </section>
 
       {/* REGLA DE ORO + GENERADOR */}
-      <section className="mt-12 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <section className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-dome bg-navy p-7 text-white shadow-dome">
           <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-3 py-1 font-inter text-[11px] uppercase tracking-[0.16em]">
             Regla de oro ARK Systems

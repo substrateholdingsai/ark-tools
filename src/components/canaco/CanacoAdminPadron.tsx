@@ -1355,7 +1355,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
       {/* Modal de confirmación de envío al proveedor */}
       {modalRecordatorioMasivoOpen && (
         <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="relative w-full max-w-lg rounded-2xl border border-henequen-arena bg-white p-6 shadow-2xl">
+          <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-2xl border border-henequen-arena bg-white p-6 shadow-2xl">
             <button
               type="button"
               onClick={() => setModalRecordatorioMasivoOpen(false)}

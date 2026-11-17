@@ -574,7 +574,7 @@ export default function MapaActivos({ onBack }: MapaActivosProps) {
           Guía práctica: qué pueden y qué no pueden hacer tus clientes con activos virtuales en
           México.
         </p>
-        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Legal */}
           <div>
             <h3 className="mb-4 flex items-center gap-2 font-inter text-[14px] font-bold text-navy">

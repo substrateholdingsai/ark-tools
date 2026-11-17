@@ -64,15 +64,15 @@ export const MallaMensual: React.FC<MallaMensualProps> = ({
       </div>
 
       {/* Selector de visualización */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Calendar className="h-5 w-5 text-sky-400" />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Calendar className="h-5 w-5 shrink-0 text-sky-400" />
           <h3 className="text-lg font-bold text-white">
             Malla Mensual Consolidada (Enero – Diciembre)
           </h3>
         </div>
 
-        <div className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 p-1 text-xs">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 p-1 text-xs">
           <button
             onClick={() => setFiltroTipo('TODOS')}
             className={`rounded-md px-3 py-1.5 font-medium transition-all ${

@@ -236,7 +236,10 @@ export function AiAssistantWidget() {
   };
 
   return (
-    <aside aria-label="Asistente Virtual Noah" className="fixed bottom-6 right-6 z-50 font-inter">
+    <aside
+      aria-label="Asistente Virtual Noah"
+      className="fixed bottom-3 right-3 z-50 font-inter sm:bottom-6 sm:right-6"
+    >
       {/* Botón Flotante (Cuando está cerrado) */}
       {!isOpen && (
         <button
@@ -268,7 +271,9 @@ export function AiAssistantWidget() {
       {isOpen && (
         <div
           className={`flex flex-col overflow-hidden rounded-2xl border-2 border-[#002B7F]/40 bg-surface shadow-[0_20px_50px_rgba(0,26,77,0.35)] ring-1 ring-[#D4AF37]/25 transition-all duration-300 ${
-            isMinimized ? 'h-14 w-80' : 'h-[600px] max-h-[85vh] w-[92vw] sm:w-[440px]'
+            isMinimized
+              ? 'h-14 w-[min(20rem,calc(100vw-1.5rem))]'
+              : 'h-[600px] max-h-[calc(100dvh-1.5rem)] w-[min(440px,calc(100vw-1.5rem))] sm:max-h-[85vh]'
           }`}
         >
           {/* Header */}

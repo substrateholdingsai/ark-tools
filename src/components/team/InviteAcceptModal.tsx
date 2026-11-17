@@ -131,7 +131,7 @@ export function InviteAcceptModal({ token, isOpen, onClose, onSuccess }: InviteA
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="animate-in fade-in zoom-in-95 w-full max-w-md overflow-hidden rounded-3xl border border-line bg-white shadow-2xl"
+        className="animate-in fade-in zoom-in-95 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-3xl border border-line bg-white shadow-2xl"
       >
         {/* Encabezado */}
         <div className="border-b border-line bg-surface-2/60 px-6 py-4">

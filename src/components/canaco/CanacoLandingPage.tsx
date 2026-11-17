@@ -1045,7 +1045,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {modalAdminOpen && (
         <div className="backdrop-blur-xs animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 duration-200">
-          <div className="w-full max-w-md rounded-2xl border border-henequen-arena bg-white p-6 shadow-pieza sm:p-8">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-henequen-arena bg-white p-6 shadow-pieza sm:p-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CanacoLogo variant="symbol" className="h-7 w-7 text-henequen-anil" />

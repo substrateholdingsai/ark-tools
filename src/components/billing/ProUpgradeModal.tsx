@@ -35,7 +35,7 @@ export function ProUpgradeModal({
 
   return (
     <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="relative w-full max-w-lg rounded-3xl border border-amber-300/60 bg-surface p-6 shadow-2xl sm:p-8">
+      <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl border border-amber-300/60 bg-surface p-6 shadow-2xl sm:p-8">
         {/* Botón cerrar */}
         <button
           type="button"
@@ -46,7 +46,7 @@ export function ProUpgradeModal({
         </button>
 
         {/* Encabezado */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 pr-8">
           <span className="inline-flex items-center gap-1 rounded-full border border-gold/40 bg-gold/10 px-3 py-1 font-orbitron text-[10px] font-bold uppercase tracking-wider text-navy">
             <Sparkles className="h-3 w-3 text-gold-dark" />
             Plan Despacho Pro
@@ -125,7 +125,7 @@ export function ProUpgradeModal({
         </div>
 
         {/* Tarjeta de Precio */}
-        <div className="mt-6 flex items-center justify-between rounded-2xl border border-line bg-surface-2 p-4">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface-2 p-4">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-wider text-muted">
               Inversión Mensual
