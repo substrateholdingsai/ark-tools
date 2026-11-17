@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS canaco_comms_jobs (
   status TEXT NOT NULL,
   cost_estimate_json TEXT,
   preview_json TEXT,
+  preview_expires_at TEXT,
   detail_json TEXT,
   receipt_json TEXT,
   draft_json TEXT NOT NULL,

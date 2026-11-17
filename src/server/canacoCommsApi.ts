@@ -73,6 +73,44 @@ function serialize(value: unknown): string {
   return serialized;
 }
 
+function previewExpiry(data: unknown, startedAt: number): string | null {
+  const response = objectValue(data);
+  const job = objectValue(response.job);
+  const preview = objectValue(response.preview ?? job.preview ?? data);
+  const ttl = preview.preview_ttl ?? response.preview_ttl;
+  let expiresAt: number;
+  if (typeof ttl === 'number' && Number.isFinite(ttl)) {
+    expiresAt = ttl > 1_000_000_000_000 ? ttl : startedAt + ttl * 1000;
+  } else if (typeof ttl === 'string' && ttl.trim()) {
+    const numeric = Number(ttl);
+    expiresAt = Number.isFinite(numeric)
+      ? numeric > 1_000_000_000_000
+        ? numeric
+        : startedAt + numeric * 1000
+      : Date.parse(ttl);
+  } else {
+    return null;
+  }
+  return Number.isFinite(expiresAt) && Math.abs(expiresAt) <= 8.64e15
+    ? new Date(expiresAt).toISOString()
+    : null;
+}
+
+function canonicalReceipt(data: unknown, jobId: string, tenantId: string): unknown {
+  const receipt = objectValue(data);
+  if (
+    receipt.job_id !== jobId ||
+    receipt.tenant_id !== tenantId ||
+    !Array.isArray(receipt.results) ||
+    !receipt.summary ||
+    typeof receipt.summary !== 'object' ||
+    Array.isArray(receipt.summary)
+  ) {
+    throw new Error('El recibo de Sales no corresponde al trabajo o tiene formato inválido.');
+  }
+  return data;
+}
+
 function toPublicJob(row: StoredJob) {
   return {
     job_id: row.job_id,
@@ -171,14 +209,15 @@ async function saveDispatch(
   body: DispatchBody,
   audienceSize: number,
   draftBody: Record<string, unknown>,
-  data: unknown
+  data: unknown,
+  startedAt: number
 ): Promise<void> {
   const db = env.ARK_TOOLS_DB;
   const id = jobIdFrom(data);
   if (!db || !id) throw new Error('La respuesta del worker no incluye job_id.');
   const response = objectValue(data);
   const job = objectValue(response.job);
-  const preview = response.preview ?? job.preview ?? null;
+  const preview = response.preview ?? job.preview ?? data;
   const costEstimate = response.cost_estimate ?? job.cost_estimate ?? null;
   const status = responseStatus(data, 'pending_approval');
   const channel = String(body.channel);
@@ -188,12 +227,13 @@ async function saveDispatch(
     .prepare(
       `INSERT INTO canaco_comms_jobs
          (job_id, tenant_id, idempotency_key, channel, audience_size, status,
-          cost_estimate_json, preview_json, detail_json, draft_json, created_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          cost_estimate_json, preview_json, preview_expires_at, detail_json, draft_json, created_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(job_id) DO UPDATE SET
          status = excluded.status,
          cost_estimate_json = excluded.cost_estimate_json,
          preview_json = excluded.preview_json,
+         preview_expires_at = excluded.preview_expires_at,
          detail_json = excluded.detail_json,
          draft_json = excluded.draft_json,
          updated_at = CURRENT_TIMESTAMP`
@@ -207,6 +247,7 @@ async function saveDispatch(
       status,
       costEstimate == null ? null : serialize(costEstimate),
       preview == null ? null : serialize(preview),
+      previewExpiry(data, startedAt),
       serialize(data),
       serialize(draftBody),
       principal.email
@@ -366,6 +407,7 @@ export async function handleCanacoCommsApiRequest(
         tenant_id: config.tenantId,
         audience: { contact_ids: allowedIds },
       };
+      const startedAt = Date.now();
       const { response, data } = await forward(
         config,
         '/api/internal/campaigns/dispatch',
@@ -380,7 +422,8 @@ export async function handleCanacoCommsApiRequest(
         body,
         allowedIds.length,
         workerBody,
-        data
+        data,
+        startedAt
       );
       return json(data, corsHeaders, response.status);
     } catch (error) {
@@ -410,11 +453,16 @@ export async function handleCanacoCommsApiRequest(
   try {
     const stored = await db
       .prepare(
-        `SELECT job_id, draft_json, status FROM canaco_comms_jobs
+        `SELECT job_id, draft_json, status, preview_expires_at FROM canaco_comms_jobs
          WHERE job_id = ? AND tenant_id = ? LIMIT 1`
       )
       .bind(jobId, config.tenantId)
-      .first<{ job_id: string; draft_json: string | null; status: string }>();
+      .first<{
+        job_id: string;
+        draft_json: string | null;
+        status: string;
+        preview_expires_at: string | null;
+      }>();
     if (!stored)
       return json({ error: 'Trabajo no encontrado en el CRM CANACO.' }, corsHeaders, 404);
 
@@ -425,18 +473,26 @@ export async function handleCanacoCommsApiRequest(
         `/api/internal/campaigns/${encodeURIComponent(jobId)}`,
         'GET'
       );
-      if (response.ok) {
-        const receipt = nestedReceipt(data);
-        await updateJob(
-          env,
-          config.tenantId,
-          jobId,
-          responseStatus(data, 'pending_approval'),
-          data,
-          receipt
-        );
-      }
-      return json(data, corsHeaders, response.status);
+      if (!response.ok) return json(data, corsHeaders, response.status);
+      const receiptResponse = await forward(
+        config,
+        `/api/internal/campaigns/${encodeURIComponent(jobId)}/receipt`,
+        'POST',
+        {}
+      );
+      if (!receiptResponse.response.ok)
+        return json(receiptResponse.data, corsHeaders, receiptResponse.response.status);
+      const receipt = canonicalReceipt(receiptResponse.data, jobId, config.tenantId);
+      const detail = { ...objectValue(data), receipt };
+      await updateJob(
+        env,
+        config.tenantId,
+        jobId,
+        responseStatus(data, 'pending_approval'),
+        detail,
+        receipt
+      );
+      return json(detail, corsHeaders, response.status);
     }
     if (!action || request.method !== 'POST') {
       return json({ error: 'Método no permitido para este trabajo.' }, corsHeaders, 405);
@@ -458,6 +514,7 @@ export async function handleCanacoCommsApiRequest(
           409
         );
       }
+      const startedAt = Date.now();
       const { response, data } = await forward(
         config,
         '/api/internal/campaigns/dispatch',
@@ -465,6 +522,9 @@ export async function handleCanacoCommsApiRequest(
         draftBody
       );
       if (response.ok) {
+        if (jobIdFrom(data) !== jobId) {
+          throw new Error('La vista previa de Sales no corresponde al trabajo.');
+        }
         await saveDispatch(
           env,
           config.tenantId,
@@ -484,25 +544,34 @@ export async function handleCanacoCommsApiRequest(
                 ).length
               : 1,
           draftBody as Record<string, unknown>,
-          data
+          data,
+          startedAt
         );
       }
       return json(data, corsHeaders, response.status);
     }
 
-    let body: unknown = {};
-    if (action === 'receipt') {
-      try {
-        body = await request.json();
-      } catch {
-        return json({ error: 'El recibo debe ser JSON válido.' }, corsHeaders, 400);
+    if (action === 'approve') {
+      const expiry = stored.preview_expires_at ? Date.parse(stored.preview_expires_at) : NaN;
+      if (
+        stored.status !== 'pending_approval' ||
+        !Number.isFinite(expiry) ||
+        expiry <= Date.now()
+      ) {
+        return json(
+          {
+            error: 'La vista previa no está vigente o el trabajo no está pendiente de aprobación.',
+          },
+          corsHeaders,
+          409
+        );
       }
     }
     const { response, data } = await forward(
       config,
       `/api/internal/campaigns/${encodeURIComponent(jobId)}/${action}`,
       'POST',
-      body
+      {}
     );
     if (!response.ok) return json(data, corsHeaders, response.status);
 
@@ -520,17 +589,11 @@ export async function handleCanacoCommsApiRequest(
       jobId,
       responseStatus(data, fallbackStatus),
       data,
-      action === 'receipt' ? body : undefined
+      action === 'receipt' ? canonicalReceipt(data, jobId, config.tenantId) : undefined
     );
     return json(data, corsHeaders, response.status);
   } catch (error) {
     console.error('[CANACO Comms] Job request failed', error);
     return json({ error: 'No se pudo completar la operación del trabajo.' }, corsHeaders, 502);
   }
-}
-
-function nestedReceipt(value: unknown): unknown | undefined {
-  const response = objectValue(value);
-  const job = objectValue(response.job);
-  return response.receipt ?? job.receipt;
 }

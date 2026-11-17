@@ -392,6 +392,10 @@ El proxy Ledger usa `SALES_WORKER_URL`, `SALES_WORKER_INTERNAL_KEY` y
 `CANACO_SALES_TENANT_ID` debe coincidir con un tenant allowlisted en Ark Sales. La migración
 `0017_canaco_comms_jobs.sql` crea el índice CRM y el almacenamiento de recibos; queda pendiente de
 aplicación y no se ejecutó durante esta construcción.
+El proxy guarda únicamente recibos obtenidos de Sales y verifica en Ledger el vencimiento absoluto
+de la vista previa antes de reenviar una aprobación.
+La integración aún requiere reconciliarse con el contrato de Sales: el despacho actual de Ledger
+no incluye todos los campos obligatorios y el dry-run de Sales no crea un trabajo aprobable.
 
 ---
 
