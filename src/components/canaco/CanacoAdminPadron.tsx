@@ -7,7 +7,7 @@
  * Usuario Administrador Designado: horus.i2d@gmail.com
  */
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   Download,
   RefreshCw,
@@ -75,6 +75,20 @@ interface LeadRow {
   notas: string | null;
 }
 
+interface Delegacion {
+  id: string;
+  nombre: string;
+  registros: number;
+  socios_activos: number;
+  con_contacto: number;
+}
+
+interface DelegacionesData {
+  delegaciones: Delegacion[];
+  asignaciones: Array<{ lead_id: string; delegacion_id: string }>;
+  sinAsignar: number;
+}
+
 interface ArcoRequestRow {
   id: string;
   requester_email: string;
@@ -118,6 +132,15 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
   const auth = useOptionalAuth();
   const isSuperAdmin = auth?.platformRole === 'super_admin';
   const isPavel = auth?.user?.email?.toLowerCase() === 'pavel@arksystems.site';
+  const delegacionesHabilitadas =
+    import.meta.env.VITE_CANACO_DELEGACIONES === 'true' &&
+    (isSuperAdmin ||
+      auth?.tenants.some((tenant) => tenant.id === 'canaco_merida' && tenant.role !== 'member'));
+  const [delegaciones, setDelegaciones] = useState<DelegacionesData | null>(null);
+  const [delegacionesError, setDelegacionesError] = useState<string | null>(null);
+  const [nombreDelegacion, setNombreDelegacion] = useState('');
+  const [filtroDelegacion, setFiltroDelegacion] = useState('todas');
+  const [guardandoDelegacion, setGuardandoDelegacion] = useState(false);
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
@@ -269,21 +292,87 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
   };
 
   // Cargar comercios del tenant CANACO
-  const cargarPadron = async () => {
+  const cargarPadron = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/leads?tenant=canaco_merida');
-      if (!res.ok) {
-        throw new Error('No se pudo consultar el CRM de CANACO.');
-      }
-      const data = (await res.json()) as { leads?: LeadRow[]; data?: LeadRow[] };
-      setLeads(data.leads || data.data || []);
+      const registros: LeadRow[] = [];
+      let offset = 0;
+      let page: LeadRow[];
+      do {
+        const res = await fetch(
+          delegacionesHabilitadas
+            ? `/api/admin/leads?tenant=canaco_merida&limit=100&offset=${offset}`
+            : '/api/admin/leads?tenant=canaco_merida'
+        );
+        if (!res.ok) throw new Error('No se pudo consultar el CRM de CANACO.');
+        const data = (await res.json()) as { leads?: LeadRow[] };
+        if (!Array.isArray(data.leads)) throw new Error('Respuesta inválida del CRM de CANACO.');
+        page = data.leads;
+        registros.push(...page);
+        offset += page.length;
+      } while (delegacionesHabilitadas && page.length === 100);
+      setLeads(registros);
       setLoadError(null);
     } catch (error) {
       setLeads([]);
       setLoadError(error instanceof Error ? error.message : 'No se pudo cargar el CRM de CANACO.');
     } finally {
       setLoading(false);
+    }
+  }, [delegacionesHabilitadas]);
+
+  const cargarDelegaciones = async () => {
+    try {
+      const response = await fetch('/api/canaco/delegaciones');
+      const data = (await response.json()) as DelegacionesData & { error?: string };
+      if (!response.ok) throw new Error(data.error || 'No se pudieron cargar las delegaciones.');
+      setDelegaciones(data);
+      setDelegacionesError(null);
+    } catch (error) {
+      setDelegacionesError(
+        error instanceof Error ? error.message : 'Error al cargar delegaciones.'
+      );
+    }
+  };
+
+  const crearDelegacion = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setGuardandoDelegacion(true);
+    try {
+      const response = await fetch('/api/canaco/delegaciones', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre: nombreDelegacion }),
+      });
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(data.error || 'No se pudo crear la delegación.');
+      setNombreDelegacion('');
+      await cargarDelegaciones();
+    } catch (error) {
+      setDelegacionesError(error instanceof Error ? error.message : 'Error al crear delegación.');
+    } finally {
+      setGuardandoDelegacion(false);
+    }
+  };
+
+  const asignarDelegacion = async (leadId: string, delegacionId: string) => {
+    setGuardandoDelegacion(true);
+    try {
+      const response = await fetch(
+        `/api/canaco/delegaciones/asignaciones/${encodeURIComponent(leadId)}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ delegacionId: delegacionId || null }),
+        }
+      );
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(data.error || 'No se pudo asignar la delegación.');
+      await cargarDelegaciones();
+    } catch (error) {
+      setDelegacionesError(error instanceof Error ? error.message : 'Error al asignar delegación.');
+    } finally {
+      setGuardandoDelegacion(false);
     }
   };
 
@@ -326,14 +415,23 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
 
   useEffect(() => {
     void cargarPadron();
+    if (delegacionesHabilitadas) void cargarDelegaciones();
     if (isSuperAdmin || auth?.user?.email?.toLowerCase() === 'horus.i2d@gmail.com') {
       void cargarSolicitudesArco();
     }
-  }, [auth?.user?.email, isSuperAdmin]);
+  }, [auth?.user?.email, isSuperAdmin, delegacionesHabilitadas, cargarPadron]);
 
   // KPIs
   const kpis = useMemo(() => {
-    const reportableLeads = leads.filter((lead) => lead.is_demo !== 1);
+    const reportableLeads = leads.filter((lead) => {
+      if (lead.is_demo === 1) return false;
+      const asignacion = delegaciones?.asignaciones.find((item) => item.lead_id === lead.id);
+      return (
+        filtroDelegacion === 'todas' ||
+        (filtroDelegacion === 'sin-asignar' && !asignacion) ||
+        asignacion?.delegacion_id === filtroDelegacion
+      );
+    });
     const stageCounts = reportableLeads.reduce(
       (counts, lead) => {
         const stage = lead.lifecycle_stage || 'prospecto';
@@ -366,7 +464,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     }, 0);
 
     return { total, activos, pendientes, recaudacion, carteraPendiente, stageCounts };
-  }, [leads]);
+  }, [leads, filtroDelegacion, delegaciones]);
 
   // Filtros
   const comerciosFiltrados = useMemo(() => {
@@ -390,9 +488,15 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         filtroSector === 'todos' ||
         (lead.especialidad && lead.especialidad.toLowerCase() === filtroSector.toLowerCase());
 
-      return matchTexto && matchEstatus && matchSector;
+      const asignacion = delegaciones?.asignaciones.find((item) => item.lead_id === lead.id);
+      const matchDelegacion =
+        filtroDelegacion === 'todas' ||
+        (filtroDelegacion === 'sin-asignar' && !asignacion) ||
+        asignacion?.delegacion_id === filtroDelegacion;
+
+      return matchTexto && matchEstatus && matchSector && matchDelegacion;
     });
-  }, [leads, busqueda, filtroEstatus, filtroSector]);
+  }, [leads, busqueda, filtroEstatus, filtroSector, filtroDelegacion, delegaciones]);
 
   // Exportar padrón a CSV (BOM UTF-8 para Excel)
   const handleExportCsv = () => {
@@ -658,9 +762,13 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
           <button
             type="button"
             onClick={() => setModalRecordatorioMasivoOpen(true)}
-            disabled={syncingArkangel}
+            disabled={syncingArkangel || filtroDelegacion !== 'todas'}
             className="shadow-xs inline-flex items-center gap-1.5 rounded-lg border border-amber-300/80 bg-amber-50 px-3.5 py-2 text-xs font-bold text-amber-900 transition hover:bg-amber-100 disabled:opacity-50"
-            title="Sincronizar los registros que pasen validación con el proveedor Arkangel"
+            title={
+              filtroDelegacion !== 'todas'
+                ? 'La sincronización no admite filtros por delegación.'
+                : 'Sincronizar los registros que pasen validación con el proveedor Arkangel'
+            }
             aria-label="Sincronizar registros"
           >
             <Radio
@@ -705,6 +813,76 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
             ✕
           </button>
         </div>
+      )}
+
+      {delegacionesHabilitadas && (
+        <section className="space-y-3 rounded-xl border border-henequen-arena bg-white p-4">
+          <h2 className="font-fraunces text-lg font-bold text-henequen-anil">Delegaciones</h2>
+          <p className="text-xs text-henequen-piedra">
+            Agrupaciones del CRM, independientes de los despachos. Los registros históricos no se
+            asignan automáticamente.
+          </p>
+          {delegacionesError && (
+            <p role="alert" className="text-xs text-red-700">
+              {delegacionesError}
+            </p>
+          )}
+          <form onSubmit={crearDelegacion} className="flex flex-wrap gap-2">
+            <label htmlFor="nombre-delegacion" className="sr-only">
+              Nombre de la delegación
+            </label>
+            <input
+              id="nombre-delegacion"
+              value={nombreDelegacion}
+              onChange={(event) => setNombreDelegacion(event.target.value)}
+              maxLength={120}
+              required
+              className="rounded-lg border border-henequen-arena px-3 py-2 text-xs"
+              placeholder="Nombre de la delegación"
+            />
+            <button
+              type="submit"
+              disabled={guardandoDelegacion}
+              className="rounded-lg bg-henequen-anil px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              Crear delegación
+            </button>
+          </form>
+          {delegaciones && (
+            <>
+              <label className="block text-xs font-semibold">
+                Filtrar por delegación
+                <select
+                  value={filtroDelegacion}
+                  onChange={(event) => setFiltroDelegacion(event.target.value)}
+                  className="ml-2 rounded-lg border border-henequen-arena px-2 py-1"
+                >
+                  <option value="todas">Todas</option>
+                  <option value="sin-asignar">Sin delegación ({delegaciones.sinAsignar})</option>
+                  {delegaciones.delegaciones.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {filtroDelegacion !== 'todas' && (
+                <p className="text-xs text-henequen-piedra">
+                  La sincronización masiva no admite filtros por delegación y está desactivada
+                  mientras se aplica este filtro.
+                </p>
+              )}
+              <ul className="space-y-1 text-xs">
+                {delegaciones.delegaciones.map((item) => (
+                  <li key={item.id}>
+                    {item.nombre}: {item.registros} registros · {item.socios_activos} en etapa socio
+                    activo · {item.con_contacto} con último contacto
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
       )}
 
       {/* ═══ TARJETAS DE KPIS ═══ */}
@@ -964,6 +1142,30 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                           <MapPin size={10} className="shrink-0" />
                           <span>{lead.ciudad || 'Mérida'}, Yucatán</span>
                         </div>
+                        {delegacionesHabilitadas && delegaciones && (
+                          <label className="mt-2 block text-[10px]">
+                            Delegación
+                            <select
+                              aria-label={`Delegación de ${lead.web || lead.id}`}
+                              value={
+                                delegaciones.asignaciones.find((item) => item.lead_id === lead.id)
+                                  ?.delegacion_id || ''
+                              }
+                              disabled={guardandoDelegacion}
+                              onChange={(event) =>
+                                void asignarDelegacion(lead.id, event.target.value)
+                              }
+                              className="ml-1 max-w-[150px] rounded border border-henequen-arena p-1"
+                            >
+                              <option value="">Sin delegación</option>
+                              {delegaciones.delegaciones.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.nombre}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                        )}
                       </td>
 
                       {/* Sector */}

@@ -349,7 +349,7 @@ Catálogo en `src/data/valores-vigentes/catalogo.ts` — **8 valores oficiales**
 
 ---
 
-## 6. Migraciones D1 (0001 → 0013)
+## 6. Migraciones D1 (0001 → 0016)
 
 Todas aplicadas en `ark_tools_db` en orden:
 
@@ -368,8 +368,21 @@ Todas aplicadas en `ark_tools_db` en orden:
 | 11  | `0011_billing_webhook_events.sql`      | billing_webhook_events                                                                                                  |
 | 12  | `0012_staypuft_audit_log.sql`          | staypuft_audit_log (bitácora inmutable operador StayPuft)                                                               |
 | 13  | `0013_staypuft_ai_telemetry.sql`       | staypuft_ai_telemetry (CREATE TABLE IF NOT EXISTS, idempotente; auto-create en runtime + try/catch, métricas nunca 500) |
+| 14  | `0014_canaco_lifecycle.sql`            | Ciclo de vida CANACO, pagos, consentimientos y solicitudes ARCO                                                         |
+| 15  | `0015_canaco_structured_employees.sql` | Datos estructurados de empleados CANACO                                                                                 |
+| 16  | `0016_canaco_delegaciones.sql`         | Delegaciones CANACO y asignaciones a registros del CRM                                                                  |
 
 > **No aplicar migraciones remotamente sin aprobación de Pavel.** Local only.
+
+### Delegaciones CANACO
+
+La migración `0016_canaco_delegaciones.sql` está aplicada en producción. Las delegaciones son
+agrupaciones del CRM, no despachos ni tenants; los registros históricos y nuevos pueden permanecer
+sin asignar hasta que un administrador los clasifique manualmente.
+La interfaz está oculta salvo que se compile con `VITE_CANACO_DELEGACIONES=true`. Solo
+superadministradores y miembros `owner` o `admin` del tenant CANACO pueden consultar y gestionar
+delegaciones; el servidor comprueba esos permisos. No define identidades de comunicación ni
+balances de créditos.
 
 ---
 

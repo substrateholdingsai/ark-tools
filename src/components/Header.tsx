@@ -125,6 +125,10 @@ export function Header({
   };
 
   const userInitials = (user?.fullName || user?.email || 'U').slice(0, 2).toUpperCase();
+  const canManageDelegaciones =
+    import.meta.env.VITE_CANACO_DELEGACIONES === 'true' &&
+    currentBrand.id === 'canaco_merida' &&
+    tenants.some((tenant) => tenant.id === 'canaco_merida' && tenant.role !== 'member');
 
   useEffect(() => {
     const loadBilling = async () => {
@@ -400,6 +404,7 @@ export function Header({
 
               {/* Botón Acceso Rápido Super Admin o Admin CANACO */}
               {(platformRole === 'super_admin' ||
+                canManageDelegaciones ||
                 user?.email?.toLowerCase() === 'horus.i2d@gmail.com') && (
                 <button
                   type="button"

@@ -159,7 +159,11 @@ const navItems: NavItem[] = [
 // APP
 // ═════════════════════════════════════════════════════════════════
 export function App() {
-  const { isLoaded, platformRole, user, tenantId: activeTenantId } = useAuth();
+  const { isLoaded, platformRole, user, tenants, tenantId: activeTenantId } = useAuth();
+  const canManageDelegaciones =
+    import.meta.env.VITE_CANACO_DELEGACIONES === 'true' &&
+    currentBrand.id === 'canaco_merida' &&
+    tenants.some((tenant) => tenant.id === 'canaco_merida' && tenant.role !== 'member');
   const { loadDemoData } = useExpediente();
   const [activeTool, setActiveTool] = useState<ToolId>(() => {
     if (typeof window === 'undefined') return 'dashboard';
@@ -238,7 +242,11 @@ export function App() {
     }
 
     if (id === 'admin') {
-      if (platformRole === 'super_admin' || user?.email?.toLowerCase() === 'horus.i2d@gmail.com') {
+      if (
+        platformRole === 'super_admin' ||
+        user?.email?.toLowerCase() === 'horus.i2d@gmail.com' ||
+        canManageDelegaciones
+      ) {
         navigateTo('admin');
       }
       return;

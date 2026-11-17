@@ -15,6 +15,7 @@ import { authenticateRequest, handleAuthApiRequest } from './server/auth';
 import { handleAdminApiRequest } from './server/adminApi';
 import { handleLeadsApiRequest } from './server/leadsApi';
 import { handleAfiliacionesApiRequest } from './server/afiliacionesApi';
+import { handleCanacoDelegacionesApi } from './server/canacoDelegacionesApi';
 import { handleCanacoArkangelSyncApi } from './server/canacoArkangelSync';
 import { handleInvitationsApiRequest } from './server/invitationsApi';
 import { handleAlegraApiRequest } from './server/alegra/alegraApi';
@@ -343,6 +344,16 @@ async function handleApiRequest(
   const authResponse = await handleAuthApiRequest(request, env, corsHeaders, authPrincipal);
   if (authResponse) {
     return finalizeApiResponse(authResponse);
+  }
+
+  const delegacionesResponse = await handleCanacoDelegacionesApi(
+    request,
+    env,
+    corsHeaders,
+    authPrincipal
+  );
+  if (delegacionesResponse) {
+    return finalizeApiResponse(delegacionesResponse);
   }
 
   const afiliacionesResponse = await handleAfiliacionesApiRequest(
