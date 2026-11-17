@@ -37,6 +37,7 @@ import { CanacoLogo } from '@/components/brand/CanacoLogo';
 import { ConstanciaSocioModal } from './ConstanciaSocioModal';
 import { VentanillaAfiliacionModal } from './VentanillaAfiliacionModal';
 import { AdminExpedienteModal } from './AdminExpedienteModal';
+import { CanacoComunicaciones } from './CanacoComunicaciones';
 import type { SocioCanacoRegistro } from './types';
 import {
   calcularCuotaAfiliacion,
@@ -143,6 +144,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
   const [guardandoDelegacion, setGuardandoDelegacion] = useState(false);
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState<'padron' | 'comunicaciones'>('padron');
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstatus, setFiltroEstatus] = useState<string>('todos');
   const [filtroSector, setFiltroSector] = useState<string>('todos');
@@ -181,6 +183,11 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     tipo: 'success' | 'error';
     mensaje: string;
   } | null>(null);
+  const canManageComms =
+    isPavel ||
+    auth?.user?.email?.toLowerCase() === 'horus.i2d@gmail.com' ||
+    auth?.tenants.some((tenant) => tenant.id === 'canaco_merida' && tenant.role !== 'member') ||
+    false;
 
   // Enviar al proveedor solo los registros que pasen la validación del servidor.
   const handleSyncArkangel = async () => {
@@ -587,6 +594,18 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     setSocioSeleccionado(socioObj);
   };
 
+  if (activeSection === 'comunicaciones') {
+    return (
+      <CanacoComunicaciones
+        leads={leads}
+        delegaciones={delegaciones?.delegaciones || []}
+        asignaciones={delegaciones?.asignaciones || []}
+        canManage={canManageComms}
+        onBack={() => setActiveSection('padron')}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6 font-inter text-henequen-grafito">
       {/* ═══ BARRA DE UBICACIÓN Y CONMUTADOR DE SECCIÓN CAMERAL ═══ */}
@@ -740,6 +759,17 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          {canManageComms && (
+            <button
+              type="button"
+              onClick={() => setActiveSection('comunicaciones')}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-henequen-anil/30 bg-white px-3.5 py-2 text-xs font-bold text-henequen-anil transition hover:bg-henequen-sisal/50"
+            >
+              <MessageSquare size={13} />
+              <span>Comunicaciones</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={cargarPadron}

@@ -26,6 +26,13 @@ CLIP_ENVIRONMENT=sandbox # 'sandbox' | 'production'
 # CONEKTA_WEBHOOK_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----"
 # CONEKTA_ENVIRONMENT=sandbox # 'sandbox' | 'production'
 
+# Proxy Ledger → Ark Sales para comunicaciones CANACO.
+# Configurar la URL, el ID tenant allowlisted en Sales y el secreto solo en el Worker.
+# No proporcionar `SALES_WORKER_INTERNAL_KEY` a la SPA ni a variables VITE_*.
+# SALES_WORKER_URL=https://sales-worker.example.com
+# SALES_WORKER_INTERNAL_KEY=replace_with_worker_secret
+# CANACO_SALES_TENANT_ID=tenant_id_configured_in_sales_allowlist
+
 # Si en el futuro se integra analytics
 # POSTHOG_API_KEY=phc_...
 

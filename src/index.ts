@@ -17,6 +17,7 @@ import { handleLeadsApiRequest } from './server/leadsApi';
 import { handleAfiliacionesApiRequest } from './server/afiliacionesApi';
 import { handleCanacoDelegacionesApi } from './server/canacoDelegacionesApi';
 import { handleCanacoArkangelSyncApi } from './server/canacoArkangelSync';
+import { handleCanacoCommsApiRequest } from './server/canacoCommsApi';
 import { handleInvitationsApiRequest } from './server/invitationsApi';
 import { handleAlegraApiRequest } from './server/alegra/alegraApi';
 import { generateLlmsTxt, generateLlmsFullTxt, generateRobotsTxt } from './server/llmsTxt';
@@ -59,6 +60,10 @@ export interface Env {
   CLIP_PAYMENT_URL?: string;
   PRO_PRICE_MXN?: string;
   CANACO_PRICING_CONFIRMED?: string;
+  // Ledger-side proxy to Ark Sales. Keep the internal key in Worker secrets only.
+  SALES_WORKER_URL?: string;
+  SALES_WORKER_INTERNAL_KEY?: string;
+  CANACO_SALES_TENANT_ID?: string;
 
   // Email transaccional (Telnyx / Resend)
   EMAIL_PROVIDER?: 'telnyx' | 'resend';
@@ -344,6 +349,16 @@ async function handleApiRequest(
   const authResponse = await handleAuthApiRequest(request, env, corsHeaders, authPrincipal);
   if (authResponse) {
     return finalizeApiResponse(authResponse);
+  }
+
+  const canacoCommsResponse = await handleCanacoCommsApiRequest(
+    request,
+    env,
+    corsHeaders,
+    authPrincipal
+  );
+  if (canacoCommsResponse) {
+    return finalizeApiResponse(canacoCommsResponse);
   }
 
   const delegacionesResponse = await handleCanacoDelegacionesApi(

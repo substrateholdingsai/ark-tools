@@ -349,9 +349,9 @@ Catálogo en `src/data/valores-vigentes/catalogo.ts` — **8 valores oficiales**
 
 ---
 
-## 6. Migraciones D1 (0001 → 0016)
+## 6. Migraciones D1 (0001 → 0017)
 
-Todas aplicadas en `ark_tools_db` en orden:
+Las migraciones `0001`–`0016` están aplicadas en `ark_tools_db`; `0017` está pendiente:
 
 | #   | Archivo                                | Tabla / propósito                                                                                                       |
 | --- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -371,6 +371,7 @@ Todas aplicadas en `ark_tools_db` en orden:
 | 14  | `0014_canaco_lifecycle.sql`            | Ciclo de vida CANACO, pagos, consentimientos y solicitudes ARCO                                                         |
 | 15  | `0015_canaco_structured_employees.sql` | Datos estructurados de empleados CANACO                                                                                 |
 | 16  | `0016_canaco_delegaciones.sql`         | Delegaciones CANACO y asignaciones a registros del CRM                                                                  |
+| 17  | `0017_canaco_comms_jobs.sql`           | Índice CRM de trabajos de comunicaciones CANACO y recibos del worker                                                    |
 
 > **No aplicar migraciones remotamente sin aprobación de Pavel.** Local only.
 
@@ -383,6 +384,14 @@ La interfaz está oculta salvo que se compile con `VITE_CANACO_DELEGACIONES=true
 superadministradores y miembros `owner` o `admin` del tenant CANACO pueden consultar y gestionar
 delegaciones; el servidor comprueba esos permisos. No define identidades de comunicación ni
 balances de créditos.
+
+### Comunicaciones CANACO
+
+El proxy Ledger usa `SALES_WORKER_URL`, `SALES_WORKER_INTERNAL_KEY` y
+`CANACO_SALES_TENANT_ID` desde la configuración del Worker; el secreto nunca se expone a la SPA.
+`CANACO_SALES_TENANT_ID` debe coincidir con un tenant allowlisted en Ark Sales. La migración
+`0017_canaco_comms_jobs.sql` crea el índice CRM y el almacenamiento de recibos; queda pendiente de
+aplicación y no se ejecutó durante esta construcción.
 
 ---
 
