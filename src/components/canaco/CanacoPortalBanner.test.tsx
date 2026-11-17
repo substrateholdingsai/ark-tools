@@ -34,6 +34,25 @@ describe('CANACO SERVYTUR Mérida — Componentes de Ventanilla & Banner HENEQU�
     expect(screen.getByText('Datos del Negocio')).toBeInTheDocument();
   });
 
+  it('bloquea el desplazamiento del fondo y restaura el estilo al cerrar o desmontar', () => {
+    document.body.style.overflow = 'scroll';
+    const { rerender, unmount } = render(
+      <VentanillaAfiliacionModal isOpen={false} onClose={() => {}} />
+    );
+    expect(document.body.style.overflow).toBe('scroll');
+
+    rerender(<VentanillaAfiliacionModal isOpen={true} onClose={() => {}} />);
+    expect(document.body.style.overflow).toBe('hidden');
+
+    rerender(<VentanillaAfiliacionModal isOpen={false} onClose={() => {}} />);
+    expect(document.body.style.overflow).toBe('scroll');
+
+    rerender(<VentanillaAfiliacionModal isOpen={true} onClose={() => {}} />);
+    unmount();
+    expect(document.body.style.overflow).toBe('scroll');
+    document.body.style.overflow = '';
+  });
+
   it('mantiene accesible el aviso de privacidad desde la captura de datos', () => {
     render(<CanacoPortalBanner />);
     fireEvent.click(screen.getByRole('button', { name: /Solicitar seguimiento de afiliación/i }));
