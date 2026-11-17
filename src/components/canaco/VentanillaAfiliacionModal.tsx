@@ -420,8 +420,8 @@ export function VentanillaAfiliacionModal({
   };
 
   return (
-    <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overscroll-contain bg-black/60 p-3 sm:p-6">
-      <div className="relative max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-henequen-arena bg-henequen-cal p-4 font-inter text-henequen-grafito shadow-2xl sm:max-h-[calc(100dvh-3rem)] sm:p-8">
+    <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-start justify-center overflow-y-auto overscroll-contain bg-black/60 p-3 sm:p-6">
+      <div className="relative my-auto max-h-[calc(100vh-1.5rem)] w-full max-w-2xl overflow-y-auto overscroll-contain rounded-2xl border border-henequen-arena bg-henequen-cal p-4 font-inter text-henequen-grafito shadow-2xl supports-[height:100dvh]:max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-3rem)] sm:p-8 sm:supports-[height:100dvh]:max-h-[calc(100dvh-3rem)]">
         {/* Cabecera institucional HENEQUÉN */}
         <div className="flex items-start justify-between border-b border-henequen-arena pb-5">
           <div className="flex items-center gap-3">
