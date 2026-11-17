@@ -202,6 +202,67 @@ async function eligibleContactIds(
   return requestedIds.filter((id) => eligible.has(id));
 }
 
+async function salesContactIds(
+  env: Env,
+  tenantId: string,
+  leadIds: string[]
+): Promise<string[] | null> {
+  const db = env.ARK_TOOLS_DB;
+  if (!db) throw new Error('D1 no está disponible para validar los vínculos.');
+  const mappings = new Map<string, string>();
+  for (let offset = 0; offset < leadIds.length; offset += SQLITE_BIND_BATCH) {
+    const batch = leadIds.slice(offset, offset + SQLITE_BIND_BATCH);
+    const placeholders = batch.map(() => '?').join(', ');
+    const result = await db
+      .prepare(
+        `SELECT ledger_lead_id, sales_contact_id FROM canaco_comms_contact_mappings
+         WHERE tenant_id = ? AND ledger_lead_id IN (${placeholders})`
+      )
+      .bind(tenantId, ...batch)
+      .all<{ ledger_lead_id: string; sales_contact_id: string }>();
+    for (const row of result.results || []) mappings.set(row.ledger_lead_id, row.sales_contact_id);
+  }
+  const mappedIds: string[] = [];
+  for (const id of leadIds) {
+    const mapped = mappings.get(id);
+    if (!mapped) return null;
+    mappedIds.push(mapped);
+  }
+  return mappedIds;
+}
+
+async function jobIdFor(tenantId: string, idempotencyKey: string): Promise<string> {
+  const bytes = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(JSON.stringify([tenantId, idempotencyKey]))
+  );
+  return `canaco_${Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, '0')).join('')}`;
+}
+
+async function validatedDraft(
+  env: Env,
+  tenantId: string,
+  value: unknown
+): Promise<Record<string, unknown> | null> {
+  const draft = objectValue(value);
+  const ids = draft.ledger_contact_ids;
+  const audience = objectValue(draft.audience);
+  if (
+    !Array.isArray(ids) ||
+    ids.length === 0 ||
+    ids.some((id) => typeof id !== 'string') ||
+    !Array.isArray(audience.contact_ids)
+  ) {
+    return null;
+  }
+  const eligible = await eligibleContactIds(env, tenantId, ids);
+  if (eligible.length !== ids.length) return null;
+  const mapped = await salesContactIds(env, tenantId, ids);
+  if (!mapped || JSON.stringify(mapped) !== JSON.stringify(audience.contact_ids)) return null;
+  const { ledger_contact_ids: _ledgerIds, ...workerBody } = draft;
+  return workerBody;
+}
+
 async function saveDispatch(
   env: Env,
   tenantId: string,
@@ -314,7 +375,11 @@ export async function handleCanacoCommsApiRequest(
 
   if (url.pathname === `${BASE_PATH}/templates` && request.method === 'GET') {
     try {
-      const { response, data } = await forward(config, '/templates', 'GET');
+      const { response, data } = await forward(
+        config,
+        `/api/internal/campaigns/templates?tenant_id=${encodeURIComponent(config.tenantId)}&status=approved`,
+        'GET'
+      );
       return json(data, corsHeaders, response.status);
     } catch (error) {
       console.error('[CANACO Comms] Sales templates request failed', error);
@@ -398,14 +463,29 @@ export async function handleCanacoCommsApiRequest(
           400
         );
       }
-      const draftFields: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(body)) {
-        if (key !== 'contact_ids') draftFields[key] = value;
+      const mappedIds = await salesContactIds(env, config.tenantId, allowedIds);
+      if (!mappedIds) {
+        return json(
+          { error: 'Hay contactos sin vínculo explícito con Sales. No se creó el trabajo.' },
+          corsHeaders,
+          409
+        );
       }
+      const message =
+        channel === 'whatsapp'
+          ? { template_id: body.template_id, variables: body.variables }
+          : channel === 'email'
+            ? { subject: body.subject, body: body.body }
+            : { script: body.script };
       const workerBody = {
-        ...draftFields,
+        job_id: await jobIdFor(config.tenantId, idempotencyKey),
+        idempotency_key: idempotencyKey,
         tenant_id: config.tenantId,
-        audience: { contact_ids: allowedIds },
+        sender_brand: 'CANACO Mérida',
+        channel: channel === 'voice_ai' ? 'voice' : channel,
+        audience: { mode: 'explicit', contact_ids: mappedIds },
+        message,
+        dry_run: true,
       };
       const startedAt = Date.now();
       const { response, data } = await forward(
@@ -421,7 +501,7 @@ export async function handleCanacoCommsApiRequest(
         principal,
         body,
         allowedIds.length,
-        workerBody,
+        { ...workerBody, ledger_contact_ids: allowedIds },
         data,
         startedAt
       );
@@ -474,16 +554,29 @@ export async function handleCanacoCommsApiRequest(
         'GET'
       );
       if (!response.ok) return json(data, corsHeaders, response.status);
-      const receiptResponse = await forward(
-        config,
-        `/api/internal/campaigns/${encodeURIComponent(jobId)}/receipt`,
-        'POST',
-        {}
-      );
-      if (!receiptResponse.response.ok)
-        return json(receiptResponse.data, corsHeaders, receiptResponse.response.status);
-      const receipt = canonicalReceipt(receiptResponse.data, jobId, config.tenantId);
-      const detail = { ...objectValue(data), receipt };
+      let receipt: unknown | undefined;
+      let receiptError: string | undefined;
+      try {
+        const receiptResponse = await forward(
+          config,
+          `/api/internal/campaigns/${encodeURIComponent(jobId)}/receipt`,
+          'POST',
+          {}
+        );
+        if (!receiptResponse.response.ok) {
+          throw new Error(
+            `Sales respondió ${receiptResponse.response.status} al consultar el recibo.`
+          );
+        }
+        receipt = canonicalReceipt(receiptResponse.data, jobId, config.tenantId);
+      } catch (error) {
+        console.error('[CANACO Comms] Sales receipt request failed', error);
+        receiptError = 'No se pudo consultar el recibo de Sales; los controles siguen disponibles.';
+      }
+      const detail = {
+        ...objectValue(data),
+        ...(receiptError ? { receipt_error: receiptError } : { receipt }),
+      };
       await updateJob(
         env,
         config.tenantId,
@@ -506,10 +599,11 @@ export async function handleCanacoCommsApiRequest(
           409
         );
       }
-      const draftBody = storedJson(stored.draft_json);
-      if (!draftBody || typeof draftBody !== 'object' || Array.isArray(draftBody)) {
+      const savedDraft = storedJson(stored.draft_json);
+      const draftBody = await validatedDraft(env, config.tenantId, savedDraft);
+      if (!draftBody) {
         return json(
-          { error: 'No hay borrador de vista previa guardado para este trabajo.' },
+          { error: 'La audiencia o sus vínculos ya no están vigentes. Crea un trabajo nuevo.' },
           corsHeaders,
           409
         );
@@ -543,7 +637,7 @@ export async function handleCanacoCommsApiRequest(
                     .contact_ids as unknown[]
                 ).length
               : 1,
-          draftBody as Record<string, unknown>,
+          objectValue(savedDraft),
           data,
           startedAt
         );
@@ -562,6 +656,13 @@ export async function handleCanacoCommsApiRequest(
           {
             error: 'La vista previa no está vigente o el trabajo no está pendiente de aprobación.',
           },
+          corsHeaders,
+          409
+        );
+      }
+      if (!(await validatedDraft(env, config.tenantId, storedJson(stored.draft_json)))) {
+        return json(
+          { error: 'La audiencia o sus vínculos ya no están vigentes. Crea un trabajo nuevo.' },
           corsHeaders,
           409
         );

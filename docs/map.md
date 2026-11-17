@@ -390,12 +390,21 @@ balances de créditos.
 El proxy Ledger usa `SALES_WORKER_URL`, `SALES_WORKER_INTERNAL_KEY` y
 `CANACO_SALES_TENANT_ID` desde la configuración del Worker; el secreto nunca se expone a la SPA.
 `CANACO_SALES_TENANT_ID` debe coincidir con un tenant allowlisted en Ark Sales. La migración
-`0017_canaco_comms_jobs.sql` crea el índice CRM y el almacenamiento de recibos; queda pendiente de
-aplicación y no se ejecutó durante esta construcción.
+`0017_canaco_comms_jobs.sql` crea el índice CRM, el almacenamiento de recibos y los vínculos
+explícitos entre leads Ledger y contactos Sales. Permanece pendiente de aplicación. Antes de usar
+comunicaciones, un administrador debe verificar y registrar cada vínculo por tenant en
+`canaco_comms_contact_mappings`; el proxy rechaza contactos sin vínculo y vuelve a comprobar
+consentimiento y vínculos antes de renovar o aprobar. No se infieren identidades por correo o teléfono.
 El proxy guarda únicamente recibos obtenidos de Sales y verifica en Ledger el vencimiento absoluto
 de la vista previa antes de reenviar una aprobación.
-La integración aún requiere reconciliarse con el contrato de Sales: el despacho actual de Ledger
-no incluye todos los campos obligatorios y el dry-run de Sales no crea un trabajo aprobable.
+Sales crea un trabajo pendiente con cada vista previa y el cron procesa únicamente trabajos
+aprobados. Voice AI está deshabilitado hasta que exista un proveedor real; SMS no está disponible.
+Si un proceso se interrumpe con un destino en `processing`, este no se reintenta automáticamente:
+operaciones debe investigar el resultado con el proveedor antes de cualquier intervención manual.
+La prueba de contrato entre repositorios usa SQLite en memoria y proveedores simulados; en Sales
+se ejecuta con `LEDGER_COMMS_PATH` apuntando al checkout Ledger. La puesta en marcha sigue requiriendo
+la allowlist del tenant, secretos, migraciones pendientes (Ledger 0017 y Sales 0027), vínculos
+verificados y despliegue de ambos workers. Nada de ello se ejecutó durante esta construcción.
 
 ---
 

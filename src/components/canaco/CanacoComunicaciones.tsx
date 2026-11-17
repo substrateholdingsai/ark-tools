@@ -68,7 +68,7 @@ type Section = 'jobs' | 'compose' | 'preview' | 'approval' | 'detail';
 const CHANNELS: Array<{ id: Channel; label: string }> = [
   { id: 'whatsapp', label: 'WhatsApp · Telnyx' },
   { id: 'email', label: 'Email · Resend' },
-  { id: 'voice_ai', label: 'Voice AI · Telnyx' },
+  { id: 'voice_ai', label: 'Voice AI · No disponible' },
 ];
 function asObject(value: unknown): Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -107,6 +107,11 @@ function templateVariables(value: unknown): Template['variables'] {
       typeof item === 'string' ||
       (item !== null && typeof item === 'object' && !Array.isArray(item))
   );
+}
+
+function templateJson(value: unknown): unknown {
+  if (typeof value !== 'string') return value;
+  return JSON.parse(value) as unknown;
 }
 
 function variableName(variable: Template['variables'][number]): string {
@@ -224,16 +229,16 @@ export function CanacoComunicaciones({
         .filter((row) => row.status === 'approved')
         .map((row) => ({
           id: String(row.id ?? row.template_id ?? ''),
-          name: String(row.name ?? row.friendly_name ?? row.id ?? ''),
-          language: String(row.language ?? row.locale ?? ''),
+          name: String(row.template_name ?? row.name ?? row.friendly_name ?? row.id ?? ''),
+          language: String(row.language_code ?? row.language ?? row.locale ?? ''),
           status: String(row.status ?? ''),
-          variables: templateVariables(row.variables),
+          variables: templateVariables(templateJson(row.variables_json ?? row.variables)),
           body: String(
             row.body ??
               row.content ??
-              (Array.isArray(row.components)
+              (Array.isArray(templateJson(row.components_json ?? row.components))
                 ? (
-                    row.components.find(
+                    (templateJson(row.components_json ?? row.components) as unknown[]).find(
                       (component) =>
                         asObject(component).type === 'BODY' &&
                         typeof asObject(component).text === 'string'
@@ -359,7 +364,7 @@ export function CanacoComunicaciones({
         ...job,
         status: String(nestedValue(data, 'status') ?? job.status),
         detail: data,
-        receipt: nestedValue(data, 'receipt') ?? job.receipt,
+        receipt: data.receipt_error ? null : (nestedValue(data, 'receipt') ?? job.receipt),
         preview: nestedValue(data, 'preview') ?? job.preview,
         cost_estimate: nestedValue(data, 'cost_estimate') ?? job.cost_estimate,
       };
@@ -451,10 +456,12 @@ export function CanacoComunicaciones({
     previewResponse !== null &&
     secondsRemaining !== null &&
     secondsRemaining > 0;
-  const displayReceipt =
-    selectedJob?.receipt ??
-    nestedValue(selectedJob?.detail, 'receipt') ??
-    nestedValue(selectedJob?.detail, 'summary');
+  const receiptError = asObject(selectedJob?.detail).receipt_error;
+  const displayReceipt = receiptError
+    ? null
+    : (selectedJob?.receipt ??
+      nestedValue(selectedJob?.detail, 'receipt') ??
+      nestedValue(selectedJob?.detail, 'summary'));
 
   return (
     <section className="space-y-5 rounded-2xl border border-henequen-arena bg-white p-4 text-henequen-grafito shadow-sm sm:p-6">
@@ -670,8 +677,9 @@ export function CanacoComunicaciones({
                     <button
                       type="button"
                       key={item.id}
+                      disabled={item.id === 'voice_ai'}
                       onClick={() => editDraft(() => setChannel(item.id))}
-                      className={`flex items-center justify-center gap-2 rounded-lg border p-2 text-xs font-semibold ${channel === item.id ? 'border-henequen-anil bg-henequen-anil text-white' : 'border-henequen-arena'}`}
+                      className={`flex items-center justify-center gap-2 rounded-lg border p-2 text-xs font-semibold disabled:opacity-50 ${channel === item.id ? 'border-henequen-anil bg-henequen-anil text-white' : 'border-henequen-arena'}`}
                     >
                       <Icon size={14} /> {item.label}
                     </button>
@@ -805,6 +813,10 @@ export function CanacoComunicaciones({
                 loading ||
                 selectedIds.length === 0 ||
                 (channel === 'whatsapp' && !templateId) ||
+                (channel === 'whatsapp' &&
+                  activeTemplate?.variables.some(
+                    (item) => !variables[variableName(item)]?.trim()
+                  )) ||
                 (channel === 'email' && (!subject.trim() || !messageBody.trim())) ||
                 (channel === 'voice_ai' && !messageBody.trim())
               }
@@ -1017,7 +1029,9 @@ export function CanacoComunicaciones({
             </div>
             <div className="rounded-xl border border-henequen-arena p-4">
               <h3 className="font-bold">Recibo · resultados y costo real</h3>
-              {displayReceipt ? (
+              {typeof receiptError === 'string' ? (
+                <p className="mt-2 text-xs text-red-700">{receiptError}</p>
+              ) : displayReceipt ? (
                 <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap break-words text-xs">
                   {formatExact(displayReceipt)}
                 </pre>

@@ -25,7 +25,7 @@ const owner: TenantMembership = {
   role: 'owner',
 };
 
-function setup(eligibleIds = ['contact-real']) {
+function setup(eligibleIds = ['contact-real'], mappedIds = eligibleIds) {
   const statements: Array<{ query: string; args: unknown[] }> = [];
   const storedJob = {
     job_id: 'job-123',
@@ -34,7 +34,8 @@ function setup(eligibleIds = ['contact-real']) {
       idempotency_key: 'idempotency-key-123456',
       dry_run: true,
       tenant_id: 'sales-tenant-123',
-      audience: { contact_ids: ['contact-real'] },
+      ledger_contact_ids: ['contact-real'],
+      audience: { mode: 'explicit', contact_ids: ['sales-contact-real'] },
     }),
     status: 'pending_approval',
     preview_expires_at: new Date(Date.now() + 60_000).toISOString() as string | null,
@@ -51,6 +52,14 @@ function setup(eligibleIds = ['contact-real']) {
         async all() {
           if (query.includes('SELECT id FROM leads_ark_tools')) {
             return { results: eligibleIds.map((id) => ({ id })) };
+          }
+          if (query.includes('SELECT ledger_lead_id, sales_contact_id')) {
+            return {
+              results: mappedIds.map((id) => ({
+                ledger_lead_id: id,
+                sales_contact_id: `sales-${id}`,
+              })),
+            };
           }
           return { results: [] };
         },
@@ -117,7 +126,7 @@ describe('CANACO Communications proxy', () => {
       audience: { contact_ids: string[] };
     };
     expect(forwarded.tenant_id).toBe('sales-tenant-123');
-    expect(forwarded.audience.contact_ids).toEqual(['contact-real']);
+    expect(forwarded.audience.contact_ids).toEqual(['sales-contact-real']);
     const eligibilityQuery = statements.find((statement) =>
       statement.query.includes('SELECT id FROM leads_ark_tools')
     )?.query;
@@ -144,6 +153,70 @@ describe('CANACO Communications proxy', () => {
 
     expect(response?.status).toBe(400);
     expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it('rejects unmapped contacts before calling Sales', async () => {
+    const { env } = setup(['contact-real'], []);
+    const response = await handleCanacoCommsApiRequest(
+      makeRequest('/api/comms/jobs', 'POST', {
+        channel: 'email',
+        contact_ids: ['contact-real'],
+        dry_run: true,
+        idempotency_key: 'idempotency-key-123456',
+      }),
+      env,
+      {},
+      admin
+    );
+    expect(response?.status).toBe(409);
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it('refuses approval if consent or the mapping has changed', async () => {
+    for (const [eligibleIds, mappedIds] of [
+      [[], []],
+      [['contact-real'], []],
+    ]) {
+      const { env } = setup(eligibleIds, mappedIds);
+      const response = await handleCanacoCommsApiRequest(
+        makeRequest('/api/comms/jobs/job-123/approve', 'POST'),
+        env,
+        {},
+        admin
+      );
+      expect(response?.status).toBe(409);
+      expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+    }
+  });
+
+  it('returns detail and allows pause when the Sales receipt is unavailable', async () => {
+    const { env, statements } = setup();
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(Response.json({ job_id: 'job-123', status: 'running' }))
+      .mockResolvedValueOnce(Response.json({ error: 'unavailable' }, { status: 503 }))
+      .mockResolvedValueOnce(Response.json({ job_id: 'job-123', status: 'paused' }));
+    const detail = await handleCanacoCommsApiRequest(
+      makeRequest('/api/comms/jobs/job-123'),
+      env,
+      {},
+      admin
+    );
+    expect(detail?.status).toBe(200);
+    expect(await detail?.json()).toMatchObject({
+      status: 'running',
+      receipt_error: expect.any(String),
+    });
+    const update = statements.find((statement) =>
+      statement.query.includes('UPDATE canaco_comms_jobs')
+    );
+    expect(update?.args[2]).toBeNull();
+    const pause = await handleCanacoCommsApiRequest(
+      makeRequest('/api/comms/jobs/job-123/pause', 'POST'),
+      env,
+      {},
+      admin
+    );
+    expect(pause?.status).toBe(200);
   });
 
   it('restricts admin actions and proxies approval only for CRM-known jobs', async () => {
@@ -185,7 +258,7 @@ describe('CANACO Communications proxy', () => {
     );
     expect(JSON.parse(String(previewRequest?.[1]?.body))).toMatchObject({
       idempotency_key: 'idempotency-key-123456',
-      audience: { contact_ids: ['contact-real'] },
+      audience: { mode: 'explicit', contact_ids: ['sales-contact-real'] },
     });
   });
 

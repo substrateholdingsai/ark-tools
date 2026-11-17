@@ -53,11 +53,11 @@ beforeEach(() => {
         templates: [
           {
             id: 'approved-template',
-            name: 'Aviso CANACO',
-            language: 'es_MX',
+            template_name: 'Aviso CANACO',
+            language_code: 'es_MX',
             status: 'approved',
-            variables: ['nombre'],
-            body: 'Hola {{nombre}}',
+            variables_json: '["nombre"]',
+            components_json: '[{"type":"BODY","text":"Hola {{nombre}}"}]',
           },
           {
             id: 'unapproved-template',
@@ -113,6 +113,10 @@ describe('CANACO Comunicaciones', () => {
     expect(screen.getByRole('option', { name: /Aviso CANACO · es_MX/i })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: /No aprobada/i })).not.toBeInTheDocument();
     fireEvent.change(templateSelect, { target: { value: 'approved-template' } });
+    expect(screen.getByText(/Hola Ana/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Voice AI · No disponible/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Generar vista previa dry-run/i })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Variable · nombre'), { target: { value: 'Ana' } });
 
     fireEvent.click(screen.getByRole('button', { name: /Generar vista previa dry-run/i }));
     await screen.findByText('3. Vista previa dry-run');
@@ -179,5 +183,48 @@ describe('CANACO Comunicaciones', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Revisar aprobación/i })).toBeDisabled();
     });
+  });
+
+  it('keeps pause available when the receipt cannot be retrieved', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/comms/templates') return Response.json({ templates: [] });
+      if (url === '/api/comms/jobs/job-1/pause' && init?.method === 'POST') {
+        return Response.json({ job_id: 'job-1', status: 'paused' });
+      }
+      if (url === '/api/comms/jobs/job-1') {
+        return Response.json({
+          job_id: 'job-1',
+          status: 'running',
+          receipt_error: 'No se pudo consultar el recibo de Sales.',
+        });
+      }
+      return Response.json({
+        jobs: [
+          {
+            job_id: 'job-1',
+            channel: 'email',
+            audience_size: 1,
+            status: 'running',
+            receipt: { stale: 'no mostrar' },
+            created_at: '2026-01-01T00:00:00Z',
+          },
+        ],
+      });
+    });
+    render(
+      <CanacoComunicaciones
+        leads={leads}
+        delegaciones={[]}
+        asignaciones={[]}
+        canManage
+        onBack={vi.fn()}
+      />
+    );
+    fireEvent.click(await screen.findByRole('button', { name: 'Detalle' }));
+    expect(await screen.findByText('No se pudo consultar el recibo de Sales.')).toBeInTheDocument();
+    expect(screen.queryByText(/no mostrar/)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Pausar' }));
+    expect(await screen.findByRole('button', { name: 'Reanudar' })).toBeEnabled();
   });
 });

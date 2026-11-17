@@ -19,3 +19,11 @@ CREATE TABLE IF NOT EXISTS canaco_comms_jobs (
 
 CREATE INDEX IF NOT EXISTS idx_canaco_comms_jobs_tenant_created
   ON canaco_comms_jobs(tenant_id, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS canaco_comms_contact_mappings (
+  tenant_id TEXT NOT NULL,
+  ledger_lead_id TEXT NOT NULL REFERENCES leads_ark_tools(id) ON DELETE CASCADE,
+  sales_contact_id TEXT NOT NULL,
+  PRIMARY KEY (tenant_id, ledger_lead_id),
+  UNIQUE (tenant_id, sales_contact_id)
+);
