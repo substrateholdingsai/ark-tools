@@ -110,6 +110,63 @@ afterEach(() => {
 });
 
 describe('CANACO Comunicaciones', () => {
+  it('filtra el historial al lead inicial y muestra su estado Sales', async () => {
+    fetchMock = vi.fn(async (url: any) => {
+      if (typeof url === 'string' && url === '/api/comms/jobs') {
+        return {
+          ok: true,
+          json: async () => ({
+            jobs: [
+              {
+                job_id: 'job-matched',
+                channel: 'whatsapp',
+                audience_size: 1,
+                status: 'approved',
+                cost_estimate: null,
+                preview: null,
+                detail: null,
+                receipt: null,
+                ledger_contact_ids: ['eligible'],
+                created_at: '2026-11-18T10:00:00.000Z',
+              },
+              {
+                job_id: 'job-other',
+                channel: 'email',
+                audience_size: 1,
+                status: 'pending',
+                cost_estimate: null,
+                preview: null,
+                detail: null,
+                receipt: null,
+                ledger_contact_ids: ['legacy-arkangel-only'],
+                created_at: '2026-11-18T09:00:00.000Z',
+              },
+            ],
+          }),
+        };
+      }
+      if (typeof url === 'string' && url.includes('/templates')) {
+        return { ok: true, json: async () => ({ templates: [] }) };
+      }
+      return { ok: true, json: async () => ({ jobs: [] }) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <CanacoComunicaciones
+        leads={leads}
+        delegaciones={[]}
+        asignaciones={[]}
+        canManage
+        onBack={vi.fn()}
+        initialLeadId="eligible"
+      />
+    );
+
+    expect(await screen.findByText(/Historial de comunicaciones:/i)).toBeInTheDocument();
+    expect(await screen.findByText('job-matched')).toBeInTheDocument();
+    expect(screen.queryByText('job-other')).not.toBeInTheDocument();
+  });
   it('excludes demo and non-consented contacts, previews worker values, and gates approval', async () => {
     render(
       <CanacoComunicaciones

@@ -52,6 +52,7 @@ interface CommsJob {
   preview: unknown;
   detail: unknown;
   receipt: unknown;
+  ledger_contact_ids?: string[];
   created_at: string;
 }
 
@@ -61,6 +62,7 @@ interface Props {
   asignaciones: Array<{ lead_id: string; delegacion_id: string }>;
   canManage: boolean;
   onBack: () => void;
+  initialLeadId?: string | null;
 }
 
 type Channel = 'whatsapp' | 'email' | 'voice_ai';
@@ -158,6 +160,7 @@ export function CanacoComunicaciones({
   asignaciones,
   canManage,
   onBack,
+  initialLeadId,
 }: Props) {
   const [section, setSection] = useState<Section>('jobs');
   const [jobs, setJobs] = useState<CommsJob[]>([]);
@@ -476,6 +479,10 @@ export function CanacoComunicaciones({
     : (selectedJob?.receipt ??
       nestedValue(selectedJob?.detail, 'receipt') ??
       nestedValue(selectedJob?.detail, 'summary'));
+  const initialLead = initialLeadId ? leads.find((lead) => lead.id === initialLeadId) : undefined;
+  const visibleJobs = initialLeadId
+    ? jobs.filter((job) => job.ledger_contact_ids?.includes(initialLeadId))
+    : jobs;
 
   return (
     <section className="space-y-5 rounded-2xl border border-henequen-arena bg-white p-4 text-henequen-grafito shadow-sm sm:p-6">
@@ -543,6 +550,14 @@ export function CanacoComunicaciones({
 
       {section === 'jobs' && (
         <div className="space-y-3">
+          {initialLead && (
+            <div className="rounded-xl border border-henequen-anil/20 bg-henequen-cal/60 p-3 text-xs">
+              <strong>Historial de comunicaciones:</strong> {initialLead.web || 'Socio'}
+              <span className="ml-2 font-semibold">
+                · Sales: {initialLead.sales_share_consent === 1 ? 'autorizado' : 'sin autorización'}
+              </span>
+            </div>
+          )}
           <div className="overflow-x-auto rounded-xl border border-henequen-arena">
             <table className="w-full min-w-[640px] text-left text-xs">
               <thead className="bg-henequen-cal text-henequen-piedra">
@@ -556,7 +571,7 @@ export function CanacoComunicaciones({
                 </tr>
               </thead>
               <tbody>
-                {jobs.map((job) => (
+                {visibleJobs.map((job) => (
                   <tr key={job.job_id} className="border-t border-henequen-arena">
                     <td className="p-3 font-mono">{job.job_id}</td>
                     <td className="p-3">
@@ -578,10 +593,12 @@ export function CanacoComunicaciones({
                     </td>
                   </tr>
                 ))}
-                {!jobs.length && !loading && (
+                {!visibleJobs.length && !loading && (
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-henequen-piedra">
-                      No hay trabajos registrados en el CRM.
+                      {initialLead
+                        ? 'No hay trabajos de comunicaciones registrados para este socio.'
+                        : 'No hay trabajos registrados en el CRM.'}
                     </td>
                   </tr>
                 )}
