@@ -60,6 +60,7 @@ interface LeadRow {
   consent_accepted_at?: string | null;
   consent_medium?: string | null;
   arkangel_share_consent?: number | null;
+  sales_share_consent?: number | null;
   origin?: string | null;
   payment_environment?: string | null;
   canonical_rfc?: string | null;

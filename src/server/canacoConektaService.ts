@@ -14,6 +14,7 @@ import { rateLimit } from './auth';
 import { calcularCuotaAfiliacion } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico } from '@/components/canaco/types';
 import { activateCanacoSocioByPayment, canonicalizarRfc } from './canacoLifecycle';
+export { timingSafeEqual } from './timingSafeEqual';
 
 export interface CanacoCheckoutParams {
   razonSocial: string;
@@ -28,15 +29,6 @@ export interface CanacoCheckoutParams {
   paymentIntentId: string;
   metodoPago: 'tarjeta' | 'spei';
   cfdiRequerido?: boolean;
-}
-
-export function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) {
-    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return diff === 0;
 }
 
 function pemToDer(pem: string): ArrayBuffer {

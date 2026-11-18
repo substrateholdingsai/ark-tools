@@ -25,6 +25,7 @@ interface Lead {
   consent_accepted_at: string | null;
   consent_medium: string | null;
   arkangel_share_consent: number | null;
+  sales_share_consent: number | null;
   origin: string | null;
   is_demo: number | null;
   payment_environment: string | null;
@@ -204,6 +205,7 @@ function rowToLead(row: Record<string, unknown>): Lead {
     consent_medium: row.consent_medium == null ? null : String(row.consent_medium),
     arkangel_share_consent:
       row.arkangel_share_consent == null ? null : Number(row.arkangel_share_consent),
+    sales_share_consent: row.sales_share_consent == null ? null : Number(row.sales_share_consent),
     origin: row.origin == null ? null : String(row.origin),
     is_demo: row.is_demo == null ? null : Number(row.is_demo),
     payment_environment: row.payment_environment == null ? null : String(row.payment_environment),

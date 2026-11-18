@@ -16,6 +16,7 @@ import {
 } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico, SocioCanacoRegistro } from '@/components/canaco/types';
 import { canonicalizarRfc } from './canacoLifecycle';
+import { ingestCanacoSalesContact } from './canacoSalesIngest';
 import {
   authenticateRequest,
   createSession,
@@ -80,6 +81,7 @@ interface AfiliacionPayload {
     medio?: 'ventanilla' | 'admin' | 'import';
   };
   consentimientoArkangel?: boolean;
+  consentimientoSales?: boolean;
   isDemo?: boolean;
 }
 
@@ -1081,7 +1083,7 @@ export async function handleAfiliacionesApiRequest(
 
     const matches = await db
       .prepare(
-        `SELECT id, status, lifecycle_stage, canonical_rfc
+        `SELECT id, status, lifecycle_stage, canonical_rfc, is_demo
          FROM leads_ark_tools
          WHERE tenant_id = ? AND canonical_rfc = ?
          ORDER BY created_at ASC, id ASC LIMIT 2`
@@ -1092,6 +1094,7 @@ export async function handleAfiliacionesApiRequest(
         status: string;
         lifecycle_stage: string;
         canonical_rfc: string | null;
+        is_demo: number;
       }>();
 
     if ((matches.results || []).length > 1) {
@@ -1136,7 +1139,8 @@ export async function handleAfiliacionesApiRequest(
                status = CASE lifecycle_stage WHEN 'prospecto' THEN 'Prospecto' WHEN 'registrado' THEN 'Registrado' WHEN 'pago_pendiente' THEN 'Pago Pendiente' ELSE status END,
                last_contact = DATE('now'), contacto_nombre = ?, notas = ?,
                consent_aviso_version = ?, consent_accepted_at = ?, consent_medium = ?,
-               arkangel_share_consent = ?, origin = CASE WHEN origin = 'legacy' THEN ? ELSE origin END,
+               arkangel_share_consent = ?, sales_share_consent = ?, sales_consent_accepted_at = ?,
+               origin = CASE WHEN origin = 'legacy' THEN ? ELSE origin END,
                is_demo = MAX(is_demo, ?), updated_at = CURRENT_TIMESTAMP
            WHERE id = ? AND tenant_id = ?`
         )
@@ -1154,6 +1158,8 @@ export async function handleAfiliacionesApiRequest(
           consentTimestamp,
           origin,
           body.consentimientoArkangel === true ? 1 : 0,
+          body.consentimientoSales === true ? 1 : 0,
+          body.consentimientoSales === true ? consentTimestamp : null,
           origin,
           isDemo ? 1 : 0,
           leadId,
@@ -1167,9 +1173,9 @@ export async function handleAfiliacionesApiRequest(
              id, web, whatsapp, email, ciudad, especialidad, status, lifecycle_stage,
              last_contact, contacto_nombre, notas, tenant_id, canonical_rfc, num_empleados,
              consent_aviso_version, consent_accepted_at, consent_medium,
-             arkangel_share_consent, origin, is_demo, created_at, updated_at
+             arkangel_share_consent, sales_share_consent, sales_consent_accepted_at, origin, is_demo, created_at, updated_at
            ) VALUES (?, ?, ?, ?, ?, ?, 'Prospecto', 'prospecto', DATE('now'), ?, ?, ?,
-                     ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
            ON CONFLICT(tenant_id, canonical_rfc)
              WHERE canonical_rfc IS NOT NULL AND canonical_rfc != ''
            DO NOTHING`
@@ -1190,6 +1196,8 @@ export async function handleAfiliacionesApiRequest(
           consentTimestamp,
           origin,
           body.consentimientoArkangel === true ? 1 : 0,
+          body.consentimientoSales === true ? 1 : 0,
+          body.consentimientoSales === true ? consentTimestamp : null,
           origin,
           isDemo ? 1 : 0
         )
@@ -1208,6 +1216,25 @@ export async function handleAfiliacionesApiRequest(
         )
         .bind(crypto.randomUUID(), leadId, authPrincipal?.id || null, authPrincipal?.email || null)
         .run();
+    }
+
+    if (body.consentimientoSales === true && !isDemo && existing?.is_demo !== 1) {
+      try {
+        await ingestCanacoSalesContact(env, {
+          id: leadId,
+          tenantId,
+          name: body.contactoNombre.trim(),
+          company: nombreComercial,
+          email: body.email.trim(),
+          phone: body.telefono.trim(),
+        });
+      } catch (error) {
+        console.error('[CANACO Sales] No se pudo sincronizar el contacto', error);
+        return Response.json(
+          { error: 'El registro se guardó, pero no se sincronizó con Sales. Intenta nuevamente.' },
+          { status: 503, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
     }
 
     const socioRegistro: SocioCanacoRegistro = {

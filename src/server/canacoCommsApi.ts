@@ -1,5 +1,6 @@
 import type { Env } from '../index';
 import { requireTenantMembership, type AuthPrincipal } from './auth';
+import { timingSafeEqual } from './timingSafeEqual';
 
 const BASE_PATH = '/api/comms';
 const ADMIN_EMAILS = new Set(['horus.i2d@gmail.com', 'pavel@arksystems.site']);
@@ -191,7 +192,8 @@ async function eligibleContactIds(
       .prepare(
         `SELECT id FROM leads_ark_tools
          WHERE tenant_id = ? AND COALESCE(is_demo, 0) = 0
-           AND COALESCE(arkangel_share_consent, 0) = 1
+           AND COALESCE(sales_share_consent, 0) = 1
+           AND sales_consent_accepted_at IS NOT NULL
            AND consent_accepted_at IS NOT NULL
            AND id IN (${placeholders})`
       )
@@ -361,16 +363,37 @@ export async function handleCanacoCommsApiRequest(
       503
     );
   }
+  const db = env.ARK_TOOLS_DB;
+  if (!db) return json({ error: 'D1 no está disponible.' }, corsHeaders, 503);
+  if (url.pathname === `${BASE_PATH}/consent` && request.method === 'GET') {
+    const key = request.headers.get('X-Ark-Internal-Key');
+    if (!key || !timingSafeEqual(key, config.internalKey)) {
+      return json({ error: 'No autorizado.' }, corsHeaders, 401);
+    }
+    const contactId = url.searchParams.get('contact_id');
+    const tenantId = url.searchParams.get('tenant_id');
+    if (!contactId || tenantId !== config.tenantId) {
+      return json({ error: 'Tenant o contacto inválido.' }, corsHeaders, 400);
+    }
+    const row = await db
+      .prepare(
+        `SELECT l.id FROM canaco_comms_contact_mappings m
+       JOIN leads_ark_tools l ON l.id = m.ledger_lead_id AND l.tenant_id = m.tenant_id
+       WHERE m.tenant_id = ? AND m.sales_contact_id = ?
+         AND COALESCE(l.is_demo, 0) = 0
+         AND COALESCE(l.sales_share_consent, 0) = 1
+         AND l.consent_accepted_at IS NOT NULL AND l.sales_consent_accepted_at IS NOT NULL
+       LIMIT 1`
+      )
+      .bind(tenantId, contactId)
+      .first();
+    return json({ allowed: Boolean(row) }, corsHeaders);
+  }
   if (!principal) {
     return json({ error: 'Autenticación requerida.' }, corsHeaders, 401);
   }
   if (!(await authorize(env, principal, config.tenantId))) {
     return json({ error: 'Se requiere administración de CANACO.' }, corsHeaders, 403);
-  }
-
-  const db = env.ARK_TOOLS_DB;
-  if (!db) {
-    return json({ error: 'D1 no está disponible.' }, corsHeaders, 503);
   }
 
   if (url.pathname === `${BASE_PATH}/templates` && request.method === 'GET') {
@@ -477,6 +500,14 @@ export async function handleCanacoCommsApiRequest(
           : channel === 'email'
             ? { subject: body.subject, body: body.body }
             : { script: body.script };
+      if (
+        channel === 'email' &&
+        (typeof body.subject !== 'string' ||
+          typeof body.body !== 'string' ||
+          /\{\{|\}\}|\{[\w.-]+\}/.test(`${body.subject}\n${body.body}`))
+      ) {
+        return json({ error: 'El correo no admite variables de contacto.' }, corsHeaders, 400);
+      }
       const workerBody = {
         job_id: await jobIdFor(config.tenantId, idempotencyKey),
         idempotency_key: idempotencyKey,
@@ -533,7 +564,7 @@ export async function handleCanacoCommsApiRequest(
   try {
     const stored = await db
       .prepare(
-        `SELECT job_id, draft_json, status, preview_expires_at FROM canaco_comms_jobs
+        `SELECT job_id, draft_json, status, preview_expires_at, preview_json FROM canaco_comms_jobs
          WHERE job_id = ? AND tenant_id = ? LIMIT 1`
       )
       .bind(jobId, config.tenantId)
@@ -542,6 +573,7 @@ export async function handleCanacoCommsApiRequest(
         draft_json: string | null;
         status: string;
         preview_expires_at: string | null;
+        preview_json: string | null;
       }>();
     if (!stored)
       return json({ error: 'Trabajo no encontrado en el CRM CANACO.' }, corsHeaders, 404);
@@ -645,6 +677,7 @@ export async function handleCanacoCommsApiRequest(
       return json(data, corsHeaders, response.status);
     }
 
+    let approvalBody: { preview_revision: string } | undefined;
     if (action === 'approve') {
       const expiry = stored.preview_expires_at ? Date.parse(stored.preview_expires_at) : NaN;
       if (
@@ -667,12 +700,23 @@ export async function handleCanacoCommsApiRequest(
           409
         );
       }
+      const requestBody: unknown = await request.json().catch(() => null);
+      const revision = objectValue(requestBody).preview_revision;
+      const savedPreview = objectValue(storedJson(stored.preview_json));
+      if (typeof revision !== 'string' || !revision || revision !== savedPreview.preview_revision) {
+        return json(
+          { error: 'La vista previa cambió. Revísala antes de aprobar.' },
+          corsHeaders,
+          409
+        );
+      }
+      approvalBody = { preview_revision: revision };
     }
     const { response, data } = await forward(
       config,
       `/api/internal/campaigns/${encodeURIComponent(jobId)}/${action}`,
       'POST',
-      {}
+      approvalBody ?? {}
     );
     if (!response.ok) return json(data, corsHeaders, response.status);
 

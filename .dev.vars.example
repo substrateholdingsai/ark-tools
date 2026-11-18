@@ -32,6 +32,7 @@ CLIP_ENVIRONMENT=sandbox # 'sandbox' | 'production'
 # SALES_WORKER_URL=https://sales-worker.example.com
 # SALES_WORKER_INTERNAL_KEY=replace_with_worker_secret
 # CANACO_SALES_TENANT_ID=tenant_id_configured_in_sales_allowlist
+# Sales también requiere LEDGER_API_URL y LEDGER_COMMS_INTERNAL_KEY con esta misma clave.
 
 # Si en el futuro se integra analytics
 # POSTHOG_API_KEY=phc_...

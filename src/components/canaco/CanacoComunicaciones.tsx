@@ -22,6 +22,7 @@ interface Lead {
   is_demo?: number | null;
   consent_accepted_at?: string | null;
   arkangel_share_consent?: number | null;
+  sales_share_consent?: number | null;
   verified_payment_num_empleados?: number | null;
   verified_payment_sector?: string | null;
   contacto_nombre: string | null;
@@ -144,7 +145,7 @@ function isQuietHours(): boolean {
 }
 
 function eligible(lead: Lead, channel: Channel): boolean {
-  if (lead.is_demo === 1 || lead.arkangel_share_consent !== 1 || !lead.consent_accepted_at) {
+  if (lead.is_demo === 1 || lead.sales_share_consent !== 1 || !lead.consent_accepted_at) {
     return false;
   }
   if (channel === 'email') return Boolean(lead.email?.trim());
@@ -196,7 +197,7 @@ export function CanacoComunicaciones({
             assignment?.delegacion_id === delegation) &&
           (size === 'all' || leadSize === size) &&
           (sector === 'all' || leadSector.toLowerCase() === sector) &&
-          lead.arkangel_share_consent === 1
+          lead.sales_share_consent === 1
         );
       })
       .map((lead) => lead.id);
@@ -204,6 +205,8 @@ export function CanacoComunicaciones({
 
   const sampleContact = leads.find((lead) => selectedIds.includes(lead.id));
   const previewText = interpolate(messageBody, variables, sampleContact);
+  const unsupportedEmailVariables =
+    channel === 'email' && /\{\{|\}\}|\{[\w.-]+\}/.test(`${subject}\n${messageBody}`);
 
   const loadJobs = useCallback(async () => {
     const response = await fetch('/api/comms/jobs');
@@ -420,6 +423,7 @@ export function CanacoComunicaciones({
       action === 'approve' &&
       (!previewResponse ||
         freshPreviewJobId !== selectedJob.job_id ||
+        typeof previewResponse.preview_revision !== 'string' ||
         secondsRemaining === null ||
         secondsRemaining <= 0)
     ) {
@@ -431,7 +435,15 @@ export function CanacoComunicaciones({
     try {
       const response = await fetch(
         `/api/comms/jobs/${encodeURIComponent(selectedJob.job_id)}/${action}`,
-        { method: 'POST' }
+        {
+          method: 'POST',
+          ...(action === 'approve'
+            ? {
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preview_revision: previewResponse?.preview_revision }),
+              }
+            : {}),
+        }
       );
       const data = (await response.json()) as Record<string, unknown>;
       if (!response.ok) throw new Error(String(data.error || 'No se pudo actualizar el trabajo.'));
@@ -454,6 +466,8 @@ export function CanacoComunicaciones({
     Boolean(selectedJob?.job_id) &&
     freshPreviewJobId === selectedJob?.job_id &&
     previewResponse !== null &&
+    typeof previewResponse.preview_revision === 'string' &&
+    previewResponse.preview_revision.length > 0 &&
     secondsRemaining !== null &&
     secondsRemaining > 0;
   const receiptError = asObject(selectedJob?.detail).receipt_error;
@@ -766,7 +780,9 @@ export function CanacoComunicaciones({
                   </label>
                   <div className="rounded-lg bg-henequen-cal p-3 text-xs">
                     <strong>Vista previa</strong>
-                    <p className="mt-2 whitespace-pre-wrap">{previewText}</p>
+                    <p className="mt-2">Asunto: {subject}</p>
+                    <p className="mt-2 whitespace-pre-wrap">{messageBody}</p>
+                    <p className="mt-2">El correo no admite variables de contacto.</p>
                   </div>
                 </div>
               )}
@@ -817,7 +833,8 @@ export function CanacoComunicaciones({
                   activeTemplate?.variables.some(
                     (item) => !variables[variableName(item)]?.trim()
                   )) ||
-                (channel === 'email' && (!subject.trim() || !messageBody.trim())) ||
+                (channel === 'email' &&
+                  (!subject.trim() || !messageBody.trim() || unsupportedEmailVariables)) ||
                 (channel === 'voice_ai' && !messageBody.trim())
               }
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-henequen-terra px-4 py-3 text-sm font-bold text-white disabled:opacity-50"

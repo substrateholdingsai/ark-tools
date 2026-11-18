@@ -93,6 +93,7 @@ export function VentanillaAfiliacionModal({
   const [cfdiRequerido, setCfdiRequerido] = useState(true);
   const [avisoAceptado, setAvisoAceptado] = useState(false);
   const [consentimientoArkangel, setConsentimientoArkangel] = useState(false);
+  const [consentimientoSales, setConsentimientoSales] = useState(false);
 
   // Datos opcionales para que CANACO pueda orientar sobre trámites relacionados.
   const [afiliacionSimultanea, setAfiliacionSimultanea] = useState(true);
@@ -213,6 +214,7 @@ export function VentanillaAfiliacionModal({
           medio: consentMedium,
         },
         consentimientoArkangel,
+        consentimientoSales,
         isDemo: isDemoMode && rfc === CANACO_WALKTHROUGH_SOCIO_DEMO.rfc,
       }),
     });
@@ -416,6 +418,7 @@ export function VentanillaAfiliacionModal({
     setAfiliacionSimultanea(true);
     setAvisoAceptado(false);
     setConsentimientoArkangel(false);
+    setConsentimientoSales(false);
     onClose();
   };
 
@@ -862,6 +865,17 @@ export function VentanillaAfiliacionModal({
                     <span>
                       Autorizo compartir mis datos de contacto con el proveedor de seguimiento
                       Arkangel para recibir comunicaciones sobre esta solicitud. Es opcional.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={consentimientoSales}
+                      onChange={(event) => setConsentimientoSales(event.target.checked)}
+                    />
+                    <span>
+                      Autorizo compartir mis datos de contacto con Ark Sales y sus proveedores para
+                      recibir comunicaciones de CANACO por correo o WhatsApp. Es opcional.
                     </span>
                   </label>
                 </div>

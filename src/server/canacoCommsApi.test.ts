@@ -39,6 +39,7 @@ function setup(eligibleIds = ['contact-real'], mappedIds = eligibleIds) {
     }),
     status: 'pending_approval',
     preview_expires_at: new Date(Date.now() + 60_000).toISOString() as string | null,
+    preview_json: JSON.stringify({ preview_revision: 'rev-1' }),
   };
   const db = {
     prepare(query: string) {
@@ -131,7 +132,7 @@ describe('CANACO Communications proxy', () => {
       statement.query.includes('SELECT id FROM leads_ark_tools')
     )?.query;
     expect(eligibilityQuery).toContain('COALESCE(is_demo, 0) = 0');
-    expect(eligibilityQuery).toContain('COALESCE(arkangel_share_consent, 0) = 1');
+    expect(eligibilityQuery).toContain('COALESCE(sales_share_consent, 0) = 1');
     expect(
       statements.some((statement) => statement.query.includes('INSERT INTO canaco_comms_jobs'))
     ).toBe(true);
@@ -152,6 +153,32 @@ describe('CANACO Communications proxy', () => {
     );
 
     expect(response?.status).toBe(400);
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it('rejects a replaced approval revision and unsupported email variables', async () => {
+    const { env } = setup();
+    const approval = await handleCanacoCommsApiRequest(
+      makeRequest('/api/comms/jobs/job-123/approve', 'POST', { preview_revision: 'stale' }),
+      env,
+      {},
+      admin
+    );
+    expect(approval?.status).toBe(409);
+    const dispatch = await handleCanacoCommsApiRequest(
+      makeRequest('/api/comms/jobs', 'POST', {
+        channel: 'email',
+        contact_ids: ['contact-real'],
+        dry_run: true,
+        idempotency_key: 'idempotency-key-123456',
+        subject: 'Aviso',
+        body: 'Hola {{nombre}}',
+      }),
+      env,
+      {},
+      admin
+    );
+    expect(dispatch?.status).toBe(400);
     expect(vi.mocked(fetch)).not.toHaveBeenCalled();
   });
 
@@ -179,7 +206,7 @@ describe('CANACO Communications proxy', () => {
     ]) {
       const { env } = setup(eligibleIds, mappedIds);
       const response = await handleCanacoCommsApiRequest(
-        makeRequest('/api/comms/jobs/job-123/approve', 'POST'),
+        makeRequest('/api/comms/jobs/job-123/approve', 'POST', { preview_revision: 'rev-1' }),
         env,
         {},
         admin
@@ -232,7 +259,7 @@ describe('CANACO Communications proxy', () => {
     expect(vi.mocked(fetch)).not.toHaveBeenCalled();
 
     const approved = await handleCanacoCommsApiRequest(
-      makeRequest('/api/comms/jobs/job-123/approve', 'POST'),
+      makeRequest('/api/comms/jobs/job-123/approve', 'POST', { preview_revision: 'rev-1' }),
       env,
       {},
       admin
@@ -319,6 +346,8 @@ describe('CANACO Communications proxy', () => {
         contact_ids: ['contact-real'],
         dry_run: true,
         idempotency_key: 'idempotency-key-123456',
+        subject: 'Aviso',
+        body: 'Hola',
       }),
       env,
       {},

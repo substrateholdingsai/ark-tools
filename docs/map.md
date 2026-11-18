@@ -389,22 +389,29 @@ balances de créditos.
 
 El proxy Ledger usa `SALES_WORKER_URL`, `SALES_WORKER_INTERNAL_KEY` y
 `CANACO_SALES_TENANT_ID` desde la configuración del Worker; el secreto nunca se expone a la SPA.
-`CANACO_SALES_TENANT_ID` debe coincidir con un tenant allowlisted en Ark Sales. La migración
-`0017_canaco_comms_jobs.sql` crea el índice CRM, el almacenamiento de recibos y los vínculos
-explícitos entre leads Ledger y contactos Sales. Permanece pendiente de aplicación. Antes de usar
-comunicaciones, un administrador debe verificar y registrar cada vínculo por tenant en
-`canaco_comms_contact_mappings`; el proxy rechaza contactos sin vínculo y vuelve a comprobar
-consentimiento y vínculos antes de renovar o aprobar. No se infieren identidades por correo o teléfono.
-El proxy guarda únicamente recibos obtenidos de Sales y verifica en Ledger el vencimiento absoluto
-de la vista previa antes de reenviar una aprobación.
+`CANACO_SALES_TENANT_ID` debe coincidir exactamente con el tenant Ledger y con
+`CAMPAIGN_ALLOWED_TENANTS` de Sales. Las migraciones Ledger 0017 y 0018 siguen pendientes de
+aplicación: crean los trabajos y vínculos y agregan el consentimiento específico para Sales.
+El consentimiento previo de Arkangel no sustituye al nuevo consentimiento; los contactos
+existentes deben otorgarlo explícitamente. Al capturar un prospecto no demo con ese consentimiento,
+Ledger ingiere el contacto en Sales y guarda el ID devuelto en el vínculo por tenant, sin deducirlo
+por correo o teléfono. Si la ingesta falla, la captura informa que quedó guardada sin sincronizar;
+se puede reintentar la captura. El proxy rechaza contactos sin vínculo o consentimiento vigente.
+Sales debe configurar `LEDGER_API_URL` y `LEDGER_COMMS_INTERNAL_KEY` (la misma clave interna
+configurada como `SALES_WORKER_INTERNAL_KEY` en Ledger); consulta el consentimiento vigente antes
+de enviar y difiere si Ledger no responde. El proxy guarda únicamente recibos obtenidos de Sales.
+Cada aprobación requiere la revisión exacta y vigente de la vista previa; la audiencia excluida no
+se envía aunque cambien los guardrails. El correo no admite variables de contacto.
 Sales crea un trabajo pendiente con cada vista previa y el cron procesa únicamente trabajos
 aprobados. Voice AI está deshabilitado hasta que exista un proveedor real; SMS no está disponible.
 Si un proceso se interrumpe con un destino en `processing`, este no se reintenta automáticamente:
 operaciones debe investigar el resultado con el proveedor antes de cualquier intervención manual.
 La prueba de contrato entre repositorios usa SQLite en memoria y proveedores simulados; en Sales
-se ejecuta con `LEDGER_COMMS_PATH` apuntando al checkout Ledger. La puesta en marcha sigue requiriendo
-la allowlist del tenant, secretos, migraciones pendientes (Ledger 0017 y Sales 0027), vínculos
-verificados y despliegue de ambos workers. Nada de ello se ejecutó durante esta construcción.
+se ejecuta en PowerShell desde Sales con
+`$env:LEDGER_COMMS_PATH='C:\Users\PAV\Desktop\e-commerce\ark-ledger'; npm test`; sin esa variable
+Vitest omite la prueba entre repositorios. La puesta en marcha requiere configurar la allowlist y
+los secretos, aplicar las migraciones pendientes y desplegar ambos workers. Nada de ello se ejecutó
+durante esta construcción.
 
 ---
 

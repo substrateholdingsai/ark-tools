@@ -12,6 +12,7 @@ const leads = [
     is_demo: 0,
     consent_accepted_at: '2026-01-01',
     arkangel_share_consent: 1,
+    sales_share_consent: 1,
     verified_payment_num_empleados: 8,
     verified_payment_sector: 'comercio',
     contacto_nombre: 'Ana',
@@ -26,6 +27,7 @@ const leads = [
     is_demo: 1,
     consent_accepted_at: '2026-01-01',
     arkangel_share_consent: 1,
+    sales_share_consent: 1,
     contacto_nombre: 'Demo',
     notas: null,
   },
@@ -39,6 +41,19 @@ const leads = [
     consent_accepted_at: null,
     arkangel_share_consent: 0,
     contacto_nombre: 'Sin autorización',
+    notas: null,
+  },
+  {
+    id: 'legacy-arkangel-only',
+    web: 'Empresa anterior',
+    whatsapp: '9991234569',
+    email: 'legacy@example.invalid',
+    especialidad: 'comercio',
+    is_demo: 0,
+    consent_accepted_at: '2026-01-01',
+    arkangel_share_consent: 1,
+    sales_share_consent: 0,
+    contacto_nombre: 'Anterior',
     notas: null,
   },
 ];
@@ -78,6 +93,7 @@ beforeEach(() => {
         deferred: 3,
         cost_estimate: { total: '12.50 MXN' },
         preview_ttl: 600,
+        preview_revision: 'rev-1',
       });
     }
     if (url === '/api/comms/jobs/job-1/approve') {
@@ -136,10 +152,33 @@ describe('CANACO Comunicaciones', () => {
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith(
         '/api/comms/jobs/job-1/approve',
-        expect.objectContaining({ method: 'POST' })
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ preview_revision: 'rev-1' }),
+        })
       );
     });
+
     expect(await screen.findByText(/job-1 · approved/)).toBeInTheDocument();
+  });
+
+  it('blocks email placeholders rather than showing a misleading sample', async () => {
+    render(
+      <CanacoComunicaciones
+        leads={leads}
+        delegaciones={[]}
+        asignaciones={[]}
+        canManage
+        onBack={vi.fn()}
+      />
+    );
+    await screen.findByText('No hay trabajos registrados en el CRM.');
+    fireEvent.click(screen.getByRole('button', { name: /Nuevo trabajo/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Email/i }));
+    fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Aviso' } });
+    fireEvent.change(screen.getByLabelText('Cuerpo'), { target: { value: 'Hola {{nombre}}' } });
+    expect(screen.getByText('Hola {{nombre}}', { selector: 'p' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Generar vista previa dry-run/i })).toBeDisabled();
   });
 
   it('does not allow approval when the preview TTL is zero', async () => {
