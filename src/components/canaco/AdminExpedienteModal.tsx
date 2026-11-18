@@ -154,7 +154,7 @@ export function AdminExpedienteModal({
               <strong>
                 {isDemo === 1
                   ? 'excluido (demo)'
-                  : salesShareConsent === 1
+                  : salesShareConsent === 1 && salesConsentAcceptedAt
                     ? `autorizado${salesConsentAcceptedAt ? ` · ${salesConsentAcceptedAt}` : ''}`
                     : 'sin autorización'}
               </strong>

@@ -23,6 +23,7 @@ interface Lead {
   consent_accepted_at?: string | null;
   arkangel_share_consent?: number | null;
   sales_share_consent?: number | null;
+  sales_consent_accepted_at?: string | null;
   verified_payment_num_empleados?: number | null;
   verified_payment_sector?: string | null;
   contacto_nombre: string | null;
@@ -147,7 +148,12 @@ function isQuietHours(): boolean {
 }
 
 function eligible(lead: Lead, channel: Channel): boolean {
-  if (lead.is_demo === 1 || lead.sales_share_consent !== 1 || !lead.consent_accepted_at) {
+  if (
+    lead.is_demo === 1 ||
+    lead.sales_share_consent !== 1 ||
+    !lead.sales_consent_accepted_at ||
+    !lead.consent_accepted_at
+  ) {
     return false;
   }
   if (channel === 'email') return Boolean(lead.email?.trim());
@@ -554,7 +560,10 @@ export function CanacoComunicaciones({
             <div className="rounded-xl border border-henequen-anil/20 bg-henequen-cal/60 p-3 text-xs">
               <strong>Historial de comunicaciones:</strong> {initialLead.web || 'Socio'}
               <span className="ml-2 font-semibold">
-                · Sales: {initialLead.sales_share_consent === 1 ? 'autorizado' : 'sin autorización'}
+                · Sales:{' '}
+                {initialLead.sales_share_consent === 1 && initialLead.sales_consent_accepted_at
+                  ? 'autorizado'
+                  : 'sin autorización'}
               </span>
             </div>
           )}

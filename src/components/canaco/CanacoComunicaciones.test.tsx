@@ -13,6 +13,7 @@ const leads = [
     consent_accepted_at: '2026-01-01',
     arkangel_share_consent: 1,
     sales_share_consent: 1,
+    sales_consent_accepted_at: '2026-01-01',
     verified_payment_num_empleados: 8,
     verified_payment_sector: 'comercio',
     contacto_nombre: 'Ana',
@@ -54,6 +55,20 @@ const leads = [
     arkangel_share_consent: 1,
     sales_share_consent: 0,
     contacto_nombre: 'Anterior',
+    notas: null,
+  },
+  {
+    id: 'missing-sales-timestamp',
+    web: 'Empresa sin constancia Sales',
+    whatsapp: '9991234570',
+    email: 'sin-fecha@example.invalid',
+    especialidad: 'comercio',
+    is_demo: 0,
+    consent_accepted_at: '2026-01-01',
+    arkangel_share_consent: 1,
+    sales_share_consent: 1,
+    sales_consent_accepted_at: null,
+    contacto_nombre: 'Sin fecha',
     notas: null,
   },
 ];
@@ -167,6 +182,32 @@ describe('CANACO Comunicaciones', () => {
     expect(await screen.findByText('job-matched')).toBeInTheDocument();
     expect(screen.queryByText('job-other')).not.toBeInTheDocument();
   });
+
+  it('muestra sin autorización cuando falta la fecha del consentimiento Sales', async () => {
+    fetchMock = vi.fn(async (url: any) => {
+      if (typeof url === 'string' && url === '/api/comms/jobs') {
+        return { ok: true, json: async () => ({ jobs: [] }) };
+      }
+      if (typeof url === 'string' && url.includes('/templates')) {
+        return { ok: true, json: async () => ({ templates: [] }) };
+      }
+      return { ok: true, json: async () => ({ jobs: [] }) };
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <CanacoComunicaciones
+        leads={leads}
+        delegaciones={[]}
+        asignaciones={[]}
+        canManage
+        onBack={vi.fn()}
+        initialLeadId="missing-sales-timestamp"
+      />
+    );
+
+    expect(await screen.findByText(/· Sales: sin autorización/i)).toBeInTheDocument();
+  });
   it('excludes demo and non-consented contacts, previews worker values, and gates approval', async () => {
     render(
       <CanacoComunicaciones
@@ -181,6 +222,7 @@ describe('CANACO Comunicaciones', () => {
     fireEvent.click(screen.getByRole('button', { name: /Nuevo trabajo/i }));
 
     expect(screen.getByText('1 contactos elegibles seleccionados')).toBeInTheDocument();
+    expect(screen.getByText(/Registros de demo y personas sin consentimiento/)).toBeInTheDocument();
     const templateSelect = screen.getByLabelText('Plantilla HSM aprobada');
     expect(templateSelect).toHaveValue('');
     expect(screen.getByRole('option', { name: /Aviso CANACO · es_MX/i })).toBeInTheDocument();

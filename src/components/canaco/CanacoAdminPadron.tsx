@@ -1202,6 +1202,8 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                   const folio = folioMatch ? folioMatch[1] : 'PENDIENTE';
                   const esActivo = getConfirmedPaymentAmount(lead) !== null;
                   const etapa = esActivo ? 'socio_activo' : lead.lifecycle_stage || 'prospecto';
+                  const salesAuthorized =
+                    lead.sales_share_consent === 1 && Boolean(lead.sales_consent_accepted_at);
 
                   // Mensaje para WhatsApp institucional
                   const waNumber = (lead.whatsapp || '').replace(/\D/g, '');
@@ -1298,7 +1300,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                           {' · Sales / Comunicaciones: '}
                           {lead.is_demo === 1
                             ? 'excluido (demo)'
-                            : lead.sales_share_consent === 1
+                            : salesAuthorized
                               ? 'autorizado'
                               : 'sin autorización'}
                         </div>
@@ -1371,26 +1373,20 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                             <span>Expediente</span>
                           </button>
 
-                          {lead.is_demo !== 1 && (
+                          {canManageComms && lead.is_demo !== 1 && (
                             <button
                               type="button"
                               disabled={updatingSalesConsentId === lead.id}
-                              onClick={() =>
-                                void handleSalesConsent(lead, lead.sales_share_consent !== 1)
-                              }
+                              onClick={() => void handleSalesConsent(lead, !salesAuthorized)}
                               className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-henequen-anil/30 bg-white px-2.5 py-1 text-[11px] font-semibold text-henequen-anil transition hover:bg-henequen-cal/60"
                               aria-label={
-                                lead.sales_share_consent === 1
+                                salesAuthorized
                                   ? `Retirar consentimiento de Sales de ${lead.web || lead.id}`
                                   : `Autorizar consentimiento de Sales de ${lead.web || lead.id}`
                               }
                             >
                               <ShieldCheck size={12} />
-                              <span>
-                                {lead.sales_share_consent === 1
-                                  ? 'Retirar Sales'
-                                  : 'Autorizar Sales'}
-                              </span>
+                              <span>{salesAuthorized ? 'Retirar Sales' : 'Autorizar Sales'}</span>
                             </button>
                           )}
 

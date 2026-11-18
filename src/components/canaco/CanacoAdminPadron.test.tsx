@@ -2,11 +2,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CanacoAdminPadron } from './CanacoAdminPadron';
 
+const authState = vi.hoisted(() => ({
+  email: 'horus.i2d@gmail.com',
+  role: 'admin',
+}));
+
 vi.mock('@/context/AuthContext', () => ({
   useOptionalAuth: () => ({
     platformRole: 'member',
-    user: { email: 'horus.i2d@gmail.com' },
-    tenants: [{ id: 'canaco_merida', role: 'admin' }],
+    user: { email: authState.email },
+    tenants: [{ id: 'canaco_merida', role: authState.role }],
   }),
 }));
 
@@ -102,6 +107,8 @@ const MOCK_LEADS = [
 let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
+  authState.email = 'horus.i2d@gmail.com';
+  authState.role = 'admin';
   fetchMock = vi.fn(async (url: any) => {
     if (typeof url === 'string' && url.includes('/api/canaco/sync-arkangel')) {
       return {
@@ -203,6 +210,21 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
         String(url).includes('/api/admin/leads/lead-can-1') && init?.method === 'PATCH'
     );
     expect(JSON.parse(String(patchCall?.[1]?.body))).toEqual({ sales_share_consent: true });
+  });
+
+  it('muestra el estado Sales sin controles de consentimiento para miembros', async () => {
+    authState.email = 'member@example.com';
+    authState.role = 'member';
+    await renderAdmin();
+
+    expect(
+      screen.getAllByText(/Sales \/ Comunicaciones: sin autorización/i).length
+    ).toBeGreaterThan(0);
+    expect(
+      screen.queryByRole('button', {
+        name: /consentimiento de Sales de Comercializadora del Mayab/i,
+      })
+    ).not.toBeInTheDocument();
   });
 
   it('abre el historial filtrado de un socio desde su fila', async () => {

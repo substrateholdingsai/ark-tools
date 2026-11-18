@@ -5,6 +5,8 @@ import { isEmailServiceConfigured, sendTransactionalEmail } from './email/emailS
 import { buildWhatsAppDeepLink, normalizeMexicanPhone } from '../lib/whatsappStudio';
 import { ingestCanacoSalesContact } from './canacoSalesIngest';
 
+const CANACO_COMMS_ADMIN_EMAILS = new Set(['horus.i2d@gmail.com', 'pavel@arksystems.site']);
+
 interface Lead {
   id: string;
   canonical_rfc: string | null;
@@ -574,6 +576,21 @@ export async function handleLeadsApiRequest(
         return null;
       }
       const body = (await request.json()) as Record<string, unknown>;
+
+      if (body.sales_share_consent !== undefined) {
+        const emailCanManageComms = CANACO_COMMS_ADMIN_EMAILS.has(principal.email.toLowerCase());
+        let canManageComms = principal.platformRole === 'super_admin' || emailCanManageComms;
+        if (!canManageComms) {
+          const membership = await requireTenantMembership(env, principal, tenantId);
+          canManageComms = membership !== null && membership.role !== 'member';
+        }
+        if (!canManageComms) {
+          return Response.json(
+            { error: 'Se requiere administración de CANACO para cambiar consentimiento.' },
+            { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+      }
 
       const existing = await db
         .prepare('SELECT * FROM leads_ark_tools WHERE id = ? AND tenant_id = ? LIMIT 1')
