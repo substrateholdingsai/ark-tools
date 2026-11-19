@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { CalculadoraRecargos } from './CalculadoraRecargos';
 import { ExpedienteProvider } from '@/context/ExpedienteContext';
+import { CANACO_MERIDA_BRAND_CONFIG } from '@/config/brand';
 
 describe('CalculadoraRecargos Component (Herramienta #18)', () => {
   it('renderiza título principal, badges oficiales y componentes', () => {
@@ -18,6 +19,7 @@ describe('CalculadoraRecargos Component (Herramienta #18)', () => {
     expect(screen.getByText('CFF ARTS. 17-A Y 21')).toBeInTheDocument();
     expect(screen.getByText('PARÁMETROS DE FISCALIZACIÓN')).toBeInTheDocument();
     expect(screen.getByText('LIQUIDACIÓN FISCAL DETERMINADA')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Federal' })).toBeChecked();
   });
 
   it('ejecuta onBack al hacer clic en el botón de regreso', () => {
@@ -45,6 +47,20 @@ describe('CalculadoraRecargos Component (Herramienta #18)', () => {
 
     // Con 100,000 histórico, el cálculo se actualiza inmediatamente
     expect(screen.getByDisplayValue('100000')).toBeInTheDocument();
+  });
+
+  it('prioriza recargos estatales de Yucatán al 2.07% para CANACO Mérida', () => {
+    render(
+      <ExpedienteProvider>
+        <CalculadoraRecargos brand={CANACO_MERIDA_BRAND_CONFIG} />
+      </ExpedienteProvider>
+    );
+
+    expect(screen.getByRole('radio', { name: 'Estatal (Yucatán)' })).toBeChecked();
+    expect(
+      screen.getByText('Recargos Estatales (Yucatán) - 2.07% (Art. 56 Ley de Ingresos 2026)')
+    ).toBeInTheDocument();
+    expect(screen.getByText('LIQUIDACIÓN FISCAL DETERMINADA')).toBeInTheDocument();
   });
 
   it('abre y cierra el modal de Cédula Oficial / Papel de Trabajo con QR', () => {

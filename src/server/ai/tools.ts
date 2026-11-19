@@ -210,6 +210,12 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           type: 'string',
           description: 'Fecha de pago real o proyectada (ISO YYYY-MM-DD).',
         },
+        tipoRecargo: {
+          type: 'string',
+          enum: ['federal', 'estatal_yucatan'],
+          description:
+            'Ámbito del recargo. Default federal; estatal_yucatan permanece fail-closed si no hay tasa oficial.',
+        },
       },
       required: ['importeHistorico', 'fechaVencimiento', 'fechaPago'],
     },
@@ -492,6 +498,7 @@ export async function executeAiTool(
         importeHistorico: Number(args.importeHistorico),
         fechaVencimiento: String(args.fechaVencimiento),
         fechaPago: String(args.fechaPago),
+        tipoRecargo: args.tipoRecargo === 'estatal_yucatan' ? 'estatal_yucatan' : 'federal',
       });
       return { success: true, data: resultado };
     }

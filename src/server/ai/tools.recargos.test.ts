@@ -80,4 +80,17 @@ describe('executeAiTool — calcular_recargos_fiscales (Monday contract)', () =>
     expect(data.folioDeIntegridad).toMatch(/^REC-[0-9a-f]{8}$/);
     expect(data.folioDeIntegridad).not.toContain('e3b0c442');
   });
+
+  it('calcula Yucatán con la tasa estatal verificada', async () => {
+    const res = await executeAiTool(
+      'calcular_recargos_fiscales',
+      { ...dorado, tipoRecargo: 'estatal_yucatan' },
+      mockEnv,
+      tenant
+    );
+
+    expect(res.success).toBe(true);
+    expect((res.data as { tipoRecargo: string }).tipoRecargo).toBe('estatal_yucatan');
+    expect((res.data as { tasaRecargosMensual: number }).tasaRecargosMensual).toBe(2.07);
+  });
 });

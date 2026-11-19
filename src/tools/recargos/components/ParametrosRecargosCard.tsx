@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { Calendar, DollarSign, Clock, AlertCircle, Sparkles, HelpCircle } from 'lucide-react';
 import type { EntradaRecargos } from '../types';
+import { RECARGOS_YUCATAN_2026, TASA_RECARGOS_MORA_PCT } from '../data/constantes';
+import { currentBrand, type BrandConfig } from '@/config/brand';
 
 interface Props {
   entrada: EntradaRecargos;
   onChange: (entrada: EntradaRecargos) => void;
+  brand?: BrandConfig;
 }
 
-export function ParametrosRecargosCard({ entrada, onChange }: Props) {
+export function ParametrosRecargosCard({ entrada, onChange, brand = currentBrand }: Props) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const tipoRecargo = entrada.tipoRecargo ?? 'federal';
+  const esCanaco = brand.id === 'canaco_merida';
+  const esEstatal = tipoRecargo === 'estatal_yucatan';
 
   const errorFechas = entrada.fechaPago < entrada.fechaVencimiento;
 
@@ -53,15 +59,59 @@ export function ParametrosRecargosCard({ entrada, onChange }: Props) {
           </button>
           {showTooltip && (
             <div className="absolute right-0 top-10 z-20 w-72 rounded-xl border border-line bg-surface p-4 text-[11px] leading-relaxed text-muted shadow-xl">
-              <strong className="block font-bold text-navy">CFF Art. 17-A y 21:</strong>
-              El factor de actualización se obtiene dividiendo el INPC del mes anterior al más
+              <strong className="block font-bold text-navy">
+                {esEstatal ? 'Decreto 140/2025:' : 'CFF Art. 17-A y 21:'}
+              </strong>
+              {esEstatal
+                ? `Los recargos estatales se calculan a razón del ${RECARGOS_YUCATAN_2026.tasaMensualPct}% mensual conforme al Artículo 56 de la Ley de Ingresos del Estado de Yucatán para 2026.`
+                : `El factor de actualización se obtiene dividiendo el INPC del mes anterior al más
               reciente del periodo de pago entre el del mes anterior al más antiguo de vencimiento,
-              truncado a 4 decimales. Los recargos se causan a razón del 1.47% mensual por cada mes
-              o fracción transcurrido.
+              truncado a 4 decimales. Los recargos se causan a razón del ${TASA_RECARGOS_MORA_PCT}% mensual por cada mes
+              o fracción transcurrido.`}
             </div>
           )}
         </div>
       </div>
+
+      <fieldset className="space-y-2">
+        <legend className="font-inter text-xs font-bold uppercase tracking-wider text-navy">
+          Tipo de Recargo
+        </legend>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <label className="flex cursor-pointer items-center gap-2 rounded-xl border border-line bg-white p-3 text-sm font-semibold text-ink">
+            <input
+              type="radio"
+              name="tipoRecargo"
+              value="federal"
+              checked={!esEstatal}
+              onChange={() => onChange({ ...entrada, tipoRecargo: 'federal' })}
+            />
+            Federal
+          </label>
+          <label
+            className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm font-semibold ${
+              esEstatal
+                ? 'border-amber-500 bg-amber-50 text-amber-950'
+                : 'border-line bg-white text-ink'
+            }`}
+          >
+            <input
+              type="radio"
+              name="tipoRecargo"
+              value="estatal_yucatan"
+              checked={esEstatal}
+              onChange={() => onChange({ ...entrada, tipoRecargo: 'estatal_yucatan' })}
+            />
+            Estatal (Yucatán)
+          </label>
+        </div>
+        {esCanaco && esEstatal && (
+          <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900">
+            Recargos Estatales (Yucatán) - {RECARGOS_YUCATAN_2026.tasaMensualPct}% (Art. 56 Ley de
+            Ingresos 2026)
+          </p>
+        )}
+      </fieldset>
 
       {/* Importe del Impuesto Omitido */}
       <div className="space-y-1.5">
@@ -199,14 +249,18 @@ export function ParametrosRecargosCard({ entrada, onChange }: Props) {
             Tasa Mensual de Recargos por Mora
           </span>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-sm font-black text-navy">1.47% mensual</span>
+            <span className="font-mono text-sm font-black text-navy">
+              {esEstatal
+                ? `${RECARGOS_YUCATAN_2026.tasaMensualPct}% mensual`
+                : `${TASA_RECARGOS_MORA_PCT}% mensual`}
+            </span>
             <span className="rounded bg-navy/10 px-1.5 py-0.5 text-[9.5px] font-bold text-navy">
-              LIF Art. 8 / CFF Art. 21
+              {esEstatal ? 'Decreto 140/2025' : 'LIF Art. 8 / CFF Art. 21'}
             </span>
           </div>
         </div>
         <span className="text-right font-mono text-[11px] text-muted">
-          Base: 0.98% prórroga + 50%
+          {esEstatal ? 'Art. 56 · Decreto 140/2025' : 'Base: 0.98% prórroga + 50%'}
         </span>
       </div>
     </div>

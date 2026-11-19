@@ -6,6 +6,7 @@ import {
   calcularRecargosYActualizacion,
   obtenerMesAnterior,
 } from './calcularRecargos';
+import { TASA_RECARGOS_MORA_PCT } from '../data/constantes';
 
 describe('Motor Matemático de Actualización y Recargos (Art. 17-A y 21 CFF)', () => {
   describe('truncarDiezmilesimo', () => {
@@ -161,6 +162,62 @@ describe('Motor Matemático de Actualización y Recargos (Art. 17-A y 21 CFF)', 
       expect(resultado.montoRecargos).toBe(0);
       expect(resultado.totalPagar).toBe(20000);
       expect(resultado.desgloseMeses).toHaveLength(0);
+    });
+  });
+
+  describe('T4 — tasa de recargos desde fuente única (catálogo)', () => {
+    it('usa TASA_RECARGOS_MORA_PCT de la constante local (no un literal suelto, alcance pendiente)', () => {
+      const entrada = {
+        importeHistorico: 10000,
+        fechaVencimiento: '2024-05-17',
+        fechaPago: '2024-06-17', // 1 mes de mora
+      };
+      const resultado = calcularRecargosYActualizacion(entrada);
+      expect(resultado.tasaRecargosMensual).toBe(TASA_RECARGOS_MORA_PCT);
+      expect(resultado.tasaRecargosTotal).toBe(1.47);
+      expect(resultado.montoRecargos).toBe(Math.round(10000 * (1.47 / 100) * 100) / 100);
+    });
+
+    it('usa 1.47% mensual cuando el tipo es federal', () => {
+      const resultado = calcularRecargosYActualizacion(
+        {
+          importeHistorico: 10000,
+          fechaVencimiento: '2024-05-17',
+          fechaPago: '2024-06-17',
+        },
+        'federal'
+      );
+
+      expect(resultado.tipoRecargo).toBe('federal');
+      expect(resultado.tasaRecargosMensual).toBe(1.47);
+    });
+
+    it('usa 2.07% mensual cuando el tipo es estatal Yucatán', () => {
+      const resultado = calcularRecargosYActualizacion(
+        {
+          importeHistorico: 10000,
+          fechaVencimiento: '2024-05-17',
+          fechaPago: '2024-06-17',
+        },
+        'estatal_yucatan'
+      );
+
+      expect(resultado.tipoRecargo).toBe('estatal_yucatan');
+      expect(resultado.tasaRecargosMensual).toBe(2.07);
+      expect(resultado.montoRecargos).toBe(207);
+    });
+
+    it('produce un resultado estatal distinto al federal para el mismo escenario', () => {
+      const entrada = {
+        importeHistorico: 10000,
+        fechaVencimiento: '2024-05-17',
+        fechaPago: '2024-06-17',
+      };
+      const federal = calcularRecargosYActualizacion(entrada, 'federal');
+      const estatal = calcularRecargosYActualizacion(entrada, 'estatal_yucatan');
+
+      expect(estatal.tasaRecargosMensual).toBeGreaterThan(federal.tasaRecargosMensual);
+      expect(estatal.montoRecargos).not.toBe(federal.montoRecargos);
     });
   });
 });

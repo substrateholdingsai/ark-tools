@@ -1860,6 +1860,7 @@ export async function executeToolPreview(
           importeHistorico: Number(payload.importeHistorico),
           fechaVencimiento: String(payload.fechaVencimiento),
           fechaPago: String(payload.fechaPago),
+          tipoRecargo: payload.tipoRecargo === 'estatal_yucatan' ? 'estatal_yucatan' : 'federal',
         });
         break;
       }
