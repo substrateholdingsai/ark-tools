@@ -208,7 +208,7 @@ ark-tools/
 │   │   ├── conductas-cobranza.ts    ✅ Auditoría Cobranza (43 conductas, 8 secciones)
 │   │   ├── comparadores-contrato-crm.ts ✅ 12 comparadores Contrato vs CRM
 │   │   └── demo-onboarding.ts       ✅ Entidades canónicas de demo (DEMO_EMPRESA, DEMO_TRABAJADOR)
-│   └── tools/                       ✅ 22 módulos de herramientas
+│   └── tools/                       ✅ 21 módulos locales; `caja-codi` se resuelve externamente desde App.tsx
 │       ├── isn/                     ✅ Calculadora ISN 32 estados + Cédula Oficial AAFY (Yucatán 3.75% bruto / 3.0% neto MIPyME 2026, Decreto 138/2025 + 147/2025, CSV UTF-8 BOM)
 │       ├── sbc/                     ✅ Calculadora SBC IMSS
 │       ├── nomina/                  ✅ Nómina Rápida 2026 (ISR + IMSS obrero)
@@ -222,7 +222,6 @@ ark-tools/
 │       ├── modalidad40/             ✅ Simulador Modalidad 40 DOF 2026 (#19)
 │       ├── auditor-cfdi-atipico/    ✅ Detector de Comportamientos Atípicos CFDI (#20)
 │       ├── retencion-clinicas/      ✅ Retención 2% Clínicas/Hospitales Yucatán (#22)
-│       ├── caja-codi/               ✅ Cobro con CoDi — Ark Caja (#13)
 │       ├── xml-excel/               ✅ Conversor XML a CSV para Excel (CFDI 4.0/3.3)
 │       ├── xml-validador/           ✅ Validador y Auditor de XMLs
 │       ├── spei/                    ✅ Generador Enlaces de Pago Clip / SPEI
@@ -235,6 +234,9 @@ ark-tools/
 │           ├── useAlegra.ts         ✅ Hook multi-empresa, estado CSD, cancelInvoice
 │           └── components/
 │               └── AlegraConnectModal.tsx ✅ Conexión Secret Key sk_test_/sk_live_, badge Sandbox/Producción
+│
+│   Nota: `caja-codi` (#13) completa las 22 herramientas mediante enlace externo a
+│   `caja.arksystems.site` desde `src/App.tsx`; no ocupa un directorio en `src/tools/`.
 │   └── server/                      ✅ APIs del Cloudflare Worker
 │       ├── auth.ts                  ✅ Contraseñas PBKDF2, cookies HttpOnly, Resend, verificación/reset
 │       ├── adminApi.ts              ✅ Super Admin Console (métricas, directorio tenants, roles)
