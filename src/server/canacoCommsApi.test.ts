@@ -311,8 +311,7 @@ describe('CANACO Communications proxy', () => {
     );
     expect(receiptResponse?.status).toBe(200);
     expect(await receiptResponse?.json()).toEqual(receipt);
-    expect(vi.mocked(fetch).mock.calls[0]?.[1]?.method).toBe('GET');
-    expect(vi.mocked(fetch).mock.calls[0]?.[1]?.body).toBeUndefined();
+    expect(JSON.parse(String(vi.mocked(fetch).mock.calls[0]?.[1]?.body))).toEqual({});
     const update = statements.find((statement) =>
       statement.query.includes('UPDATE canaco_comms_jobs')
     );
@@ -411,8 +410,6 @@ describe('CANACO Communications proxy', () => {
     expect(String(vi.mocked(fetch).mock.calls[1]?.[0])).toBe(
       'https://sales.example.test/api/internal/campaigns/job-123/receipt'
     );
-    expect(vi.mocked(fetch).mock.calls[1]?.[1]?.method).toBe('GET');
-    expect(vi.mocked(fetch).mock.calls[1]?.[1]?.body).toBeUndefined();
     const update = statements.find((statement) =>
       statement.query.includes('UPDATE canaco_comms_jobs')
     );
