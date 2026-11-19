@@ -24,7 +24,9 @@ import type {
   FactorActualizacionDetalle,
   DesgloseMesRecargo,
   ResultadoRecargos,
+  TipoRecargo,
 } from '../types';
+import { TASA_RECARGOS_MORA_YUCATAN_2026 } from '../data/constantes';
 
 export const NOMBRES_MESES = [
   'Enero',
@@ -247,9 +249,20 @@ export function generarDesgloseMesesRecargo(
  * Realiza el cálculo integral de Actualización por Inflación (Art. 17-A CFF)
  * y Recargos por Mora (Art. 21 CFF + LIF Art. 8).
  */
-export function calcularRecargosYActualizacion(entrada: EntradaRecargos): ResultadoRecargos {
+export function obtenerTasaRecargosMensual(tipoRecargo: TipoRecargo): number {
+  if (tipoRecargo === 'federal') return TASA_RECARGOS_MORA_MENSUAL;
+  return TASA_RECARGOS_MORA_YUCATAN_2026;
+}
+
+export function calcularRecargosYActualizacion(
+  entrada: EntradaRecargos,
+  tipoRecargo: TipoRecargo = entrada.tipoRecargo ?? 'federal'
+): ResultadoRecargos {
   const importeHistorico = Math.max(0, Number(entrada.importeHistorico) || 0);
-  const tasaRecargosMensual = Number(entrada.tasaRecargosMensual ?? TASA_RECARGOS_MORA_MENSUAL);
+  const tasaBase = obtenerTasaRecargosMensual(tipoRecargo);
+  const tasaRecargosMensual = Number(
+    tipoRecargo === 'federal' ? (entrada.tasaRecargosMensual ?? tasaBase) : tasaBase
+  );
 
   const factorDetalle = obtenerFactorActualizacion(entrada.fechaVencimiento, entrada.fechaPago);
   const factorActualizacion = factorDetalle.factorFinal;
@@ -305,6 +318,7 @@ export function calcularRecargosYActualizacion(entrada: EntradaRecargos): Result
   });
 
   return {
+    tipoRecargo,
     importeHistorico,
     fechaVencimiento: entrada.fechaVencimiento,
     fechaPago: entrada.fechaPago,
@@ -335,6 +349,7 @@ export const CAMPOS_CANONICOS_RECARGOS = new Set([
   'fechaVencimiento',
   'fechaPago',
   'tasaRecargosMensual',
+  'tipoRecargo',
 ]);
 
 /**
@@ -373,6 +388,12 @@ export function validarEntradaRecargos(entrada: Record<string, unknown>): {
     const dp = Date.UTC(fPago.anio, fPago.mes - 1, fPago.dia);
     if (dp < dv) {
       errores.push("'fechaPago' no puede ser anterior a 'fechaVencimiento'.");
+    }
+  }
+
+  if (entrada.tipoRecargo !== undefined) {
+    if (entrada.tipoRecargo !== 'federal' && entrada.tipoRecargo !== 'estatal_yucatan') {
+      errores.push("'tipoRecargo' debe ser 'federal' o 'estatal_yucatan'.");
     }
   }
 

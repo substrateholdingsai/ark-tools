@@ -31,7 +31,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { GlassButton } from '@/components/ui/GlassButton';
-import { ESTADOS } from '../isn/data/estados';
+import { ESTADOS, getEstadoById } from '../isn/data/estados';
 import type { Periodo } from '../nomina/types';
 import type {
   TrabajadorFilaInput,
@@ -95,7 +95,7 @@ export function CierreNomina({ onBack }: CierreNominaProps) {
 
   const [estadoIsnId, setEstadoIsnId] = useState<string>('CDMX');
   const [estadoIsnNombre, setEstadoIsnNombre] = useState<string>('Ciudad de México');
-  const [tasaIsn, setTasaIsn] = useState<number>(3.0);
+  const [tasaIsn, setTasaIsn] = useState<number>(getEstadoById('CDMX').tasa);
 
   // Opciones de ISN versionado (Decreto 147/2025, Art. 27-A, gobierno estatal)
   const [ejercicioIsn, setEjercicioIsn] = useState<2025 | 2026>(2026);

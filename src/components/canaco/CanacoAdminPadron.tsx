@@ -31,6 +31,7 @@ import {
   Compass,
   Calculator,
   Sparkles,
+  ShieldCheck,
 } from 'lucide-react';
 import { useOptionalAuth } from '@/context/AuthContext';
 import { CanacoLogo } from '@/components/brand/CanacoLogo';
@@ -61,6 +62,7 @@ interface LeadRow {
   consent_medium?: string | null;
   arkangel_share_consent?: number | null;
   sales_share_consent?: number | null;
+  sales_consent_accepted_at?: string | null;
   origin?: string | null;
   payment_environment?: string | null;
   canonical_rfc?: string | null;
@@ -146,6 +148,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
   const [leads, setLeads] = useState<LeadRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState<'padron' | 'comunicaciones'>('padron');
+  const [commsLeadId, setCommsLeadId] = useState<string | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [filtroEstatus, setFiltroEstatus] = useState<string>('todos');
   const [filtroSector, setFiltroSector] = useState<string>('todos');
@@ -296,6 +299,50 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         tipo: 'error',
         mensaje: error instanceof Error ? error.message : 'No se pudo revertir la afiliación.',
       });
+    }
+  };
+
+  const [updatingSalesConsentId, setUpdatingSalesConsentId] = useState<string | null>(null);
+
+  const handleSalesConsent = async (lead: LeadRow, authorized: boolean) => {
+    if (lead.is_demo === 1) {
+      setSyncFeedback({
+        tipo: 'error',
+        mensaje: 'Los contactos de demostración no pueden autorizar Comunicaciones.',
+      });
+      return;
+    }
+    setUpdatingSalesConsentId(lead.id);
+    try {
+      const response = await fetch(
+        `/api/admin/leads/${encodeURIComponent(lead.id)}?tenant=canaco_merida`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sales_share_consent: authorized }),
+        }
+      );
+      const data = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo actualizar el consentimiento de Sales.');
+      }
+      setSyncFeedback({
+        tipo: 'success',
+        mensaje: authorized
+          ? 'Consentimiento de Sales autorizado para Comunicaciones.'
+          : 'Consentimiento de Sales retirado. El socio quedó excluido.',
+      });
+      await cargarPadron();
+    } catch (error) {
+      setSyncFeedback({
+        tipo: 'error',
+        mensaje:
+          error instanceof Error
+            ? error.message
+            : 'No se pudo actualizar el consentimiento de Sales.',
+      });
+    } finally {
+      setUpdatingSalesConsentId(null);
     }
   };
 
@@ -602,6 +649,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
         delegaciones={delegaciones?.delegaciones || []}
         asignaciones={delegaciones?.asignaciones || []}
         canManage={canManageComms}
+        initialLeadId={commsLeadId}
         onBack={() => setActiveSection('padron')}
       />
     );
@@ -1154,6 +1202,8 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                   const folio = folioMatch ? folioMatch[1] : 'PENDIENTE';
                   const esActivo = getConfirmedPaymentAmount(lead) !== null;
                   const etapa = esActivo ? 'socio_activo' : lead.lifecycle_stage || 'prospecto';
+                  const salesAuthorized =
+                    lead.sales_share_consent === 1 && Boolean(lead.sales_consent_accepted_at);
 
                   // Mensaje para WhatsApp institucional
                   const waNumber = (lead.whatsapp || '').replace(/\D/g, '');
@@ -1247,6 +1297,12 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                             : 'sin constancia — capturar en siguiente contacto'}
                           {' · Arkangel: '}
                           {lead.arkangel_share_consent === 1 ? 'autorizado' : 'no autorizado'}
+                          {' · Sales / Comunicaciones: '}
+                          {lead.is_demo === 1
+                            ? 'excluido (demo)'
+                            : salesAuthorized
+                              ? 'autorizado'
+                              : 'sin autorización'}
                         </div>
                       </td>
 
@@ -1317,6 +1373,38 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
                             <span>Expediente</span>
                           </button>
 
+                          {canManageComms && lead.is_demo !== 1 && (
+                            <button
+                              type="button"
+                              disabled={updatingSalesConsentId === lead.id}
+                              onClick={() => void handleSalesConsent(lead, !salesAuthorized)}
+                              className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-henequen-anil/30 bg-white px-2.5 py-1 text-[11px] font-semibold text-henequen-anil transition hover:bg-henequen-cal/60"
+                              aria-label={
+                                salesAuthorized
+                                  ? `Retirar consentimiento de Sales de ${lead.web || lead.id}`
+                                  : `Autorizar consentimiento de Sales de ${lead.web || lead.id}`
+                              }
+                            >
+                              <ShieldCheck size={12} />
+                              <span>{salesAuthorized ? 'Retirar Sales' : 'Autorizar Sales'}</span>
+                            </button>
+                          )}
+
+                          {canManageComms && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCommsLeadId(lead.id);
+                                setActiveSection('comunicaciones');
+                              }}
+                              className="shadow-2xs inline-flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-800 transition hover:bg-emerald-100"
+                              aria-label={`Ver comunicaciones de ${lead.web || lead.id}`}
+                            >
+                              <MessageSquare size={12} />
+                              <span>Comunicaciones</span>
+                            </button>
+                          )}
+
                           <button
                             type="button"
                             onClick={() => verResumenPago(lead)}
@@ -1367,6 +1455,9 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
           razonSocial={expedienteAdminSocio.web || 'Comercio Registrado'}
           whatsapp={expedienteAdminSocio.whatsapp}
           contactoNombre={expedienteAdminSocio.contacto_nombre}
+          salesShareConsent={expedienteAdminSocio.sales_share_consent}
+          salesConsentAcceptedAt={expedienteAdminSocio.sales_consent_accepted_at}
+          isDemo={expedienteAdminSocio.is_demo}
           onDictamenActualizado={() => {
             void cargarPadron();
           }}

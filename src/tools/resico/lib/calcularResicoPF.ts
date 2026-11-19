@@ -1,4 +1,5 @@
 import { numeroALetras } from '@/lib/numeroALetras';
+import { TASA_IVA_GENERAL } from '@/data/valores-vigentes/catalogo';
 import {
   TARIFA_RESICO_PF_MENSUAL,
   TOPE_ANUAL_RESICO_PF,
@@ -38,10 +39,11 @@ export function calcularResicoPF(entrada: EntradaResicoPF): ResultadoResicoPF {
     if (rangoEncontrado) {
       tasaISRPct = rangoEncontrado.tasaPct;
       tasaDecimal = rangoEncontrado.tasa;
-    } else if (ingresosMes > 3500000.0) {
-      // Exceso de tarifa máxima
-      tasaISRPct = 2.5;
-      tasaDecimal = 0.025;
+    } else if (ingresosMes > TOPE_ANUAL_RESICO_PF) {
+      // Exceso de tarifa máxima: tasa del último rango de TARIFA_RESICO_PF_MENSUAL
+      const ultimoRango = TARIFA_RESICO_PF_MENSUAL[TARIFA_RESICO_PF_MENSUAL.length - 1]!;
+      tasaISRPct = ultimoRango.tasaPct;
+      tasaDecimal = ultimoRango.tasa;
     }
   }
 
@@ -58,7 +60,7 @@ export function calcularResicoPF(entrada: EntradaResicoPF): ResultadoResicoPF {
   const isrNetoPagar = Math.max(0, round2(isrCausado - retencionISR));
 
   // 4. Determinación de IVA
-  const tasaIVA: number | 'exento' = entrada.tasaIVA ?? 0.16;
+  const tasaIVA: number | 'exento' = entrada.tasaIVA ?? TASA_IVA_GENERAL;
   const tasaIVAPct = (() => {
     const n = Number(tasaIVA);
     return Number.isNaN(n) ? 0 : n * 100;

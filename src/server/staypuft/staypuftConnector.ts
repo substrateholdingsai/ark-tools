@@ -122,12 +122,15 @@ const SMG_FRONTERA_2026 = getNumericCatalogValue('SALARIO_MINIMO_FRONTERA_2026',
 const TASA_RECARGOS_MORA_2026 = getNumericCatalogValue('TASA_RECARGOS_MORA_2026', 1.47);
 const YUCATAN_ISN_ESTADO = ESTADOS.find((e) => e.id === 'YUC');
 if (!YUCATAN_ISN_ESTADO) {
-  console.error('[staypuft] YUC missing from ESTADOS; failing back to 2026 general rate 3.75%');
+  throw new Error(
+    '[staypuft] YUC missing from ESTADOS; fail-closed: tasa ISN Yucatán 2026 general no disponible.'
+  );
 }
-const YUCATAN_ISN_TASA =
-  YUCATAN_ISN_ESTADO?.tasasPorEjercicio?.[2026]?.general.tasaBruta ??
-  YUCATAN_ISN_ESTADO?.tasa ??
-  3.75; // TODO: fail closed if ESTADOS config is ever missing YUC
+export const YUCATAN_ISN_TASA =
+  YUCATAN_ISN_ESTADO.tasasPorEjercicio?.[2026]?.general.tasaBruta ?? YUCATAN_ISN_ESTADO.tasa;
+if (typeof YUCATAN_ISN_TASA !== 'number') {
+  throw new Error('[staypuft] YUC sin tasa ISN 2026 general definida; fail-closed.');
+}
 
 const KNOWN_SYSTEM_TENANTS: Record<
   string,
@@ -1857,6 +1860,7 @@ export async function executeToolPreview(
           importeHistorico: Number(payload.importeHistorico),
           fechaVencimiento: String(payload.fechaVencimiento),
           fechaPago: String(payload.fechaPago),
+          tipoRecargo: payload.tipoRecargo === 'estatal_yucatan' ? 'estatal_yucatan' : 'federal',
         });
         break;
       }

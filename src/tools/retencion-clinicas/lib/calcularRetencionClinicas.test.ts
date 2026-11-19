@@ -6,6 +6,10 @@ import {
   generarContenidoCotejoAafy,
   camposIdentidadFaltantes,
 } from './exportarAafyRetencion';
+import {
+  TASA_RETENCION_CLINICAS_PCT,
+  TASA_IMPUESTO_EJERCICIO_PROFESIONAL_PCT,
+} from '../data/constantes';
 import type { RetencionClinicasInput } from '../types';
 
 const baseInput: RetencionClinicasInput = {
@@ -174,5 +178,18 @@ describe('Export guard — campos de identidad faltantes (no exportar N/D en sil
 
   it('camposIdentidadFaltantes: todo completo devuelve vacío', () => {
     expect(camposIdentidadFaltantes(completo)).toEqual([]);
+  });
+});
+
+describe('T2 — fuente única de tasas de retención clínicas', () => {
+  it('usa las constantes importadas (no literales sueltos 0.02 / 0.03)', () => {
+    const res = calcularRetencionClinicas(baseInput);
+    expect(res.retencion2Pct).toBe((baseInput.montoHonorarios * TASA_RETENCION_CLINICAS_PCT) / 100);
+    expect(res.impuestoEjercicioProfesional3Pct).toBe(
+      (baseInput.montoHonorarios * TASA_IMPUESTO_EJERCICIO_PROFESIONAL_PCT) / 100
+    );
+    expect(res.tasaRetencion).toBe(TASA_RETENCION_CLINICAS_PCT);
+    expect(TASA_RETENCION_CLINICAS_PCT).toBe(2.0);
+    expect(TASA_IMPUESTO_EJERCICIO_PROFESIONAL_PCT).toBe(3.0);
   });
 });

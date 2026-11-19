@@ -7,6 +7,8 @@
  * - Art. 8 de la Ley de Ingresos de la Federación (Tasa de prórroga + 50% = 1.47% mensual)
  */
 
+export type TipoRecargo = 'federal' | 'estatal_yucatan';
+
 export interface EntradaRecargos {
   /** Importe histórico del impuesto omitido en MXN (> 0) */
   importeHistorico: number;
@@ -16,6 +18,8 @@ export interface EntradaRecargos {
   fechaPago: string;
   /** Tasa mensual de recargos (opcional, por defecto 1.47% conforme a la LIF vigente) */
   tasaRecargosMensual?: number;
+  /** Ámbito legal del recargo; el default federal preserva el contrato histórico */
+  tipoRecargo?: TipoRecargo;
 }
 
 export interface FactorActualizacionDetalle {
@@ -63,6 +67,8 @@ export interface DesgloseMesRecargo {
 }
 
 export interface ResultadoRecargos {
+  /** Ámbito legal usado para resolver la tasa de recargos */
+  tipoRecargo: TipoRecargo;
   /** Importe histórico del impuesto omitido */
   importeHistorico: number;
   /** Fecha en que debió pagarse */

@@ -113,6 +113,16 @@ function canonicalReceipt(data: unknown, jobId: string, tenantId: string): unkno
 }
 
 function toPublicJob(row: StoredJob) {
+  const draft = storedJson(row.draft_json);
+  const draftObject =
+    draft && typeof draft === 'object' && !Array.isArray(draft)
+      ? (draft as Record<string, unknown>)
+      : null;
+  const ledgerContactIds = Array.isArray(draftObject?.ledger_contact_ids)
+    ? draftObject.ledger_contact_ids.filter(
+        (leadId): leadId is string => typeof leadId === 'string'
+      )
+    : [];
   return {
     job_id: row.job_id,
     channel: row.channel,
@@ -122,6 +132,7 @@ function toPublicJob(row: StoredJob) {
     preview: storedJson(row.preview_json),
     detail: storedJson(row.detail_json),
     receipt: storedJson(row.receipt_json),
+    ledger_contact_ids: ledgerContactIds,
     created_by: row.created_by,
     created_at: row.created_at,
     updated_at: row.updated_at,

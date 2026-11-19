@@ -3,6 +3,9 @@ import { requireTenantMembership, type AuthPrincipal } from './auth';
 import { escapeHtml } from './canacoEmailService';
 import { isEmailServiceConfigured, sendTransactionalEmail } from './email/emailService';
 import { buildWhatsAppDeepLink, normalizeMexicanPhone } from '../lib/whatsappStudio';
+import { ingestCanacoSalesContact } from './canacoSalesIngest';
+
+const CANACO_COMMS_ADMIN_EMAILS = new Set(['horus.i2d@gmail.com', 'pavel@arksystems.site']);
 
 interface Lead {
   id: string;
@@ -26,6 +29,7 @@ interface Lead {
   consent_medium: string | null;
   arkangel_share_consent: number | null;
   sales_share_consent: number | null;
+  sales_consent_accepted_at: string | null;
   origin: string | null;
   is_demo: number | null;
   payment_environment: string | null;
@@ -206,6 +210,8 @@ function rowToLead(row: Record<string, unknown>): Lead {
     arkangel_share_consent:
       row.arkangel_share_consent == null ? null : Number(row.arkangel_share_consent),
     sales_share_consent: row.sales_share_consent == null ? null : Number(row.sales_share_consent),
+    sales_consent_accepted_at:
+      row.sales_consent_accepted_at == null ? null : String(row.sales_consent_accepted_at),
     origin: row.origin == null ? null : String(row.origin),
     is_demo: row.is_demo == null ? null : Number(row.is_demo),
     payment_environment: row.payment_environment == null ? null : String(row.payment_environment),
@@ -571,6 +577,21 @@ export async function handleLeadsApiRequest(
       }
       const body = (await request.json()) as Record<string, unknown>;
 
+      if (body.sales_share_consent !== undefined) {
+        const emailCanManageComms = CANACO_COMMS_ADMIN_EMAILS.has(principal.email.toLowerCase());
+        let canManageComms = principal.platformRole === 'super_admin' || emailCanManageComms;
+        if (!canManageComms) {
+          const membership = await requireTenantMembership(env, principal, tenantId);
+          canManageComms = membership !== null && membership.role !== 'member';
+        }
+        if (!canManageComms) {
+          return Response.json(
+            { error: 'Se requiere administración de CANACO para cambiar consentimiento.' },
+            { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+      }
+
       const existing = await db
         .prepare('SELECT * FROM leads_ark_tools WHERE id = ? AND tenant_id = ? LIMIT 1')
         .bind(id, tenantId)
@@ -681,11 +702,54 @@ export async function handleLeadsApiRequest(
             ? null
             : String(body.notas).trim() || null;
 
+      if (body.sales_share_consent !== undefined && typeof body.sales_share_consent !== 'boolean') {
+        return Response.json(
+          { error: 'sales_share_consent debe ser booleano.' },
+          { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+      if (body.sales_share_consent === true && Number(existing.is_demo ?? 0) === 1) {
+        return Response.json(
+          { error: 'Los contactos de demostración no pueden autorizar comunicaciones.' },
+          { status: 403, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      const salesShareConsent =
+        body.sales_share_consent === undefined
+          ? existing.sales_share_consent
+          : body.sales_share_consent
+            ? 1
+            : 0;
+      const salesConsentAcceptedAt =
+        body.sales_share_consent === undefined
+          ? existing.sales_consent_accepted_at
+          : body.sales_share_consent
+            ? new Date().toISOString()
+            : null;
+
+      if (
+        body.sales_share_consent !== undefined &&
+        body.sales_share_consent === true &&
+        tenantId === 'canaco_merida'
+      ) {
+        await ingestCanacoSalesContact(env, {
+          id,
+          tenantId,
+          name: String(existing.contacto_nombre || 'Socio CANACO'),
+          company: String(existing.web || 'CANACO Mérida'),
+          email: String(existing.email || ''),
+          phone: String(existing.whatsapp || ''),
+        });
+      }
+
       await db
         .prepare(
           `UPDATE leads_ark_tools SET
             web = ?, whatsapp = ?, email = ?, ciudad = ?, especialidad = ?, status = ?,
-            last_contact = ?, contacto_nombre = ?, notas = ?, updated_at = CURRENT_TIMESTAMP
+            last_contact = ?, contacto_nombre = ?, notas = ?,
+            sales_share_consent = ?, sales_consent_accepted_at = ?,
+            updated_at = CURRENT_TIMESTAMP
            WHERE id = ? AND tenant_id = ?`
         )
         .bind(
@@ -698,6 +762,8 @@ export async function handleLeadsApiRequest(
           last_contact,
           contacto_nombre,
           notas,
+          salesShareConsent,
+          salesConsentAcceptedAt,
           id,
           tenantId
         )
@@ -720,6 +786,8 @@ export async function handleLeadsApiRequest(
             last_contact,
             contacto_nombre,
             notas,
+            sales_share_consent: salesShareConsent,
+            sales_consent_accepted_at: salesConsentAcceptedAt,
           });
 
       return Response.json(

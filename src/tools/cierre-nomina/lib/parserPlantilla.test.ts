@@ -18,6 +18,12 @@ import {
   parsearPlantillaXLSX,
 } from './parserPlantilla';
 import * as XLSX from 'xlsx';
+import { VALORES_POR_ID } from '@/data/valores-vigentes/catalogo';
+
+const SMG_2026 = VALORES_POR_ID.get('SALARIO_MINIMO_GENERAL_2026')?.valor as number;
+if (!Number.isFinite(SMG_2026)) {
+  throw new Error('SALARIO_MINIMO_GENERAL_2026 no encontrado en el catálogo canónico.');
+}
 
 describe('parserPlantilla — Sprint 11', () => {
   describe('detectarDelimitador', () => {
@@ -158,6 +164,11 @@ describe('parserPlantilla — Sprint 11', () => {
       const resultado = parsearPlantillaNomina(contenido);
       expect(resultado.esValido).toBe(false);
       expect(resultado.errores[0]).toContain('supera el máximo');
+    });
+
+    it('usa el SMG 2026 del catálogo canónico en la plantilla de ejemplo (fuente única)', () => {
+      const csv = generarPlantillaEjemploCSV();
+      expect(csv).toContain(String(SMG_2026.toFixed(2)));
     });
   });
 });

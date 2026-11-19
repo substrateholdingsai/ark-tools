@@ -1,7 +1,12 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { handleLeadsApiRequest } from './leadsApi';
+import { ingestCanacoSalesContact } from './canacoSalesIngest';
 import type { Env } from '../index';
 import type { AuthPrincipal } from './auth';
+
+vi.mock('./canacoSalesIngest', () => ({
+  ingestCanacoSalesContact: vi.fn(),
+}));
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://ledger.arksystems.site',
@@ -15,6 +20,11 @@ const superAdminUser: AuthPrincipal = {
   fullName: 'Super Admin',
   platformRole: 'super_admin',
 };
+
+afterEach(() => {
+  vi.clearAllMocks();
+  vi.useRealTimers();
+});
 
 const sampleLeadRow = {
   id: 'lead-1',
@@ -76,6 +86,64 @@ function createEnv(db?: D1Database): Env {
     ENVIRONMENT: 'development',
     ALLOWED_ORIGIN: 'https://ledger.arksystems.site',
   } as unknown as Env;
+}
+
+function consentRequest(authorized: boolean, tenant = 'canaco_merida'): Request {
+  return new Request(
+    `https://ledger.arksystems.site/api/admin/leads/lead-1?tenant=${encodeURIComponent(tenant)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sales_share_consent: authorized }),
+    }
+  );
+}
+
+function createConsentDb(
+  role: 'admin' | 'member',
+  consent: Record<string, unknown> = {}
+): { database: D1Database; updateBindings: unknown[][] } {
+  const row = {
+    ...sampleLeadRow,
+    tenant_id: 'canaco_merida',
+    is_demo: 0,
+    sales_share_consent: 0,
+    sales_consent_accepted_at: null,
+    ...consent,
+  };
+  const updateBindings: unknown[][] = [];
+  const database = {
+    prepare: vi.fn((query: string) => {
+      let bindings: unknown[] = [];
+      const statement = {
+        bind: vi.fn((...args: unknown[]) => {
+          bindings = args;
+          return statement;
+        }),
+        first: vi.fn(async () => {
+          if (query.includes('tenant_memberships')) {
+            return {
+              id: 'canaco_merida',
+              name: 'CANACO',
+              slug: 'canaco_merida',
+              role,
+            };
+          }
+          if (query.includes('FROM leads_ark_tools WHERE id = ?')) return row;
+          return null;
+        }),
+        all: vi.fn(async () => ({ results: [] })),
+        run: vi.fn(async () => {
+          if (query.includes('UPDATE leads_ark_tools SET')) {
+            updateBindings.push(bindings);
+          }
+          return { success: true, meta: { changes: 1 } };
+        }),
+      };
+      return statement;
+    }),
+  } as unknown as D1Database;
+  return { database, updateBindings };
 }
 
 describe('handleLeadsApiRequest', () => {
@@ -246,6 +314,109 @@ describe('handleLeadsApiRequest', () => {
 
     const json = (await res?.json()) as { ok: boolean; lead: { id: string } };
     expect(json.ok).toBe(true);
+  });
+
+  it('deniega a un miembro cambiar el consentimiento de Sales', async () => {
+    const member: AuthPrincipal = {
+      id: 'member-1',
+      email: 'member@example.com',
+      fullName: 'Miembro',
+      platformRole: 'user',
+    };
+    const db = createConsentDb('member');
+    const response = await handleLeadsApiRequest(
+      consentRequest(true),
+      createEnv(db.database),
+      corsHeaders,
+      member
+    );
+
+    expect(response?.status).toBe(403);
+    expect(db.updateBindings).toHaveLength(0);
+  });
+
+  it('permite opt-in admin y persiste consentimiento, fecha e ingesta Sales', async () => {
+    const db = createConsentDb('admin');
+    const tenantAdmin: AuthPrincipal = {
+      id: 'tenant-admin-1',
+      email: 'tenant-admin@example.com',
+      fullName: 'Admin CANACO',
+      platformRole: 'user',
+    };
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-18T16:00:00.000Z'));
+
+    const response = await handleLeadsApiRequest(
+      consentRequest(true),
+      createEnv(db.database),
+      corsHeaders,
+      tenantAdmin
+    );
+
+    expect(response?.status).toBe(200);
+    expect(db.updateBindings).toHaveLength(1);
+    expect(db.updateBindings[0]?.slice(9, 11)).toEqual([1, '2026-11-18T16:00:00.000Z']);
+    expect(ingestCanacoSalesContact).toHaveBeenCalledTimes(1);
+  });
+
+  it('retira el consentimiento sin ingestar y limpia la fecha', async () => {
+    const db = createConsentDb('admin', {
+      sales_share_consent: 1,
+      sales_consent_accepted_at: '2026-11-17T10:00:00.000Z',
+    });
+
+    const response = await handleLeadsApiRequest(
+      consentRequest(false),
+      createEnv(db.database),
+      corsHeaders,
+      superAdminUser
+    );
+
+    expect(response?.status).toBe(200);
+    expect(db.updateBindings[0]?.slice(9, 11)).toEqual([0, null]);
+    expect(ingestCanacoSalesContact).not.toHaveBeenCalled();
+  });
+
+  it('no ingesta Sales en PATCH sin cambio de consentimiento ni fuera de canaco', async () => {
+    const adminDb = createConsentDb('admin');
+    const unrelatedResponse = await handleLeadsApiRequest(
+      new Request('https://ledger.arksystems.site/api/admin/leads/lead-1?tenant=canaco_merida', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ciudad: 'Mérida' }),
+      }),
+      createEnv(adminDb.database),
+      corsHeaders,
+      superAdminUser
+    );
+
+    expect(unrelatedResponse?.status).toBe(200);
+    expect(ingestCanacoSalesContact).not.toHaveBeenCalled();
+
+    const otherTenantDb = createConsentDb('admin');
+    const otherTenantResponse = await handleLeadsApiRequest(
+      consentRequest(true, 'ark'),
+      createEnv(otherTenantDb.database),
+      corsHeaders,
+      superAdminUser
+    );
+    expect(otherTenantResponse?.status).toBe(200);
+    expect(ingestCanacoSalesContact).not.toHaveBeenCalled();
+  });
+
+  it('no persiste consentimiento si falla la ingesta Sales', async () => {
+    vi.mocked(ingestCanacoSalesContact).mockRejectedValueOnce(new Error('Sales unavailable'));
+    const db = createConsentDb('admin');
+
+    const response = await handleLeadsApiRequest(
+      consentRequest(true),
+      createEnv(db.database),
+      corsHeaders,
+      superAdminUser
+    );
+
+    expect(response?.status).toBe(500);
+    expect(db.updateBindings).toHaveLength(0);
   });
 
   it('elimina un prospecto en DELETE /api/admin/leads/:id', async () => {

@@ -41,6 +41,9 @@ interface AdminExpedienteModalProps {
   razonSocial: string;
   whatsapp?: string | null;
   contactoNombre?: string | null;
+  salesShareConsent?: number | null;
+  salesConsentAcceptedAt?: string | null;
+  isDemo?: number | null;
   onDictamenActualizado?: () => void;
 }
 
@@ -51,6 +54,9 @@ export function AdminExpedienteModal({
   razonSocial,
   whatsapp,
   contactoNombre,
+  salesShareConsent,
+  salesConsentAcceptedAt,
+  isDemo,
   onDictamenActualizado,
 }: AdminExpedienteModalProps) {
   const [data, setData] = useState<ExpedienteAdminData | null>(null);
@@ -143,6 +149,18 @@ export function AdminExpedienteModal({
             <h3 className="mt-1 font-fraunces text-xl font-bold text-henequen-anil">
               Expediente Digital de {razonSocial}
             </h3>
+            <p className="mt-2 text-xs text-henequen-piedra">
+              Sales / Comunicaciones:{' '}
+              <strong>
+                {isDemo === 1
+                  ? 'excluido (demo)'
+                  : salesShareConsent === 1 && salesConsentAcceptedAt
+                    ? `autorizado${salesConsentAcceptedAt ? ` · ${salesConsentAcceptedAt}` : ''}`
+                    : 'sin autorización'}
+              </strong>
+              {' · Arkangel (colecciones): '}
+              <strong>gestionado en el padrón separado</strong>
+            </p>
           </div>
           <button
             type="button"

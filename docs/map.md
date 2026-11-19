@@ -15,18 +15,18 @@
 
 | Métrica                        | Estado                                                                                                                                                                                                                                                                                                      |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Herramientas integradas**    | **22 de 22** (100% operativas en código; ver §3 y `src/data/catalogo-herramientas.ts`, incluye Tool 22 `caja-codi`)                                                                                                                                                                                         |
-| **Catálogo fiscal (DOF 2026)** | **16 valores oficiales vigentes** (UMA diaria/mensual, SMG general/frontera, Tope SBC 25 UMAs, Tarifa ISR mensual, CUOTA_MODALIDAD_40_2026, TASA_RECARGOS_MORA_2026, cuotas IMSS patrón 2026 rama por rama + INFONAVIT línea separada). Auditoría `pnpm verify:catalogo`: **16/16**, 0 proyecciones         |
+| **Herramientas integradas**    | **22 de 22** (100% operativas en código; ver §3 y `src/data/catalogo-herramientas.ts`, incluye `caja-codi` y `retencion-clinicas`)                                                                                                                                                                          |
+| **Catálogo fiscal (DOF 2026)** | **22 entradas registradas** (16 valores base + 6 tasas ISN Yucatán); adicionalmente, recargos estatales Yucatán se resuelven en `src/tools/recargos/data/constantes.ts` al **2.07%**. Auditoría `pnpm verify:catalogo`: **22/22**, 0 proyecciones                                                           |
 | **ISN Yucatán**                | **Versionado 2025/2026** (Art. 21–27 LGHY, Decreto 138/2025 y Decreto 147/2025): 2025 = **3.0%**, 2026 general = **3.75%**, 2026 micro/pequeña (1–50 emp.) = **3.0% neto** (−0.75% estímulo), gobierno estatal = **4.75% bruto** (estímulo no confirmado). Cédula Oficial AAFY exportable en CSV UTF-8 BOM  |
 | **Ventanilla Tripartita**      | **CANACO — AAFY — SAT — IMSS**: Registro simultáneo (NRP IMSS 11 chars + REC Estatal AAFY), sincronización en D1 y distintivo `Tripartito AAFY-IMSS` en Padrón de Socios                                                                                                                                    |
-| **Migraciones D1**             | **0001 → 0013** (13 migraciones, `ark_tools_db`)                                                                                                                                                                                                                                                            |
+| **Migraciones D1**             | **0001 → 0016 aplicadas; 0017 y 0018 pendientes de aprobación** (`ark_tools_db`)                                                                                                                                                                                                                            |
 | **Timbrado CFDI 4.0**          | **Facturapi v2** (Sandbox SAT `EKU9003173C9` + Producción). Rutas `/api/facturapi/*` y alias `/api/alegra/*`. **Estado: `preview_only`** — timbrado en vivo deshabilitado hasta que el distribuidor ATEB/Facturapi firme precios por escrito. `ok: true` = pre-validación fiscal funciona, NO timbrado live |
 | **Approval Gate (StayPuft)**   | Bloquea POST timbrado y DELETE cancelación en `/api/facturapi/invoices` y `/api/alegra/invoices` sin aprobación explícita de Pavel                                                                                                                                                                          |
 | **Workers AI / StayPuft**      | Conector v3.1, telemetría de neuronas/tokens, `/api/internal/ai/ask`, `/api/internal/metrics`                                                                                                                                                                                                               |
 | **Typecheck (TypeScript)**     | **0 errores** en modo estricto (`pnpm typecheck` → `tsc --noEmit`) — verificado                                                                                                                                                                                                                             |
 | **Linting (ESLint)**           | **0 errores, 0 advertencias** (`pnpm lint --max-warnings 0`) — verificado                                                                                                                                                                                                                                   |
 | **Formato (Prettier)**         | **100% uniforme** (`pnpm format:check` pasa) — verificado                                                                                                                                                                                                                                                   |
-| **Pruebas (Vitest)**           | **93 suites pasadas / 764 pruebas pasadas (100% de éxito en vitest run)** — verificado en puerta completa                                                                                                                                                                                                   |
+| **Pruebas (Vitest)**           | **110 suites pasadas / 984 pruebas pasadas (100% de éxito en vitest run)** — verificado en puerta completa                                                                                                                                                                                                  |
 | **Compliance Multi-Tenant**    | **Marco LFPDPPP (DRAFT pendiente de revisión legal):** 3 docs en `docs/compliance/`, fuente parametrizada `src/data/compliance-legal.ts`, `LegalComplianceModal.tsx` conectado a `Footer.tsx` y `CanacoLandingPage.tsx`                                                                                     |
 | **GEO Engine**                 | `/llms.txt`, `/llms-full.txt`, `/robots.txt` generados dinámicamente desde el catálogo canónico (22 herramientas)                                                                                                                                                                                           |
 
@@ -82,7 +82,7 @@ ark-tools/
 │   └── sql/
 │       ├── schema_leads.sql         ✅ Tabla leads_ark_tools
 │       └── seed_leads.sql           ✅ Carga inicial de prospectos
-├── migrations/                      ✅ 13 migraciones D1 aplicadas en orden
+├── migrations/                      ✅ 18 archivos; 0001–0016 aplicadas, 0017–0018 pendientes
 │   ├── 0001_initial_schema.sql
 │   ├── 0002_expediente_unico.sql
 │   ├── 0003_native_auth.sql
@@ -95,7 +95,12 @@ ark-tools/
 │   ├── 0010_sentinela_regulatory_events.sql
 │   ├── 0011_billing_webhook_events.sql
 │   ├── 0012_staypuft_audit_log.sql
-│   └── 0013_staypuft_ai_telemetry.sql   (CREATE TABLE IF NOT EXISTS, idempotente)
+│   ├── 0013_staypuft_ai_telemetry.sql   (CREATE TABLE IF NOT EXISTS, idempotente)
+│   ├── 0014_canaco_lifecycle.sql
+│   ├── 0015_canaco_structured_employees.sql
+│   ├── 0016_canaco_delegaciones.sql
+│   ├── 0017_canaco_comms_jobs.sql       (pendiente)
+│   └── 0018_canaco_sales_consent.sql    (pendiente)
 ├── instagram-creatives/             ✅ Generador creativos Instagram (Playwright + Jinja2)
 ├── forge_ark_meta.py                ✅ Generador SVG Social Meta Tags (cero deps)
 ├── public/                          ✅ Assets estáticos servidos por Workers
@@ -188,8 +193,8 @@ ark-tools/
 │   │   │   └── index.ts             ✅ Barrel export
 │   │   └── index.ts                 ✅ Barrel export
 │   ├── data/
-│   │   ├── valores-vigentes/        ✅ Catálogo centralizado valores fiscales DOF 2026 (8 valores)
-│   │   │   ├── catalogo.ts          ✅ UMA, SMG, Tope SBC, Tarifa ISR, CUOTA_MODALIDAD_40_2026, TASA_RECARGOS_MORA_2026, TABLA_INPC
+│   │   ├── valores-vigentes/        ✅ Catálogo centralizado valores fiscales DOF 2026 (22 entradas)
+│   │   │   ├── catalogo.ts          ✅ 16 valores base + 6 tasas ISN Yucatán; TASA_RECARGOS_MORA_2026, TABLA_INPC
 │   │   │   ├── tipos.ts             ✅ Interfaces ValorFiscal, ConfigVigencia
 │   │   │   ├── vigencia.ts          ✅ Motor evaluarVigencia / evaluarLote
 │   │   │   ├── hooks.ts             ✅ useValorFiscal, useEstadoCatalogo
@@ -197,13 +202,13 @@ ark-tools/
 │   │   │   └── index.ts             ✅ Barrel export
 │   │   ├── estados.ts               ✅ Re-export ESTADOS desde isn/data/estados.ts (fuente única)
 │   │   ├── catalogo-herramientas.ts ✅ Catálogo canónico 22 herramientas; TOTAL_HERRAMIENTAS = .length
-│   │   ├── catalogo-herramientas.test.ts ✅ Sincronía con ToolId de App.tsx (20)
+│   │   ├── catalogo-herramientas.test.ts ✅ Sincronía con ToolId de App.tsx (22)
 │   │   ├── actos.ts                 ✅ Guía SAT/IMSS (8 pasos, 8 actos, 3 plazos)
 │   │   ├── conductas.ts             ✅ Activos Virtuales (12 conductas, 5 autoridades, umbrales)
 │   │   ├── conductas-cobranza.ts    ✅ Auditoría Cobranza (43 conductas, 8 secciones)
 │   │   ├── comparadores-contrato-crm.ts ✅ 12 comparadores Contrato vs CRM
 │   │   └── demo-onboarding.ts       ✅ Entidades canónicas de demo (DEMO_EMPRESA, DEMO_TRABAJADOR)
-│   └── tools/                       ✅ 20 módulos de herramientas
+│   └── tools/                       ✅ 21 módulos locales; `caja-codi` se resuelve externamente desde App.tsx
 │       ├── isn/                     ✅ Calculadora ISN 32 estados + Cédula Oficial AAFY (Yucatán 3.75% bruto / 3.0% neto MIPyME 2026, Decreto 138/2025 + 147/2025, CSV UTF-8 BOM)
 │       ├── sbc/                     ✅ Calculadora SBC IMSS
 │       ├── nomina/                  ✅ Nómina Rápida 2026 (ISR + IMSS obrero)
@@ -213,9 +218,10 @@ ark-tools/
 │       ├── balance-general/         ✅ Balance General Comparativo (#15)
 │       ├── anexo24/                 ✅ Conciliación Anexo 24 (#16)
 │       ├── monitor-lfpiorpi/        ✅ Monitor Actividades Vulnerables (#17)
-│       ├── recargos/                ✅ Actualización y Recargos CFF (#18)
+│       ├── recargos/                ✅ Actualización y Recargos federal/estatal Yucatán (#18)
 │       ├── modalidad40/             ✅ Simulador Modalidad 40 DOF 2026 (#19)
 │       ├── auditor-cfdi-atipico/    ✅ Detector de Comportamientos Atípicos CFDI (#20)
+│       ├── retencion-clinicas/      ✅ Retención 2% Clínicas/Hospitales Yucatán (#22)
 │       ├── xml-excel/               ✅ Conversor XML a CSV para Excel (CFDI 4.0/3.3)
 │       ├── xml-validador/           ✅ Validador y Auditor de XMLs
 │       ├── spei/                    ✅ Generador Enlaces de Pago Clip / SPEI
@@ -228,6 +234,9 @@ ark-tools/
 │           ├── useAlegra.ts         ✅ Hook multi-empresa, estado CSD, cancelInvoice
 │           └── components/
 │               └── AlegraConnectModal.tsx ✅ Conexión Secret Key sk_test_/sk_live_, badge Sandbox/Producción
+│
+│   Nota: `caja-codi` (#13) completa las 22 herramientas mediante enlace externo a
+│   `caja.arksystems.site` desde `src/App.tsx`; no ocupa un directorio en `src/tools/`.
 │   └── server/                      ✅ APIs del Cloudflare Worker
 │       ├── auth.ts                  ✅ Contraseñas PBKDF2, cookies HttpOnly, Resend, verificación/reset
 │       ├── adminApi.ts              ✅ Super Admin Console (métricas, directorio tenants, roles)
@@ -265,7 +274,7 @@ ark-tools/
 
 Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALOGO_HERRAMIENTAS.length` (22). Cada `id` coincide con el `ToolId` del router en `src/App.tsx` (verificado por `catalogo-herramientas.test.ts`).
 
-### Grupo A — 12 esenciales PyME / CANACO (comercio y MiPyMEs)
+### Grupo A — 13 esenciales PyME / CANACO (comercio y MiPyMEs)
 
 | #   | id                | Nombre                                                    | Categoría                         | Estado           |
 | --- | ----------------- | --------------------------------------------------------- | --------------------------------- | ---------------- |
@@ -283,7 +292,7 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 | 12  | `timbrado`        | Timbrado de Facturas CFDI 4.0 vía Facturapi PAC           | Cobros y Facturación Fiscal B2B   | **preview_only** |
 | 13  | `caja-codi`       | Cobro con CoDi — Ark Caja (enlace externo)                | Cobros y Facturación Fiscal B2B   | active           |
 
-### Grupo B — 8 corporativo / forense / PLD (Prevención de Lavado de Dinero)
+### Grupo B — 9 corporativo, forense, PLD y Yucatán
 
 | #   | id                     | Nombre                                                 | Categoría                     | Estado |
 | --- | ---------------------- | ------------------------------------------------------ | ----------------------------- | ------ |
@@ -295,6 +304,7 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 | 19  | `recargos`             | Calculadora de Actualización y Recargos Fiscales (CFF) | Fiscal y Laboral              | active |
 | 20  | `modalidad40`          | Simulador de Modalidad 40 (Criterio DOF 2026)          | Fiscal y Laboral              | active |
 | 21  | `auditor-cfdi-atipico` | Detector de Comportamientos Atípicos en CFDI           | SAT y Auditoría CFDI 4.0      | active |
+| 22  | `retencion-clinicas`   | Retención 2% Clínicas y Hospitales (Yucatán)           | Fiscal y Laboral              | active |
 
 ---
 
@@ -334,7 +344,7 @@ Fuente única: `src/data/catalogo-herramientas.ts`. `TOTAL_HERRAMIENTAS = CATALO
 
 ## 5. Valores Fiscales Vigentes (DOF 2026)
 
-Catálogo en `src/data/valores-vigentes/catalogo.ts` — **8 valores oficiales**, auditoría `pnpm verify:catalogo`: **8/8**, 0 proyecciones:
+Catálogo en `src/data/valores-vigentes/catalogo.ts` — **22 entradas oficiales o verificadas**, auditoría `pnpm verify:catalogo`: **22/22**, 0 proyecciones:
 
 1. `UMA_DIARIA_2026` — UMA diaria 2026
 2. `UMA_MENSUAL_2026` — UMA mensual 2026
@@ -344,14 +354,28 @@ Catálogo en `src/data/valores-vigentes/catalogo.ts` — **8 valores oficiales**
 6. `TARIFA_ISR_MENSUAL_2026` — Tarifa ISR mensual 2026 (11 rangos internos)
 7. `CUOTA_MODALIDAD_40_2026` — Cuota Modalidad 40 2026 (14.438%)
 8. `TASA_RECARGOS_MORA_2026` — Tasa recargos por mora 2026 (1.47% mensual)
+9. `CUOTA_IMSS_PATRONAL_ENFERMEDADES_MATERNIDAD_FIJA_2026`
+10. `CUOTA_IMSS_PATRONAL_ENFERMEDADES_MATERNIDAD_ADICIONAL_2026`
+11. `CUOTA_IMSS_PATRONAL_GASTOS_MEDICOS_PENSIONADOS_2026`
+12. `CUOTA_IMSS_PATRONAL_INVALIDEZ_VIDA_2026`
+13. `CUOTA_IMSS_PATRONAL_GUARDERIAS_2026`
+14. `CUOTA_IMSS_PATRONAL_RETIRO_2026`
+15. `CUOTA_IMSS_PATRONAL_CESANTIA_VEJEZ_2026`
+16. `CUOTA_IMSS_PATRONAL_INFONAVIT_2026`
+17. `ISN_YUC_2025_GENERAL` — ISN Yucatán 2025 general (3.0%)
+18. `ISN_YUC_2026_GENERAL` — ISN Yucatán 2026 general (3.75%)
+19. `ISN_YUC_2026_MICROPEQUENA_BRUTA` — tasa bruta 2026 (3.75%)
+20. `ISN_YUC_2026_MICROPEQUENA_ESTIMULO` — estímulo micro/pequeña (0.75%)
+21. `ISN_YUC_2026_MICROPEQUENA_NETA` — tasa neta micro/pequeña (3.0%)
+22. `ISN_YUC_2026_GOBIERNO_ESTATAL` — gobierno estatal (4.75%)
 
-**ISN Yucatán (Versionado 2025/2026):** Art. 21 al 27 LGHY, Decreto 138/2025 (D.O. 26-dic-2025) y Decreto 147/2025 (D.O. 31-dic-2025) — definido en `src/tools/isn/data/estados.ts` (`id: 'YUC'`, 2025 = 3.0%, 2026 general = 3.75%, 2026 micro/pequeña 1–50 emp. = 3.0% neto con estímulo −0.75%, gobierno estatal = 4.75% bruto con estímulo no confirmado). Incluye generador de Cédula Oficial AAFY en CSV con BOM UTF-8 (`src/tools/isn/lib/exportarCedulaAafy.ts`). Tool 21 (`src/tools/retencion-clinicas/`) implementa Retención 2% Clínicas y Hospitales (Art. 20-Bis a 20-Quinquies LGHY, formatos AAFY-30 y AAFY-31, exclusivo Yucatán). Nunca hardcodear valores fiscales; importar siempre desde `@/data/valores-vigentes/catalogo`.
+**ISN Yucatán (versionado 2025/2026):** las seis entradas anteriores provienen de los Decretos 138/2025 y 147/2025 y se consumen desde `catalogo.ts`; `src/tools/isn/data/estados.ts` ya no duplica tasas. **Recargos Yucatán 2026:** `TASA_RECARGOS_MORA_YUCATAN_2026 = 2.07%`, Art. 56 de la Ley de Ingresos del Estado de Yucatán 2026, Decreto 140/2025. Por su naturaleza operativa local se mantiene en `src/tools/recargos/data/constantes.ts`, fuera del arreglo de 22 valores, y queda validada por `verify:catalogo`. Tool 22 (`src/tools/retencion-clinicas/`) implementa Retención 2% Clínicas y Hospitales (Art. 20-Bis a 20-Quinquies LGHY, formatos AAFY-30 y AAFY-31, exclusivo Yucatán). Nunca hardcodear valores fiscales; importar desde el catálogo central o desde la constante local documentada.
 
 ---
 
-## 6. Migraciones D1 (0001 → 0017)
+## 6. Migraciones D1 (0001 → 0018)
 
-Las migraciones `0001`–`0016` están aplicadas en `ark_tools_db`; `0017` está pendiente:
+Las migraciones `0001`–`0016` están aplicadas en `ark_tools_db`; `0017` y `0018` están pendientes de aprobación:
 
 | #   | Archivo                                | Tabla / propósito                                                                                                       |
 | --- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -372,6 +396,7 @@ Las migraciones `0001`–`0016` están aplicadas en `ark_tools_db`; `0017` está
 | 15  | `0015_canaco_structured_employees.sql` | Datos estructurados de empleados CANACO                                                                                 |
 | 16  | `0016_canaco_delegaciones.sql`         | Delegaciones CANACO y asignaciones a registros del CRM                                                                  |
 | 17  | `0017_canaco_comms_jobs.sql`           | Índice CRM de trabajos de comunicaciones CANACO y recibos del worker                                                    |
+| 18  | `0018_canaco_sales_consent.sql`        | Consentimiento específico de Sales y vínculos de comunicaciones CANACO                                                  |
 
 > **No aplicar migraciones remotamente sin aprobación de Pavel.** Local only.
 
@@ -419,13 +444,13 @@ durante esta construcción.
 
 Ejecutada localmente antes de revisar este mapa:
 
-| Comando                                  | Resultado                                                                        |
-| ---------------------------------------- | -------------------------------------------------------------------------------- |
-| `pnpm typecheck` (`tsc --noEmit`)        | ✅ PASS — 0 errores TypeScript                                                   |
-| `pnpm lint` (`eslint --max-warnings 0`)  | ✅ PASS — 0 errores, 0 advertencias                                              |
-| `pnpm format:check` (`prettier --check`) | ✅ PASS — repositorio 100% uniforme                                              |
-| `pnpm verify:catalogo`                   | ✅ PASS — 8/8 valores oficiales DOF vigentes, 0 proyecciones                     |
-| `pnpm test` (`vitest run`)               | ✅ PASS — 93 suites pasadas / 764 pruebas pasadas (100% de éxito en vitest run). |
+| Comando                                  | Resultado                                                                         |
+| ---------------------------------------- | --------------------------------------------------------------------------------- |
+| `pnpm typecheck` (`tsc --noEmit`)        | ✅ PASS — 0 errores TypeScript                                                    |
+| `pnpm lint` (`eslint --max-warnings 0`)  | ✅ PASS — 0 errores, 0 advertencias                                               |
+| `pnpm format:check` (`prettier --check`) | ✅ PASS — repositorio 100% uniforme                                               |
+| `pnpm verify:catalogo`                   | ✅ PASS — 22/22 entradas del catálogo + recargos Yucatán 2.07%, 0 proyecciones    |
+| `pnpm test` (`vitest run`)               | ✅ PASS — 110 suites pasadas / 984 pruebas pasadas (100% de éxito en vitest run). |
 
 > `map.md` solo afirma "100% uniforme" de formato porque `pnpm format:check` pasó en este commit.
 
@@ -435,9 +460,15 @@ Ejecutada localmente antes de revisar este mapa:
 
 El detalle cronológico de **Sprints 1-34** (incluyendo el evolución de conteos de herramientas 13→14→15→18→19→20, conteos de pruebas, correcciones de formato, catálogo sincronizado, etc.) se encuentra en `docs/changelog.md`. Este mapa (`map.md`) se mantiene como **estado actual** únicamente; `docs/changelog.md` conserva el historial completo para referencia y auditoría.
 
+### Fases fiscales 2026 — 18 de noviembre de 2026
+
+- **Fase 1 — Hardcodes eliminados:** StayPuft consume ISN Yucatán desde `estados.ts` con fail-closed; retención clínicas usa constantes citadas; cierre-nómina, RESICO y SPEI eliminan defaults fiscales duplicados.
+- **Fase 2 — ISN Yucatán al catálogo:** seis valores 2025/2026 migrados a `catalogo.ts`; `estados.ts` consume `getValor`; vigencia y escáner validados.
+- **Fase 3 — Selector Federal/Estatal:** recargos admite `federal` y `estatal_yucatan`; Yucatán usa 2.07% según Art. 56, Decreto 140/2025; CANACO prioriza Yucatán y ARK conserva federal.
+
 ---
 
-**Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00):** 22 herramientas (12 PyME + 8 corporativo/forense/PLD + 1 retención clínicas + 1 enlace externo CoDi), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 + Cédula Oficial AAFY, Cierre de Nómina + Layout IDSE/DISPMAG (175 chars, longitud Ledger no confirmada por manual oficial IMSS), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 16/16, pruebas 93 suites / 764 tests (100%).
+**Nota de verificación para el walkthrough CANACO (lun 2026-11-16 10:00, actualizada 18-nov-2026):** 22 herramientas (13 esenciales PyME/CANACO + 9 corporativo/forense/Yucatán), timbrado `preview_only` (Facturapi Sandbox SAT `EKU9003173C9`), ISN Yucatán 3.75% bruto / 3.0% neto MIPyME 2026 + Cédula Oficial AAFY, recargos estatales Yucatán 2.07% (Art. 56, Decreto 140/2025), Cierre de Nómina + Layout IDSE/DISPMAG (175 chars, longitud Ledger no confirmada por manual oficial IMSS), Ventanilla Tripartita CANACO (NRP + REC + distintivo AAFY-IMSS), WhatsApp Studio, formato Prettier verificado (100%), typecheck 0, lint 0/0, catálogo 22/22, pruebas 110 suites / 984 tests (100%).
 
 ## Nota de alcance — Bóveda Offline (.zip) y verificación "2034 sin servidor"
 

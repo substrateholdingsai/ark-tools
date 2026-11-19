@@ -64,4 +64,16 @@ describe('catálogo de valores vigentes', () => {
       'CRÍTICO: valores fiscales vencidos sin reemplazo'
     ).toEqual([]);
   });
+
+  it('ISN Yucatán: tasas idénticas a las migradas de estados.ts (3.0, 3.75, 3.0, 4.75)', () => {
+    const obtener = (id: string): number => {
+      const v = VALORES_POR_ID.get(id);
+      expect(v, `falta entrada de catálogo ${id}`).toBeDefined();
+      return Number(v!.valor);
+    };
+    expect(obtener('ISN_YUC_2025_GENERAL')).toBe(3.0);
+    expect(obtener('ISN_YUC_2026_GENERAL')).toBe(3.75);
+    expect(obtener('ISN_YUC_2026_MICROPEQUENA_NETA')).toBe(3.0);
+    expect(obtener('ISN_YUC_2026_GOBIERNO_ESTATAL')).toBe(4.75);
+  });
 });
