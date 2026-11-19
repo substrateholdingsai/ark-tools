@@ -50,10 +50,27 @@ describe('AlertasVigencia — integración con fecha simulada', () => {
     expect(screen.getAllByText(/Vence en/)).toHaveLength(expectedProximos);
   });
 
-  it('no muestra alerta en 2026-06-15 (todo vigente)', () => {
-    const { container } = renderWithTime(new Date('2026-06-15T12:00:00Z'));
-    // No debe renderizar nada
-    expect(container.firstChild).toBeNull();
+  it('no muestra alerta para tasas vigentes en 2026-06-15 (tasas históricas ignoradas)', () => {
+    const hoy = new Date('2026-06-15T12:00:00Z');
+    const fechaISO = hoy.toISOString().slice(0, 10);
+    renderWithTime(hoy);
+    // El catálogo conserva historial; las tasas caducadas antes de la fecha de referencia
+    // generan alertas legítimas y quedan fuera de esta aserción.
+    const tasasVigentes = CATALOGO_2026.filter(
+      (valor) =>
+        (valor.vigencia.fin === null || valor.vigencia.fin >= fechaISO) &&
+        evaluarVigencia(valor, { fechaReferencia: hoy, diasAlerta: 60 }).estado === 'vigente'
+    );
+    const tasasHistoricas = CATALOGO_2026.filter(
+      (valor) => valor.vigencia.fin !== null && valor.vigencia.fin < fechaISO
+    );
+
+    expect(tasasVigentes.length).toBeGreaterThan(0);
+    expect(tasasHistoricas.some((valor) => valor.id === 'ISN_YUC_2025_GENERAL')).toBe(true);
+
+    for (const valor of tasasVigentes) {
+      expect(screen.queryByText(valor.nombre, { exact: false })).not.toBeInTheDocument();
+    }
   });
 
   it('muestra múltiples vencidos ordenados por criticidad (2027-02-01)', () => {

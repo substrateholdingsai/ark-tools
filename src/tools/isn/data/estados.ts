@@ -23,6 +23,15 @@ const getValor = (id: string): number => {
 export const UMA_DIARIA = getValor('UMA_DIARIA_2026');
 export const TOPE_25_UMA = getValor('TOPE_SBC_25_UMA_2026');
 
+// ─── ISN Yucatán — fuente de verdad en @/data/valores-vigentes/catalogo.ts ───
+// Decretos 138/2025 y 147/2025. Ningún literal de tasa se define en este archivo.
+const ISN_YUC_2025_GENERAL = getValor('ISN_YUC_2025_GENERAL');
+const ISN_YUC_2026_GENERAL = getValor('ISN_YUC_2026_GENERAL');
+const ISN_YUC_2026_MICRO_BRUTA = getValor('ISN_YUC_2026_MICROPEQUENA_BRUTA');
+const ISN_YUC_2026_MICRO_ESTIMULO = getValor('ISN_YUC_2026_MICROPEQUENA_ESTIMULO');
+const ISN_YUC_2026_MICRO_NETA = getValor('ISN_YUC_2026_MICROPEQUENA_NETA');
+const ISN_YUC_2026_GOBIERNO = getValor('ISN_YUC_2026_GOBIERNO_ESTATAL');
+
 export const ESTADOS: Estado[] = [
   {
     id: 'AGS',
@@ -268,16 +277,16 @@ export const ESTADOS: Estado[] = [
     id: 'YUC',
     nombre: 'Yucatán',
     corto: 'Yuc',
-    tasa: 3.75,
+    tasa: ISN_YUC_2026_GENERAL,
     vigencia: '2026',
-    articulo: 'Art. 21 al 27 LGHY, Art. 24 tasa 3.75% (2026), Decreto 138/2025, Decreto 147/2025',
+    articulo: 'Art. 21 al 27 LGHY, Art. 24, Decreto 138/2025, Decreto 147/2025',
     tasasPorEjercicio: {
       2025: {
         general: {
           ejercicio: 2025,
-          tasaBruta: 3.0,
+          tasaBruta: ISN_YUC_2025_GENERAL,
           estimuloTasa: 0,
-          tasaNeta: 3.0,
+          tasaNeta: ISN_YUC_2025_GENERAL,
           articulo: 'Art. 24 LGHY (Decreto 138/2025, reforma D.O. 26-dic-2025)',
           estimuloConfirmado: true,
         },
@@ -285,27 +294,27 @@ export const ESTADOS: Estado[] = [
       2026: {
         general: {
           ejercicio: 2026,
-          tasaBruta: 3.75,
+          tasaBruta: ISN_YUC_2026_GENERAL,
           estimuloTasa: 0,
-          tasaNeta: 3.75,
-          articulo: 'Art. 21 al 27 LGHY, Art. 24 tasa 3.75% (2026), Decreto 138/2025',
+          tasaNeta: ISN_YUC_2026_GENERAL,
+          articulo: 'Art. 21 al 27 LGHY, Art. 24, Decreto 138/2025',
           estimuloConfirmado: true,
         },
         microPequena: {
           ejercicio: 2026,
-          tasaBruta: 3.75,
-          estimuloTasa: 0.75,
-          tasaNeta: 3.0,
+          tasaBruta: ISN_YUC_2026_MICRO_BRUTA,
+          estimuloTasa: ISN_YUC_2026_MICRO_ESTIMULO,
+          tasaNeta: ISN_YUC_2026_MICRO_NETA,
           articulo: 'Art. 24 LGHY y Decreto 147/2025',
           decreto: 'Decreto 147/2025, D.O. 31-dic-2025, Ene-Dic 2026, no acumulable con Art. 27-A',
           estimuloConfirmado: true,
         },
         gobiernoEstatal: {
           ejercicio: 2026,
-          tasaBruta: 4.75,
+          tasaBruta: ISN_YUC_2026_GOBIERNO,
           estimuloTasa: 0,
-          tasaNeta: 4.75,
-          articulo: 'Art. 24 párrafo segundo LGHY (3.75% + 1% adicional)',
+          tasaNeta: ISN_YUC_2026_GOBIERNO,
+          articulo: 'Art. 24 párrafo segundo LGHY',
           decreto: 'Estímulo Decreto 147/2025 no confirmado para gobierno estatal',
           estimuloConfirmado: false,
         },
