@@ -603,8 +603,7 @@ export async function handleCanacoCommsApiRequest(
         const receiptResponse = await forward(
           config,
           `/api/internal/campaigns/${encodeURIComponent(jobId)}/receipt`,
-          'POST',
-          {}
+          'GET'
         );
         if (!receiptResponse.response.ok) {
           throw new Error(
@@ -725,9 +724,11 @@ export async function handleCanacoCommsApiRequest(
     }
     const { response, data } = await forward(
       config,
-      `/api/internal/campaigns/${encodeURIComponent(jobId)}/${action}`,
-      'POST',
-      approvalBody ?? {}
+      action === 'receipt'
+        ? `/api/internal/campaigns/${encodeURIComponent(jobId)}/receipt`
+        : `/api/internal/campaigns/${encodeURIComponent(jobId)}/${action}`,
+      action === 'receipt' ? 'GET' : 'POST',
+      action === 'receipt' ? undefined : (approvalBody ?? {})
     );
     if (!response.ok) return json(data, corsHeaders, response.status);
 
