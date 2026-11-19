@@ -14,6 +14,10 @@ import type {
   RetencionClinicasResultado,
   TrimestreInformativo,
 } from '../types';
+import {
+  TASA_RETENCION_CLINICAS_PCT,
+  TASA_IMPUESTO_EJERCICIO_PROFESIONAL_PCT,
+} from '../data/constantes';
 
 export const MENSAJE_SOLO_YUCATAN = 'Solo Yucatán, Art. 20-Bis LGHY';
 
@@ -101,9 +105,11 @@ export function calcularRetencionClinicas(
     throw new Error('Base de honorarios no puede ser negativa.');
   }
   const base = r2(rawBase);
-  const retencion2Pct = r2(base * 0.02);
+  const retencion2Pct = r2((base * TASA_RETENCION_CLINICAS_PCT) / 100);
   const netoPagar = r2(base - retencion2Pct);
-  const impuestoEjercicioProfesional3Pct = r2(base * 0.03);
+  const impuestoEjercicioProfesional3Pct = r2(
+    (base * TASA_IMPUESTO_EJERCICIO_PROFESIONAL_PCT) / 100
+  );
 
   const fechaPago = /^\d{4}-\d{2}-\d{2}$/.test(input.fechaPago) ? input.fechaPago : '2026-01-15';
 

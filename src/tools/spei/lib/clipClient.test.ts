@@ -4,7 +4,9 @@ import {
   validarSolicitudCobro,
   generarMensajeWhatsApp,
   formatearMXN,
+  TASA_BASE_CLIP_PCT,
 } from './clipClient';
+import { TASA_IVA_GENERAL } from '@/data/valores-vigentes/catalogo';
 
 describe('Calculadora de Comisiones Clip', () => {
   it('calcula la comisión base de 3.6% + IVA (4.176% efectiva) para $1,000 MXN', () => {
@@ -98,5 +100,20 @@ describe('Generador de Mensajes WhatsApp', () => {
 
   it('formatea moneda correctamente', () => {
     expect(formatearMXN(2500)).toContain('2,500.00');
+  });
+});
+
+describe('T6 — SPEI/Clip: tarifas desde fuente única', () => {
+  it('tasa base Clip proviene de la constante nombrada (no literal 3.6)', () => {
+    expect(TASA_BASE_CLIP_PCT).toBe(3.6);
+  });
+
+  it('IVA sobre comisión usa TASA_IVA_GENERAL del catálogo (no literal 0.16)', () => {
+    const res = calcularComisionClip(10000, 0);
+    expect(res.tasaBasePorcentaje).toBe(TASA_BASE_CLIP_PCT);
+    expect(res.ivaComisionPorcentaje).toBe(TASA_BASE_CLIP_PCT * TASA_IVA_GENERAL);
+    expect(res.tasaEfectivaPorcentaje).toBe(
+      Math.round((TASA_BASE_CLIP_PCT + TASA_BASE_CLIP_PCT * TASA_IVA_GENERAL) * 1000) / 1000
+    );
   });
 });

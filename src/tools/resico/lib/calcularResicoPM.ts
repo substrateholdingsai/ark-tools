@@ -1,4 +1,5 @@
 import { numeroALetras } from '@/lib/numeroALetras';
+import { TASA_IVA_GENERAL } from '@/data/valores-vigentes/catalogo';
 import {
   TASA_ISR_RESICO_PM,
   TOPE_ANUAL_RESICO_PM,
@@ -40,7 +41,7 @@ export function calcularResicoPM(entrada: EntradaResicoPM): ResultadoResicoPM {
   const isrNetoPagar = Math.max(0, round2(isrCausadoAcumulado - pagosPrevios - retencionesAcum));
 
   // 4. IVA del mes
-  const tasaIVA: number | 'exento' = entrada.tasaIVA ?? 0.16;
+  const tasaIVA: number | 'exento' = entrada.tasaIVA ?? TASA_IVA_GENERAL;
   const tasaIVAPct = (() => {
     const n = Number(tasaIVA);
     return Number.isNaN(n) ? 0 : n * 100;

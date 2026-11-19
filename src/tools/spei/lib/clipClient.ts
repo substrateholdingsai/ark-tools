@@ -6,6 +6,14 @@
  */
 
 import type { ClipCheckoutPayload, ClipCheckoutResult, ComisionClip } from '../types';
+import { TASA_IVA_GENERAL } from '@/data/valores-vigentes/catalogo';
+
+/**
+ * Tasa base de comisión de Clip (3.60% sobre el monto).
+ * Fuente: Clip Developers / tarifa pública de Clip Checkout.
+ * Es una tarifa comercial del proveedor de pagos, no un valor fiscal del catálogo canónico.
+ */
+export const TASA_BASE_CLIP_PCT = 3.6;
 
 /**
  * Tasas de sobretasa por Meses Sin Intereses (MSI) de Clip en México
@@ -23,11 +31,11 @@ export const SOBRETASAS_MSI: Record<number, number> = {
  */
 export function calcularComisionClip(monto: number, msiMeses: number = 0): ComisionClip {
   const montoValido = Math.max(0, monto);
-  const tasaBase = 3.6; // 3.6% base Clip
+  const tasaBase = TASA_BASE_CLIP_PCT; // 3.6% base Clip (fuente única: TASA_BASE_CLIP_PCT)
   const sobretasaMSI = SOBRETASAS_MSI[msiMeses] || 0;
 
   const tasaCombinada = tasaBase + sobretasaMSI;
-  const ivaSobreComision = tasaCombinada * 0.16; // 16% de IVA sobre la comisión
+  const ivaSobreComision = tasaCombinada * TASA_IVA_GENERAL; // IVA sobre la comisión (fuente: catálogo)
   const tasaEfectiva = tasaCombinada + ivaSobreComision; // ~4.176% base
 
   const comisionTotal = Math.round(((montoValido * tasaEfectiva) / 100) * 100) / 100;

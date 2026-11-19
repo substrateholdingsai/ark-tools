@@ -11,6 +11,12 @@
 
 import type { TrabajadorFilaInput, ValidacionImportacion } from '../types';
 import * as XLSX from 'xlsx';
+import { VALORES_POR_ID } from '@/data/valores-vigentes/catalogo';
+
+const SMG_2026 = VALORES_POR_ID.get('SALARIO_MINIMO_GENERAL_2026')?.valor as number;
+if (!Number.isFinite(SMG_2026)) {
+  throw new Error('SALARIO_MINIMO_GENERAL_2026 no encontrado en el catálogo canónico.');
+}
 
 /**
  * Límites técnicos de importación (protegen el navegador de archivos masivos).
@@ -446,7 +452,7 @@ export function generarPlantillaEjemploCSV(): string {
       'SAPC900115LK2',
       'SAPC900115HDFNNN08',
       '38129045612',
-      '315.04',
+      `${SMG_2026.toFixed(2)}`,
       '2024-01-10',
       '15',
       '0',
