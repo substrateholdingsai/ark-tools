@@ -74,7 +74,7 @@ describe('Brand Configuration Engine & White-Label Support', () => {
     );
   });
 
-  it('conmuta a CANACO mediante query param ?brand=canaco y persiste en sessionStorage', () => {
+  it('conmuta a CANACO mediante query param ?brand=canaco', () => {
     const originalLocation = window.location;
     try {
       delete (window as any).location;
@@ -82,13 +82,40 @@ describe('Brand Configuration Engine & White-Label Support', () => {
 
       const brandId = getActiveBrandId();
       expect(brandId).toBe('canaco_merida');
-      expect(sessionStorage.getItem('ark_active_brand')).toBe('canaco_merida');
 
       // Conmuta de vuelta a ark con ?brand=ark
       (window as any).location = new URL('https://ledger.arksystems.site/?brand=ark');
       const resetBrandId = getActiveBrandId();
       expect(resetBrandId).toBe('ark');
-      expect(sessionStorage.getItem('ark_active_brand')).toBeNull();
+    } finally {
+      (window as any).location = originalLocation;
+      sessionStorage.clear();
+    }
+  });
+
+  it('la raíz (sin ?brand) es ARK por defecto aunque sessionStorage guarde CANACO', () => {
+    const originalLocation = window.location;
+    try {
+      sessionStorage.setItem('ark_active_brand', 'canaco_merida');
+      delete (window as any).location;
+      (window as any).location = new URL('https://ledger.arksystems.site/');
+
+      expect(getActiveBrandId()).toBe('ark');
+    } finally {
+      (window as any).location = originalLocation;
+      sessionStorage.clear();
+    }
+  });
+
+  it('brand es "ark" por defecto y "canaco" solo cuando se especifica', () => {
+    const originalLocation = window.location;
+    try {
+      delete (window as any).location;
+      (window as any).location = new URL('https://ledger.arksystems.site/');
+      expect(getActiveBrandId()).toBe('ark');
+
+      (window as any).location = new URL('https://ledger.arksystems.site/?brand=canaco');
+      expect(getActiveBrandId()).toBe('canaco_merida');
     } finally {
       (window as any).location = originalLocation;
       sessionStorage.clear();
