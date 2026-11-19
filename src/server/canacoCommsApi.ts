@@ -455,11 +455,14 @@ export async function handleCanacoCommsApiRequest(
     const idempotencyKey = body.idempotency_key;
     const channel = body.channel;
     const contactIds = body.contact_ids;
+    if (channel === 'voice_ai') {
+      return json({ error: 'Voice AI no habilitado' }, corsHeaders, 400);
+    }
     if (
       typeof idempotencyKey !== 'string' ||
       idempotencyKey.length < 16 ||
       idempotencyKey.length > 200 ||
-      !['whatsapp', 'email', 'voice_ai'].includes(String(channel)) ||
+      !['whatsapp', 'email'].includes(String(channel)) ||
       !Array.isArray(contactIds) ||
       contactIds.length === 0 ||
       contactIds.length > MAX_AUDIENCE_SIZE ||
@@ -477,6 +480,28 @@ export async function handleCanacoCommsApiRequest(
     const uniqueIds = [...new Set(contactIds as string[])];
     if (uniqueIds.length !== contactIds.length) {
       return json({ error: 'La audiencia contiene identificadores duplicados.' }, corsHeaders, 400);
+    }
+    if (
+      channel === 'whatsapp' &&
+      (typeof body.template_id !== 'string' || !body.template_id.trim())
+    ) {
+      return json({ error: 'La plantilla de WhatsApp no puede estar vacía.' }, corsHeaders, 400);
+    }
+    if (
+      channel === 'email' &&
+      (typeof body.subject !== 'string' ||
+        !body.subject.trim() ||
+        typeof body.body !== 'string' ||
+        !body.body.trim())
+    ) {
+      return json(
+        { error: 'El asunto y el cuerpo del correo no pueden estar vacíos.' },
+        corsHeaders,
+        400
+      );
+    }
+    if (channel === 'email' && /\{\{|\}\}|\{[\w.-]+\}/.test(`${body.subject}\n${body.body}`)) {
+      return json({ error: 'El correo no admite variables de contacto.' }, corsHeaders, 400);
     }
     try {
       try {
@@ -508,23 +533,13 @@ export async function handleCanacoCommsApiRequest(
       const message =
         channel === 'whatsapp'
           ? { template_id: body.template_id, variables: body.variables }
-          : channel === 'email'
-            ? { subject: body.subject, body: body.body }
-            : { script: body.script };
-      if (
-        channel === 'email' &&
-        (typeof body.subject !== 'string' ||
-          typeof body.body !== 'string' ||
-          /\{\{|\}\}|\{[\w.-]+\}/.test(`${body.subject}\n${body.body}`))
-      ) {
-        return json({ error: 'El correo no admite variables de contacto.' }, corsHeaders, 400);
-      }
+          : { subject: body.subject, body: body.body };
       const workerBody = {
         job_id: await jobIdFor(config.tenantId, idempotencyKey),
         idempotency_key: idempotencyKey,
         tenant_id: config.tenantId,
         sender_brand: 'CANACO Mérida',
-        channel: channel === 'voice_ai' ? 'voice' : channel,
+        channel,
         audience: { mode: 'explicit', contact_ids: mappedIds },
         message,
         dry_run: true,

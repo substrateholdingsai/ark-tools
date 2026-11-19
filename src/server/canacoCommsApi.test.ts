@@ -156,6 +156,64 @@ describe('CANACO Communications proxy', () => {
     expect(vi.mocked(fetch)).not.toHaveBeenCalled();
   });
 
+  it('rejects Voice AI before dispatching to Sales', async () => {
+    const { env } = setup();
+    const response = await handleCanacoCommsApiRequest(
+      makeRequest('/api/comms/jobs', 'POST', {
+        channel: 'voice_ai',
+        contact_ids: ['contact-real'],
+        dry_run: true,
+        idempotency_key: 'idempotency-key-123456',
+        script: 'Mensaje de prueba',
+      }),
+      env,
+      {},
+      admin
+    );
+
+    expect(response?.status).toBe(400);
+    expect(await response?.json()).toEqual({ error: 'Voice AI no habilitado' });
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      channel: 'whatsapp',
+      template_id: '   ',
+      error: 'La plantilla de WhatsApp no puede estar vacía.',
+    },
+    {
+      channel: 'email',
+      subject: '   ',
+      body: 'Cuerpo',
+      error: 'El asunto y el cuerpo del correo no pueden estar vacíos.',
+    },
+    {
+      channel: 'email',
+      subject: 'Asunto',
+      body: '\n  ',
+      error: 'El asunto y el cuerpo del correo no pueden estar vacíos.',
+    },
+  ])('rejects empty required content for $channel', async ({ channel, error, ...content }) => {
+    const { env } = setup();
+    const response = await handleCanacoCommsApiRequest(
+      makeRequest('/api/comms/jobs', 'POST', {
+        channel,
+        contact_ids: ['contact-real'],
+        dry_run: true,
+        idempotency_key: 'idempotency-key-123456',
+        ...content,
+      }),
+      env,
+      {},
+      admin
+    );
+
+    expect(response?.status).toBe(400);
+    expect(await response?.json()).toEqual({ error });
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled();
+  });
+
   it('rejects a replaced approval revision and unsupported email variables', async () => {
     const { env } = setup();
     const approval = await handleCanacoCommsApiRequest(
@@ -190,6 +248,8 @@ describe('CANACO Communications proxy', () => {
         contact_ids: ['contact-real'],
         dry_run: true,
         idempotency_key: 'idempotency-key-123456',
+        subject: 'Aviso',
+        body: 'Hola',
       }),
       env,
       {},

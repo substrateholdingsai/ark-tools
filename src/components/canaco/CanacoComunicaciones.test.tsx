@@ -222,6 +222,7 @@ describe('CANACO Comunicaciones', () => {
     fireEvent.click(screen.getByRole('button', { name: /Nuevo trabajo/i }));
 
     expect(screen.getByText('1 contactos elegibles seleccionados')).toBeInTheDocument();
+    expect(screen.getByText('Selecciona una plantilla de WhatsApp aprobada.')).toBeInTheDocument();
     expect(screen.getByText(/Registros de demo y personas sin consentimiento/)).toBeInTheDocument();
     const templateSelect = screen.getByLabelText('Plantilla HSM aprobada');
     expect(templateSelect).toHaveValue('');
@@ -277,6 +278,11 @@ describe('CANACO Comunicaciones', () => {
     fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Aviso' } });
     fireEvent.change(screen.getByLabelText('Cuerpo'), { target: { value: 'Hola {{nombre}}' } });
     expect(screen.getByText('Hola {{nombre}}', { selector: 'p' })).toBeInTheDocument();
+    expect(
+      screen.getByText('El correo no admite variables de contacto.', {
+        selector: 'p#preview-disabled-reason',
+      })
+    ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Generar vista previa dry-run/i })).toBeDisabled();
   });
 

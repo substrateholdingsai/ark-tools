@@ -216,6 +216,28 @@ export function CanacoComunicaciones({
   const previewText = interpolate(messageBody, variables, sampleContact);
   const unsupportedEmailVariables =
     channel === 'email' && /\{\{|\}\}|\{[\w.-]+\}/.test(`${subject}\n${messageBody}`);
+  const previewDisabledReason = (() => {
+    if (!canManage) return 'Tu sesión no tiene permiso para crear o aprobar trabajos.';
+    if (loading) return 'Espera a que termine la operación actual.';
+    if (selectedIds.length === 0) return 'No hay contactos elegibles seleccionados.';
+    if (channel === 'whatsapp' && !templateId.trim()) {
+      return 'Selecciona una plantilla de WhatsApp aprobada.';
+    }
+    if (
+      channel === 'whatsapp' &&
+      activeTemplate?.variables.some((item) => !variables[variableName(item)]?.trim())
+    ) {
+      return 'Completa todas las variables de la plantilla de WhatsApp.';
+    }
+    if (channel === 'email' && (!subject.trim() || !messageBody.trim())) {
+      return 'El asunto y el cuerpo del correo no pueden estar vacíos.';
+    }
+    if (unsupportedEmailVariables) {
+      return 'El correo no admite variables de contacto.';
+    }
+    if (channel === 'voice_ai') return 'Voice AI no está disponible.';
+    return '';
+  })();
 
   const loadJobs = useCallback(async () => {
     const response = await fetch('/api/comms/jobs');
@@ -850,19 +872,8 @@ export function CanacoComunicaciones({
             <button
               type="button"
               onClick={() => void refreshPreview()}
-              disabled={
-                !canManage ||
-                loading ||
-                selectedIds.length === 0 ||
-                (channel === 'whatsapp' && !templateId) ||
-                (channel === 'whatsapp' &&
-                  activeTemplate?.variables.some(
-                    (item) => !variables[variableName(item)]?.trim()
-                  )) ||
-                (channel === 'email' &&
-                  (!subject.trim() || !messageBody.trim() || unsupportedEmailVariables)) ||
-                (channel === 'voice_ai' && !messageBody.trim())
-              }
+              disabled={Boolean(previewDisabledReason)}
+              aria-describedby={previewDisabledReason ? 'preview-disabled-reason' : undefined}
               className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-henequen-terra px-4 py-3 text-sm font-bold text-white disabled:opacity-50"
             >
               {loading ? (
@@ -872,9 +883,9 @@ export function CanacoComunicaciones({
               )}
               Generar vista previa dry-run
             </button>
-            {!canManage && (
-              <p className="text-xs text-red-800">
-                Tu sesión no tiene permiso para crear o aprobar trabajos.
+            {previewDisabledReason && (
+              <p id="preview-disabled-reason" className="text-xs text-henequen-piedra">
+                {previewDisabledReason}
               </p>
             )}
           </aside>
