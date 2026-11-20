@@ -25,6 +25,7 @@ import { botApp } from './server/bots/botIngestionApi';
 import { handleBillingApiRequest } from './server/billing/billingWebhook';
 import { handleCanacoConektaApiRequest } from './server/canacoConektaService';
 import { expireCanacoPaymentIntents } from './server/canacoLifecycle';
+import { handleCajaWebhookRequest } from './server/caja/cajaWebhook';
 import { handleCanacoBuzonApiRequest } from './server/canacoBuzonApi';
 import { handleSentinelaApiRequest } from './server/sentinela/sentinelaWebhook';
 import {
@@ -109,6 +110,14 @@ export interface Env {
   // Secreto para Webhooks de Facturación (Clip / SPEI) y Cron
   BILLING_WEBHOOK_SECRET?: string;
   CRON_SECRET?: string;
+
+  // Pagos Caja (consumidor interno; feature flag PAYMENTS_PROVIDER=legacy|shadow|caja)
+  PAYMENTS_PROVIDER?: string;
+  CAJA_WORKER_URL?: string;
+  CAJA_PAYMENTS_INTERNAL_KEY?: string;
+  CAJA_WEBHOOK_SECRET?: string;
+  CAJA_TIMEOUT_MS?: string;
+  LEDGER_TENANT_ID?: string;
 }
 
 export default {
@@ -311,6 +320,7 @@ async function handleApiRequest(
     (url.pathname === '/api/auth/reset-password' && request.method === 'POST') ||
     (url.pathname === '/api/afiliaciones/registro' && request.method === 'POST') ||
     (url.pathname === '/api/billing/webhook' && request.method === 'POST') ||
+    (url.pathname === '/api/webhooks/caja' && request.method === 'POST') ||
     (url.pathname === '/api/webhooks/sentinela' && request.method === 'POST');
 
   if (
@@ -343,6 +353,11 @@ async function handleApiRequest(
   const sentinelaResponse = await handleSentinelaApiRequest(request, env, corsHeaders);
   if (sentinelaResponse) {
     return finalizeApiResponse(sentinelaResponse);
+  }
+
+  const cajaWebhookResponse = await handleCajaWebhookRequest(request, env, corsHeaders);
+  if (cajaWebhookResponse) {
+    return finalizeApiResponse(cajaWebhookResponse);
   }
 
   const authPrincipal = await authenticateRequest(request, env);

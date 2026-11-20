@@ -1,18 +1,16 @@
-/**
- * ARK LEDGER — Webhook de Facturación y Activación Automática (Clip / SPEI)
- *
- * Expone endpoints:
- * - POST /api/billing/webhook  (Activación automática ante pagos aprobados de Clip / SPEI)
- * - GET  /api/billing/status   (Consulta de estatus Pro y vigencia para la SPA)
- * - POST /api/billing/manual-activate (Activación manual para Super Admin)
- */
-
-import type { Env } from '../../index';
+﻿import type { Env } from '../../index';
 import type { AuthPrincipal } from '../auth';
 import { getTenantSubscription, activateProSubscription } from './subscriptions';
 import { timingSafeEqual } from '../canacoConektaService';
-import { getProPaymentUrl } from '../../config/billing';
+import { getBillingConfig, getPaymentsProvider } from '../../config/billing';
+import { processCajaWebhookRequest } from '../caja/cajaWebhook';
 
+/**
+ * Billing API:
+ * - GET /api/billing/status
+ * - POST /api/billing/webhook (legacy Clip/SPEI) o delegación a Caja según PAYMENTS_PROVIDER
+ * - POST /api/billing/manual-activate
+ */
 export async function handleBillingApiRequest(
   request: Request,
   env: Env,
@@ -25,15 +23,13 @@ export async function handleBillingApiRequest(
     return null;
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // GET /api/billing/status?tenant_id=...
-  // ──────────────────────────────────────────────────────────────────────
   if (url.pathname === '/api/billing/status' && request.method === 'GET') {
     const tenantId =
       url.searchParams.get('tenant_id') || request.headers.get('x-tenant-id') || 'ark';
 
     const isSuperAdmin = authPrincipal?.platformRole === 'super_admin';
     const sub = await getTenantSubscription(env, tenantId, isSuperAdmin);
+    const cfg = getBillingConfig(env);
 
     return Response.json(
       {
@@ -41,16 +37,29 @@ export async function handleBillingApiRequest(
         subscription: sub,
         is_pro: sub.isPro,
         plan: sub.plan,
-        payment_url: getProPaymentUrl(env),
+        payment_url: cfg.paymentUrl,
       },
       { headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
     );
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // POST /api/billing/webhook (Activación automática de pagos)
-  // ─────────────────────────────────────────────────────────────────
   if (url.pathname === '/api/billing/webhook' && request.method === 'POST') {
+    const provider = getPaymentsProvider(env);
+    const hasCajaSig = Boolean(
+      request.headers.get('X-Caja-Signature') || request.headers.get('x-caja-signature')
+    );
+
+    if (provider === 'caja') {
+      // Modo caja: solo webhooks firmados de Caja; no activar vía legacy.
+      return processCajaWebhookRequest(request, env, corsHeaders);
+    }
+
+    if (provider === 'shadow' && hasCajaSig) {
+      // Shadow: Caja registra sin activar (cajaWebhook respeta provider!=caja). No caer a legacy.
+      return processCajaWebhookRequest(request, env, corsHeaders);
+    }
+
+    // legacy, o shadow sin firma Caja: flujo legacy intacto (shadow permite que legacy active).
     try {
       const webhookSecret = env.BILLING_WEBHOOK_SECRET || env.CLIP_API_SECRET;
       if (webhookSecret) {
@@ -87,7 +96,6 @@ export async function handleBillingApiRequest(
         provider?: 'clip' | 'spei_arkangel' | 'manual';
       };
 
-      // Manejar formato Clip o formato explícito aprobado (nunca activar si status viene vacío)
       const isApproved =
         body.status === 'approved' ||
         body.status === 'paid' ||
@@ -101,7 +109,6 @@ export async function handleBillingApiRequest(
         );
       }
 
-      // Resolver tenant_id: desde payload o buscando usuario por correo
       let tenantId = body.tenant_id?.trim();
       const email = body.email?.trim().toLowerCase();
 
@@ -129,14 +136,15 @@ export async function handleBillingApiRequest(
         );
       }
 
-      const monto = Number(body.amount || body.monto || 399);
+      const cfg = getBillingConfig(env);
+      const monto = Number(body.amount || body.monto || cfg.proPriceMxn);
       const extId =
         body.payment_id || body.reference || `PAY-${Date.now().toString(36).toUpperCase()}`;
-      const provider = body.provider || 'clip';
+      const providerBody = body.provider || 'clip';
 
       const result = await activateProSubscription(env, {
         tenantId,
-        billingProvider: provider,
+        billingProvider: providerBody,
         externalId: extId,
         monto,
         email,
@@ -159,9 +167,6 @@ export async function handleBillingApiRequest(
     }
   }
 
-  // ─────────────────────────────────────────────────────────────────
-  // POST /api/billing/manual-activate (Solo Super Admin)
-  // ─────────────────────────────────────────────────────────────────
   if (url.pathname === '/api/billing/manual-activate' && request.method === 'POST') {
     if (authPrincipal?.platformRole !== 'super_admin') {
       return Response.json(
