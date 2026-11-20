@@ -50,6 +50,10 @@ describe('GEO Engine — llms.txt & llms-full.txt', () => {
     expect(resico).toBeDefined();
     expect(resico.descripcion).toContain('Folio de Integridad');
     expect(resico.descripcion).not.toContain('Sello SHA-256');
+
+    const balance = CATALOGO_HERRAMIENTAS.find((h) => h.id === 'balance-general')!;
+    expect(balance.descripcion).toContain('Folio de Integridad');
+    expect(balance.descripcion).not.toContain('SHA-256');
   });
 
   it('genera /llms-full.txt con fundamentos matemáticos y legales exhaustivos', () => {

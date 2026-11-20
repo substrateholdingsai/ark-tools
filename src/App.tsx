@@ -651,12 +651,13 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
           Tus cálculos, <span className="text-navy">blindados</span> con evidencia verificable.
         </h1>
         <p className="mt-6 max-w-[64ch] font-inter text-[16px] leading-[1.5] text-muted md:text-[18px]">
-          Calcula nómina, emite CFDI y audita riesgos. Cada resultado se sella con SHA-256 y versión
-          DOF, generando un QR que cualquier auditor puede verificar sin depender de ti.
+          Calcula nómina, emite CFDI y audita riesgos. Los resultados pueden archivarse con un Folio
+          de Integridad y su versión de referencia; este token determinista sirve para consulta
+          interna y no constituye un sello criptográfico ni una constancia fiscal.
         </p>
       </section>
 
-      {/* Banner de Moat: Expediente Único y Sello QR */}
+      {/* Banner de Moat: Expediente Único y Folio de Integridad */}
       <section className="relative overflow-hidden rounded-2xl border border-gold/30 bg-gradient-to-r from-surface to-cream/20 p-6 shadow-sm md:p-8">
         {/* Adorno de fondo */}
         <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gold/10 blur-2xl" />
@@ -669,17 +670,17 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-orbitron text-[14px] font-bold uppercase tracking-wider text-navy">
-                  Papel de Trabajo con Sello Criptográfico
+                  Papel de Trabajo con Folio de Integridad
                 </span>
                 <span className="flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold uppercase text-emerald-800">
-                  <CheckCircle2 size={12} /> Verificable Públicamente
+                  <CheckCircle2 size={12} /> Referencia Interna
                 </span>
               </div>
               <p className="max-w-[760px] font-inter text-[13.5px] leading-relaxed text-muted">
                 Al archivar cualquier cálculo en el <strong>Expediente Único</strong>, el sistema
-                genera una cédula oficial con <strong>Sello SHA-256 inmutable</strong> y un{' '}
-                <strong>QR de verificación</strong>. Cuando el SAT o un cliente te pida evidencia,
-                no entregues un Excel: entrega un documento que se autentica solo.
+                genera una cédula de trabajo con <strong>Folio de Integridad</strong> y un{' '}
+                <strong>QR de consulta interna</strong>. El folio es un token determinista; no es un
+                sello criptográfico, una constancia NOM-151 ni una certificación oficial.
               </p>
             </div>
           </div>
@@ -785,7 +786,7 @@ function Dashboard({ onSelectTool, navFilter, onOpenOnboarding }: DashboardProps
           <ToolCard
             icon={BarChart3}
             title="Balance General Comparativo"
-            description="Análisis horizontal y vertical, cuadre A=P+C y blindaje patrimonial con Sello QR."
+            description="Análisis horizontal y vertical, cuadre A=P+C y papel de trabajo con Folio de Integridad y QR de consulta."
             badge="NUEVO"
             badgeVariant="gold"
             onSelect={() => onSelectTool('balance-general')}
