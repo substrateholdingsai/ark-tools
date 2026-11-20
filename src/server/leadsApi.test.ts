@@ -335,6 +335,31 @@ describe('handleLeadsApiRequest', () => {
     expect(db.updateBindings).toHaveLength(0);
   });
 
+  it('permite a un miembro actualizar campos no relacionados al consentimiento', async () => {
+    const member: AuthPrincipal = {
+      id: 'member-1',
+      email: 'member@example.com',
+      fullName: 'Miembro',
+      platformRole: 'user',
+    };
+    const db = createConsentDb('member');
+    const response = await handleLeadsApiRequest(
+      new Request('https://ledger.arksystems.site/api/admin/leads/lead-1?tenant=canaco_merida', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ciudad: 'Valladolid' }),
+      }),
+      createEnv(db.database),
+      corsHeaders,
+      member
+    );
+
+    expect(response?.status).toBe(200);
+    expect(db.updateBindings).toHaveLength(1);
+    expect(db.updateBindings[0]?.[3]).toBe('Valladolid');
+    expect(ingestCanacoSalesContact).not.toHaveBeenCalled();
+  });
+
   it('permite opt-in admin y persiste consentimiento, fecha e ingesta Sales', async () => {
     const db = createConsentDb('admin');
     const tenantAdmin: AuthPrincipal = {

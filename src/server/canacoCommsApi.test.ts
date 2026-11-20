@@ -18,6 +18,12 @@ const member: AuthPrincipal = {
   fullName: 'Member',
   platformRole: 'user',
 };
+const superAdmin: AuthPrincipal = {
+  id: 'super-admin-1',
+  email: 'root@example.test',
+  fullName: 'Root',
+  platformRole: 'super_admin',
+};
 const owner: TenantMembership = {
   id: 'sales-tenant-123',
   name: 'CANACO',
@@ -328,6 +334,22 @@ describe('CANACO Communications proxy', () => {
     expect(String(vi.mocked(fetch).mock.calls[0]?.[0])).toBe(
       'https://sales.example.test/api/internal/campaigns/job-123/approve'
     );
+  });
+
+  it('allows platform super admins without a CANACO membership', async () => {
+    const { env } = setup();
+    vi.mocked(requireTenantMembership).mockResolvedValue(null);
+
+    const response = await handleCanacoCommsApiRequest(
+      makeRequest('/api/comms/templates'),
+      env,
+      {},
+      superAdmin
+    );
+
+    expect(response?.status).toBe(200);
+    expect(requireTenantMembership).not.toHaveBeenCalled();
+    expect(vi.mocked(fetch)).toHaveBeenCalledTimes(1);
   });
 
   it('re-previews the stored idempotent draft', async () => {

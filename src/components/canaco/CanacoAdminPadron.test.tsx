@@ -4,12 +4,13 @@ import { CanacoAdminPadron } from './CanacoAdminPadron';
 
 const authState = vi.hoisted(() => ({
   email: 'horus.i2d@gmail.com',
+  platformRole: 'member',
   role: 'admin',
 }));
 
 vi.mock('@/context/AuthContext', () => ({
   useOptionalAuth: () => ({
-    platformRole: 'member',
+    platformRole: authState.platformRole,
     user: { email: authState.email },
     tenants: [{ id: 'canaco_merida', role: authState.role }],
   }),
@@ -108,6 +109,7 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   authState.email = 'horus.i2d@gmail.com';
+  authState.platformRole = 'member';
   authState.role = 'admin';
   fetchMock = vi.fn(async (url: any) => {
     if (typeof url === 'string' && url.includes('/api/canaco/sync-arkangel')) {
@@ -225,6 +227,20 @@ describe('CANACO SERVYTUR Mérida — Consola de Afiliaciones & Padrón SIEM', (
         name: /consentimiento de Sales de Comercializadora del Mayab/i,
       })
     ).not.toBeInTheDocument();
+  });
+
+  it('habilita controles de consentimiento y comunicaciones para super admins', async () => {
+    authState.email = 'root@example.com';
+    authState.platformRole = 'super_admin';
+    authState.role = 'member';
+    await renderAdmin();
+
+    expect(
+      screen.getByRole('button', {
+        name: /Autorizar consentimiento de Sales de Comercializadora del Mayab/i,
+      })
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Comunicaciones$/i })).not.toHaveLength(0);
   });
 
   it('abre el historial filtrado de un socio desde su fila', async () => {

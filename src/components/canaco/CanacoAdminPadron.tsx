@@ -188,6 +188,7 @@ export function CanacoAdminPadron({ onNavigateToSuite }: CanacoAdminPadronProps 
     mensaje: string;
   } | null>(null);
   const canManageComms =
+    isSuperAdmin ||
     isPavel ||
     auth?.user?.email?.toLowerCase() === 'horus.i2d@gmail.com' ||
     auth?.tenants.some((tenant) => tenant.id === 'canaco_merida' && tenant.role !== 'member') ||
