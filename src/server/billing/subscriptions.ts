@@ -26,7 +26,7 @@ export interface TenantSubscriptionInfo {
 
 export interface ActivateProParams {
   tenantId: string;
-  billingProvider?: 'clip' | 'spei_arkangel' | 'manual';
+  billingProvider?: 'clip' | 'spei_arkangel' | 'manual' | 'caja';
   externalId?: string;
   monto?: number;
   email?: string;
