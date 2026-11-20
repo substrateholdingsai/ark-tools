@@ -5,11 +5,12 @@
  * layouts bancarios masivos o al superar el límite de cortesía en Noah AI.
  */
 
+import { useState } from 'react';
+
 import {
   Sparkles,
   CheckCircle2,
   Lock,
-  ExternalLink,
   X,
   FileText,
   Bot,
@@ -23,15 +24,46 @@ export interface ProUpgradeModalProps {
   onClose: () => void;
   reason?: string;
   paymentUrl?: string;
+  tenantId?: string;
+  tier?: 'tier_1' | 'tier_2';
 }
 
 export function ProUpgradeModal({
   isOpen,
   onClose,
   reason = 'Desbloquea exportaciones ilimitadas y sellado criptográfico oficial',
-  paymentUrl = 'https://pago.clip.mx/v3/bc5ff8d9-dacb-4f36-b006-78d0348bbb65',
+  tenantId = 'ark',
+  tier = 'tier_1',
 }: ProUpgradeModalProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   if (!isOpen) return null;
+
+  async function handleActivate() {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/canaco/conekta/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          concept: 'ark_pro_upgrade',
+          tier,
+          tenant_id: tenantId,
+          metodoPago: 'tarjeta',
+        }),
+      });
+      const data = (await res.json()) as { url?: string; orderId?: string; error?: string };
+      if (!res.ok || !data.url) {
+        throw new Error(data.error || 'No se pudo iniciar el checkout de Caja.');
+      }
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al iniciar el pago.');
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="backdrop-blur-xs fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -147,16 +179,17 @@ export function ProUpgradeModal({
 
         {/* Botones de Acción */}
         <div className="mt-6 flex flex-col gap-2.5 sm:flex-row sm:items-center">
-          <a
-            href={paymentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shadow-xs inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-navy px-5 py-3 font-orbitron text-xs font-bold text-white transition hover:bg-navy-dark"
+          <button
+            type="button"
+            onClick={handleActivate}
+            disabled={loading}
+            className="shadow-xs inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-navy px-5 py-3 font-orbitron text-xs font-bold text-white transition hover:bg-navy-dark disabled:opacity-60"
           >
             <Sparkles className="h-4 w-4 text-gold" />
-            <span>Activar Pro</span>
-            <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+            <span>{loading ? 'Redirigiendo…' : 'Activar Pro'}</span>
+          </button>
+
+          {error ? <p className="text-xs text-red-600">{error}</p> : null}
 
           <button
             type="button"

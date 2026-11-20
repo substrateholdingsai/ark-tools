@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS payment_orders (
   amount_cents     INTEGER NOT NULL,
   currency         TEXT NOT NULL CHECK (currency IN ('MXN')),
   rail             TEXT NOT NULL CHECK (rail IN ('codi', 'spei', 'paypal')),
-  status           TEXT NOT NULL CHECK (status IN ('created', 'pending', 'paid', 'failed', 'expired', 'refunded')),
+  status           TEXT NOT NULL CHECK (status IN ('created', 'pending', 'paid', 'failed', 'expired', 'refunded', 'activated')),
   provider         TEXT NOT NULL DEFAULT 'caja' CHECK (provider IN ('caja', 'legacy')),
   webhook_event_id TEXT,
   paid_at          INTEGER,
@@ -29,10 +29,7 @@ CREATE TABLE IF NOT EXISTS payment_orders (
   FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 );
 
--- Índice UNIQUE parcial en caja_order_id donde no nulo (además de UNIQUE en columna para compatibilidad)
-CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_orders_caja_order_id
-  ON payment_orders(caja_order_id)
-  WHERE caja_order_id IS NOT NULL;
+-- Índice UNIQUE parcial en caja_order_id donde no nulo (redundante con UNIQUE de columna; eliminado)
 
 CREATE INDEX IF NOT EXISTS idx_payment_orders_tenant_concept_status
   ON payment_orders(tenant_id, concept, status);

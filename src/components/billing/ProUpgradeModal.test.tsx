@@ -34,11 +34,10 @@ describe('ProUpgradeModal Component', () => {
     expect(handleClose).toHaveBeenCalledTimes(1);
   });
 
-  it('el enlace de pago contiene la URL del checkout de Clip', () => {
+  it('activa Pro mediante checkout de Caja (sin enlace directo a Clip)', () => {
     render(<ProUpgradeModal isOpen={true} onClose={() => {}} />);
 
-    const link = screen.getByRole('link', { name: /Activar Pro/i });
-    expect(link).toHaveAttribute('href', expect.stringContaining('clip.mx'));
-    expect(link).toHaveAttribute('target', '_blank');
+    const button = screen.getByRole('button', { name: /Activar Pro/i });
+    expect(button).toBeInTheDocument();
   });
 });

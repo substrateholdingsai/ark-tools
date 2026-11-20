@@ -74,6 +74,14 @@ function makeDb(options: { existingEvent?: boolean; employees?: number } = {}) {
           if (query.includes('INSERT INTO auth_rate_limits')) return { attempts: 1 };
           if (query.includes('SELECT id, order_id, checkout_url')) return null;
           if (query.includes('SELECT id, web, whatsapp')) return lead;
+          if (query.includes('FROM payment_orders')) {
+            return {
+              tenant_id: 'tenant-1',
+              amount_cents: null,
+              currency: 'MXN',
+              concept: null,
+            };
+          }
           return null;
         }),
         run: vi.fn(async () => ({ success: true, meta: { changes: 1 } })),
@@ -186,7 +194,7 @@ describe('Pagos Caja — webhook y cliente', () => {
   });
 
   it('verifica la firma contra el body crudo sin prefijar el timestamp', async () => {
-    const payload = { event_id: 'evt-raw-body', event_type: 'order.ignored' };
+    const payload = { event_id: 'evt-raw-body', event_type: 'order.ignored', currency: 'MXN' };
     const request = await cajaWebhookRequest(payload);
     const response = await processCajaWebhookRequest(
       request,
@@ -279,21 +287,6 @@ describe('Pagos Caja — webhook y cliente', () => {
     expect(mocked.activateCanaco).not.toHaveBeenCalled();
   });
 
-  it('registra pero no activa pagos de Caja durante shadow', async () => {
-    const response = await processCajaWebhookRequest(
-      await cajaWebhookRequest(paidPayload('ark_pro_upgrade')),
-      makeEnv('shadow', makeDb()),
-      corsHeaders
-    );
-
-    expect(await response.json()).toMatchObject({
-      ok: true,
-      activated: false,
-      reason: 'shadow_or_legacy_mode',
-    });
-    expect(mocked.activatePro).not.toHaveBeenCalled();
-  });
-
   it('acepta HTTP 201 al crear una orden nueva en Caja', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
       Response.json(
@@ -361,54 +354,6 @@ describe('Pagos Caja — webhook y cliente', () => {
 });
 
 describe('Pagos Caja — provider CANACO', () => {
-  it('mantiene Conekta como único creador de checkout en legacy', async () => {
-    const fetchSpy = vi
-      .spyOn(globalThis, 'fetch')
-      .mockResolvedValue(
-        Response.json({ id: 'conekta-legacy', checkout: { url: 'https://checkout.test/legacy' } })
-      );
-    const response = await handleCanacoConektaApiRequest(
-      new Request('https://ledger.arksystems.site/api/canaco/conekta/create-checkout', {
-        method: 'POST',
-        body: JSON.stringify({ leadId: 'lead-caja-1', metodoPago: 'tarjeta' }),
-      }),
-      makeEnv('legacy', makeDb()),
-      corsHeaders
-    );
-
-    expect(await response?.json()).toMatchObject({ ok: true, orderId: 'conekta-legacy' });
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    expect(String(fetchSpy.mock.calls[0][0])).toContain('api.conekta.io');
-  });
-
-  it('crea en Caja y Conekta en shadow, pero devuelve Conekta', async () => {
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-      if (String(input).includes('api.conekta.io')) {
-        return Response.json({
-          id: 'conekta-primary',
-          checkout: { url: 'https://checkout.test/primary' },
-        });
-      }
-      return Response.json(
-        { caja_order_id: 'caja-shadow', checkout_url: 'https://caja.test/shadow' },
-        { status: 201 }
-      );
-    });
-    const response = await handleCanacoConektaApiRequest(
-      new Request('https://ledger.arksystems.site/api/canaco/conekta/create-checkout', {
-        method: 'POST',
-        body: JSON.stringify({ leadId: 'lead-caja-1', metodoPago: 'spei' }),
-      }),
-      makeEnv('shadow', makeDb()),
-      corsHeaders
-    );
-
-    expect(await response?.json()).toMatchObject({ ok: true, orderId: 'conekta-primary' });
-    expect(fetchSpy).toHaveBeenCalledTimes(2);
-    const cajaCall = fetchSpy.mock.calls.find(([url]) => String(url).includes('caja.example.test'));
-    expect(JSON.parse(String(cajaCall?.[1]?.body))).toMatchObject({ rail_preference: 'codi' });
-  });
-
   it('usa Caja exclusivamente y selecciona PayPal sólo para montos mayores a $8k', async () => {
     const fetchSpy = vi
       .spyOn(globalThis, 'fetch')

@@ -16,13 +16,12 @@ export const DEFAULT_PRO_PRICE_MXN = PRO_PRICES.tier_1;
 
 export type ProTier = keyof typeof PRO_PRICES;
 
-export type PaymentsProvider = 'legacy' | 'shadow' | 'caja';
+export type PaymentsProvider = 'caja';
 
-export function getPaymentsProvider(env?: { PAYMENTS_PROVIDER?: string }): PaymentsProvider {
-  const raw = (env?.PAYMENTS_PROVIDER || 'legacy').trim().toLowerCase();
-  if (raw === 'legacy' || raw === 'shadow' || raw === 'caja') return raw;
-  // Fail-closed: valor inválido -> error de arranque/configuración
-  throw new Error(`Invalid PAYMENTS_PROVIDER: ${env?.PAYMENTS_PROVIDER ?? '(empty)'}`);
+export function getPaymentsProvider(_env?: { PAYMENTS_PROVIDER?: string }): PaymentsProvider {
+  // El único procesador de pagos vivo es Caja. No existe un modo legacy/shadow
+  // que mantenga operativos Conekta/Clip.
+  return 'caja';
 }
 
 function parseProPrice(value: unknown, fallback: number, variableName: string): number {

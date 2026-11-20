@@ -2,7 +2,7 @@ export type CanacoLifecycleStage =
   'prospecto' | 'registrado' | 'pago_pendiente' | 'socio_activo' | 'cancelado';
 
 export interface VerifiedConektaEvidence {
-  provider: 'conekta';
+  provider: 'conekta' | 'caja';
   signatureVerified: true;
   eventType: 'order.paid' | 'charge.paid';
   leadId: string;
@@ -103,7 +103,7 @@ export async function activateCanacoSocioByPayment(
   evidence: VerifiedConektaEvidence
 ): Promise<CanacoPaymentActivationResult> {
   if (
-    evidence.provider !== 'conekta' ||
+    (evidence.provider !== 'conekta' && evidence.provider !== 'caja') ||
     evidence.signatureVerified !== true ||
     !['order.paid', 'charge.paid'].includes(evidence.eventType) ||
     evidence.environment !== 'production' ||
@@ -215,8 +215,8 @@ export async function activateCanacoSocioByPayment(
         `UPDATE leads_ark_tools
          SET status = 'Socio Activo', lifecycle_stage = 'socio_activo',
              payment_environment = ?,
-             notas = COALESCE(notas, '') || ' | Pago Confirmado Conekta: '
-               || ? || ' ($' || ? || ' MXN)',
+              notas = COALESCE(notas, '') || ' | Pago Confirmado ' || ? || ': '
+                || ? || ' ($' || ? || ' MXN)',
              last_contact = DATE('now'), updated_at = CURRENT_TIMESTAMP
          WHERE id = ? AND tenant_id = 'canaco_merida' AND lifecycle_stage = 'pago_pendiente'
            AND EXISTS (
@@ -227,6 +227,7 @@ export async function activateCanacoSocioByPayment(
       )
       .bind(
         evidence.environment,
+        evidence.provider === 'caja' ? 'Caja' : 'Conekta',
         evidence.transactionReference,
         (evidence.amountCents / 100).toLocaleString('es-MX'),
         evidence.leadId,
@@ -240,14 +241,23 @@ export async function activateCanacoSocioByPayment(
         `INSERT OR IGNORE INTO canaco_lifecycle_audit
            (id, lead_id, actor_id, actor_email, from_stage, to_stage, reason,
             payment_outcome, evidence_reference)
-         SELECT ?, ?, NULL, 'conekta', 'pago_pendiente', 'socio_activo',
-                'Provider-verified Conekta payment', 'paid', ?
+          SELECT ?, ?, NULL, ?, 'pago_pendiente', 'socio_activo',
+                 ?, 'paid', ?
          WHERE EXISTS (
            SELECT 1 FROM leads_ark_tools
            WHERE id = ? AND tenant_id = 'canaco_merida' AND lifecycle_stage = 'socio_activo'
          )`
       )
-      .bind(crypto.randomUUID(), evidence.leadId, evidence.transactionReference, evidence.leadId),
+      .bind(
+        crypto.randomUUID(),
+        evidence.leadId,
+        evidence.provider === 'caja' ? 'caja' : 'conekta',
+        evidence.provider === 'caja'
+          ? 'Provider-verified Caja payment'
+          : 'Provider-verified Conekta payment',
+        evidence.transactionReference,
+        evidence.leadId
+      ),
   ];
 
   const results = await db.batch(statements);

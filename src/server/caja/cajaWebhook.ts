@@ -194,9 +194,18 @@ export async function processCajaWebhookRequest(
   const cajaOrderId = asString(payload.caja_order_id);
   const tenantId = asString(payload.tenant_id);
   const amountCents = asNumber(payload.amount_cents);
+  const currencyRaw = asString(payload.currency);
+  const currency = currencyRaw ? currencyRaw.toUpperCase() : '';
   const rail = (payload.rail ?? null) as CajaRail | null;
   const concept = asString(payload.concept);
   const metadata = payload.metadata;
+
+  if (!currency || currency !== 'MXN') {
+    return Response.json(
+      { ok: false, error: 'currency requerida y debe ser MXN.' },
+      { status: 422, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
 
   const db = env.ARK_TOOLS_DB;
   if (!db) {
@@ -275,6 +284,63 @@ export async function processCajaWebhookRequest(
     }
   }
 
+  if (cajaOrderId) {
+    const storedOrder = await db
+      .prepare(
+        `SELECT tenant_id, amount_cents, currency, concept
+         FROM payment_orders
+         WHERE caja_order_id = ?
+         LIMIT 1`
+      )
+      .bind(cajaOrderId)
+      .first<{
+        tenant_id: string | null;
+        amount_cents: number | null;
+        currency: string | null;
+        concept: string | null;
+      }>();
+
+    if (!storedOrder) {
+      await markBillingEventFailed(db, eventRowId, 'payment_order_not_found');
+      return Response.json(
+        { ok: false, error: 'Orden de pago Caja no encontrada.' },
+        { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (storedOrder.tenant_id && tenantId && storedOrder.tenant_id !== tenantId) {
+      await markBillingEventFailed(db, eventRowId, 'tenant_mismatch');
+      return Response.json(
+        { ok: false, error: 'El tenant de la orden no coincide.' },
+        { status: 422, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (
+      storedOrder.amount_cents != null &&
+      Number.isFinite(amountCents) &&
+      storedOrder.amount_cents !== amountCents
+    ) {
+      await markBillingEventFailed(db, eventRowId, 'amount_mismatch');
+      return Response.json(
+        { ok: false, error: 'El importe de la orden no coincide.' },
+        { status: 422, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (storedOrder.currency && storedOrder.currency.toUpperCase() !== currency) {
+      await markBillingEventFailed(db, eventRowId, 'currency_mismatch');
+      return Response.json(
+        { ok: false, error: 'La moneda de la orden no coincide.' },
+        { status: 422, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+    if (storedOrder.concept && concept && storedOrder.concept !== concept) {
+      await markBillingEventFailed(db, eventRowId, 'concept_mismatch');
+      return Response.json(
+        { ok: false, error: 'El concepto de la orden no coincide.' },
+        { status: 422, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+      );
+    }
+  }
+
   if (eventType === 'event.paid' || eventType === 'order.paid') {
     await updatePaymentOrderStatus('paid', true);
 
@@ -338,8 +404,8 @@ export async function processCajaWebhookRequest(
         const intentId = asString(
           metadata?.intent_id ?? metadata?.intentId ?? metadata?.paymentIntentId
         );
-        await activateCanacoSocioByPayment(env.DB!, {
-          provider: 'conekta',
+        await activateCanacoSocioByPayment(env.ARK_TOOLS_DB!, {
+          provider: 'caja',
           signatureVerified: true,
           eventType: 'order.paid',
           leadId: leadId || '',
@@ -347,7 +413,7 @@ export async function processCajaWebhookRequest(
           transactionReference: ext,
           eventId,
           amountCents: amountCents,
-          currency: 'MXN',
+          currency: currency,
           environment: 'production',
           paidAt: asString(payload.paid_at) || new Date().toISOString(),
         });

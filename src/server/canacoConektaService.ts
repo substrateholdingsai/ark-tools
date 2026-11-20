@@ -256,12 +256,6 @@ export async function handleCanacoConektaApiRequest(
       };
 
       if (body.concept === 'ark_pro_upgrade') {
-        if (paymentsProvider === 'legacy') {
-          return Response.json(
-            { error: 'El checkout Ark Pro con Caja no está habilitado en modo legacy.' },
-            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
-          );
-        }
         const tier = body.tier || 'tier_1';
         if (tier !== 'tier_1' && tier !== 'tier_2') {
           return Response.json(
@@ -294,6 +288,30 @@ export async function handleCanacoConektaApiRequest(
             { status: 502, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
           );
         }
+        if (db) {
+          try {
+            await db
+              .prepare(
+                `INSERT INTO payment_orders
+                 (id, caja_order_id, tenant_id, user_id, concept, amount_cents, currency, rail,
+                  status, provider, metadata_json, created_at, updated_at)
+                 VALUES (?, ?, ?, NULL, ?, ?, 'MXN', 'codi', 'created', 'caja', ?, ?, ?)`
+              )
+              .bind(
+                crypto.randomUUID(),
+                cajaResult.caja_order_id,
+                tenantId,
+                'ark_pro_upgrade',
+                amountCents,
+                JSON.stringify({ tier }),
+                Math.floor(Date.now() / 1000),
+                Math.floor(Date.now() / 1000)
+              )
+              .run();
+          } catch {
+            // no-op
+          }
+        }
         return Response.json(
           {
             ok: true,
@@ -309,9 +327,7 @@ export async function handleCanacoConektaApiRequest(
       }
 
       const metodoPagoValido =
-        body.metodoPago === 'tarjeta' ||
-        body.metodoPago === 'spei' ||
-        (paymentsProvider !== 'legacy' && body.metodoPago === 'paypal');
+        body.metodoPago === 'tarjeta' || body.metodoPago === 'spei' || body.metodoPago === 'paypal';
       if (!body.leadId?.trim() || !metodoPagoValido) {
         return Response.json(
           { error: 'Se requieren el registro y un método de pago Conekta válido.' },
@@ -432,7 +448,6 @@ export async function handleCanacoConektaApiRequest(
         sector as SectorEconomico
       ).totalAnual;
       const amountCents = Math.round(totalAnual * 100);
-      const conektaMethod: 'tarjeta' | 'spei' = body.metodoPago === 'spei' ? 'spei' : 'tarjeta';
       let checkoutResult: {
         ok: boolean;
         url?: string;
@@ -443,23 +458,7 @@ export async function handleCanacoConektaApiRequest(
         provider?: 'conekta' | 'caja';
       };
 
-      if (paymentsProvider !== 'caja') {
-        checkoutResult = await createCanacoConektaCheckout(env, {
-          razonSocial,
-          rfc,
-          folioSiem,
-          email: lead.email,
-          telefono: lead.whatsapp || undefined,
-          numEmpleados,
-          sector: sector as SectorEconomico,
-          municipio: lead.ciudad || 'Mérida',
-          leadId: lead.id,
-          paymentIntentId: intentId,
-          metodoPago: conektaMethod,
-        });
-      } else {
-        checkoutResult = { ok: true, provider: 'caja' };
-      }
+      checkoutResult = { ok: true, provider: 'caja' };
 
       if (!checkoutResult.ok) {
         return Response.json(
@@ -469,8 +468,10 @@ export async function handleCanacoConektaApiRequest(
       }
 
       const railPreference: 'codi' | 'paypal' =
-        body.metodoPago === 'paypal' && amountCents > 800_000 ? 'paypal' : 'codi';
-      if (paymentsProvider === 'shadow' || paymentsProvider === 'caja') {
+        body.metodoPago === 'tarjeta' || body.metodoPago === 'paypal' || amountCents > 800_000
+          ? 'paypal'
+          : 'codi';
+      if (paymentsProvider === 'caja') {
         const cajaResult = await createCajaOrder(env, {
           tenant_id: 'canaco_merida',
           concept: 'canaco_membership',
@@ -509,6 +510,36 @@ export async function handleCanacoConektaApiRequest(
             simulated: false,
             provider: 'caja',
           };
+          try {
+            await db
+              .prepare(
+                `INSERT INTO payment_orders
+                 (id, caja_order_id, tenant_id, user_id, concept, amount_cents, currency, rail,
+                  status, provider, metadata_json, created_at, updated_at)
+                 VALUES (?, ?, ?, NULL, ?, ?, 'MXN', ?, 'created', 'caja', ?, ?, ?)`
+              )
+              .bind(
+                crypto.randomUUID(),
+                cajaResult.caja_order_id,
+                'canaco_merida',
+                'canaco_membership',
+                amountCents,
+                railPreference,
+                JSON.stringify({
+                  lead_id: lead.id,
+                  intent_id: intentId,
+                  folio_siem: folioSiem,
+                  rfc,
+                  razon_social: razonSocial,
+                  email: lead.email,
+                }),
+                Math.floor(Date.now() / 1000),
+                Math.floor(Date.now() / 1000)
+              )
+              .run();
+          } catch {
+            // no-op
+          }
         }
       }
 
