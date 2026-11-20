@@ -8,6 +8,7 @@
 
 import { ChevronDown } from 'lucide-react';
 import { ESTADOS } from '../data/estados';
+import { formatearPorcentaje } from '../lib/calcularISN';
 import type { Estado } from '../types';
 
 interface EstadoSelectorProps {
@@ -44,7 +45,7 @@ export function EstadoSelector({ value, onChange }: EstadoSelectorProps) {
           >
             {ESTADOS.map((estado) => (
               <option key={estado.id} value={estado.id}>
-                {estado.nombre} — {estado.tasa.toFixed(1)}%
+                {estado.nombre} — {formatearPorcentaje(estado.tasa)}
               </option>
             ))}
           </select>
@@ -61,7 +62,7 @@ export function EstadoSelector({ value, onChange }: EstadoSelectorProps) {
           <div className="rounded-[12px] bg-navy p-3 text-white">
             <div className="text-[9px] font-bold tracking-[0.16em] opacity-70">TASA 2026</div>
             <div className="mt-1 font-orbitron text-[22px] font-black tabular-nums leading-none">
-              {value.tasa.toFixed(1)}%
+              {formatearPorcentaje(value.tasa)}
             </div>
             <div className="mt-1 truncate font-mono text-[9px] opacity-60">{value.articulo}</div>
           </div>

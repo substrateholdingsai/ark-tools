@@ -193,7 +193,7 @@ const TOOLS_PREVIEW: ToolPreview[] = [
     category: 'Fiscal',
     title: 'Balance General Comparativo',
     description:
-      'Análisis Horizontal y Vertical, validación A=P+C con tolerancia $0.02, parser CSV/Excel, export CSV BOM UTF-8 y Papel de Trabajo PDF con SHA-256+QR.',
+      'Análisis Horizontal y Vertical, validación A=P+C con tolerancia $0.02, parser CSV/Excel, export CSV BOM UTF-8 y Papel de Trabajo PDF con Folio de Integridad y QR de consulta.',
     tag: 'Herramienta #15',
   },
   {

@@ -3953,7 +3953,7 @@ export async function handleStayPuftInternalRequest(
           {
             step: 1,
             tool_id: 'isn',
-            title: `ISN Yucatán 2026 (Tasa ${YUCATAN_ISN_TASA.toFixed(1)}%)`,
+            title: `ISN Yucatán 2026 (Tasa ${YUCATAN_ISN_TASA.toFixed(2)}%)`,
             endpoint: 'POST /api/internal/tools/isn/preview',
           },
           {

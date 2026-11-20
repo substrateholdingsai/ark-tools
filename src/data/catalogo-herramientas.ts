@@ -82,7 +82,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Balance General Comparativo',
     categoria: 'Patrimonial y Análisis Financiero',
     descripcion:
-      'Análisis comparativo de Balance General (Ejercicio Actual vs. Anterior) con Análisis Horizontal y Vertical, cuadre patrimonial A=P+C, ingesta CSV/Excel, exportación CSV con BOM UTF-8 y Papel de Trabajo Oficial con Sello SHA-256 + QR de verificación pública.',
+      'Análisis comparativo de Balance General (Ejercicio Actual vs. Anterior) con Análisis Horizontal y Vertical, cuadre patrimonial A=P+C, ingesta CSV/Excel, exportación CSV con BOM UTF-8 y Papel de Trabajo con Folio de Integridad y QR de consulta interna.',
   },
   {
     id: 'xml-excel',
