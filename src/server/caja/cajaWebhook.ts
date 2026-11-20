@@ -7,13 +7,10 @@ import { logStayPuftAudit } from '../staypuft/staypuftConnector';
 
 /**
  * Webhook entrante de Caja: POST /api/webhooks/caja
- * Firma: HMAC-SHA256 hex sobre `${timestamp}.${rawBody}` con CAJA_WEBHOOK_SECRET.
+ * Firma: HMAC-SHA256 hex sobre el body crudo con CAJA_WEBHOOK_SECRET.
  * Headers: X-Caja-Signature, X-Caja-Timestamp. Anti-replay ±300s.
  * Idempotencia: billing_webhook_events.external_id = event_id (0011:8, UNIQUE).
  * Fail-closed en firma inválida, timeout/ausencia de timestamp, o datos insuficientes.
- *
- * CONFIRMAR CON CAJA: formato exacto de firma (asumido `${timestamp}.${rawBody}`),
- * validación de callback URL, y nombres/tipos de eventos CoDi.
  */
 
 type CajaRail = 'codi' | 'spei' | 'paypal';
@@ -27,18 +24,8 @@ interface CajaWebhookPayload {
   currency?: string;
   rail?: CajaRail;
   concept?: string;
-  tenant_name?: string;
+  paid_at?: string;
   metadata?: Record<string, any>;
-  data?: {
-    caja_order_id?: string;
-    tenant_id?: string;
-    amount_cents?: number;
-    rail?: CajaRail;
-    concept?: string;
-    tenant_name?: string;
-    metadata?: Record<string, any>;
-    [k: string]: unknown;
-  };
   [k: string]: unknown;
 }
 
@@ -120,16 +107,19 @@ async function markBillingEventFailed(
 
 async function verifyCajaSignature(
   secret: string,
-  timestamp: string,
   rawBody: string,
   signature: string
 ): Promise<boolean> {
-  const tsNum = Number(timestamp);
-  if (!Number.isFinite(tsNum)) return false;
-  const nowSec = Math.floor(Date.now() / 1000);
-  if (Math.abs(nowSec - tsNum) > 300) return false;
-  const expected = await hmacSha256Hex(secret, `${timestamp}.${rawBody}`);
+  const expected = await hmacSha256Hex(secret, rawBody);
   return timingSafeEqual(signature, expected);
+}
+
+function isCajaTimestampFresh(timestamp: string): boolean {
+  if (!/^\d+$/.test(timestamp)) return false;
+  const tsNum = Number(timestamp);
+  if (!Number.isSafeInteger(tsNum) || tsNum <= 0) return false;
+  const nowSec = Math.floor(Date.now() / 1000);
+  return Math.abs(nowSec - tsNum) <= 300;
 }
 
 export async function processCajaWebhookRequest(
@@ -157,10 +147,18 @@ export async function processCajaWebhookRequest(
     );
   }
 
+  if (!isCajaTimestampFresh(timestamp)) {
+    await auditInvalidCajaSignature(env, timestamp, null, 'invalid_or_stale_timestamp');
+    return Response.json(
+      { ok: false, error: 'Timestamp de webhook inválido o fuera de ventana.' },
+      { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+    );
+  }
+
   const rawBody = await request.text();
-  const valid = await verifyCajaSignature(secret, timestamp, rawBody, signature);
+  const valid = await verifyCajaSignature(secret, rawBody, signature);
   if (!valid) {
-    await auditInvalidCajaSignature(env, timestamp, null, 'invalid_signature_or_replay');
+    await auditInvalidCajaSignature(env, timestamp, null, 'invalid_signature');
     return Response.json(
       { ok: false, error: 'Firma de webhook inválida.' },
       { status: 401, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
@@ -179,7 +177,6 @@ export async function processCajaWebhookRequest(
 
   const eventId = asString(payload.event_id);
   const eventType = asString(payload.event_type) || '';
-  const data = payload.data || {};
   if (!eventId) {
     return Response.json(
       { ok: false, error: 'event_id requerido.' },
@@ -187,12 +184,12 @@ export async function processCajaWebhookRequest(
     );
   }
 
-  const cajaOrderId = asString(data.caja_order_id ?? payload.caja_order_id);
-  const tenantId = asString(data.tenant_id ?? payload.tenant_id);
-  const amountCents = asNumber(data.amount_cents ?? payload.amount_cents);
-  const rail = (data.rail ?? payload.rail ?? null) as CajaRail | null;
-  const concept = asString(data.concept ?? payload.concept);
-  const metadata = (data.metadata ?? payload.metadata) as Record<string, any> | undefined;
+  const cajaOrderId = asString(payload.caja_order_id);
+  const tenantId = asString(payload.tenant_id);
+  const amountCents = asNumber(payload.amount_cents);
+  const rail = (payload.rail ?? null) as CajaRail | null;
+  const concept = asString(payload.concept);
+  const metadata = payload.metadata;
 
   const db = env.ARK_TOOLS_DB;
   if (!db) {
@@ -271,7 +268,7 @@ export async function processCajaWebhookRequest(
     }
   }
 
-  if (eventType === 'order.paid') {
+  if (eventType === 'event.paid' || eventType === 'order.paid') {
     await updatePaymentOrderStatus('paid', true);
 
     const isProUpgrade = isProUpgradeConcept(concept, metadata);
