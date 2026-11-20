@@ -41,6 +41,8 @@ SUPPORT_URL = "https://wa.me/525657062511"
 AUTH_EMAIL_FROM = "ARK LEDGER <no-reply@mail.arksystems.site>"
 # Pagos (consumo de Caja): legacy (default) | shadow | caja
 PAYMENTS_PROVIDER = "legacy"
+PRO_PRICE_MXN_TIER_1 = "399"
+PRO_PRICE_MXN_TIER_2 = "499"
 # LEDGER_TENANT_ID = "ark" # tenant por defecto para órdenes Pro (configurar por entorno)
 # CAJA_WORKER_URL = "https://caja.arksystems.site"
 # CAJA_TIMEOUT_MS = "10000"

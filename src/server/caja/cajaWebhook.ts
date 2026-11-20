@@ -1,7 +1,7 @@
 ﻿import type { Env } from '../../index';
 import { timingSafeEqual } from '../canacoConektaService';
 import { activateProSubscription } from '../billing/subscriptions';
-import { getPaymentsProvider, getProPriceMxn } from '../../config/billing';
+import { getPaymentsProvider, getProPrice, type ProTier } from '../../config/billing';
 import { activateCanacoSocioByPayment } from '../canacoLifecycle';
 import { logStayPuftAudit } from '../staypuft/staypuftConnector';
 
@@ -63,6 +63,13 @@ function isProUpgradeConcept(concept: string | null, metadata?: Record<string, a
 function isCanacoConcept(concept: string | null): boolean {
   const c = (concept || '').toLowerCase();
   return c === 'canaco_membership' || c === 'canaco_socio' || c === 'canaco';
+}
+
+function getProTierFromAmountCents(env: Env, amountCents: number): ProTier | null {
+  if (!Number.isInteger(amountCents)) return null;
+  if (amountCents === Math.round(getProPrice(env, 'tier_1') * 100)) return 'tier_1';
+  if (amountCents === Math.round(getProPrice(env, 'tier_2') * 100)) return 'tier_2';
+  return null;
 }
 
 async function auditInvalidCajaSignature(
@@ -296,12 +303,19 @@ export async function processCajaWebhookRequest(
         );
       }
       try {
-        const monto = Number.isFinite(amountCents) ? amountCents / 100 : getProPriceMxn(env);
+        const tier = getProTierFromAmountCents(env, amountCents);
+        if (!tier) {
+          await markBillingEventFailed(db, eventRowId, 'amount_cents no coincide con un tier Pro');
+          return Response.json(
+            { ok: false, error: 'El importe no coincide con un tier Ark Pro válido.' },
+            { status: 422, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
         const result = await activateProSubscription(env, {
           tenantId,
           billingProvider: 'caja',
+          tier,
           externalId: cajaOrderId || eventId,
-          monto,
         });
         await updatePaymentOrderStatus('activated', true);
         return Response.json(

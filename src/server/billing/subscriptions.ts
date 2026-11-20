@@ -8,7 +8,7 @@
  */
 
 import type { Env } from '../../index';
-import { getBillingConfig } from '../../config/billing';
+import { getBillingConfig, getProPrice, type ProTier } from '../../config/billing';
 import { isEmailServiceConfigured, sendTransactionalEmail } from '../email/emailService';
 
 export type PlanType = 'free' | 'pro' | 'enterprise';
@@ -27,6 +27,7 @@ export interface TenantSubscriptionInfo {
 export interface ActivateProParams {
   tenantId: string;
   billingProvider?: 'clip' | 'spei_arkangel' | 'manual' | 'caja';
+  tier: ProTier;
   externalId?: string;
   monto?: number;
   email?: string;
@@ -180,7 +181,7 @@ export async function activateProSubscription(
   const duracion = params.duracionDias || billingConfig.defaultProDays;
   const periodEnd = new Date(now.getTime() + duracion * 24 * 60 * 60 * 1000);
   const periodEndIso = periodEnd.toISOString();
-  const monto = params.monto || billingConfig.proPriceMxn;
+  const monto = params.monto ?? getProPrice(env, params.tier);
   const provider = params.billingProvider || 'clip';
   const extId = params.externalId || `CLIP-${Date.now().toString(36).toUpperCase()}`;
 

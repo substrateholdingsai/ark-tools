@@ -118,6 +118,8 @@ export interface Env {
   CAJA_WEBHOOK_SECRET?: string;
   CAJA_TIMEOUT_MS?: string;
   LEDGER_TENANT_ID?: string;
+  PRO_PRICE_MXN_TIER_1?: string;
+  PRO_PRICE_MXN_TIER_2?: string;
 }
 
 export default {

@@ -98,6 +98,8 @@ function makeEnv(provider: 'legacy' | 'shadow' | 'caja', db: ReturnType<typeof m
     CONEKTA_PRIVATE_KEY: 'conekta-key',
     CONEKTA_ENVIRONMENT: 'production',
     CANACO_PRICING_CONFIRMED: 'true',
+    PRO_PRICE_MXN_TIER_1: '399',
+    PRO_PRICE_MXN_TIER_2: '499',
   } as unknown as Env;
 }
 
@@ -208,6 +210,40 @@ describe('Pagos Caja — webhook y cliente', () => {
     expect(mocked.activatePro).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ billingProvider: 'caja', tenantId: 'tenant-1' })
+    );
+  });
+
+  it('activa Ark Pro Tier 1 con amount_cents 39900', async () => {
+    const payload = { ...paidPayload('ark_pro_upgrade'), event_type: 'order.paid' };
+    const response = await processCajaWebhookRequest(
+      await cajaWebhookRequest(payload),
+      makeEnv('caja', makeDb()),
+      corsHeaders
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocked.activatePro).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ tier: 'tier_1' })
+    );
+  });
+
+  it('activa Ark Pro Tier 2 con amount_cents 49900', async () => {
+    const payload = {
+      ...paidPayload('ark_pro_upgrade'),
+      event_type: 'order.paid',
+      amount_cents: 49900,
+    };
+    const response = await processCajaWebhookRequest(
+      await cajaWebhookRequest(payload),
+      makeEnv('caja', makeDb()),
+      corsHeaders
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocked.activatePro).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ tier: 'tier_2' })
     );
   });
 

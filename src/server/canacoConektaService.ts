@@ -14,7 +14,7 @@ import { rateLimit } from './auth';
 import { calcularCuotaAfiliacion } from '@/components/canaco/calculoCuota';
 import type { SectorEconomico } from '@/components/canaco/types';
 import { activateCanacoSocioByPayment, canonicalizarRfc } from './canacoLifecycle';
-import { getPaymentsProvider } from '../config/billing';
+import { getPaymentsProvider, getProPrice, type ProTier } from '../config/billing';
 import { createCajaOrder } from './caja/cajaClient';
 export { timingSafeEqual } from './timingSafeEqual';
 
@@ -249,8 +249,64 @@ export async function handleCanacoConektaApiRequest(
 
       const body = (await request.json()) as {
         leadId?: string;
+        tenant_id?: string;
+        concept?: 'canaco_membership' | 'ark_pro_upgrade';
+        tier?: ProTier;
         metodoPago?: 'tarjeta' | 'spei' | 'paypal';
       };
+
+      if (body.concept === 'ark_pro_upgrade') {
+        if (paymentsProvider === 'legacy') {
+          return Response.json(
+            { error: 'El checkout Ark Pro con Caja no está habilitado en modo legacy.' },
+            { status: 409, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+        const tier = body.tier || 'tier_1';
+        if (tier !== 'tier_1' && tier !== 'tier_2') {
+          return Response.json(
+            { error: 'Tier Ark Pro inválido.' },
+            { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+        const tenantId = body.tenant_id?.trim() || env.LEDGER_TENANT_ID?.trim();
+        if (!tenantId) {
+          return Response.json(
+            { error: 'tenant_id requerido para generar el checkout Ark Pro.' },
+            { status: 400, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+
+        const amountCents = Math.round(getProPrice(env, tier) * 100);
+        const cajaResult = await createCajaOrder(env, {
+          tenant_id: tenantId,
+          concept: 'ark_pro_upgrade',
+          amount_cents: amountCents,
+          currency: 'MXN',
+          rail_preference: 'codi',
+          metadata: { tier },
+          callback_url: `${(env.APP_URL || 'https://ledger.arksystems.site').replace(/\/+$/, '')}/api/webhooks/caja`,
+          idempotency_key: `ark-pro:${tenantId}:${tier}:${crypto.randomUUID()}`,
+        });
+        if (!cajaResult.ok) {
+          return Response.json(
+            { error: 'Caja no pudo generar la orden Ark Pro.', detail: cajaResult.error },
+            { status: 502, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+          );
+        }
+        return Response.json(
+          {
+            ok: true,
+            provider: 'caja',
+            orderId: cajaResult.caja_order_id,
+            url: cajaResult.checkout_url,
+            paypalOrderId: cajaResult.paypal_order_id,
+            tier,
+            amountCents,
+          },
+          { status: 200, headers: { ...corsHeaders, 'Cache-Control': 'no-store' } }
+        );
+      }
 
       const metodoPagoValido =
         body.metodoPago === 'tarjeta' ||

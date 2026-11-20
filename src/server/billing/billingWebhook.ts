@@ -145,6 +145,7 @@ export async function handleBillingApiRequest(
       const result = await activateProSubscription(env, {
         tenantId,
         billingProvider: providerBody,
+        tier: 'tier_1',
         externalId: extId,
         monto,
         email,
@@ -191,6 +192,7 @@ export async function handleBillingApiRequest(
     const result = await activateProSubscription(env, {
       tenantId: body.tenant_id.trim(),
       billingProvider: 'manual',
+      tier: 'tier_1',
       externalId: `ADMIN-OVERRIDE-${Date.now().toString(36).toUpperCase()}`,
       monto: 0,
       email: body.email,
