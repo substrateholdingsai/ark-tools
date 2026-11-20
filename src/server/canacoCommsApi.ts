@@ -145,6 +145,7 @@ async function authorize(
   tenantId: string
 ): Promise<boolean> {
   if (!principal) return false;
+  if (principal.platformRole === 'super_admin') return true;
   if (ADMIN_EMAILS.has(principal.email.toLowerCase())) return true;
   const membership = await requireTenantMembership(env, principal, tenantId);
   return membership !== null && membership.role !== 'member';
