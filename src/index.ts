@@ -11,6 +11,7 @@
 
 import { handleD1ApiRequest } from './server/d1Api';
 import { handleAiApiRequest } from './server/ai/aiApi';
+import { handleMcpApiRequest } from './server/mcpApi';
 import { authenticateRequest, handleAuthApiRequest } from './server/auth';
 import { handleAdminApiRequest } from './server/adminApi';
 import { handleLeadsApiRequest } from './server/leadsApi';
@@ -85,6 +86,11 @@ export interface Env {
   // Conector Interno de Operador StayPuft / Marina (Total Access, Fail-Closed)
   LEDGER_STAYPUFT_API_KEY?: string;
 
+  // MCP bridge (Ledger remote MCP server)
+  LEDGER_MCP_API_KEY?: string;
+  MCP_API_KEY?: string;
+  LEDGER_MCP_TENANT_ID?: string;
+
   // Integración Arkangel Call Center (Worker-to-Worker Service Binding / REST)
   ARKANGEL?: Fetcher;
   ARKANGEL_URL?: string;
@@ -118,6 +124,24 @@ export default {
     // ─────────────────────────────────────────────────────────────────
     // API ROUTES (para futuras integraciones)
     // ─────────────────────────────────────────────────────────────────
+    // MCP bridge (remote MCP server, streamable HTTP)
+    if (
+      url.pathname === '/mcp' ||
+      url.pathname === '/mcp/' ||
+      url.pathname === '/api/mcp' ||
+      url.pathname === '/api/mcp/'
+    ) {
+      const mcpCorsHeaders = {
+        'Access-Control-Allow-Origin':
+          env.ENVIRONMENT === 'production' ? 'https://ledger.arksystems.site' : '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers':
+          'Content-Type, Authorization, x-tenant-id, X-Tenant-ID, X-StayPuft-Key, x-staypuft-key, X-API-Key, x-api-key',
+      };
+      const authPrincipal = await authenticateRequest(request, env);
+      return handleMcpApiRequest(request, env, mcpCorsHeaders, authPrincipal);
+    }
+
     if (url.pathname.startsWith('/api/')) {
       return handleApiRequest(request, env, ctx);
     }
