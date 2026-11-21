@@ -1,7 +1,7 @@
 # ARK SYSTEMS — Sistema de Diseño
 
-**Versión:** 1.0  
-**Última actualización:** Octubre 2026  
+**Versión:** 1.1  
+**Última actualización:** Noviembre 2026  
 **Mantenedor:** Substrate Holdings LLC  
 **Aplicable a:** `ark-tools`, `ark-system`, `ark-compliance`, `ark-commerce`
 
@@ -18,6 +18,7 @@
 7. [CSS Variables](#7-css-variables)
 8. [Configuración Tailwind](#8-configuración-tailwind)
 9. [Checklist de Entrega](#9-checklist-de-entrega)
+10. [Principios de Gestalt](#10-principios-de-gestalt)
 
 ---
 
@@ -434,6 +435,25 @@ module.exports = {
   plugins: [],
 };
 ```
+
+---
+
+## 10. Principios de Gestalt
+
+El sistema ARK aplica principios de Gestalt para que la información contable se perciba como **un todo coherente**, no como partes sueltas. Cada principio refuerza la magnificación óptica y la jerarquía física.
+
+| Principio         | Aplicación en ARK                                                                                  |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| **Proximidad**    | Agrupación de métricas relacionadas (IVA + ISR = carga fiscal; ingreso + gasto = flujo).           |
+| **Similitud**     | Mismo estilo = misma categoría. Totales en cúpula; datos tabulares en Orbitron; labels en Inter.   |
+| **Figura-fondo**  | Cúpula blanca (figura) sobre fondo Surface (fondo). El total salta; el resto respira.              |
+| **Pregnancia**    | Formas simples, cerradas, estables. La cúpula es un óvalo; el divider es una línea con diamante.   |
+| **Continuidad**   | El ojo sigue el oro: divider → cúpula → botón primario. Flujo de lectura guiado.                   |
+| **Cierre**        | Recibos con borde doble completan la forma. El cerebro "cierra" el comprobante.                    |
+| **Simetría**      | Layouts centrados en mobile; grid simétrico en desktop. Balance visual = confianza.                |
+| **Destino común** | Animaciones coordinadas (hover, active, focus). Elementos que se mueven juntos, pertenecen juntos. |
+
+> **Nota de implementación:** Estos principios justifican las decisiones visuales del sistema. No son código, son la razón por la que el código es así.
 
 ---
 
