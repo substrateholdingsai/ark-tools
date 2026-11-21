@@ -210,33 +210,33 @@ export const AuditorCFDIAtipico: React.FC = () => {
   }, [cfdis, mesSeleccionado, filtroMesTipo]);
 
   return (
-    <div className="min-h-screen space-y-6 bg-slate-950 p-4 text-slate-100 md:p-8">
+    <div className="bg-slate-950 text-slate-100 min-h-screen space-y-6 p-4 md:p-8">
       {/* Barra de Título y Marca */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="border-slate-800 flex flex-wrap items-center justify-between gap-4 border-b pb-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="rounded-full border border-sky-800 bg-sky-950 px-2.5 py-0.5 text-[11px] font-bold text-sky-400">
               HERRAMIENTA 20
             </span>
-            <span className="text-xs text-slate-400">SAT & Auditoría Forense CFDI 4.0</span>
+            <span className="text-slate-400 text-xs">SAT & Auditoría Forense CFDI 4.0</span>
           </div>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-white md:text-3xl">
             Detector de Comportamientos Atípicos en CFDI
           </h1>
-          <p className="mt-0.5 text-xs text-slate-400">
+          <p className="text-slate-400 mt-0.5 text-xs">
             Ingesta local, cruce de metadata SAT, Ley de Benford, Z-Score y matriz de riesgo 5×5.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {ultimoRespaldo && (
-            <span className="hidden font-mono text-[11px] text-slate-400 sm:inline">
+            <span className="text-slate-400 hidden font-mono text-[11px] sm:inline">
               Último snapshot: {ultimoRespaldo}
             </span>
           )}
           <button
             onClick={handleDescargarRespaldoJSON}
-            className="flex items-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 transition-all hover:border-slate-700 hover:text-white"
+            className="border-slate-800 bg-slate-900 text-slate-300 hover:border-slate-700 flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs transition-all hover:text-white"
             title="Descargar copia de seguridad en JSON"
           >
             <Download className="h-3.5 w-3.5 text-sky-400" /> Respaldo JSON
@@ -261,13 +261,13 @@ export const AuditorCFDIAtipico: React.FC = () => {
       />
 
       {/* Tabs Principales de Navegación */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-800 pb-px">
+      <div className="border-slate-800 flex items-center gap-2 overflow-x-auto border-b pb-px">
         <button
           onClick={() => setTabActivo('malla')}
           className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
             tabActivo === 'malla'
               ? 'border-sky-500 bg-sky-950/20 text-sky-400'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'text-slate-400 border-transparent hover:text-white'
           }`}
         >
           <Calendar className="h-4 w-4" /> Malla Mensual (12 Meses)
@@ -278,7 +278,7 @@ export const AuditorCFDIAtipico: React.FC = () => {
           className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
             tabActivo === 'matriz'
               ? 'border-sky-500 bg-sky-950/20 text-sky-400'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'text-slate-400 border-transparent hover:text-white'
           }`}
         >
           <ShieldAlert className="h-4 w-4" /> Matriz de Riesgo 5×5 ({hallazgosEstado.length})
@@ -289,7 +289,7 @@ export const AuditorCFDIAtipico: React.FC = () => {
           className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
             tabActivo === 'conciliacion'
               ? 'border-sky-500 bg-sky-950/20 text-sky-400'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'text-slate-400 border-transparent hover:text-white'
           }`}
         >
           <FileCheck className="h-4 w-4" /> Conciliación Metadata SAT (
@@ -301,7 +301,7 @@ export const AuditorCFDIAtipico: React.FC = () => {
           className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
             tabActivo === 'criterios'
               ? 'border-sky-500 bg-sky-950/20 text-sky-400'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'text-slate-400 border-transparent hover:text-white'
           }`}
         >
           <Sliders className="h-4 w-4" /> Parámetros y Criterios
@@ -312,7 +312,7 @@ export const AuditorCFDIAtipico: React.FC = () => {
           className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-2.5 text-xs font-bold transition-all ${
             tabActivo === 'dictamen'
               ? 'border-sky-500 bg-sky-950/20 text-sky-400'
-              : 'border-transparent text-slate-400 hover:text-white'
+              : 'text-slate-400 border-transparent hover:text-white'
           }`}
         >
           <FileText className="h-4 w-4" /> Resumen Ejecutivo & Dictamen

@@ -64,14 +64,14 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
   return (
     <div className="space-y-6">
       {/* Selector de Contribuyente Activo y Carga Demo */}
-      <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/90 p-5 shadow-xl">
+      <div className="border-slate-800 bg-slate-900/90 space-y-4 rounded-2xl border p-5 shadow-xl">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-sky-800 bg-sky-950/80 text-sky-400">
               <Building2 className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <div className="text-slate-400 text-xs font-semibold uppercase tracking-wider">
                 Contribuyente en Auditoría
               </div>
               <h2 className="text-lg font-bold text-white">{contribuyenteActivo.razonSocial}</h2>
@@ -94,7 +94,7 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
                 const found = todosContribuyentes.find((c) => c.rfc === e.target.value);
                 if (found) onSeleccionarContribuyente(found);
               }}
-              className="max-w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-white focus:border-sky-500 focus:outline-none"
+              className="border-slate-800 bg-slate-950 max-w-full rounded-xl border px-3 py-2 text-xs font-medium text-white focus:border-sky-500 focus:outline-none"
             >
               {todosContribuyentes.map((c) => (
                 <option key={c.rfc} value={c.rfc}>
@@ -105,7 +105,7 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
 
             <button
               onClick={() => setModalNuevo(true)}
-              className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-slate-700"
+              className="border-slate-700 bg-slate-800 hover:bg-slate-700 flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold text-white transition-all"
             >
               <Plus className="h-4 w-4 text-sky-400" /> Nuevo RFC
             </button>
@@ -124,7 +124,7 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
       <div
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
-        className="group relative cursor-pointer rounded-2xl border-2 border-dashed border-slate-800 bg-slate-900/60 p-8 text-center transition-all hover:border-sky-500/80"
+        className="border-slate-800 bg-slate-900/60 group relative cursor-pointer rounded-2xl border-2 border-dashed p-8 text-center transition-all hover:border-sky-500/80"
       >
         <input
           type="file"
@@ -143,13 +143,13 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
             <h3 className="text-base font-bold text-white">
               Arrastra aquí paquetes .ZIP con CFDIs, XMLs sueltos o Metadata del SAT (.txt)
             </h3>
-            <p className="mx-auto mt-1 max-w-xl text-xs text-slate-400">
+            <p className="text-slate-400 mx-auto mt-1 max-w-xl text-xs">
               Todo el procesamiento ocurre <strong>100% en tu navegador</strong> vía Web Workers y
               memoria local IndexedDB. Ninguna factura ni dato fiscal sale de tu equipo.
             </p>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-semibold text-sky-400">
+          <span className="border-slate-700 bg-slate-800 inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold text-sky-400">
             Explorar archivos en este equipo
           </span>
         </div>
@@ -165,56 +165,56 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
       {/* Modal para crear nuevo RFC */}
       {modalNuevo && (
         <div className="animate-in fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+          <div className="border-slate-800 bg-slate-900 max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-2xl border p-6 shadow-2xl">
             <h3 className="mb-4 text-base font-bold text-white">Registrar Nuevo Contribuyente</h3>
             <form onSubmit={handleCrear} className="space-y-4 text-xs">
               <div>
-                <label className="mb-1 block font-semibold text-slate-400">RFC</label>
+                <label className="text-slate-400 mb-1 block font-semibold">RFC</label>
                 <input
                   type="text"
                   required
                   placeholder="AAA010101AAA"
                   value={nuevoRFC}
                   onChange={(e) => setNuevoRFC(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 font-mono uppercase text-white focus:border-sky-500 focus:outline-none"
+                  className="border-slate-800 bg-slate-950 w-full rounded-xl border px-3 py-2 font-mono uppercase text-white focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block font-semibold text-slate-400">Razón Social</label>
+                <label className="text-slate-400 mb-1 block font-semibold">Razón Social</label>
                 <input
                   type="text"
                   required
                   placeholder="EMPRESA EJEMPLO S.A. DE C.V."
                   value={nuevaRazon}
                   onChange={(e) => setNuevaRazon(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-sky-500 focus:outline-none"
+                  className="border-slate-800 bg-slate-950 w-full rounded-xl border px-3 py-2 text-white focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block font-semibold text-slate-400">Ejercicio Fiscal</label>
+                <label className="text-slate-400 mb-1 block font-semibold">Ejercicio Fiscal</label>
                 <input
                   type="number"
                   required
                   value={nuevoEjercicio}
                   onChange={(e) => setNuevoEjercicio(parseInt(e.target.value) || 2026)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 font-mono text-white focus:border-sky-500 focus:outline-none"
+                  className="border-slate-800 bg-slate-950 w-full rounded-xl border px-3 py-2 font-mono text-white focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block font-semibold text-slate-400">Régimen Fiscal</label>
+                <label className="text-slate-400 mb-1 block font-semibold">Régimen Fiscal</label>
                 <input
                   type="text"
                   value={nuevoRegimen}
                   onChange={(e) => setNuevoRegimen(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-sky-500 focus:outline-none"
+                  className="border-slate-800 bg-slate-950 w-full rounded-xl border px-3 py-2 text-white focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block font-semibold text-slate-400">
+                <label className="text-slate-400 mb-1 block font-semibold">
                   Actividad Económica Declarada
                 </label>
                 <input
@@ -222,7 +222,7 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
                   placeholder="Ej: Comercio al por mayor de abarrotes"
                   value={nuevaActividad}
                   onChange={(e) => setNuevaActividad(e.target.value)}
-                  className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-white focus:border-sky-500 focus:outline-none"
+                  className="border-slate-800 bg-slate-950 w-full rounded-xl border px-3 py-2 text-white focus:border-sky-500 focus:outline-none"
                 />
               </div>
 
@@ -230,7 +230,7 @@ export const GestionContribuyentes: React.FC<GestionContribuyentesProps> = ({
                 <button
                   type="button"
                   onClick={() => setModalNuevo(false)}
-                  className="rounded-xl bg-slate-800 px-4 py-2 text-slate-300 hover:text-white"
+                  className="bg-slate-800 text-slate-300 rounded-xl px-4 py-2 hover:text-white"
                 >
                   Cancelar
                 </button>

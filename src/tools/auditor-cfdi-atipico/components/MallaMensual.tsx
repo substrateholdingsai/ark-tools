@@ -29,35 +29,35 @@ export const MallaMensual: React.FC<MallaMensualProps> = ({
     <div className="space-y-6">
       {/* Encabezado y Métricas */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="border-slate-800 bg-slate-900/60 rounded-xl border p-4">
+          <div className="text-slate-400 mb-1 text-xs font-semibold uppercase tracking-wider">
             Promedio Mensual Emitido
           </div>
           <div className="font-mono text-2xl font-bold text-white">
             {formatoMoneda(promedioMensual)}
           </div>
-          <p className="mt-1 text-xs text-slate-400">Línea base para cálculo de Z-Score</p>
+          <p className="text-slate-400 mt-1 text-xs">Línea base para cálculo de Z-Score</p>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="border-slate-800 bg-slate-900/60 rounded-xl border p-4">
+          <div className="text-slate-400 mb-1 text-xs font-semibold uppercase tracking-wider">
             Desviación Estándar (σ)
           </div>
           <div className="font-mono text-2xl font-bold text-amber-400">
             {formatoMoneda(desviacionEstandar)}
           </div>
-          <p className="mt-1 text-xs text-slate-400">Umbral atípico: |Z| &gt; 2.0 (2σ)</p>
+          <p className="text-slate-400 mt-1 text-xs">Umbral atípico: |Z| &gt; 2.0 (2σ)</p>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="border-slate-800 bg-slate-900/60 rounded-xl border p-4">
+          <div className="text-slate-400 mb-1 text-xs font-semibold uppercase tracking-wider">
             Meses con Desviación Atípica
           </div>
           <div className="font-mono text-2xl font-bold text-rose-400">
             {malla.filter((m) => m.esAtipico).length}{' '}
-            <span className="text-xs font-normal text-slate-400">/ 12 meses</span>
+            <span className="text-slate-400 text-xs font-normal">/ 12 meses</span>
           </div>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="text-slate-400 mt-1 text-xs">
             Volatilidad atípica de ingresos o cancelaciones
           </p>
         </div>
@@ -72,7 +72,7 @@ export const MallaMensual: React.FC<MallaMensualProps> = ({
           </h3>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 p-1 text-xs">
+        <div className="border-slate-800 bg-slate-900 flex flex-wrap items-center gap-2 rounded-lg border p-1 text-xs">
           <button
             onClick={() => setFiltroTipo('TODOS')}
             className={`rounded-md px-3 py-1.5 font-medium transition-all ${
@@ -144,7 +144,7 @@ export const MallaMensual: React.FC<MallaMensualProps> = ({
               <div className="space-y-2 text-xs">
                 {(filtroTipo === 'TODOS' || filtroTipo === 'EMITIDO') && (
                   <div>
-                    <div className="flex justify-between text-slate-400">
+                    <div className="text-slate-400 flex justify-between">
                       <span>Emitidos ({celda.emitidos.count}):</span>
                       <span className="font-mono font-semibold text-sky-300">
                         {formatoMoneda(celda.emitidos.importe)}
@@ -164,7 +164,7 @@ export const MallaMensual: React.FC<MallaMensualProps> = ({
 
                 {(filtroTipo === 'TODOS' || filtroTipo === 'RECIBIDO') && (
                   <div>
-                    <div className="flex justify-between text-slate-400">
+                    <div className="text-slate-400 flex justify-between">
                       <span>Recibidos ({celda.recibidos.count}):</span>
                       <span className="font-mono font-semibold text-emerald-300">
                         {formatoMoneda(celda.recibidos.importe)}
@@ -174,7 +174,7 @@ export const MallaMensual: React.FC<MallaMensualProps> = ({
                 )}
 
                 {filtroTipo === 'TODOS' && (
-                  <div className="flex justify-between border-t border-slate-800/80 pt-2 font-medium">
+                  <div className="border-slate-800/80 flex justify-between border-t pt-2 font-medium">
                     <span className="text-slate-300">Flujo Neto:</span>
                     <span
                       className={`font-mono ${celda.totalNeto >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}
@@ -185,7 +185,7 @@ export const MallaMensual: React.FC<MallaMensualProps> = ({
                 )}
               </div>
 
-              <div className="mt-3 flex items-center justify-between border-t border-slate-800/40 pt-2 text-[11px] text-sky-400/80">
+              <div className="border-slate-800/40 mt-3 flex items-center justify-between border-t pt-2 text-[11px] text-sky-400/80">
                 <span>Ver comprobantes</span>
                 <span>→</span>
               </div>

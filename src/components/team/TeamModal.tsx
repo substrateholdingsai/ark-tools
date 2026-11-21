@@ -398,7 +398,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                                     ? 'border border-amber-300 bg-amber-50 text-amber-900'
                                     : isMemberAdmin
                                       ? 'border border-sky-300 bg-sky-50 text-sky-900'
-                                      : 'border border-slate-200 bg-slate-50 text-slate-700'
+                                      : 'border-slate-200 bg-slate-50 text-slate-700 border'
                                 )}
                               >
                                 {isMemberOwner ? (
@@ -538,7 +538,7 @@ export function TeamModal({ isOpen, onClose }: TeamModalProps) {
                         : 'border-line bg-surface-2 hover:bg-surface'
                     )}
                   >
-                    <UserCheck size={18} className="shrink-0 text-slate-600" />
+                    <UserCheck size={18} className="text-slate-600 shrink-0" />
                     <div>
                       <div className="text-[12px] font-bold text-navy">Colaborador</div>
                       <div className="text-[10px] text-muted">

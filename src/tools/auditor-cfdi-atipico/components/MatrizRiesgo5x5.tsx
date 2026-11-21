@@ -46,12 +46,12 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
     <div className="space-y-6">
       {/* Resumen Superior */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="border-slate-800 bg-slate-900/60 rounded-xl border p-4">
+          <div className="text-slate-400 mb-1 text-xs font-semibold uppercase tracking-wider">
             Total Hallazgos Activos
           </div>
           <div className="font-mono text-2xl font-bold text-white">{hallazgos.length}</div>
-          <p className="mt-1 text-xs text-slate-400">Identificados por el motor forense</p>
+          <p className="text-slate-400 mt-1 text-xs">Identificados por el motor forense</p>
         </div>
 
         <div className="rounded-xl border border-rose-900/50 bg-rose-950/20 p-4">
@@ -64,21 +64,21 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
                 .length
             }
           </div>
-          <p className="mt-1 text-xs text-slate-400">Prioridad inmediata de aclaración</p>
+          <p className="text-slate-400 mt-1 text-xs">Prioridad inmediata de aclaración</p>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="border-slate-800 bg-slate-900/60 rounded-xl border p-4">
+          <div className="text-slate-400 mb-1 text-xs font-semibold uppercase tracking-wider">
             Importe en Riesgo Fiscal
           </div>
           <div className="font-mono text-2xl font-bold text-amber-400">
             {formatoMoneda(totalInvolucrado)}
           </div>
-          <p className="mt-1 text-xs text-slate-400">Monto acumulado con posible rechazo SAT</p>
+          <p className="text-slate-400 mt-1 text-xs">Monto acumulado con posible rechazo SAT</p>
         </div>
 
-        <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
-          <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+        <div className="border-slate-800 bg-slate-900/60 rounded-xl border p-4">
+          <div className="text-slate-400 mb-1 text-xs font-semibold uppercase tracking-wider">
             Casos Corregidos / Aclarados
           </div>
           <div className="font-mono text-2xl font-bold text-emerald-400">
@@ -88,12 +88,12 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
               ).length
             }
           </div>
-          <p className="mt-1 text-xs text-slate-400">Con expediente de soporte solventado</p>
+          <p className="text-slate-400 mt-1 text-xs">Con expediente de soporte solventado</p>
         </div>
       </div>
 
       {/* Matriz 5x5 Visual */}
-      <div className="rounded-xl border border-slate-800 bg-slate-900/80 p-6">
+      <div className="border-slate-800 bg-slate-900/80 rounded-xl border p-6">
         <div className="mb-4 flex items-center gap-2">
           <ShieldAlert className="h-5 w-5 text-sky-400" />
           <h3 className="text-lg font-bold text-white">Matriz de Calor de Riesgo Fiscal (5 × 5)</h3>
@@ -101,11 +101,11 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
 
         <div className="grid grid-cols-6 gap-2 text-center text-xs">
           {/* Eje Y Header */}
-          <div className="flex items-center justify-center font-bold text-slate-400">
+          <div className="text-slate-400 flex items-center justify-center font-bold">
             Probabilidad
           </div>
           {[1, 2, 3, 4, 5].map((imp) => (
-            <div key={imp} className="p-2 font-bold text-slate-400">
+            <div key={imp} className="text-slate-400 p-2 font-bold">
               Impacto {imp}
             </div>
           ))}
@@ -113,7 +113,7 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
           {/* Filas 5 a 1 */}
           {[5, 4, 3, 2, 1].map((prob) => (
             <React.Fragment key={prob}>
-              <div className="flex items-center justify-center rounded bg-slate-950/40 p-2 font-bold text-slate-400">
+              <div className="bg-slate-950/40 text-slate-400 flex items-center justify-center rounded p-2 font-bold">
                 Nivel {prob}
               </div>
               {[1, 2, 3, 4, 5].map((imp) => {
@@ -147,8 +147,8 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
       {/* Filtros de la Tabla de Hallazgos */}
       <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
         <div className="flex items-center gap-2">
-          <Filter className="h-4 w-4 text-slate-400" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+          <Filter className="text-slate-400 h-4 w-4" />
+          <span className="text-slate-300 text-xs font-semibold uppercase tracking-wider">
             Filtrar Hallazgos:
           </span>
         </div>
@@ -157,7 +157,7 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
           <select
             value={filtroEstatus}
             onChange={(e) => setFiltroEstatus(e.target.value)}
-            className="rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-xs text-slate-300 focus:border-sky-500 focus:outline-none"
+            className="border-slate-800 bg-slate-900 text-slate-300 rounded-lg border px-2 py-1 text-xs focus:border-sky-500 focus:outline-none"
           >
             <option value="TODOS">Todos los estatus</option>
             <option value="pendiente">Solo Pendientes</option>
@@ -184,7 +184,7 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
       {/* Lista / Tabla de Hallazgos */}
       <div className="space-y-3">
         {hallazgosFiltrados.length === 0 ? (
-          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-8 text-center text-sm text-slate-400">
+          <div className="border-slate-800 bg-slate-900/40 text-slate-400 rounded-xl border p-8 text-center text-sm">
             <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-400" />
             No se identificaron hallazgos para los filtros seleccionados.
           </div>
@@ -192,7 +192,7 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
           hallazgosFiltrados.map((h) => (
             <div
               key={h.id}
-              className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/90 p-5 transition-all hover:border-slate-700"
+              className="border-slate-800 bg-slate-900/90 hover:border-slate-700 space-y-3 rounded-xl border p-5 transition-all"
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -205,7 +205,7 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
                 </div>
 
                 <div className="flex items-center gap-3">
-                  <span className="text-xs text-slate-400">{h.periodo}</span>
+                  <span className="text-slate-400 text-xs">{h.periodo}</span>
                   <select
                     value={h.estatusSeguimiento}
                     onChange={(e) =>
@@ -214,7 +214,7 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
                         e.target.value as HallazgoRiesgo['estatusSeguimiento']
                       )
                     }
-                    className="rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-xs text-slate-300 focus:border-sky-500 focus:outline-none"
+                    className="border-slate-800 bg-slate-950 text-slate-300 rounded-lg border px-2 py-1 text-xs focus:border-sky-500 focus:outline-none"
                   >
                     <option value="pendiente">Pendiente</option>
                     <option value="en_revision">En Revisión</option>
@@ -224,27 +224,27 @@ export const MatrizRiesgo5x5: React.FC<MatrizRiesgo5x5Props> = ({
                 </div>
               </div>
 
-              <p className="text-xs leading-relaxed text-slate-300">{h.descripcion}</p>
+              <p className="text-slate-300 text-xs leading-relaxed">{h.descripcion}</p>
 
-              <div className="grid grid-cols-1 gap-3 border-t border-slate-800/60 pt-2 text-xs md:grid-cols-2">
-                <div className="rounded-lg border border-slate-800/80 bg-slate-950/60 p-3">
+              <div className="border-slate-800/60 grid grid-cols-1 gap-3 border-t pt-2 text-xs md:grid-cols-2">
+                <div className="border-slate-800/80 bg-slate-950/60 rounded-lg border p-3">
                   <span className="mb-1 flex items-center gap-1 font-semibold text-rose-400">
                     <AlertOctagon className="h-3.5 w-3.5" /> Consecuencia Fiscal SAT:
                   </span>
-                  <p className="text-[11px] leading-relaxed text-slate-400">
+                  <p className="text-slate-400 text-[11px] leading-relaxed">
                     {h.posibleConsecuenciaFiscal}
                   </p>
                 </div>
 
-                <div className="rounded-lg border border-slate-800/80 bg-slate-950/60 p-3">
+                <div className="border-slate-800/80 bg-slate-950/60 rounded-lg border p-3">
                   <span className="mb-1 flex items-center gap-1 font-semibold text-emerald-400">
                     <CheckCircle2 className="h-3.5 w-3.5" /> Recomendación Preventiva:
                   </span>
-                  <p className="text-[11px] leading-relaxed text-slate-400">{h.recomendacion}</p>
+                  <p className="text-slate-400 text-[11px] leading-relaxed">{h.recomendacion}</p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1 text-xs text-slate-400">
+              <div className="text-slate-400 flex items-center justify-between pt-1 text-xs">
                 <span>
                   Importe Involucrado:{' '}
                   <strong className="font-mono text-white">

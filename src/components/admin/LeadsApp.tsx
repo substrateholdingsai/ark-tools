@@ -619,7 +619,7 @@ export default function LeadsApp() {
           <button
             onClick={load}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-sm transition hover:bg-slate-50 active:scale-95 disabled:opacity-50"
+            className="hover:bg-slate-50 flex items-center gap-2 rounded-xl border border-line bg-white px-3.5 py-2 text-xs font-semibold text-ink shadow-sm transition active:scale-95 disabled:opacity-50"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin text-navy' : 'text-muted'} />
             Actualizar
@@ -712,7 +712,7 @@ export default function LeadsApp() {
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && load()}
               placeholder="Buscar por despacho, web, email o contacto..."
-              className="w-full rounded-xl border border-line bg-slate-50/60 py-2 pl-9 pr-3 text-xs font-medium text-ink transition placeholder:text-muted focus:border-navy focus:bg-white focus:outline-none"
+              className="bg-slate-50/60 w-full rounded-xl border border-line py-2 pl-9 pr-3 text-xs font-medium text-ink transition placeholder:text-muted focus:border-navy focus:bg-white focus:outline-none"
             />
           </div>
 
@@ -720,7 +720,7 @@ export default function LeadsApp() {
             <select
               value={ciudad}
               onChange={(e) => setCiudad(e.target.value)}
-              className="rounded-xl border border-line bg-slate-50/60 px-3 py-2 text-xs font-medium text-ink transition focus:border-navy focus:bg-white focus:outline-none"
+              className="bg-slate-50/60 rounded-xl border border-line px-3 py-2 text-xs font-medium text-ink transition focus:border-navy focus:bg-white focus:outline-none"
             >
               <option value="">Todas las ciudades</option>
               <option value="Merida">Mérida</option>
@@ -731,7 +731,7 @@ export default function LeadsApp() {
             <select
               value={especialidad}
               onChange={(e) => setEspecialidad(e.target.value)}
-              className="rounded-xl border border-line bg-slate-50/60 px-3 py-2 text-xs font-medium text-ink transition focus:border-navy focus:bg-white focus:outline-none"
+              className="bg-slate-50/60 rounded-xl border border-line px-3 py-2 text-xs font-medium text-ink transition focus:border-navy focus:bg-white focus:outline-none"
             >
               <option value="">Todas las especialidades</option>
               <option value="Crypto">Crypto</option>
@@ -743,7 +743,7 @@ export default function LeadsApp() {
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="rounded-xl border border-line bg-slate-50/60 px-3 py-2 text-xs font-medium text-ink transition focus:border-navy focus:bg-white focus:outline-none"
+              className="bg-slate-50/60 rounded-xl border border-line px-3 py-2 text-xs font-medium text-ink transition focus:border-navy focus:bg-white focus:outline-none"
             >
               <option value="">Todos los estatus</option>
               {STATUSES.map((s) => (
@@ -764,7 +764,7 @@ export default function LeadsApp() {
               <button
                 onClick={clearFilters}
                 title="Limpiar filtros"
-                className="flex items-center gap-1 rounded-xl border border-line px-3 py-2 text-xs font-medium text-muted transition hover:bg-slate-50 hover:text-ink"
+                className="hover:bg-slate-50 flex items-center gap-1 rounded-xl border border-line px-3 py-2 text-xs font-medium text-muted transition hover:text-ink"
               >
                 <FilterX size={14} />
                 Limpiar
@@ -783,7 +783,7 @@ export default function LeadsApp() {
 
       {/* Tabla de Prospectos */}
       <div className="overflow-hidden rounded-3xl border border-line bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-line bg-slate-50/80 px-6 py-4">
+        <div className="bg-slate-50/80 flex items-center justify-between border-b border-line px-6 py-4">
           <div className="flex items-center gap-2">
             <Building2 size={16} className="text-navy" />
             <h3 className="font-orbitron text-xs font-bold uppercase tracking-wider text-navy">
@@ -800,7 +800,7 @@ export default function LeadsApp() {
 
         <div className="overflow-x-auto">
           <table className="min-w-full text-left text-xs">
-            <thead className="border-b border-line bg-slate-50/60 font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
+            <thead className="bg-slate-50/60 border-b border-line font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
               <tr>
                 <th className="px-5 py-3.5">Despacho / Web</th>
                 <th className="px-5 py-3.5">Contacto</th>
@@ -812,11 +812,11 @@ export default function LeadsApp() {
                 <th className="px-5 py-3.5 text-right">Acción Comercial</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-slate-100 divide-y">
               {leads.length === 0 && !loading ? (
                 <tr>
                   <td colSpan={8} className="px-5 py-12 text-center text-muted">
-                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-muted">
+                    <div className="bg-slate-100 mx-auto flex h-12 w-12 items-center justify-center rounded-full text-muted">
                       <Target size={24} />
                     </div>
                     <p className="mt-3 font-orbitron text-xs font-semibold text-navy">
@@ -832,7 +832,7 @@ export default function LeadsApp() {
                   const statusConfig = getStatusBadge(l.status);
 
                   return (
-                    <tr key={l.id} className="transition hover:bg-slate-50/80">
+                    <tr key={l.id} className="hover:bg-slate-50/80 transition">
                       {/* Web / Dominio */}
                       <td className="px-5 py-3.5 font-medium">
                         {l.web ? (
@@ -969,7 +969,7 @@ export default function LeadsApp() {
                           <button
                             onClick={() => setLeadToDelete(l)}
                             disabled={deletingLead && leadToDelete?.id === l.id}
-                            className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-muted transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 active:scale-95 disabled:opacity-50"
+                            className="border-slate-200 inline-flex h-7 w-7 items-center justify-center rounded-lg border bg-white text-muted transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 active:scale-95 disabled:opacity-50"
                             title="Eliminar prospecto"
                           >
                             <Trash2 size={13} />
@@ -1006,7 +1006,7 @@ export default function LeadsApp() {
               <button
                 onClick={() => setIsCreateModalOpen(false)}
                 disabled={creatingLead}
-                className="rounded-lg p-1.5 text-muted transition hover:bg-slate-100 hover:text-ink"
+                className="hover:bg-slate-100 rounded-lg p-1.5 text-muted transition hover:text-ink"
               >
                 <X size={18} />
               </button>
@@ -1150,7 +1150,7 @@ export default function LeadsApp() {
                   type="button"
                   onClick={() => setIsCreateModalOpen(false)}
                   disabled={creatingLead}
-                  className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink active:scale-95"
+                  className="hover:bg-slate-50 rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:text-ink active:scale-95"
                 >
                   Cancelar
                 </button>
@@ -1207,7 +1207,7 @@ export default function LeadsApp() {
                 type="button"
                 onClick={() => setLeadToDelete(null)}
                 disabled={deletingLead}
-                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink active:scale-95"
+                className="hover:bg-slate-50 rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:text-ink active:scale-95"
               >
                 Cancelar
               </button>
@@ -1254,7 +1254,7 @@ export default function LeadsApp() {
               <button
                 onClick={closeEmailModal}
                 disabled={sendingEmail}
-                className="rounded-lg p-1.5 text-muted transition hover:bg-slate-100 hover:text-ink"
+                className="hover:bg-slate-100 rounded-lg p-1.5 text-muted transition hover:text-ink"
               >
                 <X size={18} />
               </button>
@@ -1267,7 +1267,7 @@ export default function LeadsApp() {
                   <label className="mb-1 block font-orbitron text-[11px] font-semibold uppercase tracking-wider text-muted">
                     Destinatario Oficial
                   </label>
-                  <div className="rounded-xl border border-line bg-slate-50 px-3 py-2 font-mono text-xs font-medium text-ink">
+                  <div className="bg-slate-50 rounded-xl border border-line px-3 py-2 font-mono text-xs font-medium text-ink">
                     {selectedLeadForEmail.email}
                   </div>
                 </div>
@@ -1323,7 +1323,7 @@ export default function LeadsApp() {
 
               {/* Vista previa colapsable */}
               {showHtmlPreview && (
-                <div className="max-h-[280px] space-y-3 overflow-y-auto rounded-2xl border border-line bg-slate-50 p-4 text-xs">
+                <div className="bg-slate-50 max-h-[280px] space-y-3 overflow-y-auto rounded-2xl border border-line p-4 text-xs">
                   <div className="flex items-center justify-between border-b border-line pb-2">
                     <span className="font-orbitron font-bold text-navy">
                       Asunto: Infraestructura Tecnológica para su Firma
@@ -1339,7 +1339,7 @@ export default function LeadsApp() {
                     software genérico de terceros donde pierden el control y privacidad de sus
                     datos...
                   </p>
-                  <div className="rounded-xl border border-slate-200 bg-white p-3 font-mono text-[11px] text-slate-700">
+                  <div className="border-slate-200 text-slate-700 rounded-xl border bg-white p-3 font-mono text-[11px]">
                     <strong>Plan Corporate Firm (Marca Blanca)</strong>
                     <ul className="mt-1 list-disc space-y-0.5 pl-4">
                       <li>Branding Total en su propio subdominio</li>
@@ -1379,7 +1379,7 @@ export default function LeadsApp() {
                 type="button"
                 onClick={closeEmailModal}
                 disabled={sendingEmail}
-                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink active:scale-95"
+                className="hover:bg-slate-50 rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:text-ink active:scale-95"
               >
                 Cerrar
               </button>
@@ -1433,7 +1433,7 @@ export default function LeadsApp() {
               <button
                 onClick={closeWhatsAppStudioModal}
                 disabled={sendingWa}
-                className="rounded-lg p-1.5 text-muted transition hover:bg-slate-100 hover:text-ink"
+                className="hover:bg-slate-100 rounded-lg p-1.5 text-muted transition hover:text-ink"
               >
                 <X size={18} />
               </button>
@@ -1480,7 +1480,7 @@ export default function LeadsApp() {
                   aria-label="Plantilla Comercial WhatsApp"
                   value={waTemplateId}
                   onChange={(e) => handleChangeWaTemplate(e.target.value)}
-                  className="w-full rounded-xl border border-line bg-slate-50/70 px-3 py-2 text-xs font-medium text-ink focus:border-navy focus:bg-white focus:outline-none"
+                  className="bg-slate-50/70 w-full rounded-xl border border-line px-3 py-2 text-xs font-medium text-ink focus:border-navy focus:bg-white focus:outline-none"
                 >
                   {WS_TEMPLATES.filter((t) => t.tenant === waTenant).map((tpl) => (
                     <option key={tpl.id} value={tpl.id}>
@@ -1607,7 +1607,7 @@ export default function LeadsApp() {
                 type="button"
                 onClick={closeWhatsAppStudioModal}
                 disabled={sendingWa}
-                className="rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:bg-slate-50 hover:text-ink active:scale-95"
+                className="hover:bg-slate-50 rounded-xl border border-line px-4 py-2 text-xs font-semibold text-muted transition hover:text-ink active:scale-95"
               >
                 Cerrar
               </button>

@@ -4,56 +4,105 @@
    ========================================================================== */
 
 /* 1. Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Orbitron:wght@700&family=Playfair+Display:wght@900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@500;600&family=Inter:wght@400;600;700&family=Orbitron:wght@700&family=Playfair+Display:wght@900&display=swap');
 
 /* 2. Tailwind Directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* 3. CSS Variables */
+/* 3. CSS Variables — target tokens (Qwen) + legacy aliases */
 :root {
-  /* Navy */
-  --navy: #002b7f;
-  --navy-2: #001a4d;
-
-  /* Gold */
-  --gold: #d4af37;
-  --gold-light: #f5d97a;
-  --gold-dark: #a8883f;
-
-  /* LCD */
-  --lcd: #9ea792;
-  --lcd-text: #2a2f23;
-
-  /* Surfaces */
+  /* Surfaces — paper */
+  --paper: #f4f2ed;
+  --paper-2: #edeae3;
   --surface: #ffffff;
-  --surface-2: #f8f6f0;
-  --cream: #f5ecd7;
-  --parchment: #e8dcc4;
+  --surface-2: #faf9f6;
 
-  /* Text */
-  --ink: #121a2e;
-  --muted: #6b7a99;
+  /* Ink */
+  --ink: #12171f;
+  --ink-2: #1b2330;
+  --ink-3: #2a3441;
+  --slate: #4a5566;
+  --muted: #6e747e;
+  --faint: #9aa0a9;
 
   /* Lines */
-  --line: #e8e0cc;
+  --line: #e2ded5;
+  --line-2: #d3cec3;
+  --line-ink: rgba(255, 255, 255, 0.09);
+
+  /* Brass */
+  --brass: #8a6d22;
+  --brass-2: #b08d3f;
+  --brass-wash: #f7f1e1;
+
+  /* Semantic */
+  --ok: #1e6b47;
+  --ok-wash: #e8f2ec;
+  --warn: #8f5d06;
+  --warn-wash: #faf0dc;
+  --bad: #8b2c2c;
+  --bad-wash: #f8e9e7;
+  --info: #2b5478;
+  --info-wash: #e9f0f6;
+  --ledger: #eff4ee;
+
+  /* Geometry */
+  --r1: 3px;
+  --r2: 5px;
+  --r3: 8px;
+  --sh1: 0 1px 2px rgba(18, 23, 31, 0.05);
+  --sh2: 0 12px 32px -8px rgba(18, 23, 31, 0.22), 0 2px 8px rgba(18, 23, 31, 0.08);
+  --sh3: 0 32px 80px -16px rgba(18, 23, 31, 0.38);
+
+  /* Typography */
+  --sans: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --serif: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Layout */
+  --nav-w: 252px;
+  --top-h: 52px;
 
   /* Safe Area (iOS) */
   --safe-area-inset-top: env(safe-area-inset-top, 0px);
+
+  /* ---- Legacy aliases (ARK v1.0) -> target values ---- */
+  --navy: var(--ink-2);
+  --navy-2: var(--ink);
+  --gold: var(--brass-2);
+  --gold-light: var(--brass-wash);
+  --gold-dark: var(--brass);
+  --lcd: var(--ledger);
+  --lcd-text: var(--ink);
+  --cream: var(--paper-2);
+  --parchment: var(--line-2);
+  --surface-legacy: var(--surface);
+  --muted-legacy: var(--muted);
+  --line-legacy: var(--line);
 }
 
 /* 4. Base Overrides */
 body {
-  font-family:
-    'Inter',
-    -apple-system,
-    BlinkMacSystemFont,
-    sans-serif;
+  font-family: var(--sans);
   color: var(--ink);
-  background-color: var(--surface);
+  background-color: var(--paper);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
+}
+
+/* Paper grain overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  opacity: 0.028;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* 5. Componentes Base */

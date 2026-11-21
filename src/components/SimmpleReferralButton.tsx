@@ -20,13 +20,13 @@ export function SimmpleReferralButton({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        'shadow-xs backdrop-blur-xs group inline-flex items-center gap-1.5 rounded-full border border-slate-200/90 bg-white/95 px-3 py-1.5 text-[11px] font-medium text-slate-700 transition-all hover:border-[#9ec844] hover:bg-white hover:text-slate-900 hover:shadow-sm',
+        'shadow-xs backdrop-blur-xs border-slate-200/90 text-slate-700 hover:text-slate-900 group inline-flex items-center gap-1.5 rounded-full border bg-white/95 px-3 py-1.5 text-[11px] font-medium transition-all hover:border-[#9ec844] hover:bg-white hover:shadow-sm',
         className
       )}
       title="¿Buscas contabilidad para tu negocio o PyME? Conoce SIMMPLE"
     >
       {!compact && prefixText && (
-        <span className="hidden text-slate-500 transition-colors group-hover:text-slate-700 sm:inline">
+        <span className="text-slate-500 group-hover:text-slate-700 hidden transition-colors sm:inline">
           {prefixText}
         </span>
       )}

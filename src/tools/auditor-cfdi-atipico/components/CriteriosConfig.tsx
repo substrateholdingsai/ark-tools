@@ -21,7 +21,7 @@ export const CriteriosConfig: React.FC<CriteriosConfigProps> = ({
             <Sliders className="h-5 w-5 text-sky-400" />
             Parámetros y Reglas del Motor Forense
           </h3>
-          <p className="mt-1 text-xs text-slate-400">
+          <p className="text-slate-400 mt-1 text-xs">
             Habilite o ajuste los umbrales estadísticos y fiscales según la política de cumplimiento
             de su despacho.
           </p>
@@ -29,7 +29,7 @@ export const CriteriosConfig: React.FC<CriteriosConfigProps> = ({
 
         <button
           onClick={onRestablecer}
-          className="flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs text-slate-300 transition-all hover:bg-slate-700 hover:text-white"
+          className="border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-all hover:text-white"
         >
           <RotateCcw className="h-3.5 w-3.5" /> Restablecer Valores Oficiales
         </button>
@@ -48,7 +48,7 @@ export const CriteriosConfig: React.FC<CriteriosConfigProps> = ({
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h4 className="text-sm font-bold text-white">{c.nombre}</h4>
-                <p className="mt-0.5 text-xs text-slate-400">{c.descripcion}</p>
+                <p className="text-slate-400 mt-0.5 text-xs">{c.descripcion}</p>
               </div>
 
               <label className="relative inline-flex shrink-0 cursor-pointer items-center">
@@ -58,11 +58,11 @@ export const CriteriosConfig: React.FC<CriteriosConfigProps> = ({
                   onChange={(e) => onActualizarCriterio(c.id, e.target.checked, c.umbral)}
                   className="peer sr-only"
                 />
-                <div className="peer h-5 w-9 rounded-full bg-slate-800 after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-sky-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none"></div>
+                <div className="bg-slate-800 after:border-slate-300 peer h-5 w-9 rounded-full after:absolute after:left-[2px] after:top-[2px] after:h-4 after:w-4 after:rounded-full after:border after:bg-white after:transition-all after:content-[''] peer-checked:bg-sky-600 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none"></div>
               </label>
             </div>
 
-            <div className="flex items-start gap-1.5 rounded-lg border border-slate-800/80 bg-slate-950/60 p-2.5 text-[11px] text-slate-400">
+            <div className="border-slate-800/80 bg-slate-950/60 text-slate-400 flex items-start gap-1.5 rounded-lg border p-2.5 text-[11px]">
               <BookOpen className="mt-0.5 h-3.5 w-3.5 shrink-0 text-sky-400" />
               <span>
                 <strong>Fundamento:</strong> {c.fundamento}
@@ -70,7 +70,7 @@ export const CriteriosConfig: React.FC<CriteriosConfigProps> = ({
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-xs font-medium text-slate-400">Umbral Parametrizable:</span>
+              <span className="text-slate-400 text-xs font-medium">Umbral Parametrizable:</span>
               <div className="flex items-center gap-2">
                 <input
                   type="number"
@@ -79,7 +79,7 @@ export const CriteriosConfig: React.FC<CriteriosConfigProps> = ({
                   onChange={(e) =>
                     onActualizarCriterio(c.id, c.activo, parseFloat(e.target.value) || 0)
                   }
-                  className="w-24 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-right font-mono text-xs text-white focus:border-sky-500 focus:outline-none disabled:opacity-50"
+                  className="border-slate-800 bg-slate-950 w-24 rounded-lg border px-2 py-1 text-right font-mono text-xs text-white focus:border-sky-500 focus:outline-none disabled:opacity-50"
                 />
               </div>
             </div>

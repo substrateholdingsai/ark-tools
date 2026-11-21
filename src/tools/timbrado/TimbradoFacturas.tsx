@@ -333,7 +333,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
       {onBack && (
         <button
           onClick={onBack}
-          className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 transition-colors hover:text-amber-500"
+          className="text-slate-500 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider transition-colors hover:text-amber-500"
         >
           <ArrowLeft className="h-4 w-4" />
           Volver a Cobros
@@ -341,14 +341,14 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
       )}
 
       {/* Header Principal */}
-      <div className="flex flex-col justify-between gap-6 border-b border-slate-200 pb-6 md:flex-row md:items-end dark:border-slate-800">
+      <div className="border-slate-200 dark:border-slate-800 flex flex-col justify-between gap-6 border-b pb-6 md:flex-row md:items-end">
         <div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500">
               COBROS & TIMBRADO SAT
             </span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
-            <span className="text-xs text-slate-500 dark:text-slate-400">
+            <span className="text-slate-500 dark:text-slate-400 text-xs">
               CFDI 4.0 con Facturapi PAC
             </span>
             <span className="text-slate-300 dark:text-slate-700">•</span>
@@ -358,10 +358,10 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
             </span>
           </div>
 
-          <h1 className="mt-2 font-serif text-3xl font-black tracking-tight text-slate-900 md:text-4xl dark:text-slate-100">
+          <h1 className="text-slate-900 dark:text-slate-100 mt-2 font-serif text-3xl font-black tracking-tight md:text-4xl">
             Timbrado de Facturas CFDI 4.0
           </h1>
-          <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-400">
+          <p className="text-slate-600 dark:text-slate-400 mt-1 max-w-3xl text-sm">
             Emite tus facturas fiscales con Certificado de Sello Digital en modo preview / Sandbox
             SAT sin salir de ARK LEDGER. Timbrado directo con Facturapi (Sandbox SAT{' '}
             <code className="font-mono text-xs">EKU9003173C9</code>). El timbrado en vivo está
@@ -373,13 +373,13 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
         {/* Acciones de Cuenta */}
         <div className="flex shrink-0 items-center gap-3">
           {hasConnectedAccount && selectedAccount && (
-            <div className="flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-3 py-2 dark:border-slate-700 dark:bg-slate-800/80">
+            <div className="border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800/80 flex items-center gap-2 rounded-xl border px-3 py-2">
               <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
               <div className="text-left">
-                <div className="max-w-[160px] truncate text-xs font-bold text-slate-900 dark:text-slate-100">
+                <div className="text-slate-900 dark:text-slate-100 max-w-[160px] truncate text-xs font-bold">
                   {selectedAccount.alegra_company_name || selectedAccount.alegra_email}
                 </div>
-                <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
+                <div className="text-slate-500 dark:text-slate-400 flex items-center gap-1 text-[10px]">
                   <span>{selectedAccount.alegra_rfc || 'Sin RFC'}</span>
                   {selectedAccount.alegra_rfc === 'EKU9003173C9' ||
                   selectedAccount.environment === 'sandbox' ? (
@@ -398,7 +398,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
 
           <button
             onClick={() => setIsConnectModalOpen(true)}
-            className="flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-white"
+            className="bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:text-slate-900 flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-all dark:hover:bg-white"
           >
             <Key className="h-3.5 w-3.5" />
             {hasConnectedAccount ? 'Conectar otra cuenta' : 'Conectar Facturapi'}
@@ -448,14 +448,14 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
       {/* ESTADO ONBOARDING (Si no hay cuentas conectadas) */}
       {!loading && !hasConnectedAccount && (
         <div className="grid grid-cols-1 items-start gap-8 py-4 lg:grid-cols-12">
-          <div className="rounded-3xl border border-slate-700 bg-gradient-to-br from-slate-900 to-slate-800 p-8 text-white shadow-xl md:p-10 lg:col-span-8">
+          <div className="border-slate-700 from-slate-900 to-slate-800 rounded-3xl border bg-gradient-to-br p-8 text-white shadow-xl md:p-10 lg:col-span-8">
             <div className="mb-6 inline-flex rounded-2xl bg-emerald-500/20 p-3 text-emerald-400">
               <ShieldCheck className="h-8 w-8" />
             </div>
             <h2 className="mb-3 font-serif text-2xl font-black tracking-tight md:text-3xl">
               Emite Facturas CFDI 4.0 directamente desde tu despacho
             </h2>
-            <p className="mb-8 max-w-2xl text-sm leading-relaxed text-slate-300">
+            <p className="text-slate-300 mb-8 max-w-2xl text-sm leading-relaxed">
               Conecta tu cuenta de Facturapi en modo Sandbox{' '}
               <code className="font-mono">sk_test_...</code> para timbrar CFDI de prueba ante el
               SAT. El modo Producción <code className="font-mono">sk_live_...</code> está
@@ -468,7 +468,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   <CheckCircle2 className="h-4 w-4" />
                   PAC Autorizado Facturapi
                 </div>
-                <p className="text-xs text-slate-300">
+                <p className="text-slate-300 text-xs">
                   Timbrado garantizado bajo las especificaciones de la reforma fiscal y Anexo 20 del
                   SAT, con Sandbox de pruebas inmediato.
                 </p>
@@ -479,7 +479,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   <CheckCircle2 className="h-4 w-4" />
                   Tus Sellos Seguros
                 </div>
-                <p className="text-xs text-slate-300">
+                <p className="text-slate-300 text-xs">
                   Tu CSD (.cer / .key) permanece seguro en Facturapi. ARK LEDGER nunca toca tus
                   contraseñas privadas.
                 </p>
@@ -490,7 +490,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   <CheckCircle2 className="h-4 w-4" />
                   Multi-Organización por Despacho
                 </div>
-                <p className="text-xs text-slate-300">
+                <p className="text-slate-300 text-xs">
                   Gestiona múltiples razones sociales o clientes con llaves independientes de
                   Facturapi.
                 </p>
@@ -501,7 +501,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   <CheckCircle2 className="h-4 w-4" />
                   Descarga y Cancelación SAT
                 </div>
-                <p className="text-xs text-slate-300">
+                <p className="text-slate-300 text-xs">
                   Obtén el Folio Fiscal UUID, XML sellado, PDF impreso y cancela CFDI con motivos
                   01–04 en un clic.
                 </p>
@@ -510,7 +510,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
 
             <button
               onClick={() => setIsConnectModalOpen(true)}
-              className="flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400"
+              className="text-slate-950 flex items-center gap-2 rounded-2xl bg-emerald-500 px-6 py-3.5 text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400"
             >
               <Key className="h-4 w-4" />
               Conectar Cuenta de Facturapi Ahora
@@ -518,27 +518,27 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
           </div>
 
           {/* RUTA ALTERNATIVA (No bloqueante) */}
-          <div className="space-y-4 rounded-3xl border border-slate-200 bg-slate-50 p-6 md:p-8 lg:col-span-4 dark:border-slate-800 dark:bg-slate-900/60">
+          <div className="border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 space-y-4 rounded-3xl border p-6 md:p-8 lg:col-span-4">
             <div className="inline-flex rounded-xl bg-amber-100 p-2.5 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400">
               <FileCode className="h-5 w-5" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-slate-900 dark:text-slate-100 text-lg font-bold">
               ¿Prefieres utilizar otro PAC?
             </h3>
-            <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+            <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
               La integración con Facturapi v2 (Sandbox SAT / modo preview) es 100% opcional. Si tu
               despacho ya cuenta con otro proveedor de timbrado (ej. Facturama, Finkok o el portal
               del SAT), puedes timbrar por fuera sin problema.
             </p>
-            <div className="border-t border-slate-200 pt-2 dark:border-slate-800">
-              <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            <div className="border-slate-200 dark:border-slate-800 border-t pt-2">
+              <p className="text-slate-500 dark:text-slate-400 mb-3 text-xs">
                 Una vez timbrado tu comprobante, puedes auditar su estructura y sellos fiscales en
                 nuestro validador:
               </p>
               {onNavigateToValidador ? (
                 <button
                   onClick={onNavigateToValidador}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-900 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  className="border-slate-200 text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-xs font-semibold transition-colors"
                 >
                   <FileCode className="h-4 w-4 text-amber-500" />
                   Ir al Validador XML CFDI
@@ -546,7 +546,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               ) : (
                 <a
                   href="#validador-cfdi"
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-900 transition-colors hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  className="border-slate-200 text-slate-900 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 flex w-full items-center justify-center gap-2 rounded-xl border bg-white px-4 py-2.5 text-xs font-semibold transition-colors"
                 >
                   <FileCode className="h-4 w-4 text-amber-500" />
                   Ir al Validador XML CFDI
@@ -561,13 +561,13 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
       {hasConnectedAccount && (
         <div className="space-y-6">
           {/* Navegación por Pestañas */}
-          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800">
+          <div className="border-slate-200 dark:border-slate-800 flex items-center gap-2 border-b">
             <button
               onClick={() => setActiveTab('nueva')}
               className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-colors ${
                 activeTab === 'nueva'
                   ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 border-transparent'
               }`}
             >
               <FileSpreadsheet className="h-4 w-4" />
@@ -578,7 +578,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-colors ${
                 activeTab === 'historial'
                   ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 border-transparent'
               }`}
             >
               <History className="h-4 w-4" />
@@ -589,7 +589,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-xs font-bold transition-colors ${
                 activeTab === 'cuentas'
                   ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                  : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100 border-transparent'
               }`}
             >
               <Settings className="h-4 w-4" />
@@ -649,18 +649,18 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               </div>
 
               {facturaEmitida.uuid && (
-                <div className="flex items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-white p-3 dark:border-emerald-900/50 dark:bg-slate-900">
+                <div className="dark:bg-slate-900 flex items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-white p-3 dark:border-emerald-900/50">
                   <div>
-                    <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    <span className="text-slate-500 block text-[10px] font-bold uppercase tracking-wider">
                       Folio Fiscal (UUID SAT)
                     </span>
-                    <span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100">
+                    <span className="text-slate-900 dark:text-slate-100 font-mono text-sm font-bold">
                       {facturaEmitida.uuid}
                     </span>
                   </div>
                   <button
                     onClick={() => handleCopyUuid(facturaEmitida.uuid)}
-                    className="flex items-center gap-1.5 rounded-lg p-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-emerald-400"
+                    className="text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 flex items-center gap-1.5 rounded-lg p-2 text-xs font-semibold transition-colors hover:text-emerald-600 dark:hover:text-emerald-400"
                   >
                     {copiedUuid ? (
                       <Check className="h-4 w-4 text-emerald-500" />
@@ -678,7 +678,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                     href={resolveDownloadUrl(facturaEmitida.xml_url) || '#'}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                    className="border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 rounded-xl border bg-white px-4 py-2 text-xs font-semibold transition-colors"
                   >
                     <Download className="h-4 w-4 text-emerald-600" />
                     Descargar XML Fiscal
@@ -689,7 +689,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                     href={resolveDownloadUrl(facturaEmitida.pdf_url) || '#'}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-900 transition-colors hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800"
+                    className="border-slate-200 text-slate-900 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 rounded-xl border bg-white px-4 py-2 text-xs font-semibold transition-colors"
                   >
                     <Download className="h-4 w-4 text-rose-600" />
                     Descargar Representación PDF
@@ -703,14 +703,14 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
           {activeTab === 'nueva' && !facturaEmitida && (
             <form onSubmit={handleEmitirFactura} className="space-y-8">
               {/* Selector de Empresa Emisora */}
-              <div className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-900/60">
+              <div className="border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/60 space-y-3 rounded-2xl border p-5">
                 <div className="flex items-center justify-between">
-                  <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <label className="text-slate-700 dark:text-slate-300 flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
                     <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     Empresa Emisora (Cuenta Facturapi)
                   </label>
                   {accounts.length > 1 && (
-                    <span className="text-xs text-slate-500">
+                    <span className="text-slate-500 text-xs">
                       {accounts.length} cuentas disponibles
                     </span>
                   )}
@@ -724,13 +724,13 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       className={`cursor-pointer rounded-xl border p-3.5 transition-all ${
                         selectedAccountId === acc.alegra_account_id
                           ? 'border-emerald-500 bg-emerald-50/50 shadow-sm dark:bg-emerald-950/20'
-                          : 'border-slate-200 bg-white hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700'
+                          : 'border-slate-200 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700 bg-white'
                       }`}
                     >
-                      <div className="truncate text-xs font-bold text-slate-900 dark:text-slate-100">
+                      <div className="text-slate-900 dark:text-slate-100 truncate text-xs font-bold">
                         {acc.alegra_company_name || acc.alegra_email}
                       </div>
-                      <div className="mt-1 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="text-slate-500 dark:text-slate-400 mt-1 flex items-center justify-between text-[11px]">
                         <span>RFC: {acc.alegra_rfc || 'Configurar'}</span>
                         {acc.csd_configured ? (
                           <span className="font-semibold text-emerald-600">CSD Listo</span>
@@ -752,20 +752,20 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               </div>
 
               {/* SECCIÓN 1: DATOS DEL RECEPTOR */}
-              <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex flex-col justify-between gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center dark:border-slate-800">
-                  <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+              <div className="border-slate-200 dark:border-slate-800 dark:bg-slate-900 space-y-4 rounded-2xl border bg-white p-6 shadow-sm">
+                <div className="border-slate-100 dark:border-slate-800 flex flex-col justify-between gap-3 border-b pb-3 sm:flex-row sm:items-center">
+                  <h3 className="text-slate-900 dark:text-slate-100 flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
                     <User className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     1. Datos Fiscales del Receptor (Cliente)
                   </h3>
 
                   {clientsList.length > 0 && (
                     <div className="flex items-center gap-2">
-                      <Users className="h-3.5 w-3.5 text-slate-400" />
+                      <Users className="text-slate-400 h-3.5 w-3.5" />
                       <select
                         value={selectedClientId}
                         onChange={(e) => handleClientSelect(e.target.value)}
-                        className="rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                        className="border-slate-300 bg-slate-50 text-slate-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 rounded-lg border px-3 py-1.5 text-xs outline-none"
                       >
                         <option value="">Cargar de Expediente Único...</option>
                         {clientsList.map((c) => (
@@ -780,7 +780,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                       Razón Social o Nombre Completo *
                     </label>
                     <input
@@ -789,12 +789,12 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       value={receptorNombre}
                       onChange={(e) => setReceptorNombre(e.target.value)}
                       placeholder="Ej. CLIENTE EJEMPLO SA DE CV"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs uppercase text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 text-xs uppercase outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                       RFC del Receptor *
                     </label>
                     <input
@@ -804,12 +804,12 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       value={receptorRfc}
                       onChange={(e) => setReceptorRfc(e.target.value.toUpperCase())}
                       placeholder="XAXX010101000"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs uppercase text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 font-mono text-xs uppercase outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                       Código Postal Fiscal * (CFDI 4.0)
                     </label>
                     <input
@@ -819,18 +819,18 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       value={receptorCp}
                       onChange={(e) => setReceptorCp(e.target.value)}
                       placeholder="06600"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 font-mono text-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                       Régimen Fiscal Receptor *
                     </label>
                     <select
                       value={receptorRegimen}
                       onChange={(e) => setReceptorRegimen(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                     >
                       {REGIMENES_FISCALES.map((r) => (
                         <option key={r.clave} value={r.clave}>
@@ -841,13 +841,13 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                       Uso de CFDI *
                     </label>
                     <select
                       value={receptorUsoCfdi}
                       onChange={(e) => setReceptorUsoCfdi(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                     >
                       {USOS_CFDI.map((u) => (
                         <option key={u.clave} value={u.clave}>
@@ -858,7 +858,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                       Correo Electrónico (Opcional)
                     </label>
                     <input
@@ -866,16 +866,16 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       value={receptorEmail}
                       onChange={(e) => setReceptorEmail(e.target.value)}
                       placeholder="facturas@cliente.com"
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
                     />
                   </div>
                 </div>
               </div>
 
               {/* SECCIÓN 2: CONCEPTOS / PARTIDAS */}
-              <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-slate-800">
-                  <h3 className="flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+              <div className="border-slate-200 dark:border-slate-800 dark:bg-slate-900 space-y-4 rounded-2xl border bg-white p-6 shadow-sm">
+                <div className="border-slate-100 dark:border-slate-800 flex items-center justify-between border-b pb-3">
+                  <h3 className="text-slate-900 dark:text-slate-100 flex items-center gap-2 text-sm font-bold uppercase tracking-wider">
                     <Layers className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     2. Conceptos y Servicios a Facturar
                   </h3>
@@ -893,17 +893,17 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   {items.map((item, idx) => (
                     <div
                       key={item.id}
-                      className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60"
+                      className="border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 space-y-3 rounded-xl border p-4"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                        <span className="text-slate-600 dark:text-slate-300 text-xs font-bold">
                           Partida #{idx + 1}
                         </span>
                         {items.length > 1 && (
                           <button
                             type="button"
                             onClick={() => handleRemoveItem(item.id)}
-                            className="p-1 text-slate-400 transition-colors hover:text-red-500"
+                            className="text-slate-400 p-1 transition-colors hover:text-red-500"
                             title="Eliminar partida"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -913,7 +913,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
 
                       <div className="grid grid-cols-1 gap-3 md:grid-cols-12">
                         <div className="md:col-span-4">
-                          <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                          <label className="text-slate-600 dark:text-slate-400 mb-1 block text-[11px] font-semibold">
                             Concepto / Descripción *
                           </label>
                           <input
@@ -922,12 +922,12 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                             value={item.name}
                             onChange={(e) => handleUpdateItem(item.id, 'name', e.target.value)}
                             placeholder="Ej. Asesoría Contable"
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                            className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-1.5 text-xs outline-none"
                           />
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                          <label className="text-slate-600 dark:text-slate-400 mb-1 block text-[11px] font-semibold">
                             Clave SAT (Prod/Serv)
                           </label>
                           <input
@@ -937,12 +937,12 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                               handleUpdateItem(item.id, 'productKey', e.target.value)
                             }
                             placeholder="84111500"
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                            className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-1.5 font-mono text-xs outline-none"
                           />
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                          <label className="text-slate-600 dark:text-slate-400 mb-1 block text-[11px] font-semibold">
                             Clave Unidad SAT
                           </label>
                           <input
@@ -950,12 +950,12 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                             value={item.unit}
                             onChange={(e) => handleUpdateItem(item.id, 'unit', e.target.value)}
                             placeholder="E48"
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 font-mono text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                            className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-1.5 font-mono text-xs outline-none"
                           />
                         </div>
 
                         <div className="md:col-span-1">
-                          <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                          <label className="text-slate-600 dark:text-slate-400 mb-1 block text-[11px] font-semibold">
                             Cantidad
                           </label>
                           <input
@@ -967,12 +967,12 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                             onChange={(e) =>
                               handleUpdateItem(item.id, 'quantity', Number(e.target.value))
                             }
-                            className="w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-right text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                            className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-2 py-1.5 text-right text-xs outline-none"
                           />
                         </div>
 
                         <div className="md:col-span-2">
-                          <label className="mb-1 block text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                          <label className="text-slate-600 dark:text-slate-400 mb-1 block text-[11px] font-semibold">
                             Precio Unitario ($)
                           </label>
                           <input
@@ -984,13 +984,13 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                             onChange={(e) =>
                               handleUpdateItem(item.id, 'price', Number(e.target.value))
                             }
-                            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-right font-mono text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                            className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-1.5 text-right font-mono text-xs outline-none"
                           />
                         </div>
 
                         <div className="flex flex-col justify-end text-right md:col-span-1">
-                          <span className="text-[10px] text-slate-400">Importe</span>
-                          <span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-100">
+                          <span className="text-slate-400 text-[10px]">Importe</span>
+                          <span className="text-slate-900 dark:text-slate-100 font-mono text-xs font-bold">
                             ${(Number(item.price || 0) * Number(item.quantity || 0)).toFixed(2)}
                           </span>
                         </div>
@@ -1002,20 +1002,20 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
 
               {/* SECCIÓN 3: CONDICIONES DE PAGO Y TOTALES */}
               <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-                <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-7 dark:border-slate-800 dark:bg-slate-900">
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                <div className="border-slate-200 dark:border-slate-800 dark:bg-slate-900 space-y-4 rounded-2xl border bg-white p-6 shadow-sm lg:col-span-7">
+                  <h3 className="text-slate-900 dark:text-slate-100 text-sm font-bold uppercase tracking-wider">
                     3. Método y Forma de Pago
                   </h3>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                         Método de Pago
                       </label>
                       <select
                         value={metodoPago}
                         onChange={(e) => setMetodoPago(e.target.value as 'PUE' | 'PPD')}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                        className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none"
                       >
                         <option value="PUE">PUE - Pago en una sola exhibición</option>
                         <option value="PPD">PPD - Pago en parcialidades o diferido</option>
@@ -1023,13 +1023,13 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                     </div>
 
                     <div>
-                      <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                         Forma de Pago SAT
                       </label>
                       <select
                         value={formaPago}
                         onChange={(e) => setFormaPago(e.target.value)}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                        className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none"
                       >
                         {FORMAS_PAGO.map((f) => (
                           <option key={f.clave} value={f.clave}>
@@ -1041,7 +1041,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    <label className="text-slate-700 dark:text-slate-300 mb-1 block text-xs font-semibold">
                       Observaciones / Condiciones Comerciales (Opcional)
                     </label>
                     <textarea
@@ -1049,19 +1049,19 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       value={observaciones}
                       onChange={(e) => setObservaciones(e.target.value)}
                       placeholder="Ej. Pago correspondiente a la mensualidad de Octubre 2026."
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                      className="border-slate-300 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 w-full rounded-lg border bg-white px-3 py-2 text-xs outline-none"
                     />
                   </div>
                 </div>
 
                 {/* Resumen Económico */}
-                <div className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900 p-6 text-white shadow-xl lg:col-span-5">
-                  <h4 className="font-mono text-xs font-bold uppercase tracking-widest text-slate-400">
+                <div className="border-slate-800 bg-slate-900 space-y-4 rounded-2xl border p-6 text-white shadow-xl lg:col-span-5">
+                  <h4 className="text-slate-400 font-mono text-xs font-bold uppercase tracking-widest">
                     Resumen Económico CFDI 4.0
                   </h4>
 
-                  <div className="space-y-2 border-t border-slate-800 pt-2">
-                    <div className="flex justify-between text-xs text-slate-300">
+                  <div className="border-slate-800 space-y-2 border-t pt-2">
+                    <div className="text-slate-300 flex justify-between text-xs">
                       <span>Subtotal</span>
                       <span className="font-mono">
                         $
@@ -1071,7 +1071,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                         })}
                       </span>
                     </div>
-                    <div className="flex justify-between text-xs text-slate-300">
+                    <div className="text-slate-300 flex justify-between text-xs">
                       <span>IVA Trasladado (16%)</span>
                       <span className="font-mono">
                         $
@@ -1081,7 +1081,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                         })}
                       </span>
                     </div>
-                    <div className="flex justify-between border-t border-slate-800 pt-2 text-base font-bold text-white">
+                    <div className="border-slate-800 flex justify-between border-t pt-2 text-base font-bold text-white">
                       <span>Total MXN</span>
                       <span className="font-mono text-emerald-400">
                         $
@@ -1096,7 +1096,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-xs font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400 disabled:opacity-50"
+                    className="text-slate-950 mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400 disabled:opacity-50"
                   >
                     {submitting ? (
                       <>
@@ -1110,7 +1110,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       </>
                     )}
                   </button>
-                  <p className="text-center text-[10px] text-slate-400">
+                  <p className="text-slate-400 text-center text-[10px]">
                     Facturapi generará el XML CFDI 4.0 de prueba y lo timbrará en el Sandbox SAT
                     (CSD EKU9003173C9).
                   </p>
@@ -1121,19 +1121,19 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
 
           {/* PESTAÑA 2: HISTORIAL DE FACTURAS */}
           {activeTab === 'historial' && (
-            <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+            <div className="border-slate-200 dark:border-slate-800 dark:bg-slate-900 space-y-4 rounded-2xl border bg-white p-6 shadow-sm">
+              <div className="border-slate-100 dark:border-slate-800 flex items-center justify-between border-b pb-4">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                  <h3 className="text-slate-900 dark:text-slate-100 text-sm font-bold uppercase tracking-wider">
                     Historial de Facturas Emitidas ({(invoices || []).length})
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-slate-500 text-xs">
                     Comprobantes timbrados y registrados en este despacho.
                   </p>
                 </div>
                 <button
                   onClick={() => refreshInvoices()}
-                  className="flex items-center gap-1.5 rounded-lg p-2 text-xs font-semibold text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                  className="text-slate-500 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-300 flex items-center gap-1.5 rounded-lg p-2 text-xs font-semibold transition-colors"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   Actualizar
@@ -1141,7 +1141,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
               </div>
 
               {(invoices || []).length === 0 ? (
-                <div className="py-12 text-center text-slate-400">
+                <div className="text-slate-400 py-12 text-center">
                   <FileText className="mx-auto mb-3 h-12 w-12 opacity-30" />
                   <p className="text-sm font-medium">
                     Aún no hay facturas emitidas en este despacho.
@@ -1157,7 +1157,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-slate-200 uppercase tracking-wider text-slate-500 dark:border-slate-800 dark:text-slate-400">
+                      <tr className="border-slate-200 text-slate-500 dark:border-slate-800 dark:text-slate-400 border-b uppercase tracking-wider">
                         <th className="px-3 py-2.5">Fecha</th>
                         <th className="px-3 py-2.5">Folio</th>
                         <th className="px-3 py-2.5">Folio Fiscal (UUID)</th>
@@ -1167,16 +1167,16 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                         <th className="px-3 py-2.5 text-right">Comprobantes</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100 font-sans dark:divide-slate-800/60">
+                    <tbody className="divide-slate-100 dark:divide-slate-800/60 divide-y font-sans">
                       {invoices.map((inv) => (
                         <tr key={inv.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                          <td className="whitespace-nowrap px-3 py-3 text-slate-600 dark:text-slate-400">
+                          <td className="text-slate-600 dark:text-slate-400 whitespace-nowrap px-3 py-3">
                             {new Date(inv.created_at * 1000).toLocaleDateString('es-MX')}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 font-semibold text-slate-900 dark:text-slate-100">
+                          <td className="text-slate-900 dark:text-slate-100 whitespace-nowrap px-3 py-3 font-semibold">
                             {inv.folio || 'N/A'}
                           </td>
-                          <td className="px-3 py-3 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+                          <td className="text-slate-600 dark:text-slate-300 px-3 py-3 font-mono text-[11px]">
                             {inv.uuid ? (
                               <button
                                 onClick={() => handleCopyUuid(inv.uuid!)}
@@ -1184,21 +1184,21 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                                 title="Copiar UUID"
                               >
                                 {inv.uuid.slice(0, 8)}...{inv.uuid.slice(-4)}
-                                <Copy className="h-3 w-3 text-slate-400" />
+                                <Copy className="text-slate-400 h-3 w-3" />
                               </button>
                             ) : (
                               'Sin timbrar'
                             )}
                           </td>
                           <td className="px-3 py-3">
-                            <div className="font-semibold text-slate-900 dark:text-slate-100">
+                            <div className="text-slate-900 dark:text-slate-100 font-semibold">
                               {inv.customer_name}
                             </div>
-                            <div className="font-mono text-[10px] text-slate-500">
+                            <div className="text-slate-500 font-mono text-[10px]">
                               {inv.customer_rfc}
                             </div>
                           </td>
-                          <td className="px-3 py-3 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                          <td className="text-slate-900 dark:text-slate-100 px-3 py-3 text-right font-mono font-bold">
                             $
                             {Number(inv.total || 0).toLocaleString('es-MX', {
                               minimumFractionDigits: 2,
@@ -1232,7 +1232,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                                   }
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-emerald-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                                  className="text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-lg p-1.5 transition-colors hover:text-emerald-600"
                                   title="Descargar XML CFDI 4.0"
                                 >
                                   <FileCode className="h-4 w-4 text-emerald-600" />
@@ -1248,7 +1248,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                                   }
                                   target="_blank"
                                   rel="noreferrer"
-                                  className="rounded-lg p-1.5 text-slate-600 transition-colors hover:bg-slate-100 hover:text-rose-600 dark:text-slate-300 dark:hover:bg-slate-800"
+                                  className="text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 rounded-lg p-1.5 transition-colors hover:text-rose-600"
                                   title="Descargar PDF CFDI 4.0"
                                 >
                                   <FileText className="h-4 w-4 text-rose-600" />
@@ -1266,7 +1266,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                                           )
                                         }
                                         aria-label="Motivo de cancelación SAT"
-                                        className="rounded border border-rose-300 bg-white px-1.5 py-0.5 text-[10px] text-slate-800 dark:border-rose-800 dark:bg-slate-900 dark:text-slate-100"
+                                        className="text-slate-800 dark:bg-slate-900 dark:text-slate-100 rounded border border-rose-300 bg-white px-1.5 py-0.5 text-[10px] dark:border-rose-800"
                                       >
                                         <option value="02">02 - Sin relación</option>
                                         <option value="01">01 - Con relación</option>
@@ -1288,7 +1288,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                                       <button
                                         type="button"
                                         onClick={() => setCancellingInvoiceId(null)}
-                                        className="px-1 text-[10px] text-slate-500 hover:text-slate-800"
+                                        className="text-slate-500 hover:text-slate-800 px-1 text-[10px]"
                                       >
                                         ✕
                                       </button>
@@ -1320,13 +1320,13 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
 
           {/* PESTAÑA 3: GESTIÓN DE CUENTAS */}
           {activeTab === 'cuentas' && (
-            <div className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-slate-800">
+            <div className="border-slate-200 dark:border-slate-800 dark:bg-slate-900 space-y-6 rounded-2xl border bg-white p-6 shadow-sm">
+              <div className="border-slate-100 dark:border-slate-800 flex items-center justify-between border-b pb-4">
                 <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+                  <h3 className="text-slate-900 dark:text-slate-100 text-sm font-bold uppercase tracking-wider">
                     Cuentas Facturapi Vinculadas ({accounts.length})
                   </h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-slate-500 text-xs">
                     Conecta múltiples empresas o razones sociales administradas por este despacho.
                   </p>
                 </div>
@@ -1343,7 +1343,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                 {accounts.map((acc) => (
                   <div
                     key={acc.alegra_account_id}
-                    className="flex flex-col justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 md:flex-row md:items-center dark:border-slate-800 dark:bg-slate-950/60"
+                    className="border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-950/60 flex flex-col justify-between gap-4 rounded-xl border p-4 md:flex-row md:items-center"
                   >
                     <div className="flex items-start gap-3">
                       <div className="shrink-0 rounded-xl bg-emerald-100 p-2.5 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">
@@ -1351,7 +1351,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                          <h4 className="text-slate-900 dark:text-slate-100 text-sm font-bold">
                             {acc.alegra_company_name || acc.alegra_email}
                           </h4>
                           {acc.is_default && (
@@ -1369,7 +1369,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                             {acc.status === 'active' ? 'Conectada' : acc.status}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-slate-500">
+                        <p className="text-slate-500 mt-1 text-xs">
                           Email: {acc.alegra_email} • RFC: {acc.alegra_rfc || 'No detectado'}
                         </p>
                         <div className="mt-2 flex items-center gap-3 text-[11px]">
@@ -1400,7 +1400,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                     <div className="flex items-center gap-2 self-end md:self-center">
                       <button
                         onClick={() => refreshAccountStatus(acc.alegra_account_id)}
-                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800"
+                        className="text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-800 flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
                         title="Verificar CSD y credenciales con Facturapi"
                       >
                         <RefreshCw className="h-3.5 w-3.5" />
@@ -1410,7 +1410,7 @@ export const TimbradoFacturas: React.FC<TimbradoFacturasProps> = ({
                       {!acc.is_default && (
                         <button
                           onClick={() => setDefaultAccount(acc.alegra_account_id)}
-                          className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800"
+                          className="text-slate-700 hover:bg-slate-200 dark:text-slate-200 dark:hover:bg-slate-800 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
                         >
                           Hacer default
                         </button>

@@ -86,7 +86,7 @@ export const TablaFacturas: React.FC<TablaFacturasProps> = ({
         );
       default:
         return (
-          <span className="inline-flex items-center rounded border border-white/10 bg-slate-800 px-2 py-0.5 text-[10px] font-bold text-slate-300">
+          <span className="bg-slate-800 text-slate-300 inline-flex items-center rounded border border-white/10 px-2 py-0.5 text-[10px] font-bold">
             {tipo}
           </span>
         );

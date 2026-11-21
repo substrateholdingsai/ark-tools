@@ -435,7 +435,7 @@ export function CanacoLandingPage({ onOpenAuth }: CanacoLandingPageProps) {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* 2.25 Orientación sobre trámites relacionados */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <section className="border-b border-henequen-arena bg-gradient-to-r from-henequen-anil via-henequen-anil to-slate-900 py-6 text-white">
+      <section className="to-slate-900 border-b border-henequen-arena bg-gradient-to-r from-henequen-anil via-henequen-anil py-6 text-white">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
           <div className="flex items-start gap-3.5">
             <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-henequen-terra text-white shadow-md">

@@ -146,7 +146,7 @@ export function LegalComplianceModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-sm"
+      className="bg-slate-950/70 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
       aria-labelledby="legal-modal-title"

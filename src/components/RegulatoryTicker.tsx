@@ -262,13 +262,13 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
             key={`${isClone ? 'clone' : 'orig'}-live-${ev.id}`}
             type="button"
             onClick={() => handleOpenEvent(ev)}
-            className="group flex cursor-pointer items-center gap-2.5 text-left text-slate-300 transition-colors hover:text-white"
+            className="text-slate-300 group flex cursor-pointer items-center gap-2.5 text-left transition-colors hover:text-white"
           >
             {renderBadge(badgeVar, `SENTINELA ${ev.channel.toUpperCase()}`)}
             <span className="font-mono text-[11px] uppercase tracking-wide group-hover:underline">
               {ev.title}
             </span>
-            <span className="font-mono text-[10px] text-slate-600">●</span>
+            <span className="text-slate-600 font-mono text-[10px]">●</span>
           </button>
         );
       })}
@@ -279,13 +279,13 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
           key={`${isClone ? 'clone' : 'orig'}-g-${g.id}`}
           type="button"
           onClick={() => handleOpenGuarantee(g)}
-          className="group flex cursor-pointer items-center gap-2.5 text-left text-slate-300 transition-colors hover:text-white"
+          className="text-slate-300 group flex cursor-pointer items-center gap-2.5 text-left transition-colors hover:text-white"
         >
           {renderBadge(g.badgeVariant, g.badgeText)}
-          <span className="font-mono text-[11px] uppercase tracking-wide text-slate-200 transition-colors group-hover:text-gold-light">
-            <span className="font-semibold text-slate-400">{g.label}:</span> {g.headline}
+          <span className="text-slate-200 font-mono text-[11px] uppercase tracking-wide transition-colors group-hover:text-gold-light">
+            <span className="text-slate-400 font-semibold">{g.label}:</span> {g.headline}
           </span>
-          <span className="font-mono text-[10px] text-slate-600">●</span>
+          <span className="text-slate-600 font-mono text-[10px]">●</span>
         </button>
       ))}
     </div>
@@ -294,12 +294,12 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
   return (
     <>
       <div
-        className={`border-navy-800/80 relative z-40 flex h-7 w-full select-none items-center overflow-hidden border-b bg-[#070b16] text-slate-300 ${className}`}
+        className={`border-navy-800/80 text-slate-300 relative z-40 flex h-7 w-full select-none items-center overflow-hidden border-b bg-[#070b16] ${className}`}
         role="region"
         aria-label="Cinta de inteligencia regulatoria en vivo DOF y SAT"
       >
         {/* Pin izquierdo: Radar DOF / SAT en vivo con pulso LED */}
-        <div className="z-10 flex h-full shrink-0 items-center gap-2 border-r border-slate-800 bg-[#070b16] px-3.5 shadow-[4px_0_12px_rgba(0,0,0,0.5)]">
+        <div className="border-slate-800 z-10 flex h-full shrink-0 items-center gap-2 border-r bg-[#070b16] px-3.5 shadow-[4px_0_12px_rgba(0,0,0,0.5)]">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
@@ -308,7 +308,7 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
             <Radio size={11} className="animate-pulse text-emerald-400" />
             <span>RADAR REGTECH</span>
           </div>
-          <span className="hidden border-l border-slate-700/80 pl-2 font-mono text-[9px] uppercase tracking-widest text-slate-400 md:inline">
+          <span className="border-slate-700/80 text-slate-400 hidden border-l pl-2 font-mono text-[9px] uppercase tracking-widest md:inline">
             DOF · SAT EN VIVO
           </span>
         </div>
@@ -322,10 +322,10 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
         </div>
 
         {/* Pin derecho: Conteo de herramientas blindadas */}
-        <div className="z-10 hidden h-full shrink-0 items-center gap-1.5 border-l border-slate-800 bg-[#070b16] px-3 font-mono text-[9.5px] tracking-wider text-slate-300 shadow-[-4px_0_12px_rgba(0,0,0,0.5)] lg:flex">
+        <div className="border-slate-800 text-slate-300 z-10 hidden h-full shrink-0 items-center gap-1.5 border-l bg-[#070b16] px-3 font-mono text-[9.5px] tracking-wider shadow-[-4px_0_12px_rgba(0,0,0,0.5)] lg:flex">
           <ShieldCheck size={12} className="text-emerald-400" />
           <span className="font-bold text-emerald-400">{TOTAL_HERRAMIENTAS}</span>
-          <span className="uppercase text-slate-400">HERRAMIENTAS EN SUITE</span>
+          <span className="text-slate-400 uppercase">HERRAMIENTAS EN SUITE</span>
         </div>
       </div>
 
@@ -353,7 +353,7 @@ export function RegulatoryTicker({ onSelectTool, className = '' }: RegulatoryTic
                       {selectedItem.source}
                     </span>
                     {selectedItem.severity && (
-                      <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[9px] font-bold uppercase text-slate-700">
+                      <span className="bg-slate-100 text-slate-700 rounded-full px-2 py-0.5 font-mono text-[9px] font-bold uppercase">
                         {selectedItem.severity}
                       </span>
                     )}
