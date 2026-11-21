@@ -30,6 +30,9 @@ export { ErrorBoundary } from './ErrorBoundary';
 export { OnboardingQuickstartModal } from './onboarding/OnboardingQuickstartModal';
 export { OnboardingCelebrationModal } from './onboarding/OnboardingCelebrationModal';
 export { RegulatoryTicker } from './RegulatoryTicker';
+export { Sidebar } from './Sidebar';
+export type { SidebarNavItem } from './Sidebar';
+export { Topbar } from './Topbar';
 
 // Tipos
 export type { NavItem } from './Header';

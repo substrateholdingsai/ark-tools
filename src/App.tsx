@@ -46,6 +46,8 @@ import {
   ErrorBoundary,
   OnboardingQuickstartModal,
   RegulatoryTicker,
+  Sidebar,
+  Topbar,
 } from './components';
 import type { NavItem } from './components';
 
@@ -208,6 +210,7 @@ export function App() {
     if (typeof window === 'undefined') return false;
     return window.localStorage.getItem('ark_onboarding_completed') !== 'true';
   });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [verifyHash, setVerifyHash] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
     const params = new URLSearchParams(window.location.search);
@@ -417,163 +420,330 @@ export function App() {
       </SignedOut>
 
       <SignedIn>
-        <div className="min-h-screen bg-surface font-inter text-ink antialiased">
-          <RegulatoryTicker onSelectTool={navigateTo} />
-          <Header
-            activeTool={activeTool === 'admin' ? 'admin' : activeNavFilter}
-            currentToolLabel={activeTool === 'dashboard' ? undefined : toolLabels[activeTool]}
-            onNavigate={handleNavigate}
-            navItems={navItems}
-          />
+        {currentBrand.id === 'canaco_merida' ? (
+          <div className="min-h-screen bg-surface font-inter text-ink antialiased">
+            <RegulatoryTicker onSelectTool={navigateTo} />
+            <Header
+              activeTool={activeTool === 'admin' ? 'admin' : activeNavFilter}
+              currentToolLabel={activeTool === 'dashboard' ? undefined : toolLabels[activeTool]}
+              onNavigate={handleNavigate}
+              navItems={navItems}
+            />
 
-          {/* Selector y Catálogo de Expediente Único (Sprint 9) — oculto en consola admin */}
-          {activeTool !== 'admin' && (
-            <div className="w-full">
-              <ExpedienteSelector />
-              {!(activeTool === 'dashboard' && activeNavFilter === 'dof') && (
-                <div className="mx-auto max-w-[1280px] px-6 md:px-10">
-                  <AlertasVigencia onVerTodos={() => handleNavigate('dof')} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Barra de Orientación Contextual (Breadcrumb) dentro de cualquier Herramienta */}
-          {activeTool !== 'dashboard' && activeTool !== 'admin' && (
-            <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
-              <div
-                aria-label="Ubicación actual en la suite"
-                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-white/90 px-4 py-2 text-xs shadow-sm"
-              >
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <Compass size={13} className="text-gold-dark" />
-                  <button
-                    type="button"
-                    onClick={goToDashboard}
-                    className="font-semibold text-muted transition hover:text-navy hover:underline"
-                  >
-                    {currentBrand.brandName}
-                  </button>
-                  <span className="text-line">›</span>
-                  <button
-                    type="button"
-                    onClick={goToDashboard}
-                    className="font-medium text-muted transition hover:text-navy hover:underline"
-                  >
-                    Catálogo de Herramientas
-                  </button>
-                  <span className="text-line">›</span>
-                  <span className="rounded-md bg-navy/10 px-2 py-0.5 font-orbitron text-[10px] font-bold text-navy">
-                    {toolLabels[activeTool] || activeTool}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={goToDashboard}
-                  className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-navy transition hover:bg-cream/50"
-                >
-                  <ArrowLeft size={12} />
-                  <span>Volver al Catálogo Principal</span>
-                </button>
+            {/* Selector y Catálogo de Expediente Único (Sprint 9) — oculto en consola admin */}
+            {activeTool !== 'admin' && (
+              <div className="w-full">
+                <ExpedienteSelector />
+                {!(activeTool === 'dashboard' && activeNavFilter === 'dof') && (
+                  <div className="mx-auto max-w-[1280px] px-6 md:px-10">
+                    <AlertasVigencia onVerTodos={() => handleNavigate('dof')} />
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Pantalla/Tarjeta de Bienvenida Guiada Post-SIEM */}
-          {showSiemWelcome && (
-            <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
-              <div className="rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/60 p-4 text-xs text-emerald-950 shadow-sm sm:p-5">
-                <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                  <div className="flex items-start gap-2.5">
-                    <Sparkles size={18} className="mt-0.5 shrink-0 text-emerald-600" />
-                    <div>
-                      <div className="font-orbitron text-xs font-bold uppercase tracking-wider text-emerald-900">
-                        ¡Bienvenido a tu Suite Fiscal Acreditada desde SIEM CANACO!
+            {/* Barra de Orientación Contextual (Breadcrumb) dentro de cualquier Herramienta */}
+            {activeTool !== 'dashboard' && activeTool !== 'admin' && (
+              <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
+                <div
+                  aria-label="Ubicación actual en la suite"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-white/90 px-4 py-2 text-xs shadow-sm"
+                >
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Compass size={13} className="text-gold-dark" />
+                    <button
+                      type="button"
+                      onClick={goToDashboard}
+                      className="font-semibold text-muted transition hover:text-navy hover:underline"
+                    >
+                      {currentBrand.brandName}
+                    </button>
+                    <span className="text-line">›</span>
+                    <button
+                      type="button"
+                      onClick={goToDashboard}
+                      className="font-medium text-muted transition hover:text-navy hover:underline"
+                    >
+                      Catálogo de Herramientas
+                    </button>
+                    <span className="text-line">›</span>
+                    <span className="rounded-md bg-navy/10 px-2 py-0.5 font-orbitron text-[10px] font-bold text-navy">
+                      {toolLabels[activeTool] || activeTool}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={goToDashboard}
+                    className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-navy transition hover:bg-cream/50"
+                  >
+                    <ArrowLeft size={12} />
+                    <span>Volver al Catálogo Principal</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Pantalla/Tarjeta de Bienvenida Guiada Post-SIEM */}
+            {showSiemWelcome && (
+              <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
+                <div className="rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/60 p-4 text-xs text-emerald-950 shadow-sm sm:p-5">
+                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                    <div className="flex items-start gap-2.5">
+                      <Sparkles size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                      <div>
+                        <div className="font-orbitron text-xs font-bold uppercase tracking-wider text-emerald-900">
+                          ¡Bienvenido a tu Suite Fiscal Acreditada desde SIEM CANACO!
+                        </div>
+                        <p className="mt-1 text-xs leading-relaxed text-emerald-800">
+                          <strong>¡Bienvenido a ARK LEDGER!</strong> Tu empresa ha sido importada
+                          exitosamente desde el Registro SIEM. El Expediente Único está activo y
+                          listo para tu primer cálculo y sellado criptográfico.
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={goToDashboard}
+                            className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-900 transition hover:bg-emerald-100"
+                          >
+                            Ver Portal del Afiliado y 22 Herramientas
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigateTo('isn')}
+                            className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
+                          >
+                            Abrir ISN Yucatán (3.75% / 3.0% MIPyME)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => navigateTo('resico')}
+                            className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
+                          >
+                            Abrir Calculadora RESICO
+                          </button>
+                        </div>
                       </div>
-                      <p className="mt-1 text-xs leading-relaxed text-emerald-800">
-                        <strong>¡Bienvenido a ARK LEDGER!</strong> Tu empresa ha sido importada
-                        exitosamente desde el Registro SIEM. El Expediente Único está activo y listo
-                        para tu primer cálculo y sellado criptográfico.
-                      </p>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowSiemWelcome(false)}
+                      className="shrink-0 self-end rounded-lg border border-emerald-200 bg-white px-3 py-1.5 font-semibold text-emerald-700 transition hover:bg-emerald-100 sm:self-start"
+                    >
+                      Entendido
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <main>
+              {activeTool === 'dashboard' && activeNavFilter === 'dof' ? (
+                <section className="mx-auto max-w-[1280px] px-6 py-8 md:px-10">
+                  <h1 className="font-playfair text-3xl font-bold text-ink">Avisos DOF</h1>
+                  <AlertasVigencia />
+                </section>
+              ) : activeTool === 'dashboard' ? (
+                <Dashboard
+                  onSelectTool={navigateTo}
+                  navFilter={activeNavFilter}
+                  onOpenOnboarding={() => setShowOnboarding(true)}
+                />
+              ) : (
+                <ErrorBoundary
+                  key={activeTool}
+                  toolName={toolLabels[activeTool]}
+                  onReset={goToDashboard}
+                >
+                  <Suspense fallback={<ToolSkeleton />}>{renderTool()}</Suspense>
+                </ErrorBoundary>
+              )}
+            </main>
+
+            <Footer onSelectTool={navigateTo} />
+
+            {/* Widget Flotante del Asistente Workers AI */}
+            <AiAssistantWidget />
+
+            {/* Modal de Onboarding y Quickstart (Aha! Moment en 60s) */}
+            <OnboardingQuickstartModal
+              isOpen={showOnboarding}
+              onClose={() => setShowOnboarding(false)}
+              onStartDemo={() => {
+                loadDemoData();
+                navigateTo('nomina');
+              }}
+              onSelectTool={(toolId) => {
+                navigateTo(toolId);
+              }}
+            />
+          </div>
+        ) : (
+          <div className="flex min-h-screen bg-paper font-sans text-ink antialiased">
+            <Sidebar
+              navItems={navItems}
+              activeId={activeTool === 'admin' ? 'admin' : activeNavFilter}
+              onNavigate={handleNavigate}
+              open={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+            />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <Topbar
+                onOpenSidebar={() => setSidebarOpen(true)}
+                currentToolLabel={activeTool === 'dashboard' ? undefined : toolLabels[activeTool]}
+              />
+              <main className="flex-1 overflow-y-auto">
+                {/* Selector y Catálogo de Expediente Único (Sprint 9) — oculto en consola admin */}
+                {activeTool !== 'admin' && (
+                  <div className="w-full">
+                    <ExpedienteSelector />
+                    {!(activeTool === 'dashboard' && activeNavFilter === 'dof') && (
+                      <div className="mx-auto max-w-[1280px] px-6 md:px-10">
+                        <AlertasVigencia onVerTodos={() => handleNavigate('dof')} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Barra de Orientación Contextual (Breadcrumb) dentro de cualquier Herramienta */}
+                {activeTool !== 'dashboard' && activeTool !== 'admin' && (
+                  <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
+                    <div
+                      aria-label="Ubicación actual en la suite"
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-line bg-white/90 px-4 py-2 text-xs shadow-sm"
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Compass size={13} className="text-gold-dark" />
                         <button
                           type="button"
                           onClick={goToDashboard}
-                          className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-900 transition hover:bg-emerald-100"
+                          className="font-semibold text-muted transition hover:text-navy hover:underline"
                         >
-                          Ver Portal del Afiliado y 22 Herramientas
+                          {currentBrand.brandName}
                         </button>
+                        <span className="text-line">›</span>
                         <button
                           type="button"
-                          onClick={() => navigateTo('isn')}
-                          className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
+                          onClick={goToDashboard}
+                          className="font-medium text-muted transition hover:text-navy hover:underline"
                         >
-                          Abrir ISN Yucatán (3.75% / 3.0% MIPyME)
+                          Catálogo de Herramientas
                         </button>
+                        <span className="text-line">›</span>
+                        <span className="rounded-md bg-navy/10 px-2 py-0.5 font-orbitron text-[10px] font-bold text-navy">
+                          {toolLabels[activeTool] || activeTool}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={goToDashboard}
+                        className="inline-flex items-center gap-1 rounded-lg border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-semibold text-navy transition hover:bg-cream/50"
+                      >
+                        <ArrowLeft size={12} />
+                        <span>Volver al Catálogo Principal</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pantalla/Tarjeta de Bienvenida Guiada Post-SIEM */}
+                {showSiemWelcome && (
+                  <div className="mx-auto max-w-[1280px] px-6 pt-3 md:px-10">
+                    <div className="rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-white to-emerald-50/60 p-4 text-xs text-emerald-950 shadow-sm sm:p-5">
+                      <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                        <div className="flex items-start gap-2.5">
+                          <Sparkles size={18} className="mt-0.5 shrink-0 text-emerald-600" />
+                          <div>
+                            <div className="font-orbitron text-xs font-bold uppercase tracking-wider text-emerald-900">
+                              ¡Bienvenido a tu Suite Fiscal Acreditada desde SIEM CANACO!
+                            </div>
+                            <p className="mt-1 text-xs leading-relaxed text-emerald-800">
+                              <strong>¡Bienvenido a ARK LEDGER!</strong> Tu empresa ha sido
+                              importada exitosamente desde el Registro SIEM. El Expediente Único
+                              está activo y listo para tu primer cálculo y sellado criptográfico.
+                            </p>
+                            <div className="mt-3 flex flex-wrap items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={goToDashboard}
+                                className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 text-[11px] font-bold text-emerald-900 transition hover:bg-emerald-100"
+                              >
+                                Ver Portal del Afiliado y 22 Herramientas
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => navigateTo('isn')}
+                                className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
+                              >
+                                Abrir ISN Yucatán (3.75% / 3.0% MIPyME)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => navigateTo('resico')}
+                                className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
+                              >
+                                Abrir Calculadora RESICO
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                         <button
                           type="button"
-                          onClick={() => navigateTo('resico')}
-                          className="rounded-lg border border-emerald-200 bg-emerald-100/70 px-3 py-1.5 text-[11px] font-semibold text-emerald-900 transition hover:bg-emerald-200/70"
+                          onClick={() => setShowSiemWelcome(false)}
+                          className="shrink-0 self-end rounded-lg border border-emerald-200 bg-white px-3 py-1.5 font-semibold text-emerald-700 transition hover:bg-emerald-100 sm:self-start"
                         >
-                          Abrir Calculadora RESICO
+                          Entendido
                         </button>
                       </div>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowSiemWelcome(false)}
-                    className="shrink-0 self-end rounded-lg border border-emerald-200 bg-white px-3 py-1.5 font-semibold text-emerald-700 transition hover:bg-emerald-100 sm:self-start"
-                  >
-                    Entendido
-                  </button>
-                </div>
-              </div>
+                )}
+
+                <main>
+                  {activeTool === 'dashboard' && activeNavFilter === 'dof' ? (
+                    <section className="mx-auto max-w-[1280px] px-6 py-8 md:px-10">
+                      <h1 className="font-playfair text-3xl font-bold text-ink">Avisos DOF</h1>
+                      <AlertasVigencia />
+                    </section>
+                  ) : activeTool === 'dashboard' ? (
+                    <Dashboard
+                      onSelectTool={navigateTo}
+                      navFilter={activeNavFilter}
+                      onOpenOnboarding={() => setShowOnboarding(true)}
+                    />
+                  ) : (
+                    <ErrorBoundary
+                      key={activeTool}
+                      toolName={toolLabels[activeTool]}
+                      onReset={goToDashboard}
+                    >
+                      <Suspense fallback={<ToolSkeleton />}>{renderTool()}</Suspense>
+                    </ErrorBoundary>
+                  )}
+                </main>
+
+                <Footer onSelectTool={navigateTo} />
+
+                {/* Widget Flotante del Asistente Workers AI */}
+                <AiAssistantWidget />
+
+                {/* Modal de Onboarding y Quickstart (Aha! Moment en 60s) */}
+                <OnboardingQuickstartModal
+                  isOpen={showOnboarding}
+                  onClose={() => setShowOnboarding(false)}
+                  onStartDemo={() => {
+                    loadDemoData();
+                    navigateTo('nomina');
+                  }}
+                  onSelectTool={(toolId) => {
+                    navigateTo(toolId);
+                  }}
+                />
+              </main>
             </div>
-          )}
-
-          <main>
-            {activeTool === 'dashboard' && activeNavFilter === 'dof' ? (
-              <section className="mx-auto max-w-[1280px] px-6 py-8 md:px-10">
-                <h1 className="font-playfair text-3xl font-bold text-ink">Avisos DOF</h1>
-                <AlertasVigencia />
-              </section>
-            ) : activeTool === 'dashboard' ? (
-              <Dashboard
-                onSelectTool={navigateTo}
-                navFilter={activeNavFilter}
-                onOpenOnboarding={() => setShowOnboarding(true)}
-              />
-            ) : (
-              <ErrorBoundary
-                key={activeTool}
-                toolName={toolLabels[activeTool]}
-                onReset={goToDashboard}
-              >
-                <Suspense fallback={<ToolSkeleton />}>{renderTool()}</Suspense>
-              </ErrorBoundary>
-            )}
-          </main>
-
-          <Footer onSelectTool={navigateTo} />
-
-          {/* Widget Flotante del Asistente Workers AI */}
-          <AiAssistantWidget />
-
-          {/* Modal de Onboarding y Quickstart (Aha! Moment en 60s) */}
-          <OnboardingQuickstartModal
-            isOpen={showOnboarding}
-            onClose={() => setShowOnboarding(false)}
-            onStartDemo={() => {
-              loadDemoData();
-              navigateTo('nomina');
-            }}
-            onSelectTool={(toolId) => {
-              navigateTo(toolId);
-            }}
-          />
-        </div>
+          </div>
+        )}
       </SignedIn>
 
       {/* Modal Público de Verificación Criptográfica de Papel de Trabajo (QR) */}
