@@ -457,20 +457,20 @@ export function LandingPage() {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-cream/70 px-3.5 py-1.5 font-orbitron text-[11px] font-bold uppercase tracking-[0.14em] text-gold-dark">
             <ShieldCheck size={14} className="text-gold-dark" />
-            <span>Herramientas de cálculo fiscal y laboral</span>
+            <span>Suite fiscal y laboral para despachos en México</span>
           </div>
 
           {/* Headline */}
           <h1 className="font-playfair text-[42px] font-black leading-[0.96] tracking-[-0.03em] text-ink sm:text-[56px] md:text-[68px]">
-            Calcula y revisa. <br />
-            <span className="text-navy">Decide con contexto.</span>
+            {TOTAL_HERRAMIENTAS} herramientas. <br />
+            <span className="text-navy">Cada cálculo cita la ley.</span>
           </h1>
 
           {/* Subtitle */}
           <p className="mx-auto max-w-[760px] font-inter text-[16px] leading-[1.55] text-muted md:text-[19px]">
-            Herramientas de referencia para despachos y negocios en México. Revisa cada resultado
-            con tu asesor antes de presentarlo ante una autoridad. Los folios internos no son sellos
-            criptográficos ni constancias fiscales.
+            Suite fiscal y laboral para despachos y empresas en México. 32 estados, cálculos al 2026
+            y el artículo exacto citado en cada resultado: LISR, LSS, CFF, LFT y las leyes de
+            hacienda estatales. Listo para tus papeles de trabajo.
           </p>
 
           {/* Caja Freemium: Calculadoras Gratis + Trazabilidad Pro */}
@@ -479,11 +479,11 @@ export function LandingPage() {
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 font-orbitron text-[13px] font-bold uppercase text-navy">
                   <Fingerprint size={16} className="text-gold-dark" />
-                  <span>Explora vistas previas; el acceso completo requiere cuenta</span>
+                  <span>Empieza gratis. Sube a Pro cuando lo necesites.</span>
                 </div>
                 <p className="text-[13px] leading-relaxed text-muted">
-                  Explora las vistas previas disponibles. Algunas funciones requieren iniciar sesión
-                  o contar con un plan. El portal no emite dictámenes ni sellos fiscales.
+                  Las calculadoras y el conversor XML son de acceso libre y sin límite de cálculos
+                  diarios. Crea tu cuenta y empieza a calcular en segundos, sin tarjeta.
                 </p>
               </div>
 
@@ -501,17 +501,26 @@ export function LandingPage() {
           <div className="flex flex-wrap items-center justify-center gap-6 pt-2 text-[12px] font-medium text-muted">
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              <span>Sin tarjeta de crédito requerida</span>
+              <span>Sin tarjeta de crédito</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              <span>Folios internos; sin verificación QR oficial</span>
+              <span>Cita el artículo de ley en cada cálculo</span>
             </div>
             <div className="flex items-center gap-1.5">
               <CheckCircle2 size={15} className="text-emerald-600" />
-              <span>Fuentes de vigencia visibles en el catálogo</span>
+              <span>Cobertura en los 32 estados</span>
             </div>
           </div>
+
+          {/* Aviso legal (letra chica) */}
+          <p className="mx-auto max-w-[820px] text-[10.5px] leading-[1.6] text-muted/70">
+            Aviso: ARK LEDGER entrega resultados de referencia y el fundamento legal aplicable; la
+            decisión final corresponde al profesional. El Folio de Integridad es una referencia
+            interna determinista: no es un sello SHA-256, una constancia NOM-151 ni una
+            certificación oficial. El portal no emite dictámenes. El timbrado CFDI 4.0 opera en modo
+            preview (Sandbox SAT).
+          </p>
         </div>
       </section>
 
@@ -702,14 +711,16 @@ export function LandingPage() {
         <div className="mx-auto max-w-[1100px] space-y-12">
           <div className="space-y-3 text-center">
             <div className="font-orbitron text-[11px] font-bold uppercase tracking-[0.2em] text-gold-dark">
-              Transparencia Total
+              Modelo Freemium
             </div>
             <h2 className="font-playfair text-[34px] font-black leading-[1.1] text-ink md:text-[44px]">
-              ¿Cómo ganamos dinero si las calculadoras son gratis?
+              El valor es gratis. <br />
+              <span className="text-navy">Lo que escala es Pro.</span>
             </h2>
             <p className="mx-auto max-w-[620px] text-[15px] text-muted">
-              Creemos en dar valor primero. La suite básica siempre será de acceso libre. Cobramos
-              únicamente por servicios de alto valor operativo.
+              Las calculadoras y el conversor XML nunca tendrán costo ni límite de uso diario. Los
+              planes Pro cubren funciones de alto valor operativo: emisión de CFDI 4.0 y
+              automatización masiva para despachos con alto volumen.
             </p>
           </div>
 
@@ -745,8 +756,8 @@ export function LandingPage() {
                 3. Timbrado & Automatización Masiva
               </h3>
               <p className="text-[13px] leading-relaxed text-muted">
-                Emisión de CFDI 4.0 con PAC certificado y procesamiento masivo de nóminas para
-                despachos que manejan alto volumen.
+                Pre-validación y timbrado CFDI 4.0 en modo preview (Sandbox SAT) y procesamiento
+                masivo de nóminas para despachos que manejan alto volumen.
               </p>
             </div>
           </div>
@@ -761,14 +772,15 @@ export function LandingPage() {
 
         <div className="relative mx-auto max-w-[760px] space-y-6">
           <div className="font-orbitron text-[11px] font-bold uppercase tracking-[0.2em] text-gold">
-            Empieza en 30 segundos
+            Empieza gratis hoy
           </div>
           <h2 className="font-playfair text-[38px] font-black leading-[1] text-white md:text-[52px]">
-            Eleva el nivel de tu práctica contable hoy mismo.
+            Deja de verificar a mano. <br className="hidden sm:inline" />
+            Calcula con fundamento.
           </h2>
           <p className="mx-auto max-w-[520px] text-[15px] leading-relaxed text-white/80">
-            Únete a la comunidad de contadores y asesores fiscales que ya optimizan su tiempo con
-            ARK LEDGER.
+            Crea tu cuenta y accede a las {TOTAL_HERRAMIENTAS} herramientas de ARK LEDGER. Sin
+            tarjeta de crédito, sin límite de cálculos.
           </p>
 
           <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
