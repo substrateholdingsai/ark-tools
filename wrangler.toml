@@ -97,7 +97,7 @@ name = "ark-tools-production"
 routes = [
   { pattern = "ledger.arksystems.site", custom_domain = true }
 ]
-vars = { ENVIRONMENT = "production", APP_NAME = "ARK LEDGER", APP_VERSION = "1.0.0", APP_URL = "https://ledger.arksystems.site", COMPANY_NAME = "Substrate Holdings LLC", COMPANY_EMAIL = "pavel@arksystems.site", SUPPORT_URL = "https://wa.me/525657062511", AUTH_EMAIL_FROM = "ARK LEDGER <no-reply@mail.arksystems.site>" }
+vars = { ENVIRONMENT = "production", APP_NAME = "ARK LEDGER", APP_VERSION = "1.0.0", APP_URL = "https://ledger.arksystems.site", COMPANY_NAME = "Substrate Holdings LLC", COMPANY_EMAIL = "pavel@arksystems.site", SUPPORT_URL = "https://wa.me/525657062511", AUTH_EMAIL_FROM = "ARK LEDGER <no-reply@mail.arksystems.site>", SALES_WORKER_URL = "https://sales.arksystems.site", CANACO_SALES_TENANT_ID = "canaco_merida" }
 
 [[env.production.d1_databases]]
 binding = "ARK_TOOLS_DB"
