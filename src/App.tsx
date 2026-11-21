@@ -18,15 +18,9 @@ import {
   ShieldAlert,
   Users,
   FileCode,
-  // removed
-  // removed
-  BarChart3,
-  Layers,
-  TrendingUp,
   Compass,
   ArrowLeft,
   Stethoscope,
-  QrCode,
 } from 'lucide-react';
 
 import { SignedIn, SignedOut, useAuth } from '@/context/AuthContext';
@@ -52,6 +46,7 @@ import {
 import type { NavItem } from './components';
 
 import { AlertasVigencia } from '@/data/valores-vigentes';
+import { TOTAL_HERRAMIENTAS } from '@/data/catalogo-herramientas';
 import { currentBrand } from '@/config/brand';
 import { CanacoPortalBanner, CanacoAdminPadron, CanacoLandingPage } from '@/components/canaco';
 import { lazyWithRetry } from '@/lib/lazyWithRetry';
@@ -803,7 +798,7 @@ interface DashboardProps {
 
 function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
   return (
-    <div className="mx-auto max-w-[1280px] px-6 py-8 md:px-10">
+    <div className="mx-auto max-w-[1280px] px-6 py-6 md:px-10">
       {/* Banner de Ventanilla Institucional CANACO HENEQUÉN */}
       {currentBrand.features.ventanillaPagos && (
         <section className="mb-6">
@@ -811,39 +806,99 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
         </section>
       )}
 
-      {/* NetSuite-style grid: left reminders column + main area */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
+      {/* Page header */}
+      <div className="border-b border-line bg-surface px-0 pb-0 pt-0">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-[25px] font-semibold leading-[1.15] tracking-[-0.012em] text-ink">
+              Panel del despacho
+            </h1>
+            <p className="mt-1.5 max-w-[62ch] text-[12.5px] text-muted">
+              Estado operativo del ejercicio 2026. Los importes provienen de cédulas emitidas y no
+              constituyen declaraciones presentadas.
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-[3px] border border-[#CBE0D3] bg-ok-wash px-2 py-1 font-mono text-[10.5px] font-medium tracking-[0.04em] text-ok">
+                <span className="h-1.5 w-1.5 rounded-full bg-ok" />
+                Catálogo DOF verificado
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-[3px] border border-line-2 bg-surface-2 px-2 py-1 font-mono text-[10.5px] font-medium tracking-[0.04em] text-slate">
+                Ejercicio <b className="ml-1 font-semibold text-ink">2026</b>
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-[3px] border border-line-2 bg-surface-2 px-2 py-1 font-mono text-[10.5px] font-medium tracking-[0.04em] text-slate">
+                Corte <b className="ml-1 font-semibold text-ink">2026-11-22</b>
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="inline-flex h-[32px] items-center gap-1.5 rounded-[5px] border border-line-2 bg-surface px-3 text-[12.5px] font-semibold text-ink-2 transition hover:bg-surface-2"
+            >
+              Exportar corte
+            </button>
+            <button
+              type="button"
+              onClick={() => onSelectTool('isn')}
+              className="inline-flex h-[32px] items-center gap-1.5 rounded-[5px] bg-ink-2 px-3 text-[12.5px] font-semibold text-[#F5F3EE] transition hover:bg-ink"
+            >
+              Nueva cédula
+            </button>
+          </div>
+        </div>
+        <div className="mt-4 flex gap-0.5">
+          <button className="border-b-2 border-brass-2 px-3 py-2 text-[12.5px] font-semibold text-ink">
+            Resumen
+          </button>
+          <button
+            type="button"
+            onClick={() => onSelectTool('isn')}
+            className="border-b-2 border-transparent px-3 py-2 text-[12.5px] font-medium text-muted transition hover:text-ink"
+          >
+            Cédulas
+          </button>
+          <button
+            type="button"
+            onClick={() => onSelectTool('isn')}
+            className="border-b-2 border-transparent px-3 py-2 text-[12.5px] font-medium text-muted transition hover:text-ink"
+          >
+            Catálogo
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-[260px_1fr]">
         {/* Left column: Reminders + shortcuts */}
         <aside className="space-y-4">
-          <div className="rounded-xl border border-line bg-surface p-4">
-            <div className="mb-3 font-orbitron text-[10px] font-bold uppercase tracking-[0.16em] text-navy">
+          <div className="rounded-[8px] border border-line bg-surface p-4 shadow-sh1">
+            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">
               Recordatorios
             </div>
             <ul className="space-y-2 text-[13px] text-ink">
               <li className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-navy" />
+                <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-brass-2" />
                 <span>DOF 2026 vigente — UMA $117.31</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-navy" />
+                <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-brass-2" />
                 <span>TOPE SBC: 25 UMAs ($2,932.75)</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-navy" />
+                <span className="mt-1.5 h-1.5 w-1.5 flex-none rounded-full bg-brass-2" />
                 <span>SMG 2026: $315.04</span>
               </li>
             </ul>
             <button
               type="button"
-              onClick={() => onSelectTool('recargos' as ToolId)}
-              className="mt-3 w-full text-left text-[11px] font-bold uppercase tracking-wider text-navy hover:underline"
+              onClick={() => onSelectTool('recargos')}
+              className="mt-3 w-full text-left text-[11px] font-bold uppercase tracking-wider text-brass transition hover:underline"
             >
               Ver todos →
             </button>
           </div>
 
-          <div className="rounded-xl border border-line bg-surface p-4">
-            <div className="mb-3 font-orbitron text-[10px] font-bold uppercase tracking-[0.16em] text-navy">
+          <div className="rounded-[8px] border border-line bg-surface p-4 shadow-sh1">
+            <div className="mb-3 text-[10px] font-semibold uppercase tracking-[0.15em] text-muted">
               Accesos rápidos
             </div>
             <div className="grid grid-cols-2 gap-2">
@@ -857,7 +912,7 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
                   key={q.tool}
                   type="button"
                   onClick={() => onSelectTool(q.tool as ToolId)}
-                  className="rounded-lg border border-line bg-surface-2 px-2 py-1.5 text-[11px] font-bold text-ink hover:bg-navy hover:text-white"
+                  className="rounded-[5px] border border-line bg-surface-2 px-2 py-1.5 text-[11px] font-bold text-ink transition hover:bg-ink-2 hover:text-[#F5F3EE]"
                 >
                   {q.label}
                 </button>
@@ -868,62 +923,72 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
 
         {/* Main area */}
         <main className="space-y-6">
-          {/* Hero total (single gold accent) */}
-          <section className="rounded-2xl border border-line bg-surface p-6">
-            <div className="font-orbitron text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
-              Suite Fiscal Acreditada
-            </div>
-            <div className="mt-2 font-playfair text-[48px] font-black leading-none tracking-[-0.04em] text-gold">
-              22 herramientas
-            </div>
-            <div className="mt-1 font-inter text-[13px] text-muted">
-              Cálculos deterministas con fundamento en LISR, LSS, LFT.
-            </div>
-          </section>
-
           {/* KPI strip */}
-          <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: 'UMA 2026', value: '$117.31', trend: '+3.2%' },
-              { label: 'SMG 2026', value: '$315.04', trend: '+12%' },
-              { label: 'TOPE SBC', value: '$2,932.75', trend: '25 UMAs' },
-              { label: 'Herramientas', value: '22', trend: '100%' },
+              { label: 'UMA 2026', value: '$117.31', detail: 'Diaria', stripe: 'brass' },
+              { label: 'SMG 2026', value: '$315.04', detail: 'Diario', stripe: 'ok' },
+              { label: 'TOPE SBC', value: '$2,932.75', detail: '25 UMAs', stripe: 'warn' },
+              {
+                label: 'Herramientas',
+                value: String(TOTAL_HERRAMIENTAS),
+                detail: 'En catálogo',
+                stripe: 'info',
+              },
             ].map((k) => (
-              <div key={k.label} className="rounded-xl border border-line bg-surface p-4">
-                <div className="font-inter text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
+              <div
+                key={k.label}
+                className="relative overflow-hidden rounded-[8px] border border-line bg-surface p-4 shadow-sh1"
+              >
+                <span
+                  className={`absolute bottom-0 left-0 top-0 w-[2px] ${
+                    k.stripe === 'brass'
+                      ? 'bg-brass-2'
+                      : k.stripe === 'ok'
+                        ? 'bg-ok'
+                        : k.stripe === 'warn'
+                          ? 'bg-warn'
+                          : 'bg-info'
+                  }`}
+                />
+                <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted">
                   {k.label}
                 </div>
-                <div className="mt-1 font-orbitron text-[18px] font-bold tabular-nums text-ink">
+                <div className="mt-1 font-mono text-[18px] font-semibold tabular-nums text-ink">
                   {k.value}
                 </div>
-                <div className="mt-1 font-inter text-[11px] text-navy">{k.trend}</div>
+                <div className="mt-1 text-[11px] text-muted">{k.detail}</div>
               </div>
             ))}
           </section>
 
           {/* Period comparison table */}
-          <section className="rounded-xl border border-line bg-surface">
-            <div className="border-b border-line px-4 py-3 font-orbitron text-[10px] font-bold uppercase tracking-[0.16em] text-navy">
+          <section className="rounded-[8px] border border-line bg-surface shadow-sh1">
+            <div className="border-b border-line px-4 py-3 text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
               Comparativo de período
             </div>
             <table className="w-full text-[13px]">
               <thead>
                 <tr className="text-muted">
-                  <th className="px-4 py-2 text-left font-inter font-bold">Concepto</th>
-                  <th className="px-4 py-2 text-right font-inter font-bold">Actual</th>
-                  <th className="px-4 py-2 text-right font-inter font-bold">Anterior</th>
+                  <th className="px-4 py-2 text-left font-semibold">Concepto</th>
+                  <th className="px-4 py-2 text-right font-semibold">Actual</th>
+                  <th className="px-4 py-2 text-right font-semibold">Anterior</th>
                 </tr>
               </thead>
               <tbody>
                 <tr className="border-t border-line">
                   <td className="px-4 py-2 text-ink">UMA</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink">$117.31</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-muted">$113.14</td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums text-ink">$117.31</td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums text-muted">
+                    $113.14
+                  </td>
                 </tr>
                 <tr className="border-t border-line">
                   <td className="px-4 py-2 text-ink">SMG</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-ink">$315.04</td>
-                  <td className="px-4 py-2 text-right tabular-nums text-muted">$278.80</td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums text-ink">$315.04</td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums text-muted">
+                    $278.80
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -989,48 +1054,41 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
                 <ToolCard
                   icon={Users}
                   title="Cierre de Nómina Masivo"
-                  description="Procesamiento batch por período. Cédula Concentradora con Sello QR y Layout Bancario."
+                  description="Procesamiento en lote por período. Retenciones SAT, cuotas IMSS, ISN estatal."
                   badge="PRO"
                   badgeVariant="gold"
                   onSelect={() => onSelectTool('cierre-nomina')}
                 />
                 <ToolCard
-                  icon={BarChart3}
-                  title="Balance General Comparativo"
-                  description="Análisis horizontal y vertical, cuadre A=P+C y papel de trabajo con Folio de Integridad y QR de consulta."
-                  badge="NUEVO"
-                  badgeVariant="gold"
-                  onSelect={() => onSelectTool('balance-general')}
-                />
-                <ToolCard
-                  icon={TrendingUp}
-                  title="Actualización y Recargos Fiscales"
-                  description="Cálculo CFF Art. 17-A y 21 con INPC oficial, factor truncado a 4 decimales y tasa LIF 1.47%."
-                  badge="NUEVO"
-                  badgeVariant="gold"
-                  onSelect={() => onSelectTool('recargos')}
-                />
-                <ToolCard
-                  icon={ShieldAlert}
-                  title="Simulador de Modalidad 40"
-                  description="Proyección Ley 73 con restricción DOF 21/10/2026 (Último SBC + 1 UMA), cuota 14.438% y ROI."
+                  icon={Calculator}
+                  title="Simulador Modalidad 40"
+                  description="Proyección de pensión Ley 73 con el Acuerdo DOF 21/10/2026."
                   badge="GRATIS"
                   badgeVariant="neutral"
                   onSelect={() => onSelectTool('modalidad40')}
                 />
+                <ToolCard
+                  icon={Calculator}
+                  title="Actualización y Recargos CFF"
+                  description="Art. 17-A CFF. Factor INPC y tasa de mora vigente."
+                  badge="GRATIS"
+                  badgeVariant="neutral"
+                  onSelect={() => onSelectTool('recargos')}
+                />
               </CategorySection>
             )}
+
             {(navFilter === 'dashboard' || navFilter === 'sat') && (
               <CategorySection
                 id="sat"
                 title="SAT & CFDI"
-                description="Procesamiento local de comprobantes fiscales, auditoría y conciliación contable Anexo 24."
+                description="Conversión, validación y conciliación de comprobantes fiscales."
                 columns={3}
               >
                 <ToolCard
                   icon={FileSpreadsheet}
-                  title="Conversor XML → CSV para Excel"
-                  description="Extrae datos y exporta una fila por CFDI. Hasta 200 archivos de 10 MB."
+                  title="Conversor XML a CSV/Excel"
+                  description="Extrae CFDI 3.3 y 4.0 a CSV. Hasta 200 archivos."
                   badge="GRATIS"
                   badgeVariant="neutral"
                   onSelect={() => onSelectTool('xml-excel')}
@@ -1038,81 +1096,67 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
                 <ToolCard
                   icon={ShieldCheck}
                   title="Validador de XMLs"
-                  description="Verifica UUID, sello y estructura. Cotejo preventivo contra Art. 69-B (EFOS)."
+                  description="Verificación de sellos digitales y cotejo preventivo 69-B."
                   badge="GRATIS"
                   badgeVariant="neutral"
                   onSelect={() => onSelectTool('validador')}
                 />
                 <ToolCard
-                  icon={Layers}
+                  icon={FileSpreadsheet}
                   title="Conciliación Anexo 24"
-                  description="Generador automático de pólizas contables, cruce CFDI vs Anexo 24 y filtro Metadata SAT."
-                  badge="PRO"
-                  badgeVariant="gold"
+                  description="Cruce CFDI vs Catálogo y Balanza Anexo 24."
+                  badge="GRATIS"
+                  badgeVariant="neutral"
                   onSelect={() => onSelectTool('anexo24')}
-                />
-                <ToolCard
-                  icon={ShieldAlert}
-                  title="Detector de Atípicos CFDI"
-                  description="Auditoría forense CFDI 4.0, cruce Metadata SAT, Ley de Benford, Z-Score y matriz 5×5."
-                  badge="NUEVO"
-                  badgeVariant="gold"
-                  onSelect={() => onSelectTool('auditor-cfdi-atipico')}
                 />
               </CategorySection>
             )}
+
             {(navFilter === 'dashboard' || navFilter === 'cobros') && (
               <CategorySection
                 id="cobros"
                 title="Cobros & Finanzas"
-                description="Emisión de facturas SAT, pasarelas de pago y modelado financiero."
+                description="Generación de links de pago y timbrado CFDI 4.0."
                 columns={3}
               >
                 <ToolCard
                   icon={Globe}
-                  title="Generador Links de Pago"
-                  description="Cobra con Clip Checkout. Link compartible, sin comisiones ocultas."
+                  title="Generador Links de Pago SPEI"
+                  description="Links de cobro instantáneos vía SPEI / Clip Checkout."
                   badge="GRATIS"
                   badgeVariant="neutral"
                   onSelect={() => onSelectTool('spei')}
                 />
                 <ToolCard
-                  icon={QrCode}
-                  title="Cobro con CoDi — Ark Caja"
-                  description="Enlace externo a Caja. QR en mostrador, $8,000 MXN por operación, SPEI arriba de eso. Motor Pey."
-                  badge="ARK CAJA"
-                  badgeVariant="gold"
-                  onSelect={() => onSelectTool('caja-codi')}
-                />
-                <ToolCard
                   icon={FileCode}
-                  title="Timbrado de Facturas"
-                  description="Pre-validación CFDI 4.0 Anexo 20 y conector Facturapi v2 (Sandbox SAT · modo preview)."
-                  badge="PREVIEW"
+                  title="Timbrado de Facturas CFDI 4.0"
+                  description="Pre-validación y timbrado con Facturapi v2 (preview)."
+                  badge="PRO"
                   badgeVariant="gold"
                   onSelect={() => onSelectTool('timbrado')}
                 />
                 <ToolCard
                   icon={Building2}
                   title="Calculadora Leasing"
-                  description="Proyección de ingresos recurrentes y análisis de deducción de ISR."
+                  description="Simulador financiero y fiscal de arrendamiento."
                   badge="GRATIS"
                   badgeVariant="neutral"
                   onSelect={() => onSelectTool('leasing')}
                 />
               </CategorySection>
             )}
+
             {(navFilter === 'dashboard' || navFilter === 'compliance') && (
               <CategorySection
                 id="compliance"
                 title="Compliance & Auditoría"
-                description="Matrices legales, requerimientos y defensa ante autoridades fiscales."
+                description="Defensa fiscal, auditoría legal y prevención de lavado."
                 columns={3}
               >
                 <ToolCard
                   icon={Scale}
-                  title="Guía SAT/IMSS"
-                  description="8 pasos para responder requerimientos. Checklists, plazos y expediente único."
+                  title="Guía Requerimientos SAT / IMSS"
+                  description="Metodología en 8 pasos para responder auditorías."
                   badge="PRO"
                   badgeVariant="gold"
                   onSelect={() => onSelectTool('guia-sat-imss')}
@@ -1120,7 +1164,7 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
                 <ToolCard
                   icon={ShieldAlert}
                   title="Auditoría Legal de Cobranza"
-                  description="Compara contrato vs CRM, detecta conductas ilícitas y emite dictamen exportable."
+                  description="Compara contratos vs bitácoras CRM, detecta conductas ilícitas."
                   badge="GRATIS"
                   badgeVariant="neutral"
                   onSelect={() => onSelectTool('auditor-cobranza')}
@@ -1128,18 +1172,34 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
                 <ToolCard
                   icon={Sparkles}
                   title="Mapa de Activos Virtuales"
-                  description="12 conductas mapeadas con Ley Fintech, LFPIORPI y CFF."
-                  badge="PRO"
-                  badgeVariant="gold"
+                  description="Matriz legal sobre 12 conductas con criptoactivos."
+                  badge="GRATIS"
+                  badgeVariant="neutral"
                   onSelect={() => onSelectTool('mapa-activos')}
                 />
                 <ToolCard
-                  icon={ShieldCheck}
+                  icon={FileSpreadsheet}
+                  title="Balance General Comparativo"
+                  description="Análisis Horizontal y Vertical, validación A=P+C."
+                  badge="GRATIS"
+                  badgeVariant="neutral"
+                  onSelect={() => onSelectTool('balance-general')}
+                />
+                <ToolCard
+                  icon={ShieldAlert}
                   title="Monitor LFPIORPI"
-                  description="Auditoría antilavado con regla de acumulación de 6 meses y umbrales UMA 2026."
-                  badge="PRO"
-                  badgeVariant="gold"
+                  description="Evaluación determinista Art. 17 LFPIORPI, semáforo por cliente."
+                  badge="GRATIS"
+                  badgeVariant="neutral"
                   onSelect={() => onSelectTool('monitor-lfpiorpi')}
+                />
+                <ToolCard
+                  icon={ShieldAlert}
+                  title="Auditor CFDI Atípico"
+                  description="Detector de atípicos y matriz de riesgo 5x5."
+                  badge="GRATIS"
+                  badgeVariant="neutral"
+                  onSelect={() => onSelectTool('auditor-cfdi-atipico')}
                 />
               </CategorySection>
             )}
@@ -1150,9 +1210,6 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════
-// PLACEHOLDER
-// ═════════════════════════════════════════════════════════════════
 export interface PlaceholderToolProps {
   name: string;
   onBack: () => void;
