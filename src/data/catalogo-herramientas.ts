@@ -188,6 +188,13 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     descripcion:
       'Determinación exclusiva para Yucatán de la retención del 2% sobre honorarios médicos al momento del pago (Art. 20-Bis a 20-Quinquies LGHY, D.O. 26-dic-2025). Calcula retención 2%, neto a pagar, referencia del Impuesto sobre el Ejercicio Profesional (3% Arts. 16-20), plazos de entero día 10 (prórroga enero 2026 al 20-feb-2026, Acuerdo AAFY 12/2026 III.1.5) y emite formatos oficiales AAFY-30 (constancia), AAFY-31 (entero) y CSV de cotejo.',
   },
+  {
+    id: 'repse',
+    nombre: 'Rastreador REPSE (Registro Prestadoras Servicios Especializados)',
+    categoria: 'Compliance y Defensa Jurídica',
+    descripcion:
+      'Control de proveedores de servicios especializados con registro REPSE vigente (LFT Arts. 13, 15; Acuerdo DOF 24/05/2021 mod. 21/02/2024). Tabla con RFC, razón social, actividad, folio, vigencia, estatus y nivel de riesgo calculado (Crítico: suspendido/vencido; Alto: en renovación o ≤30 días; Medio: ≤90 días; Bajo: resto). Alertas de expiración a 30/60/90 días. Formulario de alta/edición con validación RFC y fecha. Exportación CSV/Excel. Fundamento: pagos a contratistas sin REPSE vigente ponen en riesgo la deducibilidad fiscal (LFT Art. 1004-C, CFF Art. 29, LISR Art. 27). No consulta el padrón STPS; registra última verificación del usuario.',
+  },
 ];
 
 /** Total de herramientas de la suite. Se deriva del catálogo: nunca se escribe a mano. */

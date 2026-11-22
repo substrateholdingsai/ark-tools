@@ -110,6 +110,9 @@ const AuditorCFDIAtipico = lazyWithRetry(() =>
 const RetencionClinicas = lazyWithRetry(() =>
   import('./tools/retencion-clinicas').then((m) => ({ default: m.RetencionClinicas }))
 );
+const RepseTracker = lazyWithRetry(() =>
+  import('./tools/repse').then((m) => ({ default: m.RepseTracker }))
+);
 
 // ═════════════════════════════════════════════════════════════════
 // TIPOS
@@ -138,6 +141,7 @@ export type ToolId =
   | 'modalidad40'
   | 'auditor-cfdi-atipico'
   | 'retencion-clinicas'
+  | 'repse'
   | 'admin';
 
 export type ToolRoute = ToolId;
@@ -189,6 +193,7 @@ export function App() {
       'modalidad40',
       'auditor-cfdi-atipico',
       'retencion-clinicas',
+      'repse',
       'admin',
     ];
     if (toolParam && validTools.includes(toolParam)) {
@@ -286,6 +291,7 @@ export function App() {
     modalidad40: 'Simulador Modalidad 40 (DOF 2026)',
     'auditor-cfdi-atipico': 'Detector de Atípicos CFDI',
     'retencion-clinicas': 'Retención 2% Clínicas (Yucatán)',
+    repse: 'Rastreador REPSE',
     admin: 'Super Admin Console',
   };
 
@@ -389,6 +395,9 @@ export function App() {
 
       case 'retencion-clinicas':
         return <RetencionClinicas onBack={goToDashboard} />;
+
+      case 'repse':
+        return <RepseTracker onBack={goToDashboard} />;
 
       case 'dashboard':
       default:
@@ -1200,6 +1209,14 @@ function Dashboard({ onSelectTool, navFilter }: DashboardProps) {
                   badge="GRATIS"
                   badgeVariant="neutral"
                   onSelect={() => onSelectTool('auditor-cfdi-atipico')}
+                />
+                <ToolCard
+                  icon={ShieldAlert}
+                  title="Rastreador REPSE"
+                  description="Control de proveedores servicios especializados con REPSE vigente. Alertas de expiración y riesgo deducibilidad."
+                  badge="GRATIS"
+                  badgeVariant="neutral"
+                  onSelect={() => onSelectTool('repse')}
                 />
               </CategorySection>
             )}

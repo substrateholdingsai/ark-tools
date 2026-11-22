@@ -20,9 +20,9 @@ function leerToolIdsDelRouter(): string[] {
 }
 
 describe('Catálogo Canónico de Herramientas', () => {
-  it('expone 22 herramientas con identificadores únicos', () => {
-    expect(TOTAL_HERRAMIENTAS).toBe(22);
-    expect(CATALOGO_HERRAMIENTAS).toHaveLength(22);
+  it('expone 23 herramientas con identificadores únicos', () => {
+    expect(TOTAL_HERRAMIENTAS).toBe(23);
+    expect(CATALOGO_HERRAMIENTAS).toHaveLength(23);
 
     const ids = CATALOGO_HERRAMIENTAS.map((h) => h.id);
     expect(new Set(ids).size).toBe(ids.length);
@@ -59,9 +59,10 @@ describe('Catálogo Canónico de Herramientas', () => {
     expect(ids).toContain('auditor-cfdi-atipico');
     expect(ids).toContain('retencion-clinicas');
     expect(ids).toContain('caja-codi');
+    expect(ids).toContain('repse');
   });
 
-  it('cuenta con un instructivo individual (.md) e índice en docs/instructivos/README.md para las 22 herramientas', () => {
+  it('cuenta con un instructivo individual (.md) e índice en docs/instructivos/README.md para las 23 herramientas', () => {
     const readmePath = resolve(process.cwd(), 'docs/instructivos/README.md');
     const readmeContent = readFileSync(readmePath, 'utf-8');
 

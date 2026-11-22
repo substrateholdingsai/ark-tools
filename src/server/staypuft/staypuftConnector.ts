@@ -85,6 +85,7 @@ import {
   calcularRetencionClinicas,
   MENSAJE_SOLO_YUCATAN,
 } from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
+import { SEED_PROVEEDORES } from '../../tools/repse/types';
 import { DEFAULT_MODEL, FAST_MODEL } from '../ai/agent';
 import { timingSafeEqual } from '../canacoConektaService';
 import { CURRENT_CATALOG_VERSION } from '../d1Api.expediente';
@@ -1395,6 +1396,26 @@ const TOOL_SPECS_MAP: Record<
       fechaPago: '2026-03-15',
     },
   },
+  repse: {
+    route: '/#repse',
+    status: 'active',
+    preview_supported: true,
+    law_cited: [
+      'LFT Arts. 13, 15, 1004-C (Subcontratación y REPSE)',
+      'Acuerdo DOF 24/05/2021 (mod. 21/02/2024) Arts. 13, 16, 18 (REPSE obligatorio)',
+      'CFF Art. 29 (Deducibilidad fiscal y comprobantes)',
+      'LISR Art. 27 (Deducciones autorizadas — servicios especializados)',
+    ],
+    inputs: {
+      proveedores:
+        'ProveedorRepse[] (rfc, razonSocial, actividadRepse, folioRepse, vigenciaRepse, estatusRepse, nivelRiesgo, ultimaVerificacion, esEjemplo?)',
+    },
+    outputs: {
+      proveedores: 'ProveedorRepse[] con análisis de riesgo y alertas',
+      alertas: '{ total, activos, enRenovacion, suspendidos, vencidos }',
+    },
+    sample_preview_payload: {},
+  },
 };
 
 export function buildLiveToolCatalog(): ToolInternalSpec[] {
@@ -2323,6 +2344,31 @@ export async function executeToolPreview(
             tipoPersona: 'fisica',
           },
         });
+        break;
+      }
+
+      case 'repse': {
+        // REPSE preview: returns sample providers with risk analysis
+        resultOutput = {
+          proveedores: SEED_PROVEEDORES.map((p) => ({
+            rfc: p.rfc,
+            razonSocial: p.razonSocial,
+            actividadRepse: p.actividadRepse,
+            folioRepse: p.folioRepse,
+            vigenciaRepse: p.vigenciaRepse,
+            estatusRepse: p.estatusRepse,
+            nivelRiesgo: p.nivelRiesgo,
+            ultimaVerificacion: p.ultimaVerificacion,
+            esEjemplo: p.esEjemplo,
+          })),
+          alertas: {
+            total: SEED_PROVEEDORES.length,
+            activos: SEED_PROVEEDORES.filter((p) => p.estatusRepse === 'activo').length,
+            enRenovacion: SEED_PROVEEDORES.filter((p) => p.estatusRepse === 'en_renovacion').length,
+            suspendidos: SEED_PROVEEDORES.filter((p) => p.estatusRepse === 'suspendido').length,
+            vencidos: SEED_PROVEEDORES.filter((p) => p.estatusRepse === 'vencido').length,
+          },
+        };
         break;
       }
 
@@ -3920,6 +3966,7 @@ export async function handleStayPuftInternalRequest(
             'monitor-lfpiorpi',
             'auditor-cfdi-atipico',
             'retencion-clinicas',
+            'repse',
           ],
         },
         chamber_bundle: [

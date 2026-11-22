@@ -38,3 +38,4 @@
 - [Auditoría Legal de Cobranza](auditor-cobranza.md) — disponible
 - [Mapa de Regulación de Activos Virtuales](mapa-activos.md) — disponible
 - [Monitor de Actividades Vulnerables LFPIORPI](monitor-lfpiorpi.md) — disponible
+- [Rastreador REPSE (Registro Prestadoras Servicios Especializados)](repse.md) — disponible
