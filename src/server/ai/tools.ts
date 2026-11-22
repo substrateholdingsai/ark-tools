@@ -454,6 +454,26 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
       required: [],
     },
   },
+  {
+    name: 'consultar_repse',
+    description:
+      'Consulta el estatus REPSE (Registro de Prestadoras de Servicios Especializados) de un proveedor de servicios especializados: folio de registro, vigencia, estatus y nivel de riesgo. Señala si el proveedor está vigente o vencido y si un pago a ese contratista pone en riesgo la deducibilidad fiscal del cliente (LFT Arts. 13 y 15; Acuerdo DOF 24/05/2021 mod. 21/02/2024).',
+    parameters: {
+      type: 'object',
+      properties: {
+        rfc: {
+          type: 'string',
+          description: 'RFC del proveedor de servicios especializados a consultar en el REPSE.',
+        },
+        nombre: {
+          type: 'string',
+          description:
+            'Razón social o nombre del proveedor (opcional, complementa la búsqueda por RFC).',
+        },
+      },
+      required: ['rfc'],
+    },
+  },
 ];
 
 /**

@@ -55,6 +55,8 @@ export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
     'Si preguntan por prospectos, cartera comercial, embudo de ventas o KPIs del CRM, invoca "consultar_leads_crm".',
   consultar_alertas_regulatorias:
     'Si preguntan por novedades regulatorias, reformas legales recientes, publicaciones del DOF, SAT, circulares de BANXICO, CONDUSEF o alertas de Sentinela Legal, invoca "consultar_alertas_regulatorias".',
+  consultar_repse:
+    'Si preguntan por el estatus REPSE de un proveedor de servicios especializados, si está registrado y vigente, o si un pago a ese contratista pone en riesgo la deducibilidad fiscal, invoca "consultar_repse" con el RFC del proveedor.',
 };
 
 /**
@@ -177,6 +179,10 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
     - Enlace externo a caja.arksystems.site. Cobra con CoDi sin terminal, QR en mostrador,
     $8,000 MXN por operación, SPEI arriba de eso. Noah NO cobra, NO genera QR, NO llama a Pey.
     Solo comparte el enlace.
+23. Rastreador REPSE ('repse'):
+    - Seguimiento del registro REPSE de proveedores de servicios especializados (folio, vigencia,
+    estatus y nivel de riesgo) y alerta cuando un contratista sin REPSE vigente pone en riesgo
+    la deducibilidad fiscal (LFT Arts. 13 y 15; Acuerdo DOF 24/05/2021 mod. 21/02/2024).
 `;
 }
 export async function runAiAgent(env: Env, options: RunAgentOptions): Promise<Response> {
