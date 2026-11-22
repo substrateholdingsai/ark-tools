@@ -1,7 +1,7 @@
 import type { Env } from '../index';
 import { authenticateRequest, requireTenantMembership } from './auth';
 import { STAYPUFT_OPERATOR_ID } from './staypuft/staypuftConnector';
-import { verifyStayPuftKey, hasStayPuftHeader } from './staypuft/staypuftConnector';
+import { hasStayPuftHeader } from './staypuft/staypuftConnector';
 import { resolveTenantById } from './staypuft/staypuftConnector';
 import { timingSafeEqual } from './canacoConektaService';
 import { executeAiTool, AI_TOOLS_CATALOG } from './ai/tools';
@@ -108,7 +108,15 @@ async function authorizeTenant(
   }
 
   if (principal.id === 'mcp-api-key') {
-    const allowed = env.LEDGER_MCP_TENANT_ID || 'ark';
+    const allowed = env.LEDGER_MCP_TENANT_ID?.trim();
+    if (!allowed) {
+      return {
+        error: new Response(JSON.stringify({ error: 'No tienes acceso a este despacho.' }), {
+          status: 403,
+          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+        }),
+      };
+    }
     if (requested !== allowed) {
       return {
         error: new Response(JSON.stringify({ error: 'No tienes acceso a este despacho.' }), {
@@ -138,15 +146,12 @@ async function authenticateMcp(
   url: URL
 ): Promise<{ tenantId: string } | { error: Response }> {
   if (hasStayPuftHeader(request)) {
-    const check = verifyStayPuftKey(request, env);
-    if (!check.authorized) {
-      return {
-        error: new Response(JSON.stringify({ error: 'No autorizado.' }), {
-          status: 401,
-          headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
-        }),
-      };
-    }
+    return {
+      error: new Response(JSON.stringify({ error: 'No autorizado.' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
+      }),
+    };
   }
 
   const principal = await resolvePrincipal(request, env);
