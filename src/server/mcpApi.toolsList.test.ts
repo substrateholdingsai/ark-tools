@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { handleMcpApiRequest } from './mcpApi';
 import { AI_TOOLS_CATALOG } from './ai/tools';
 import { MCP_FIRST_RELEASE_TOOLS } from './mcpApi';
+import { generateLlmsTxt } from './llmsTxt';
 
 const env = {
   MCP_API_KEY: 'test-key',
@@ -96,5 +97,15 @@ describe('MCP tools/list', () => {
       const tool = tools.find((t) => t.name === name)!;
       expect(tool.inputSchema.additionalProperties, name).toBe(false);
     }
+  });
+
+  it('the nine names in /llms.txt match the nine names tools/list returns', async () => {
+    const tools = await listTools();
+    const text = generateLlmsTxt();
+    const toolNames = tools.map((t) => t.name);
+    for (const name of toolNames) {
+      expect(text, name).toContain(name);
+    }
+    expect(toolNames).toEqual(MCP_FIRST_RELEASE_TOOLS.map((t) => t.name));
   });
 });

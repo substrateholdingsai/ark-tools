@@ -9,6 +9,9 @@
 import { CATALOGO_2026 } from '../data/valores-vigentes/catalogo';
 import { CATALOGO_HERRAMIENTAS, TOTAL_HERRAMIENTAS } from '../data/catalogo-herramientas';
 import { CURRENT_CATALOG_VERSION } from './d1Api.expediente';
+import { AI_TOOLS_CATALOG } from './ai/tools';
+import type { AiToolFunction } from './ai/types';
+import { MCP_FIRST_RELEASE_TOOL_NAMES } from './mcpFirstReleaseTools';
 
 function obtenerValor(id: string, fallback: number): number {
   const item = CATALOGO_2026.find((v) => v.id === id);
@@ -49,6 +52,50 @@ function renderCatalogoHerramientas(): string {
 /**
  * Genera /llms.txt (Índice conciso, < 2,000 tokens)
  */
+function mcpFirstReleaseTools(): AiToolFunction[] {
+  const result: AiToolFunction[] = [];
+  for (const name of MCP_FIRST_RELEASE_TOOL_NAMES) {
+    const tool = AI_TOOLS_CATALOG.find((t) => t.name === name);
+    if (tool) result.push(tool);
+  }
+  return result;
+}
+
+function renderMcpDiscoveryShort(): string {
+  const lines = mcpFirstReleaseTools().map((t) => {
+    const short = (t.description.split('Úsalo')[0] ?? t.description).trim();
+    return `- \`${t.name}\`: ${short}`;
+  });
+  return `## MCP (Model Context Protocol)
+
+- **Endpoint:** https://ledger.arksystems.site/mcp
+- **Autenticación:** API key dedicada y acotada por tenant (OAuth diferido al gateway Sentinela).
+- **Scopes:** \`mcp:read\`, \`mcp:calculate\`
+- **Herramientas (9):**
+${lines.join('\n')}
+`;
+}
+
+function renderMcpDiscoveryFull(): string {
+  const blocks = mcpFirstReleaseTools().map((t) => {
+    const schema = t.parameters;
+    const props = Object.entries(schema.properties || {})
+      .map(([k, v]) => `${k}: ${(v as { type?: string }).type ?? 'any'}`)
+      .join(', ');
+    const required = schema.required?.length ? ` (requeridos: ${schema.required.join(', ')})` : '';
+    return `### \`${t.name}\`
+${t.description}
+
+Esquema de entrada: ${props || 'sin argumentos'}${required}.
+`;
+  });
+  return `## MCP — detalle de las nueve herramientas
+
+${blocks.join('\n')}
+> Nota: los resultados son referencias de cálculo, no dictámenes fiscales ni laborales. Cada resultado incluye fundamento legal, versión de catálogo y folio de referencia determinista.
+`;
+}
+
 export function generateLlmsTxt(): string {
   return `# ARK LEDGER — Suite Fiscal, Laboral y de Compliance MX (DOF 2026)
 
@@ -72,6 +119,8 @@ export function generateLlmsTxt(): string {
 
 ${renderCatalogoHerramientas()}
 
+${renderMcpDiscoveryShort()}
+
 ## Verificación Pública de Autenticidad (API Abierta)
 Cualquier agente de IA, auditor o tercero puede verificar la autenticidad e integridad de un cálculo o Papel de Trabajo emitido por ARK LEDGER sin autenticación:
 - **Endpoint JSON:** \`GET https://ledger.arksystems.site/api/expedientes/verify?hash={sha256_hash}\`
@@ -86,6 +135,8 @@ export function generateLlmsFullTxt(): string {
   const base = generateLlmsTxt();
 
   return `${base}
+
+${renderMcpDiscoveryFull()}
 ---
 
 # ANEXO TÉCNICO Y FUNDAMENTOS MATEMÁTICOS / LEGALES

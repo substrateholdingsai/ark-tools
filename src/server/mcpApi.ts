@@ -6,23 +6,12 @@ import { resolveTenantById } from './staypuft/staypuftConnector';
 import { timingSafeEqual } from './canacoConektaService';
 import { executeAiTool, AI_TOOLS_CATALOG } from './ai/tools';
 import { makeMcpToolError, type McpToolError } from './ai/mcpErrors';
+import { MCP_FIRST_RELEASE_TOOL_NAMES } from './mcpFirstReleaseTools';
 
-// Vista MCP de primera entrega: solo estas nueve herramientas se exponen en tools/list.
-// Las seis restantes siguen en AI_TOOLS_CATALOG (Noah las usa) pero no se listan aquí.
-const MCP_FIRST_RELEASE_TOOL_NAMES = new Set<string>([
-  'calc_isn',
-  'calc_sbc',
-  'calc_nomina',
-  'calc_finiquito',
-  'calc_resico',
-  'calc_modalidad40',
-  'calc_recargos',
-  'calc_retencion_clinicas',
-  'get_fiscal_values',
-]);
+const MCP_FIRST_RELEASE_TOOL_NAME_SET = new Set<string>(MCP_FIRST_RELEASE_TOOL_NAMES);
 
 export const MCP_FIRST_RELEASE_TOOLS = AI_TOOLS_CATALOG.filter((t) =>
-  MCP_FIRST_RELEASE_TOOL_NAMES.has(t.name)
+  MCP_FIRST_RELEASE_TOOL_NAME_SET.has(t.name)
 );
 import type { AiToolFunction } from './ai/types';
 import { generateLlmsTxt } from './llmsTxt';
@@ -445,6 +434,6 @@ export async function handleMcpApiRequest(
   });
 }
 
-export { makeMcpToolError, type McpToolError, type McpToolErrorCode } from './ai/mcpErrors';
+export { MCP_FIRST_RELEASE_TOOL_NAMES } from './mcpFirstReleaseTools';
 export const handleMcp = handleMcpApiRequest;
 export const handleMcpApi = handleMcpApiRequest;
