@@ -13,6 +13,8 @@ const MCP_FIRST_RELEASE_TOOL_NAME_SET = new Set<string>(MCP_FIRST_RELEASE_TOOL_N
 export const MCP_FIRST_RELEASE_TOOLS = AI_TOOLS_CATALOG.filter((t) =>
   MCP_FIRST_RELEASE_TOOL_NAME_SET.has(t.name)
 );
+
+export const MAX_USER_TEXT_LENGTH = 200;
 import type { AiToolFunction } from './ai/types';
 import { generateLlmsTxt } from './llmsTxt';
 import { sha256 } from './auth';
@@ -198,6 +200,13 @@ function validateToolArgs(
     if (pschema.type === 'string' && typeof v !== 'string') {
       return makeMcpToolError('VALIDATION_ERROR', `El campo ${k} debe ser texto.`, k);
     }
+    if (typeof v === 'string' && v.length > MAX_USER_TEXT_LENGTH) {
+      return makeMcpToolError(
+        'VALIDATION_ERROR',
+        `El campo ${k} excede ${MAX_USER_TEXT_LENGTH} caracteres.`,
+        k
+      );
+    }
     if (pschema.type === 'boolean' && typeof v !== 'boolean') {
       return makeMcpToolError('VALIDATION_ERROR', `El campo ${k} debe ser booleano.`, k);
     }
@@ -224,7 +233,7 @@ function validateToolArgs(
   return null;
 }
 
-async function handleOne(req: any, env: Env, tenantId: string): Promise<any | null> {
+async function handleOneImpl(req: any, env: Env, tenantId: string): Promise<any | null> {
   if (!req || typeof req !== 'object' || req.jsonrpc !== '2.0' || typeof req.method !== 'string') {
     return jsonRpcError(req?.id, -32600, 'Invalid Request');
   }
@@ -363,6 +372,20 @@ async function handleOne(req: any, env: Env, tenantId: string): Promise<any | nu
       if (isNotification) return null;
       return jsonRpcError(id, -32601, `Method not found: ${req.method}`);
   }
+}
+
+async function handleOne(req: any, env: Env, tenantId: string): Promise<any | null> {
+  const startedAt = Date.now();
+  const result = await handleOneImpl(req, env, tenantId);
+  if (req?.method === 'tools/call') {
+    const status =
+      result?.result?.isError === true ? (result.result.error?.code ?? 'error') : 'success';
+    // eslint-disable-next-line no-console
+    console.log(
+      `[MCP] tool=${String(req?.params?.name)} tenant=${tenantId} status=${status} duration=${Date.now() - startedAt}ms`
+    );
+  }
+  return result;
 }
 
 export async function handleMcpApiRequest(
