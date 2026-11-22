@@ -24,6 +24,18 @@ export interface AiToolFunction {
     type: 'object';
     properties: Record<string, unknown>;
     required?: string[];
+    additionalProperties?: boolean;
+  };
+  /**
+   * Anotaciones de comportamiento (MCP spec: ToolAnnotations).
+   * Se exponen tal cual en `tools/list` para que el cliente sepa que la
+   * herramienta no muta estado y puede reintentarse sin efectos secundarios.
+   */
+  annotations?: {
+    readOnly: boolean;
+    idempotent: boolean;
+    destructive?: boolean;
+    openWorld?: boolean;
   };
 }
 

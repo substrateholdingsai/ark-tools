@@ -5,6 +5,7 @@ import { verifyStayPuftKey, hasStayPuftHeader } from './staypuft/staypuftConnect
 import { resolveTenantById } from './staypuft/staypuftConnector';
 import { timingSafeEqual } from './canacoConektaService';
 import { executeAiTool, AI_TOOLS_CATALOG } from './ai/tools';
+import type { AiToolFunction } from './ai/types';
 import { generateLlmsTxt } from './llmsTxt';
 import { sha256 } from './auth';
 
@@ -187,11 +188,17 @@ async function handleOne(req: any, env: Env, tenantId: string): Promise<any | nu
         jsonrpc: '2.0',
         id,
         result: {
-          tools: AI_TOOLS_CATALOG.map((t: any) => ({
-            name: t.name,
-            description: t.description,
-            inputSchema: t.parameters,
-          })),
+          tools: AI_TOOLS_CATALOG.map((t: AiToolFunction) => {
+            const tool: Record<string, unknown> = {
+              name: t.name,
+              description: t.description,
+              inputSchema: t.parameters,
+            };
+            // Anotaciones de comportamiento: se reenvían verbatim desde el catálogo,
+            // única fuente de verdad de las herramientas.
+            if (t.annotations) tool.annotations = { ...t.annotations };
+            return tool;
+          }),
         },
       };
     case 'tools/call': {

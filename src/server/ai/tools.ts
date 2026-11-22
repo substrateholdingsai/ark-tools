@@ -18,7 +18,6 @@ import {
   simularModalidad40,
   validarParametrosModalidad40,
 } from '../../tools/modalidad40/lib/calcularModalidad40';
-import { VECTOR_REFERENCIA_MODALIDAD40 } from '../../tools/modalidad40/mensajes';
 import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
 import { ESTADOS } from '../../tools/isn/data/estados';
 import { calcularRetencionClinicas } from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
@@ -29,7 +28,7 @@ import { FACTOR_INTEGRACION_SBC_DEFAULT } from '../../tools/nomina/data/defaults
 import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import type { ParametrosNomina } from '../../tools/nomina/types';
-import { CATALOGO_2026, TASA_IVA_GENERAL } from '../../data/valores-vigentes/catalogo';
+import { TASA_IVA_GENERAL } from '../../data/valores-vigentes/catalogo';
 import { listStoredRegulatoryEvents } from '../sentinela/sentinelaWebhook';
 import { buildWhatsAppDeepLink } from '../../lib/whatsappStudio';
 import { parseStrictBoolean } from '../../lib/parseBoolean';
@@ -45,14 +44,6 @@ import {
   wrapCalcSbc,
 } from './mcpCalculationEnvelope';
 
-const fiscalValue = (id: string): number => {
-  const item = CATALOGO_2026.find((value) => value.id === id);
-  if (!item || typeof item.valor !== 'number') {
-    throw new Error(`Valor no encontrado en catálogo: ${id}`);
-  }
-  return item.valor;
-};
-
 const TOOL_ALIASES: Record<string, string> = {
   calcular_modalidad_40: 'calc_modalidad40',
   calcular_isn: 'calc_isn',
@@ -67,7 +58,8 @@ const TOOL_ALIASES: Record<string, string> = {
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calc_modalidad40',
-    description: `Calcula una proyección Ley 73 y cuota de Modalidad 40 con los seis campos obligatorios. La regla de registro se basa en una medida temporal del Acuerdo ACDO.AS2.HCT.101026/302.P.DG, cuyo alcance jurídico es materia de discusión. Vector de referencia: ${JSON.stringify(VECTOR_REFERENCIA_MODALIDAD40)}`,
+    description:
+      'Calcula una proyección bajo la Ley 73 y la cuota de Modalidad 40 (continuación voluntaria del IMSS), con ROI y pensión mensual estimada. Úsalo para estimar cuotas de Modalidad 40 a partir del último SBC. No lo uses para calcular una pensión ya otorgada por el IMSS ni como garantía de derecho a pensión. Las cantidades están en MXN (pesos mexicanos); semanasPrevias y mesesAportacion son enteros; edadJubilacion está entre 60 y 65. Se aplica la Ley del Seguro Social de 1973 (Arts. 164, 167 y 171) y el Acuerdo ACDO.AS2.HCT.101026/302.P.DG (medida temporal vigente desde 22/10/2026, cuyo alcance jurídico está en discusión). El resultado es una referencia de cálculo, NO es un dictamen del IMSS; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
@@ -87,10 +79,14 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         mesesAportacion: {
           type: 'number',
           description: 'Meses a cotizar en Continuación Voluntaria (12 a 60 meses).',
+          minimum: 12,
+          maximum: 60,
         },
         edadJubilacion: {
           type: 'number',
           description: 'Edad proyectada de retiro (60 a 65 años).',
+          minimum: 60,
+          maximum: 65,
         },
         asignacionFamiliar: {
           type: 'boolean',
@@ -105,22 +101,28 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         'edadJubilacion',
         'asignacionFamiliar',
       ],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'calc_isn',
-    description: `Calcula el Impuesto Sobre Nómina (ISN) estatal usando la tasa oficial del estado y las reglas vigentes del ejercicio. Yucatán usa la fuente central ${fiscalValue('ISN_YUC_2026_GENERAL')} % para la tasa general.`,
+    description:
+      'Calcula el Impuesto Sobre Nómina (ISN) estatal sobre la base gravable usando la tasa del estado y las reglas del ejercicio fiscal. Úsalo para estimar el ISN a retener o pagar de una nómina. No lo uses para ISR federal ni para cuotas patronales del IMSS. Las cantidades están en MXN (pesos mexicanos); el ejercicio es 2025 o 2026; el estado se identifica por código (ej. "YUC"); numEmpleados está entre 1 y 50. Se aplica la Ley de Hacienda del estado correspondiente (para Yucatán, Arts. 21 al 27 de la LGHY, incluido su Art. 24). El resultado es una referencia de cálculo, NO es un dictamen fiscal; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
         baseGravable: {
           type: 'number',
           description: 'Suma de percepciones gravadas (base del ISN) en MXN.',
+          minimum: 0,
         },
         tasa: {
           type: 'number',
           description:
             'Tasa de respaldo para estados sin entrada en el catálogo estatal; la tasa oficial declarada para el estado seleccionado prevalece cuando existe.',
+          minimum: 0,
+          maximum: 100,
         },
         estadoId: {
           type: 'string',
@@ -129,10 +131,13 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         ejercicio: {
           type: 'number',
           description: 'Ejercicio fiscal (2025 o 2026, default 2026).',
+          enum: [2025, 2026],
         },
         numEmpleados: {
           type: 'number',
-          description: 'Número de trabajadores (1-50 elegible a Decreto 147/2025 en YUC 2026).',
+          description: 'Número de trabajadores (1-50 elegible a Decreto 147/2025 in YUC 2026).',
+          minimum: 1,
+          maximum: 50,
         },
         esMicroPequena2026: {
           type: 'boolean',
@@ -148,22 +153,26 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
       },
       required: ['baseGravable', 'tasa'],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'calc_retencion_clinicas',
     description:
-      'Calcula la retención para clínicas y hospitales en Yucatán (Art. 20-Bis LGHY, D.O. 26-dic-2025): base, retención, neto a pagar, impuesto profesional informativo y fechas límite AAFY-30 / AAFY-31.',
+      'Calcula la retención del 2 % sobre honorarios médicos para clínicas y hospitales en Yucatán, el neto a pagar, el impuesto profesional informativo y las fechas límite AAFY-30 / AAFY-31. Úsalo exclusivamente para honorarios médicos en Yucatán. No lo uses para otros estados ni para honorarios que no sean médicos. Las cantidades están en MXN (pesos mexicanos); fechaPago usa el formato YYYY-MM-DD; estadoId debe ser "YUC". Se aplica la Ley General de Hacienda del Estado de Yucatán (Arts. 20-Bis a 20-Quinquies) y el Acuerdo AAFY 12/2026 (III.1.5). El resultado es una referencia de cálculo, NO es un dictamen; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
         estadoId: {
           type: 'string',
           description: 'Entidad federativa (exclusivo "YUC").',
+          enum: ['YUC'],
         },
         montoHonorarios: {
           type: 'number',
           description: 'Monto bruto de honorarios médicos pagados en MXN.',
+          minimum: 0,
         },
         fechaPago: {
           type: 'string',
@@ -171,22 +180,38 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
       },
       required: ['montoHonorarios', 'fechaPago'],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'calc_sbc',
     description:
-      'Calcula el Salario Base de Cotización (SBC) IMSS: factor de integración por prestaciones, SBC bruto y SBC final aplicando los topes vigentes.',
+      'Calcula el Salario Base de Cotización (SBC) del IMSS: factor de integración por prestaciones, SBC bruto y SBC final aplicando los topes vigentes. Úsalo para determinar la base de cotización al IMSS a partir del salario diario. No lo uses para calcular ISR ni el sueldo neto de un trabajador. Las cantidades están en MXN (pesos mexicanos); salarioDiario es MXN por día; zona es "general" o "frontera" (usar frontera solo para ZLFN). Se aplica la Ley del Seguro Social, Art. 27 (aguinaldo, vacaciones dignas, prima vacacional y topes de 1 SMG a 25 UMAs). El resultado es una referencia de cálculo, NO es un dictamen del IMSS; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
-        salarioDiario: { type: 'number', description: 'Salario diario ordinario en MXN.' },
-        diasVacaciones: { type: 'number', description: 'Días de vacaciones por antigüedad.' },
+        salarioDiario: {
+          type: 'number',
+          description: 'Salario diario ordinario en MXN.',
+          minimum: 0,
+        },
+        diasVacaciones: {
+          type: 'number',
+          description: 'Días de vacaciones por antigüedad.',
+          minimum: 0,
+        },
         primaVacacional: {
           type: 'number',
           description: 'Porcentaje de prima vacacional (default 25).',
+          minimum: 0,
+          maximum: 100,
         },
-        diasAguinaldo: { type: 'number', description: 'Días de aguinaldo (default 15).' },
+        diasAguinaldo: {
+          type: 'number',
+          description: 'Días de aguinaldo (default 15).',
+          minimum: 0,
+        },
         zona: {
           type: 'string',
           enum: ['general', 'frontera'],
@@ -195,12 +220,14 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
       },
       required: ['salarioDiario'],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'calc_nomina',
     description:
-      'Calcula nómina rápida: ISR con subsidio al empleo, cuotas obreras IMSS y neto a pagar por período (diario/semanal/quincenal/mensual). Obrero únicamente; sin cédula, sin folio, sin exportación. SBC diario sin aplicar topes/pisos de Tool 6 salvo que se proporcione.',
+      'Calcula nómina rápida: percepciones brutas, retención ISR con subsidio al empleo, cuotas obreras IMSS y sueldo neto a pagar por período. Úsalo para nómina rápida obrera únicamente, sin cédula ni folio. No lo uses para finiquitos, liquidaciones ni cálculos patronales completos. Las cantidades están en MXN (pesos mexicanos); período es diario, semanal, quincenal o mensual; sueldoBruto es MXN por período. Se aplica la Ley del Impuesto sobre la Renta (Arts. 96 y 152), las Reglas Misceláneas 2026 (Regla 3.12.2; Anexo 8) y la Ley del Seguro Social (Arts. 25, 147, 168 y 211). El resultado es una referencia de cálculo, NO es un dictamen; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
@@ -209,30 +236,44 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           enum: ['diario', 'semanal', 'quincenal', 'mensual'],
           description: 'Período de pago.',
         },
-        sueldoBruto: { type: 'number', description: 'Sueldo bruto del período en MXN.' },
-        diasTrabajados: { type: 'number', description: 'Días trabajados (para prorrateo).' },
+        sueldoBruto: {
+          type: 'number',
+          description: 'Sueldo bruto del período en MXN.',
+          minimum: 0,
+        },
+        diasTrabajados: {
+          type: 'number',
+          description: 'Días trabajados (para prorrateo).',
+          minimum: 0,
+        },
         diasPeriodo: {
           type: 'number',
           description: 'Días del período completo (ej. 30 para mensual).',
+          minimum: 1,
         },
         sbcDiario: {
           type: 'number',
           description:
             'SBC diario para IMSS obrero. Si se omite, usa el factor de integración mínimo documentado de la herramienta.',
+          minimum: 0,
         },
       },
       required: ['periodo', 'sueldoBruto'],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'calc_recargos',
-    description: `Calcula la actualización inflacionaria (INPC Art. 17-A CFF) y recargos por mora con la tasa vigente ${fiscalValue('TASA_RECARGOS_MORA_2026')} % mensual para contribuciones federales omitidas.`,
+    description:
+      'Calcula la actualización inflacionaria con el INPC (Art. 17-A CFF) y los recargos por mora (Art. 21 CFF; Ley de Ingresos de la Federación, Art. 8) sobre contribuciones federales omitidas. Úsalo para calcular actualización y recargos de impuestos federales en mora. No lo uses para impuestos estatales salvo Yucatán (tipoRecargo "estatal_yucatan"), ni como cédula oficial de recargos. Las cantidades están en MXN (pesos mexicanos); las fechas usan el formato YYYY-MM-DD; tipoRecargo es "federal" o "estatal_yucatan". El resultado es una referencia de cálculo, NO es un dictamen ni una cédula oficial; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
         importeHistorico: {
           type: 'number',
           description: 'Monto del impuesto omitido en MXN.',
+          minimum: 0,
         },
         fechaVencimiento: {
           type: 'string',
@@ -250,12 +291,14 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
       },
       required: ['importeHistorico', 'fechaVencimiento', 'fechaPago'],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'calc_finiquito',
     description:
-      'Calcula el finiquito o liquidación de un trabajador según la Ley Federal del Trabajo. Incluye aguinaldo, vacaciones, prima vacacional, prima de antigüedad e indemnizaciones aplicables.',
+      'Calcula el finiquito o la liquidación de un trabajador según la Ley Federal del Trabajo: aguinaldo, vacaciones, prima vacacional, prima de antigüedad e indemnizaciones aplicables. Úsalo para cuantificar un finiquito o liquidación al terminar una relación laboral. No lo uses para nómina periódica en curso. Las cantidades están en MXN (pesos mexicanos); las fechas usan el formato YYYY-MM-DD. Se aplica la Ley Federal del Trabajo (Arts. 48, 50, 76, 79, 80, 87, 162 y 486). El resultado es una referencia de cálculo, NO es un dictamen laboral; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
@@ -270,22 +313,31 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           description: 'Fecha de ingreso en formato ISO YYYY-MM-DD.',
         },
         fechaBaja: { type: 'string', description: 'Fecha de baja en formato ISO YYYY-MM-DD.' },
-        salarioDiario: { type: 'number', description: 'Salario diario ordinario en MXN.' },
+        salarioDiario: {
+          type: 'number',
+          description: 'Salario diario ordinario en MXN.',
+          minimum: 0,
+        },
         sdi: {
           type: 'number',
           description: 'Salario Diario Integrado para indemnizaciones en MXN.',
+          minimum: 0,
         },
         vacacionesPendientes: {
           type: 'number',
           description: 'Días de vacaciones pendientes de años anteriores (opcional, default: 0).',
+          minimum: 0,
         },
         aguinaldoPendiente: {
           type: 'number',
           description: 'Días de aguinaldo adeudados (opcional, default: 0).',
+          minimum: 0,
         },
         primaVacacionalPct: {
           type: 'number',
           description: 'Porcentaje de prima vacacional (default: 25).',
+          minimum: 0,
+          maximum: 100,
         },
         incluirPrimaAntiguedad: {
           type: 'boolean',
@@ -301,12 +353,14 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
       },
       required: ['tipoBaja', 'fechaIngreso', 'fechaBaja', 'salarioDiario', 'sdi'],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'calc_resico',
     description:
-      'Calcula la liquidación mensual de ISR e IVA para contribuyentes en RESICO, tanto Personas Físicas como Personas Morales.',
+      'Calcula la liquidación mensual de ISR e IVA para contribuyentes en RESICO, tanto Personas Físicas como Personas Morales. Úsalo para estimar los impuestos mensuales de un contribuyente en RESICO. No lo uses para regímenes generales de ISR ni para contribuyentes fuera de RESICO. Las cantidades están en MXN (pesos mexicanos); mes es un número del 1 al 12; el ejercicio es 2026. Se aplica la Ley del Impuesto sobre la Renta (Arts. 113-E y 113-J para Persona Física; Arts. 206 al 215 para Persona Moral) y la Ley del Impuesto al Valor Agregado (Arts. 1, 1-A y 5). El resultado es una referencia de cálculo, NO es un dictamen fiscal; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
@@ -320,41 +374,52 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
           type: 'number',
           description:
             'Monto de ingresos efectivamente cobrados amparados por CFDI en el mes (para PF) o acumulados en el ejercicio (para PM).',
+          minimum: 0,
         },
         deduccionesCobros: {
           type: 'number',
           description:
             'Deducciones autorizadas pagadas acumuladas (solo aplica para Persona Moral).',
+          minimum: 0,
         },
         retencionISR: {
           type: 'number',
           description: 'Monto de retención de ISR aplicable al contribuyente.',
+          minimum: 0,
         },
         ivaCobrado: {
           type: 'number',
           description: 'IVA trasladado efectivamente cobrado en el mes.',
+          minimum: 0,
         },
         ivaAcreditable: {
           type: 'number',
           description: 'IVA acreditable efectivamente pagado en gastos e inversiones.',
+          minimum: 0,
         },
         mes: {
           type: 'number',
           description: 'Número de mes a declarar (1 a 12).',
+          minimum: 1,
+          maximum: 12,
         },
       },
       required: ['tipoPersona', 'ingresosCobrados'],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'get_fiscal_values',
     description:
-      'Devuelve el catálogo fiscal vigente completo con valor, vigencia, fuente oficial y referencia legal.',
+      'Devuelve el catálogo fiscal vigente completo (22 valores) con valor, vigencia, fuente oficial y referencia legal (UMA, salario mínimo, ISN, recargos, IVA, cuotas IMSS, etc.). Úsalo para consultar valores fiscales oficiales y sus fuentes publicadas en el DOF. No lo uses para cálculos de nómina ni para obtener un dictamen. Los valores numéricos incluyen su unidad (MXN para montos, porcentaje para tasas); las vigencias tienen fecha de inicio y fin. Cada valor cita su fuente oficial en el DOF. El resultado es una referencia de consulta, NO es un dictamen fiscal; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {},
       required: [],
+      additionalProperties: false,
     },
+    annotations: { readOnly: true, idempotent: true, destructive: false, openWorld: false },
   },
   {
     name: 'consultar_progreso_guia',
