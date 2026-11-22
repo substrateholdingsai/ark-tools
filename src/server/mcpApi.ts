@@ -5,6 +5,7 @@ import { verifyStayPuftKey, hasStayPuftHeader } from './staypuft/staypuftConnect
 import { resolveTenantById } from './staypuft/staypuftConnector';
 import { timingSafeEqual } from './canacoConektaService';
 import { executeAiTool, AI_TOOLS_CATALOG } from './ai/tools';
+import { makeMcpToolError, type McpToolError } from './ai/mcpErrors';
 
 // Vista MCP de primera entrega: solo estas nueve herramientas se exponen en tools/list.
 // Las seis restantes siguen en AI_TOOLS_CATALOG (Noah las usa) pero no se listan aquí.
@@ -176,6 +177,64 @@ function jsonRpcError(id: unknown, code: number, message: string) {
   return { jsonrpc: '2.0', id: id ?? null, error: { code, message } };
 }
 
+function validateToolArgs(
+  tool: AiToolFunction,
+  args: Record<string, unknown>
+): McpToolError | null {
+  const schema = tool.parameters;
+  if (args === null || typeof args !== 'object' || Array.isArray(args)) {
+    return makeMcpToolError('VALIDATION_ERROR', 'Los argumentos deben ser un objeto.', null);
+  }
+  const props = schema.properties || {};
+  const propKeys = Object.keys(props);
+  for (const req of schema.required || []) {
+    if (!(req in args)) {
+      return makeMcpToolError('VALIDATION_ERROR', `Falta el campo requerido: ${req}.`, req);
+    }
+  }
+  if (schema.additionalProperties === false) {
+    for (const k of Object.keys(args)) {
+      if (!propKeys.includes(k)) {
+        return makeMcpToolError('VALIDATION_ERROR', `Campo no permitido: ${k}.`, k);
+      }
+    }
+  }
+  for (const [k, v] of Object.entries(args)) {
+    const pschema = props[k] as
+      { type?: string; enum?: unknown[]; minimum?: number; maximum?: number } | undefined;
+    if (!pschema) continue;
+    if (pschema.type === 'number' && typeof v !== 'number') {
+      return makeMcpToolError('VALIDATION_ERROR', `El campo ${k} debe ser numérico.`, k);
+    }
+    if (pschema.type === 'string' && typeof v !== 'string') {
+      return makeMcpToolError('VALIDATION_ERROR', `El campo ${k} debe ser texto.`, k);
+    }
+    if (pschema.type === 'boolean' && typeof v !== 'boolean') {
+      return makeMcpToolError('VALIDATION_ERROR', `El campo ${k} debe ser booleano.`, k);
+    }
+    if (pschema.enum && !pschema.enum.includes(v)) {
+      return makeMcpToolError('VALIDATION_ERROR', `El campo ${k} tiene un valor no permitido.`, k);
+    }
+    if (typeof v === 'number') {
+      if (pschema.minimum !== undefined && v < pschema.minimum) {
+        return makeMcpToolError(
+          'VALIDATION_ERROR',
+          `El campo ${k} debe ser mayor o igual a ${pschema.minimum}.`,
+          k
+        );
+      }
+      if (pschema.maximum !== undefined && v > pschema.maximum) {
+        return makeMcpToolError(
+          'VALIDATION_ERROR',
+          `El campo ${k} debe ser menor o igual a ${pschema.maximum}.`,
+          k
+        );
+      }
+    }
+  }
+  return null;
+}
+
 async function handleOne(req: any, env: Env, tenantId: string): Promise<any | null> {
   if (!req || typeof req !== 'object' || req.jsonrpc !== '2.0' || typeof req.method !== 'string') {
     return jsonRpcError(req?.id, -32600, 'Invalid Request');
@@ -221,29 +280,95 @@ async function handleOne(req: any, env: Env, tenantId: string): Promise<any | nu
       };
     case 'tools/call': {
       const name = req.params?.name;
-      const args = req.params?.arguments ?? {};
+      const args = (req.params?.arguments ?? {}) as Record<string, unknown>;
       if (typeof name !== 'string' || !name) {
-        return jsonRpcError(id, -32602, 'Missing tool name');
-      }
-      const result = await executeAiTool(name, args, env, tenantId);
-      if (!result.success) {
+        const err = makeMcpToolError(
+          'VALIDATION_ERROR',
+          'Falta el nombre de la herramienta.',
+          null
+        );
         return {
           jsonrpc: '2.0',
           id,
           result: {
-            content: [{ type: 'text', text: result.error || 'Error' }],
+            content: [{ type: 'text', text: JSON.stringify(err) }],
             isError: true,
+            error: err,
           },
         };
       }
-      return {
-        jsonrpc: '2.0',
-        id,
-        result: {
-          content: [{ type: 'text', text: JSON.stringify(result.data) }],
-          isError: false,
-        },
-      };
+
+      const exposed = MCP_FIRST_RELEASE_TOOLS.find((t) => t.name === name);
+      if (!exposed) {
+        const err = makeMcpToolError('UNKNOWN_TOOL', `Herramienta desconocida: "${name}".`, null);
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [{ type: 'text', text: JSON.stringify(err) }],
+            isError: true,
+            error: err,
+          },
+        };
+      }
+
+      const validationError = validateToolArgs(exposed, args || {});
+      if (validationError) {
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [{ type: 'text', text: JSON.stringify(validationError) }],
+            isError: true,
+            error: validationError,
+          },
+        };
+      }
+
+      try {
+        const result = await executeAiTool(name, args, env, tenantId);
+        if (!result.success) {
+          const err =
+            result.mcpError ||
+            makeMcpToolError(
+              'INTERNAL_ERROR',
+              typeof result.error === 'string' ? result.error : 'Error al ejecutar la herramienta.',
+              null
+            );
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: {
+              content: [{ type: 'text', text: JSON.stringify(err) }],
+              isError: true,
+              error: err,
+            },
+          };
+        }
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [{ type: 'text', text: JSON.stringify(result.data) }],
+            isError: false,
+          },
+        };
+      } catch {
+        const err = makeMcpToolError(
+          'INTERNAL_ERROR',
+          `Error al ejecutar la herramienta "${name}".`,
+          null
+        );
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: {
+            content: [{ type: 'text', text: JSON.stringify(err) }],
+            isError: true,
+            error: err,
+          },
+        };
+      }
     }
     default:
       if (isNotification) return null;
@@ -320,6 +445,6 @@ export async function handleMcpApiRequest(
   });
 }
 
-export const handleMcpRequest = handleMcpApiRequest;
+export { makeMcpToolError, type McpToolError, type McpToolErrorCode } from './ai/mcpErrors';
 export const handleMcp = handleMcpApiRequest;
 export const handleMcpApi = handleMcpApiRequest;

@@ -8,6 +8,8 @@
 
 import type { Env } from '../../index';
 import type { AiToolFunction } from './types';
+import { makeMcpToolError, type McpToolError } from './mcpErrors';
+import { validateFiscalCatalog } from './mcpCatalogGuard';
 import { calcularFiniquito } from '../../tools/finiquitos';
 import { calcularResicoPF, calcularResicoPM, type MesFiscal } from '../../tools/resico';
 import {
@@ -591,7 +593,7 @@ export async function executeAiTool(
   rawArgs: Record<string, unknown> | string,
   env: Env,
   tenantId: string
-): Promise<{ success: boolean; data?: unknown; error?: string }> {
+): Promise<{ success: boolean; data?: unknown; error?: string; mcpError?: McpToolError }> {
   const args: Record<string, unknown> =
     typeof rawArgs === 'string'
       ? (JSON.parse(rawArgs || '{}') as Record<string, unknown>)
@@ -871,6 +873,10 @@ export async function executeAiTool(
     }
 
     if (canonicalToolName === 'get_fiscal_values') {
+      const catalogError = validateFiscalCatalog();
+      if (catalogError) {
+        return { success: false, error: catalogError.message, mcpError: catalogError };
+      }
       return { success: true, data: getFiscalValuesEnvelope(args) };
     }
 
@@ -1085,13 +1091,22 @@ export async function executeAiTool(
         return {
           success: false,
           error: `Herramienta desconocida: "${toolName}".`,
+          mcpError: makeMcpToolError(
+            'UNKNOWN_TOOL',
+            `Herramienta desconocida: "${toolName}".`,
+            null
+          ),
         };
     }
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
-      error: `Error al ejecutar la herramienta "${toolName}": ${errorMsg}`,
+      error: `Error al ejecutar la herramienta "${toolName}".`,
+      mcpError: makeMcpToolError(
+        'INTERNAL_ERROR',
+        `Error al ejecutar la herramienta "${toolName}".`,
+        null
+      ),
     };
   }
 }

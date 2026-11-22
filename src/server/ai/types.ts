@@ -39,6 +39,9 @@ export interface AiToolFunction {
   };
 }
 
+export type { McpToolError, McpToolErrorCode } from './mcpErrors';
+export { makeMcpToolError } from './mcpErrors';
+
 export interface AiChatRequestBody {
   messages: AiChatMessage[];
   model?: string;
