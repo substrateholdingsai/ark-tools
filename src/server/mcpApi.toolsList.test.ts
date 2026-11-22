@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { handleMcpApiRequest } from './mcpApi';
 import { AI_TOOLS_CATALOG } from './ai/tools';
+import { MCP_FIRST_RELEASE_TOOLS } from './mcpApi';
 
 const env = {
   MCP_API_KEY: 'test-key',
@@ -25,13 +26,31 @@ async function listTools() {
 }
 
 describe('MCP tools/list', () => {
-  it('exposes every catalog tool with inputSchema', async () => {
+  it('exposes only the nine first-release tools with inputSchema', async () => {
     const tools = await listTools();
-    expect(tools.map((t) => t.name)).toEqual(AI_TOOLS_CATALOG.map((t) => t.name));
+    expect(tools.map((t) => t.name)).toEqual(MCP_FIRST_RELEASE_TOOLS.map((t) => t.name));
     for (const tool of tools) {
       expect(tool.inputSchema).toMatchObject({ type: 'object' });
       expect(typeof tool.description).toBe('string');
     }
+  });
+
+  it('tools/list returns exactly the nine first-release tools', async () => {
+    const tools = await listTools();
+    expect(tools).toHaveLength(9);
+    expect(tools.map((t) => t.name)).toEqual(MCP_FIRST_RELEASE_TOOLS.map((t) => t.name));
+    const expected = new Set([
+      'calc_isn',
+      'calc_sbc',
+      'calc_nomina',
+      'calc_finiquito',
+      'calc_resico',
+      'calc_modalidad40',
+      'calc_recargos',
+      'calc_retencion_clinicas',
+      'get_fiscal_values',
+    ]);
+    expect(new Set(tools.map((t) => t.name))).toEqual(expected);
   });
 
   it('forwards annotations verbatim from the catalog', async () => {

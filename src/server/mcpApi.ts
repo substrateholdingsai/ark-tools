@@ -5,6 +5,24 @@ import { verifyStayPuftKey, hasStayPuftHeader } from './staypuft/staypuftConnect
 import { resolveTenantById } from './staypuft/staypuftConnector';
 import { timingSafeEqual } from './canacoConektaService';
 import { executeAiTool, AI_TOOLS_CATALOG } from './ai/tools';
+
+// Vista MCP de primera entrega: solo estas nueve herramientas se exponen en tools/list.
+// Las seis restantes siguen en AI_TOOLS_CATALOG (Noah las usa) pero no se listan aquí.
+const MCP_FIRST_RELEASE_TOOL_NAMES = new Set<string>([
+  'calc_isn',
+  'calc_sbc',
+  'calc_nomina',
+  'calc_finiquito',
+  'calc_resico',
+  'calc_modalidad40',
+  'calc_recargos',
+  'calc_retencion_clinicas',
+  'get_fiscal_values',
+]);
+
+export const MCP_FIRST_RELEASE_TOOLS = AI_TOOLS_CATALOG.filter((t) =>
+  MCP_FIRST_RELEASE_TOOL_NAMES.has(t.name)
+);
 import type { AiToolFunction } from './ai/types';
 import { generateLlmsTxt } from './llmsTxt';
 import { sha256 } from './auth';
@@ -188,7 +206,7 @@ async function handleOne(req: any, env: Env, tenantId: string): Promise<any | nu
         jsonrpc: '2.0',
         id,
         result: {
-          tools: AI_TOOLS_CATALOG.map((t: AiToolFunction) => {
+          tools: MCP_FIRST_RELEASE_TOOLS.map((t: AiToolFunction) => {
             const tool: Record<string, unknown> = {
               name: t.name,
               description: t.description,
