@@ -20,20 +20,53 @@ import {
 } from '../../tools/modalidad40/lib/calcularModalidad40';
 import { VECTOR_REFERENCIA_MODALIDAD40 } from '../../tools/modalidad40/mensajes';
 import { calcularResultadoISN } from '../../tools/isn/lib/calcularISN';
+import { ESTADOS } from '../../tools/isn/data/estados';
 import { calcularRetencionClinicas } from '../../tools/retencion-clinicas/lib/calcularRetencionClinicas';
 import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
 import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
 import { PERIODOS } from '../../tools/nomina/data/periodos';
+import { FACTOR_INTEGRACION_SBC_DEFAULT } from '../../tools/nomina/data/defaults';
 import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import type { ParametrosNomina } from '../../tools/nomina/types';
+import { CATALOGO_2026, TASA_IVA_GENERAL } from '../../data/valores-vigentes/catalogo';
 import { listStoredRegulatoryEvents } from '../sentinela/sentinelaWebhook';
 import { buildWhatsAppDeepLink } from '../../lib/whatsappStudio';
 import { parseStrictBoolean } from '../../lib/parseBoolean';
+import {
+  getFiscalValuesEnvelope,
+  wrapCalcFiniquito,
+  wrapCalcIsn,
+  wrapCalcModalidad40,
+  wrapCalcNomina,
+  wrapCalcRecargos,
+  wrapCalcResico,
+  wrapCalcRetencionClinicas,
+  wrapCalcSbc,
+} from './mcpCalculationEnvelope';
+
+const fiscalValue = (id: string): number => {
+  const item = CATALOGO_2026.find((value) => value.id === id);
+  if (!item || typeof item.valor !== 'number') {
+    throw new Error(`Valor no encontrado en catálogo: ${id}`);
+  }
+  return item.valor;
+};
+
+const TOOL_ALIASES: Record<string, string> = {
+  calcular_modalidad_40: 'calc_modalidad40',
+  calcular_isn: 'calc_isn',
+  calcular_retencion_clinicas: 'calc_retencion_clinicas',
+  calcular_sbc: 'calc_sbc',
+  calcular_nomina_rapida: 'calc_nomina',
+  calcular_recargos_fiscales: 'calc_recargos',
+  calcular_finiquito_lft: 'calc_finiquito',
+  calcular_resico: 'calc_resico',
+};
 
 export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
-    name: 'calcular_modalidad_40',
+    name: 'calc_modalidad40',
     description: `Calcula una proyección Ley 73 y cuota de Modalidad 40 con los seis campos obligatorios. La regla de registro se basa en una medida temporal del Acuerdo ACDO.AS2.HCT.101026/302.P.DG, cuyo alcance jurídico es materia de discusión. Vector de referencia: ${JSON.stringify(VECTOR_REFERENCIA_MODALIDAD40)}`,
     parameters: {
       type: 'object',
@@ -61,7 +94,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
         asignacionFamiliar: {
           type: 'boolean',
-          description: 'Si cuenta con cónyuge o solicita ayuda asistencial por soledad (+15%).',
+          description: 'Si cuenta con cónyuge o solicita ayuda asistencial por soledad.',
         },
       },
       required: [
@@ -75,9 +108,8 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
     },
   },
   {
-    name: 'calcular_isn',
-    description:
-      'Calcula el Impuesto Sobre Nómina (ISN) estatal: suma de percepciones gravadas por la tasa del estado. Para Yucatán 2026 soporta tasa bruta 3.75%, estímulo Decreto 147/2025 (-0.75% = 3.0% neto para 1-50 empleados) y gobierno estatal (+1% = 4.75% bruto).',
+    name: 'calc_isn',
+    description: `Calcula el Impuesto Sobre Nómina (ISN) estatal usando la tasa oficial del estado y las reglas vigentes del ejercicio. Yucatán usa la fuente central ${fiscalValue('ISN_YUC_2026_GENERAL')} % para la tasa general.`,
     parameters: {
       type: 'object',
       properties: {
@@ -87,7 +119,8 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
         tasa: {
           type: 'number',
-          description: 'Tasa del ISN del estado en porcentaje (ej. 3.75 para YUC 2026 general).',
+          description:
+            'Tasa de respaldo para estados sin entrada en el catálogo estatal; la tasa oficial declarada para el estado seleccionado prevalece cuando existe.',
         },
         estadoId: {
           type: 'string',
@@ -107,7 +140,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
         esGobiernoEstatal: {
           type: 'boolean',
-          description: 'Si corresponde a trabajadores de gobierno estatal (+1% Art. 24 LGHY).',
+          description: 'Si corresponde a trabajadores de gobierno estatal (Art. 24 LGHY).',
         },
         aplica27A: {
           type: 'boolean',
@@ -118,9 +151,9 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
     },
   },
   {
-    name: 'calcular_retencion_clinicas',
+    name: 'calc_retencion_clinicas',
     description:
-      'Calcula la retención del 2% para clínicas y hospitales en Yucatán (Art. 20-Bis LGHY, D.O. 26-dic-2025): base, retención 2%, neto a pagar, impuesto profesional 3% informativo y fechas límite AAFY-30 / AAFY-31.',
+      'Calcula la retención para clínicas y hospitales en Yucatán (Art. 20-Bis LGHY, D.O. 26-dic-2025): base, retención, neto a pagar, impuesto profesional informativo y fechas límite AAFY-30 / AAFY-31.',
     parameters: {
       type: 'object',
       properties: {
@@ -141,9 +174,9 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
     },
   },
   {
-    name: 'calcular_sbc',
+    name: 'calc_sbc',
     description:
-      'Calcula el Salario Base de Cotización (SBC) IMSS: factor de integración por prestaciones (vacaciones, prima vacacional, aguinaldo), SBC bruto y SBC final aplicando topes (mínimo salario mínimo, máximo 25 UMAs).',
+      'Calcula el Salario Base de Cotización (SBC) IMSS: factor de integración por prestaciones, SBC bruto y SBC final aplicando los topes vigentes.',
     parameters: {
       type: 'object',
       properties: {
@@ -165,7 +198,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
     },
   },
   {
-    name: 'calcular_nomina_rapida',
+    name: 'calc_nomina',
     description:
       'Calcula nómina rápida: ISR con subsidio al empleo, cuotas obreras IMSS y neto a pagar por período (diario/semanal/quincenal/mensual). Obrero únicamente; sin cédula, sin folio, sin exportación. SBC diario sin aplicar topes/pisos de Tool 6 salvo que se proporcione.',
     parameters: {
@@ -185,16 +218,15 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         sbcDiario: {
           type: 'number',
           description:
-            'SBC diario para IMSS obrero. Si se omite, default = round((sueldoBruto/diasPeriodo)*1.0493, 2).',
+            'SBC diario para IMSS obrero. Si se omite, usa el factor de integración mínimo documentado de la herramienta.',
         },
       },
       required: ['periodo', 'sueldoBruto'],
     },
   },
   {
-    name: 'calcular_recargos_fiscales',
-    description:
-      'Calcula la actualización inflacionaria (INPC Art. 17-A CFF) y recargos por mora (Art. 21 CFF y LIF al 1.47% mensual) de contribuciones federales omitidas.',
+    name: 'calc_recargos',
+    description: `Calcula la actualización inflacionaria (INPC Art. 17-A CFF) y recargos por mora con la tasa vigente ${fiscalValue('TASA_RECARGOS_MORA_2026')} % mensual para contribuciones federales omitidas.`,
     parameters: {
       type: 'object',
       properties: {
@@ -221,9 +253,9 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
     },
   },
   {
-    name: 'calcular_finiquito_lft',
+    name: 'calc_finiquito',
     description:
-      'Calcula con precisión legal el finiquito o liquidación constitucional de un trabajador según la Ley Federal del Trabajo (LFT). Incluye aguinaldo proporcional (Art. 87), vacaciones dignas 2023 (Art. 76), prima vacacional (Art. 80), prima de antigüedad con tope 2xSMG (Arts. 162 y 486), e indemnizaciones de 90 días y 20 días por año (Art. 50).',
+      'Calcula el finiquito o liquidación de un trabajador según la Ley Federal del Trabajo. Incluye aguinaldo, vacaciones, prima vacacional, prima de antigüedad e indemnizaciones aplicables.',
     parameters: {
       type: 'object',
       properties: {
@@ -272,9 +304,9 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
     },
   },
   {
-    name: 'calcular_resico',
+    name: 'calc_resico',
     description:
-      'Calcula la liquidación mensual de ISR e IVA para contribuyentes en el Régimen Simplificado de Confianza (RESICO). Soporta Persona Física (Art. 113-E con tasas 1.0% a 2.5%, retención 1.25% de personas morales y tope 3.5M) y Persona Moral (Art. 206 base flujo de efectivo al 30%).',
+      'Calcula la liquidación mensual de ISR e IVA para contribuyentes en RESICO, tanto Personas Físicas como Personas Morales.',
     parameters: {
       type: 'object',
       properties: {
@@ -296,8 +328,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
         retencionISR: {
           type: 'number',
-          description:
-            'Monto de retención de ISR (1.25% por PM para PF, o retenciones bancarias acumuladas para PM).',
+          description: 'Monto de retención de ISR aplicable al contribuyente.',
         },
         ivaCobrado: {
           type: 'number',
@@ -313,6 +344,16 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
       },
       required: ['tipoPersona', 'ingresosCobrados'],
+    },
+  },
+  {
+    name: 'get_fiscal_values',
+    description:
+      'Devuelve el catálogo fiscal vigente completo con valor, vigencia, fuente oficial y referencia legal.',
+    parameters: {
+      type: 'object',
+      properties: {},
+      required: [],
     },
   },
   {
@@ -490,20 +531,21 @@ export async function executeAiTool(
     typeof rawArgs === 'string'
       ? (JSON.parse(rawArgs || '{}') as Record<string, unknown>)
       : rawArgs || {};
+  const canonicalToolName = TOOL_ALIASES[toolName] ?? toolName;
 
   try {
     // 1. Herramientas de cálculo puro (no requieren base de datos)
-    if (toolName === 'calcular_modalidad_40') {
+    if (canonicalToolName === 'calc_modalidad40') {
       const validacion = validarParametrosModalidad40(args);
       if (!validacion.ok) {
         return { success: false, error: validacion.error };
       }
 
       const resultado = await simularModalidad40(validacion.valor);
-      return { success: true, data: resultado };
+      return { success: true, data: wrapCalcModalidad40(args, resultado) };
     }
 
-    if (toolName === 'calcular_recargos_fiscales') {
+    if (canonicalToolName === 'calc_recargos') {
       const validacion = validarEntradaRecargos(args);
       if (!validacion.ok) {
         return {
@@ -520,23 +562,26 @@ export async function executeAiTool(
         fechaPago: String(args.fechaPago),
         tipoRecargo: args.tipoRecargo === 'estatal_yucatan' ? 'estatal_yucatan' : 'federal',
       });
-      return { success: true, data: resultado };
+      return { success: true, data: wrapCalcRecargos(args, resultado) };
     }
 
-    if (toolName === 'calcular_isn') {
+    if (canonicalToolName === 'calc_isn') {
       const baseGravable = Number(args.baseGravable || 0);
       const tasa = Number(args.tasa || 0);
       const conceptos: ConceptoPercepcion[] = [
         { id: 1, concepto: 'Base gravable', gravado: baseGravable, exento: 0 },
       ];
-      const estado: Estado = {
-        id: String(args.estadoId || 'ai').toUpperCase(),
-        nombre: String(args.estadoId || 'AI'),
-        corto: String(args.estadoId || 'AI'),
-        tasa,
-        vigencia: '2026',
-        articulo: 'N/A',
-      };
+      const estadoId = String(args.estadoId || 'AI').toUpperCase();
+      const estado: Estado =
+        ESTADOS.find((item) => item.id === estadoId) ??
+        ({
+          id: estadoId,
+          nombre: estadoId,
+          corto: estadoId,
+          tasa,
+          vigencia: '2026',
+          articulo: 'N/A',
+        } satisfies Estado);
       const rawNumEmpleados =
         args.numEmpleados !== undefined ? Number(args.numEmpleados) : undefined;
       const resultado = calcularResultadoISN(conceptos, estado, {
@@ -549,10 +594,10 @@ export async function executeAiTool(
         esGobiernoEstatal: parseStrictBoolean(args.esGobiernoEstatal) ?? false,
         aplica27A: parseStrictBoolean(args.aplica27A) ?? false,
       });
-      return { success: true, data: resultado };
+      return { success: true, data: wrapCalcIsn(args, estadoId, resultado) };
     }
 
-    if (toolName === 'calcular_retencion_clinicas') {
+    if (canonicalToolName === 'calc_retencion_clinicas') {
       const resultado = calcularRetencionClinicas({
         estadoId: String(args.estadoId || 'YUC'),
         montoHonorarios: Number(args.montoHonorarios || 0),
@@ -560,10 +605,10 @@ export async function executeAiTool(
         retenedor: { nombre: 'Retenedor', rfc: 'XAXX010101000' },
         prestador: { nombre: 'Prestador', rfc: 'XAXX010101000', tipoPersona: 'fisica' },
       });
-      return { success: true, data: resultado };
+      return { success: true, data: wrapCalcRetencionClinicas(args, resultado) };
     }
 
-    if (toolName === 'calcular_sbc') {
+    if (canonicalToolName === 'calc_sbc') {
       const zonaRaw = args.zona ?? args.zonaSalarial ?? 'general';
       const zona = zonaRaw === 'frontera' || zonaRaw === 'zlfn' ? 'frontera' : 'general';
       const parametros: ParametrosSBC = {
@@ -574,10 +619,10 @@ export async function executeAiTool(
         zona,
       } as ParametrosSBC;
       const resultado = calcularResultadoSBC(parametros);
-      return { success: true, data: resultado };
+      return { success: true, data: wrapCalcSbc(args, resultado) };
     }
 
-    if (toolName === 'calcular_nomina_rapida') {
+    if (canonicalToolName === 'calc_nomina') {
       const NOMINA_CANONICAL_FIELDS = new Set([
         'periodo',
         'sueldoBruto',
@@ -642,7 +687,7 @@ export async function executeAiTool(
       const sbcProporcionado = args.sbcDiario != null;
       const sbcDiario = sbcProporcionado
         ? Number(args.sbcDiario)
-        : Math.round((sueldoBruto / diasPeriodo) * 1.0493 * 100) / 100;
+        : Math.round((sueldoBruto / diasPeriodo) * FACTOR_INTEGRACION_SBC_DEFAULT * 100) / 100;
       if (!Number.isFinite(sbcDiario)) {
         return { success: false, error: "Campo 'sbcDiario' debe ser numérico." };
       }
@@ -657,15 +702,16 @@ export async function executeAiTool(
       const resultado = calcularNomina(parametros);
       return {
         success: true,
-        data: {
-          ...resultado,
-          sbcDiarioEfectivo: sbcDiario,
-          sbcDiarioFuente: sbcProporcionado ? 'proporcionado' : 'default_1.0493',
-        },
+        data: wrapCalcNomina(
+          args,
+          resultado,
+          sbcDiario,
+          sbcProporcionado ? 'proporcionado' : 'default'
+        ),
       };
     }
 
-    if (toolName === 'calcular_finiquito_lft') {
+    if (canonicalToolName === 'calc_finiquito') {
       const resultado = calcularFiniquito({
         tipoBaja: (args.tipoBaja as 'finiquito' | 'liquidacion') || 'finiquito',
         fechaIngreso: String(args.fechaIngreso || ''),
@@ -687,10 +733,10 @@ export async function executeAiTool(
           error: resultado.errores.map((e) => `${e.campo}: ${e.mensaje}`).join(', '),
         };
       }
-      return { success: true, data: resultado.valor };
+      return { success: true, data: wrapCalcFiniquito(args, resultado.valor) };
     }
 
-    if (toolName === 'calcular_resico') {
+    if (canonicalToolName === 'calc_resico') {
       // (a) reject unknown 'ingresos' field
       if (Object.prototype.hasOwnProperty.call(args, 'ingresos')) {
         return {
@@ -708,7 +754,7 @@ export async function executeAiTool(
       }
       const mes = mesRaw as MesFiscal;
 
-      let tasaIVA: number | 'exento' = (args.tasaIVA as number | 'exento') ?? 0.16;
+      let tasaIVA: number | 'exento' = (args.tasaIVA as number | 'exento') ?? TASA_IVA_GENERAL;
       if (typeof tasaIVA === 'string') {
         const n = Number(tasaIVA);
         tasaIVA = Number.isNaN(n) ? tasaIVA : n;
@@ -732,7 +778,7 @@ export async function executeAiTool(
           mes,
           ejercicio: 2026,
         });
-        return { success: true, data: resultado };
+        return { success: true, data: wrapCalcResico(args, resultado) };
       } else {
         if (args.ingresosCobrados == null) {
           return { success: false, error: 'ingresosCobrados requerido (mes PF).' };
@@ -741,7 +787,7 @@ export async function executeAiTool(
           return {
             success: false,
             error:
-              'ingresosAcumuladosPrevios requerido para Persona FÃ­sica (control de tope 3.5M).',
+              'ingresosAcumuladosPrevios requerido para Persona Física para controlar el tope anual.',
           };
         }
         const resultado = calcularResicoPF({
@@ -755,8 +801,12 @@ export async function executeAiTool(
           mes,
           ejercicio: 2026,
         });
-        return { success: true, data: resultado };
+        return { success: true, data: wrapCalcResico(args, resultado) };
       }
+    }
+
+    if (canonicalToolName === 'get_fiscal_values') {
+      return { success: true, data: getFiscalValuesEnvelope(args) };
     }
 
     // 2. Herramientas que requieren D1
@@ -768,7 +818,7 @@ export async function executeAiTool(
       };
     }
 
-    switch (toolName) {
+    switch (canonicalToolName) {
       case 'consultar_progreso_guia': {
         const stepId = args.step_id ? Number(args.step_id) : null;
         if (stepId) {

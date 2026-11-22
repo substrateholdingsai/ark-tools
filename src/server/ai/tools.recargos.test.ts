@@ -70,7 +70,7 @@ describe('executeAiTool — calcular_recargos_fiscales (Monday contract)', () =>
   it('vector dorado válido → success con importes exactos', async () => {
     const res = await executeAiTool('calcular_recargos_fiscales', dorado as any, mockEnv, tenant);
     expect(res.success).toBe(true);
-    const data = res.data as any;
+    const data = (res.data as any).result.details;
     expect(data.impuestoActualizado).toBe(46134);
     expect(data.montoRecargos).toBe(5425.36);
     expect(data.totalPagar).toBe(51559.36);
@@ -90,7 +90,10 @@ describe('executeAiTool — calcular_recargos_fiscales (Monday contract)', () =>
     );
 
     expect(res.success).toBe(true);
-    expect((res.data as { tipoRecargo: string }).tipoRecargo).toBe('estatal_yucatan');
-    expect((res.data as { tasaRecargosMensual: number }).tasaRecargosMensual).toBe(2.07);
+    const details = (
+      res.data as { result: { details: { tipoRecargo: string; tasaRecargosMensual: number } } }
+    ).result.details;
+    expect(details.tipoRecargo).toBe('estatal_yucatan');
+    expect(details.tasaRecargosMensual).toBe(2.07);
   });
 });

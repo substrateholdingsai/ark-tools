@@ -98,7 +98,7 @@ describe('Workers AI — Tools Catalog & Executor', () => {
 
     expect(res.success).toBe(true);
     expect(res.data).toBeDefined();
-    const data = res.data as any;
+    const data = (res.data as any).result.details;
     expect(data.totalFiniquito).toBeGreaterThan(0);
     expect(data.importeAguinaldo).toBe(7500); // 15 días * $500
   });
@@ -123,7 +123,7 @@ describe('Workers AI — Tools Catalog & Executor', () => {
 
     expect(res.success).toBe(true);
     expect(res.data).toBeDefined();
-    const data = res.data as any;
+    const data = (res.data as any).result.details;
     expect(data.tipoPersona).toBe('fisica');
     expect(data.tasaISRPct).toBe(1.1); // hasta 50,000 -> 1.1% = 550
     expect(data.isrCausado).toBe(550);
@@ -244,8 +244,8 @@ describe('Workers AI — Tools Catalog & Executor', () => {
     expect(data.alertas[0].titulo).toBe('Reforma Fiscal DOF 2026');
   });
 
-  it('calcular_isn publicado en AI_TOOLS_CATALOG declara los 8 inputs (estadoId, baseGravable, exento, ejercicio, numEmpleados, esMicroPequena2026, esGobiernoEstatal, aplica27A)', () => {
-    const isn = AI_TOOLS_CATALOG.find((t) => t.name === 'calcular_isn');
+  it('calc_isn publicado en AI_TOOLS_CATALOG declara los inputs oficiales', () => {
+    const isn = AI_TOOLS_CATALOG.find((t) => t.name === 'calc_isn');
     expect(isn).toBeDefined();
     const props = isn!.parameters.properties as Record<string, unknown>;
     const expected = [
@@ -266,7 +266,7 @@ describe('Workers AI — Tools Catalog & Executor', () => {
   });
 
   it('Modalidad 40 requiere los seis campos canónicos y no aplica defaults silenciosos', async () => {
-    const tool = AI_TOOLS_CATALOG.find((item) => item.name === 'calcular_modalidad_40');
+    const tool = AI_TOOLS_CATALOG.find((item) => item.name === 'calc_modalidad40');
     expect(tool?.parameters.required).toEqual([
       'ultimoSbc',
       'sbcDeseado',
@@ -294,6 +294,9 @@ describe('Workers AI — Tools Catalog & Executor', () => {
       'tenant_test'
     );
     expect(valid.success).toBe(true);
-    expect((valid.data as { limites: { sbcEfectivo: number } }).limites.sbcEfectivo).toBe(717.31);
+    expect(
+      (valid.data as { result: { details: { limites: { sbcEfectivo: number } } } }).result.details
+        .limites.sbcEfectivo
+    ).toBe(717.31);
   });
 });

@@ -25,22 +25,24 @@ const ALLOWED_MODELS = new Set<string>([DEFAULT_MODEL, FAST_MODEL]);
  * instrucción de cuándo usarla. `agent.test.ts` falla si falta alguna.
  */
 export const DIRECTIVAS_HERRAMIENTAS: Record<string, string> = {
-  calcular_modalidad_40:
-    'Si te piden proyectar pensión Ley 73, estimar cuotas de Modalidad 40, evaluar el límite aplicado por el Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (DOF 21/10/2026) o ROI, invoca "calcular_modalidad_40" con sus seis campos obligatorios. Describe el Acuerdo como una medida temporal cuyo alcance frente a la LSS y su Reglamento es materia de discusión jurídica; no lo presentes como criterio definitivo ni como resolución IMSS.',
-  calcular_recargos_fiscales:
-    'Si te piden calcular actualización por inflación, INPC, recargos fiscales o adeudos tributarios en mora (CFF Arts. 17-A y 21), invoca "calcular_recargos_fiscales".',
-  calcular_isn:
-    'Si te piden calcular el Impuesto Sobre Nómina (ISN) estatal, invoca "calcular_isn" con baseGravable, tasa, estadoId, ejercicio (2025 o 2026), numEmpleados, esMicroPequena2026, esGobiernoEstatal y aplica27A. Para Yucatán 2026 micro/pequeña (1-50 empleados): tasa bruta 3.75%, estímulo Decreto 147/2025 -0.75%, neto 3.0%. Vector demo: $250,000, 15 empleados, 2026 → $9,375 − $1,875 = $7,500 neto (tasa efectiva 3.0%). Gobierno estatal +1% = 4.75% bruto.',
-  calcular_retencion_clinicas:
-    'Si te piden calcular la retención del 2% para clínicas y hospitales en Yucatán (Art. 20-Bis LGHY, AAFY-30, AAFY-31), invoca "calcular_retencion_clinicas".',
-  calcular_sbc:
-    'Si te piden calcular el Salario Base de Cotización (SBC) IMSS, invoca "calcular_sbc" con el salario diario y las prestaciones.',
-  calcular_nomina_rapida:
-    'Si te piden calcular nómina rápida (ISR, IMSS obrero, neto a pagar) por período, invoca "calcular_nomina_rapida".',
-  calcular_finiquito_lft:
-    'Si te piden un cálculo laboral (finiquito, liquidación, aguinaldo, vacaciones, prima de antigüedad, indemnización), invoca "calcular_finiquito_lft" para calcular con la LFT vigente (Arts. 48, 50, 76, 80, 87, 162 y 486).',
-  calcular_resico:
-    'Si te piden liquidar o estimar impuestos de RESICO (ingresos, tasas 1% a 2.5%, retención 1.25%, IVA, tope $3.5M), invoca "calcular_resico" para Persona Física y Persona Moral.',
+  calc_modalidad40:
+    'Si te piden proyectar pensión Ley 73, estimar cuotas de Modalidad 40, evaluar el límite del Acuerdo ACDO.AS2.HCT.101026/302.P.DG o ROI, invoca "calc_modalidad40" con sus seis campos obligatorios.',
+  calc_recargos:
+    'Si te piden calcular actualización por inflación, INPC, recargos fiscales o adeudos tributarios en mora (CFF Arts. 17-A y 21), invoca "calc_recargos".',
+  calc_isn:
+    'Si te piden calcular el Impuesto Sobre Nómina estatal, invoca "calc_isn" con los campos de nómina y las opciones del régimen aplicable.',
+  calc_retencion_clinicas:
+    'Si te piden calcular la retención para clínicas y hospitales en Yucatán, invoca "calc_retencion_clinicas".',
+  calc_sbc:
+    'Si te piden calcular el Salario Base de Cotización (SBC) IMSS, invoca "calc_sbc" con el salario diario y las prestaciones.',
+  calc_nomina:
+    'Si te piden calcular nómina rápida (ISR, IMSS obrero y neto a pagar), invoca "calc_nomina".',
+  calc_finiquito:
+    'Si te piden un finiquito, liquidación o concepto laboral relacionado, invoca "calc_finiquito" para calcular con la LFT vigente.',
+  calc_resico:
+    'Si te piden liquidar o estimar ISR e IVA de RESICO, invoca "calc_resico" para Persona Física o Persona Moral.',
+  get_fiscal_values:
+    'Si te piden valores, vigencias o fuentes oficiales del catálogo fiscal vigente, invoca "get_fiscal_values".',
   consultar_progreso_guia:
     'Si preguntan por el avance, el checklist o los borradores de defensa de la Guía SAT/IMSS, invoca "consultar_progreso_guia".',
   consultar_auditoria_ledger:
@@ -168,7 +170,7 @@ CATÁLOGO OFICIAL DE LAS ${TOTAL_HERRAMIENTAS} HERRAMIENTAS DE ARK LEDGER:
 17. Monitor de Actividades Vulnerables LFPIORPI ('monitor-lfpiorpi'):
     - Detección de umbrales en UMA 2026 (Identificación 1,605 UMA / Aviso SAT-UIF 3,210 UMA) con regla de acumulación de 6 meses.
 18. Calculadora de Actualización y Recargos Fiscales ('recargos'):
-    - Actualización inflacionaria (INPC Art. 17-A CFF) y recargos por mora (1.47% mensual Art. 21 CFF) con cédula oficial y Folio de Integridad (hash SHA-256 local).
+    - Actualización inflacionaria (INPC Art. 17-A CFF) y recargos por mora con cédula oficial y Folio de Integridad de referencia.
 19. Simulador de Modalidad 40 ('modalidad40'):
     - Proyección actuarial Ley 73 auditando el tope del Acuerdo DOF 21/10/2026 (salario previo + 1 UMA), ROI y pensión neta mensual.
 20. Detector Forense de Comportamientos Atípicos en CFDI ('auditor-cfdi-atipico'):

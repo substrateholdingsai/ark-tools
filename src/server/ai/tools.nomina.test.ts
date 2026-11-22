@@ -27,7 +27,7 @@ describe('executeAiTool — calcular_nomina_rapida (Monday contract)', () => {
     expect(String(res.error)).toContain('campoInventado');
   });
 
-  it('sin sbcDiario usa default 1.0493 y reporta efectivo/fuente', async () => {
+  it('sin sbcDiario usa el factor documentado y reporta efectivo/fuente', async () => {
     const res = await executeAiTool(
       'calcular_nomina_rapida',
       { periodo: 'mensual', sueldoBruto: 18000, diasTrabajados: 30, diasPeriodo: 30 },
@@ -35,9 +35,9 @@ describe('executeAiTool — calcular_nomina_rapida (Monday contract)', () => {
       'tenant_test'
     );
     expect(res.success).toBe(true);
-    const data = res.data as any;
+    const data = (res.data as any).result.details;
     expect(data.sbcDiarioEfectivo).toBe(629.58);
-    expect(data.sbcDiarioFuente).toBe('default_1.0493');
+    expect(data.sbcDiarioFuente).toBe('default');
     expect(data.imss.sbc).toBe(629.58);
     expect(data.imss.total).toBe(427.73);
     expect(data.isr.isrFinal).toBe(2033.23);
@@ -57,7 +57,7 @@ describe('executeAiTool — calcular_nomina_rapida (Monday contract)', () => {
       'tenant_test'
     );
     expect(res.success).toBe(true);
-    const data = res.data as any;
+    const data = (res.data as any).result.details;
     expect(data.sbcDiarioEfectivo).toBe(600);
     expect(data.sbcDiarioFuente).toBe('proporcionado');
     expect(data.imss.sbc).toBe(600);

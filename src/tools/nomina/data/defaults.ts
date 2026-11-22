@@ -25,6 +25,9 @@ export const PARAMETROS_DEFAULT: ParametrosNomina = {
   sbcDiario: 610, // Estimado: 18,000 / 30 × factor 1.05 aprox.
 };
 
+/** Factor documentado de integración mínima usado cuando nómina rápida no recibe SBC. */
+export const FACTOR_INTEGRACION_SBC_DEFAULT = 1.0493;
+
 /**
  * Presets de sueldo mensual (para botones rápidos).
  * Basados en salario mínimo oficial del catálogo.
