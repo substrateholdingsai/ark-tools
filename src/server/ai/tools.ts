@@ -59,7 +59,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calc_modalidad40',
     description:
-      'Calcula una proyección bajo la Ley 73 y la cuota de Modalidad 40 (continuación voluntaria del IMSS), con ROI y pensión mensual estimada. Úsalo para estimar cuotas de Modalidad 40 a partir del último SBC. No lo uses para calcular una pensión ya otorgada por el IMSS ni como garantía de derecho a pensión. Las cantidades están en MXN (pesos mexicanos); semanasPrevias y mesesAportacion son enteros; edadJubilacion está entre 60 y 65. Se aplica la Ley del Seguro Social de 1973 (Arts. 164, 167 y 171) y el Acuerdo ACDO.AS2.HCT.101026/302.P.DG (medida temporal vigente desde 22/10/2026, cuyo alcance jurídico está en discusión). El resultado es una referencia de cálculo, NO es un dictamen del IMSS; la decisión final corresponde al profesional.',
+      'Calcula una proyección bajo la Ley 73 y la cuota de Modalidad 40 (continuación voluntaria del IMSS), con ROI y pensión mensual estimada. Úsalo para estimar cuotas de Modalidad 40 a partir del último SBC. No lo uses para calcular una pensión ya otorgada por el IMSS ni como garantía de derecho a pensión. Las cantidades están en MXN (pesos mexicanos); semanasPrevias y mesesAportacion son enteros; edadJubilacion está entre 60 y 65. Se aplica la Ley del Seguro Social de 1973 (Arts. 164, 167 y 171) y el Acuerdo ACDO.AS2.HCT.101026/302.P.DG (medida temporal vigente desde 21/10/2026, cuyo alcance jurídico está en discusión). El resultado es una referencia de cálculo, NO es un dictamen del IMSS; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
@@ -108,7 +108,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calc_isn',
     description:
-      'Calcula el Impuesto Sobre Nómina (ISN) estatal sobre la base gravable usando la tasa del estado y las reglas del ejercicio fiscal. Úsalo para estimar el ISN a retener o pagar de una nómina. No lo uses para ISR federal ni para cuotas patronales del IMSS. Las cantidades están en MXN (pesos mexicanos); el ejercicio es 2025 o 2026; el estado se identifica por código (ej. "YUC"); numEmpleados está entre 1 y 50. Se aplica la Ley de Hacienda del estado correspondiente (para Yucatán, Arts. 21 al 27 de la LGHY, incluido su Art. 24). El resultado es una referencia de cálculo, NO es un dictamen fiscal; la decisión final corresponde al profesional.',
+      'Calcula el Impuesto Sobre Nómina (ISN) estatal sobre la base gravable usando la tasa del estado y las reglas del ejercicio fiscal. Úsalo para estimar el ISN a retener o pagar de una nómina. No lo uses para ISR federal ni para cuotas patronales del IMSS. Las cantidades están en MXN (pesos mexicanos); el ejercicio es 2025 o 2026; el estado se identifica por código (ej. "YUC"); numEmpleados está entre 1 y 50 (si se omite, se aplica la tasa general sin el estímulo micro/pequeña). Se aplica la Ley de Hacienda del estado correspondiente (para Yucatán, Arts. 21 al 27 de la LGHY, incluido su Art. 24). El resultado es una referencia de cálculo, NO es un dictamen fiscal; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
@@ -135,7 +135,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
         },
         numEmpleados: {
           type: 'number',
-          description: 'Número de trabajadores (1-50 elegible a Decreto 147/2025 in YUC 2026).',
+          description: 'Número de trabajadores (1-50 elegible a Decreto 147/2025 en YUC 2026).',
           minimum: 1,
           maximum: 50,
         },
@@ -298,7 +298,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calc_finiquito',
     description:
-      'Calcula el finiquito o la liquidación de un trabajador según la Ley Federal del Trabajo: aguinaldo, vacaciones, prima vacacional, prima de antigüedad e indemnizaciones aplicables. Úsalo para cuantificar un finiquito o liquidación al terminar una relación laboral. No lo uses para nómina periódica en curso. Las cantidades están en MXN (pesos mexicanos); las fechas usan el formato YYYY-MM-DD. Se aplica la Ley Federal del Trabajo (Arts. 48, 50, 76, 79, 80, 87, 162 y 486). El resultado es una referencia de cálculo, NO es un dictamen laboral; la decisión final corresponde al profesional.',
+      'Calcula el finiquito o la liquidación de un trabajador según la Ley Federal del Trabajo: aguinaldo, vacaciones, prima vacacional, prima de antigüedad e indemnizaciones aplicables. Úsalo para cuantificar un finiquito o liquidación al terminar una relación laboral. No lo uses para nómina periódica en curso. Las cantidades están en MXN (pesos mexicanos); las fechas usan el formato YYYY-MM-DD. Se aplica la Ley Federal del Trabajo (Arts. 50, 76, 79, 80, 87, 162 y 486). El resultado es una referencia de cálculo, NO es un dictamen laboral; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {
