@@ -120,7 +120,7 @@ function getNumericCatalogValue(id: string, fallback: number): number {
 const UMA_DIARIA_2026 = getNumericCatalogValue('UMA_DIARIA_2026', 117.31);
 const SMG_GENERAL_2026 = getNumericCatalogValue('SALARIO_MINIMO_GENERAL_2026', 315.04);
 const SMG_FRONTERA_2026 = getNumericCatalogValue('SALARIO_MINIMO_FRONTERA_2026', 440.87);
-const TASA_RECARGOS_MORA_2026 = getNumericCatalogValue('TASA_RECARGOS_MORA_2026', 1.47);
+const TASA_RECARGOS_MORA_2026 = getNumericCatalogValue('TASA_RECARGOS_MORA_2026', 2.07);
 const YUCATAN_ISN_ESTADO = ESTADOS.find((e) => e.id === 'YUC');
 if (!YUCATAN_ISN_ESTADO) {
   throw new Error(

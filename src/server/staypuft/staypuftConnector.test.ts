@@ -775,17 +775,17 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
         expect(body.result).toBeDefined();
 
         if (tool.id === 'nomina') {
-          expect(body.result.isr.isrFinal).toBe(2033.23);
+          expect(body.result.isr.isrFinal).toBe(1956.45);
           expect(body.result.imss.total).toBe(427.73);
-          expect(body.result.neto).toBe(15539.04);
+          expect(body.result.neto).toBe(15615.82);
         }
         if (tool.id === 'recargos') {
           // Vector dorado verificado: no silent defaults, importes exactos
           expect(body.result.impuestoActualizado).toBe(46134);
-          expect(body.result.montoRecargos).toBe(5425.36);
-          expect(body.result.totalPagar).toBe(51559.36);
+          expect(body.result.montoRecargos).toBe(7639.79);
+          expect(body.result.totalPagar).toBe(53773.79);
           expect(body.result.mesesMora).toBe(8);
-          expect(body.result.tasaRecargosTotal).toBe(11.76);
+          expect(body.result.tasaRecargosTotal).toBe(16.56);
           expect(body.result.factorActualizacion).toBe(1.0252);
           expect(body.result.folioDeIntegridad).toMatch(/^REC-[0-9a-f]{8}$/);
           expect(body.result.folioDeIntegridad).not.toContain('e3b0c442');

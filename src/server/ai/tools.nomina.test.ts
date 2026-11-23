@@ -40,7 +40,7 @@ describe('executeAiTool — calcular_nomina_rapida (Monday contract)', () => {
     expect(data.sbcDiarioFuente).toBe('default');
     expect(data.imss.sbc).toBe(629.58);
     expect(data.imss.total).toBe(427.73);
-    expect(data.isr.isrFinal).toBe(2033.23);
+    expect(data.isr.isrFinal).toBe(1956.45);
   });
 
   it('con sbcDiario explícito usa exactamente ese valor', async () => {

@@ -71,7 +71,7 @@ const cases: Array<{
     },
     expected: (envelope) => {
       expect(envelope.result.details.sbcDiarioEfectivo).toBe(629.58);
-      expect(envelope.result.total).toBe(15539.04);
+      expect(envelope.result.total).toBe(15615.82);
     },
   },
   {
@@ -143,8 +143,8 @@ const cases: Array<{
     },
     expected: (envelope) => {
       expect(envelope.result.details.impuestoActualizado).toBe(46134);
-      expect(envelope.result.details.montoRecargos).toBe(5425.36);
-      expect(envelope.result.total).toBe(51559.36);
+      expect(envelope.result.details.montoRecargos).toBe(7639.79);
+      expect(envelope.result.total).toBe(53773.79);
       expect(envelope.integrity.value).toMatch(/^REC-[0-9a-f]{8}$/);
     },
   },

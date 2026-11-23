@@ -87,11 +87,11 @@ export interface ResultadoRecargos {
   mesesMora: number;
   /** Tasa mensual de recargos aplicada (1.47%) */
   tasaRecargosMensual: number;
-  /** Tasa total acumulada de recargos (mesesCobrados × tasaRecargosMensual, tope 88.2% a 60 meses) */
+  /** Tasa total acumulada de recargos (mesesCobrados × tasaRecargosMensual, tope 124.2% a 60 meses) */
   tasaRecargosTotal: number;
   /** Mesese efectivamente cobrados tras aplicar el tope de 60 meses (Art. 21 CFF) */
   mesesCobrados: number;
-  /** Indica si el tope de 60 meses / 88.2% se aplicó */
+  /** Indica si el tope de 60 meses / 124.2% se aplicó */
   recargosCapped: boolean;
   /** Monto total de recargos por mora */
   montoRecargos: number;

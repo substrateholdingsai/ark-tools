@@ -99,17 +99,17 @@ export const CATALOGO_2026: ValorFiscal[] = [
     id: 'TARIFA_ISR_MENSUAL_2026',
     nombre: 'Tarifa ISR Mensual 2026',
     valor: [
-      { limiteInferior: 0.01, limiteSuperior: 809.17, cuotaFija: 0, tasa: 0.0192 },
-      { limiteInferior: 809.18, limiteSuperior: 6872.78, cuotaFija: 15.53, tasa: 0.064 },
-      { limiteInferior: 6872.79, limiteSuperior: 12081.52, cuotaFija: 403.25, tasa: 0.1088 },
-      { limiteInferior: 12081.53, limiteSuperior: 14039.03, cuotaFija: 969.11, tasa: 0.16 },
-      { limiteInferior: 14039.04, limiteSuperior: 16799.16, cuotaFija: 1282.25, tasa: 0.1792 },
-      { limiteInferior: 16799.17, limiteSuperior: 33929.88, cuotaFija: 1776.73, tasa: 0.2136 },
-      { limiteInferior: 33929.89, limiteSuperior: 53464.77, cuotaFija: 5435.36, tasa: 0.2352 },
-      { limiteInferior: 53464.78, limiteSuperior: 102113.47, cuotaFija: 10035.72, tasa: 0.3 },
-      { limiteInferior: 102113.48, limiteSuperior: 135930.45, cuotaFija: 24629.32, tasa: 0.32 },
-      { limiteInferior: 135930.46, limiteSuperior: 407791.35, cuotaFija: 35466.03, tasa: 0.34 },
-      { limiteInferior: 407791.36, limiteSuperior: null, cuotaFija: 127911.73, tasa: 0.35 },
+      { limiteInferior: 0.01, limiteSuperior: 844.59, cuotaFija: 0, tasa: 0.0192 },
+      { limiteInferior: 844.6, limiteSuperior: 7168.51, cuotaFija: 16.22, tasa: 0.064 },
+      { limiteInferior: 7168.52, limiteSuperior: 12598.02, cuotaFija: 420.95, tasa: 0.1088 },
+      { limiteInferior: 12598.03, limiteSuperior: 14644.64, cuotaFija: 1011.68, tasa: 0.16 },
+      { limiteInferior: 14644.65, limiteSuperior: 17533.64, cuotaFija: 1339.14, tasa: 0.1792 },
+      { limiteInferior: 17533.65, limiteSuperior: 35362.83, cuotaFija: 1856.84, tasa: 0.2136 },
+      { limiteInferior: 35362.84, limiteSuperior: 55736.68, cuotaFija: 5665.16, tasa: 0.2352 },
+      { limiteInferior: 55736.69, limiteSuperior: 106410.5, cuotaFija: 10457.09, tasa: 0.3 },
+      { limiteInferior: 106410.51, limiteSuperior: 141880.66, cuotaFija: 25659.23, tasa: 0.32 },
+      { limiteInferior: 141880.67, limiteSuperior: 425641.99, cuotaFija: 37009.69, tasa: 0.34 },
+      { limiteInferior: 425642.0, limiteSuperior: null, cuotaFija: 133488.54, tasa: 0.35 },
     ],
     unidad: 'PORCENTAJE',
     vigencia: { inicio: '2026-01-01', fin: '2026-12-31' },
@@ -142,14 +142,15 @@ export const CATALOGO_2026: ValorFiscal[] = [
   {
     id: 'TASA_RECARGOS_MORA_2026',
     nombre: 'Tasa Mensual de Recargos por Mora (LIF 2026)',
-    valor: 1.47,
+    valor: 2.07,
     unidad: 'PORCENTAJE',
     vigencia: { inicio: '2026-01-01', fin: '2026-12-31' },
     fuente: {
       organismo: 'SAT',
-      publicacion: 'DOF 25/11/2025 (Ley de Ingresos de la Federación 2026)',
-      urlDOF: 'https://dof.gob.mx/nota_detalle.php?codigo=5775534&fecha=25/11/2025',
-      referencia: 'Artículo 8, fracción I penúltimo párrafo LIF 2026; Artículos 17-A y 21 CFF',
+      publicacion: 'DOF 07/11/2025 (Ley de Ingresos de la Federación 2026, edición vespertina)',
+      urlDOF: 'https://dof.gob.mx/nota_detalle.php?codigo=5775534&fecha=07/11/2025',
+      referencia:
+        'Artículo 11, fracción I, LIF 2026 (tasa de prórroga 1.38%) + Art. 21 CFF (+50% = 2.07% mora)',
     },
     esProyeccion: false,
     verificadoPor: 'Pavel M. — 2026-10-15',
@@ -385,7 +386,7 @@ export const CATALOGO_2026: ValorFiscal[] = [
 ];
 
 // ─── TASA DE RECARGOS VIGENTE (LIF Art. 8 / CFF Art. 21) ───────────
-export const TASA_RECARGOS_MORA_MENSUAL = 1.47;
+export const TASA_RECARGOS_MORA_MENSUAL = 2.07;
 
 // ─── TOPES Y TASAS DE DEDUCCIÓN DE INVERSIONES Y ARRENDAMIENTO (LISR Art. 28, 34 y 36) ─
 /** Tope MOI deducible para automóviles de combustión interna (LISR Art. 36 Fracc. II) */

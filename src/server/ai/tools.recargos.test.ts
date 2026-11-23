@@ -72,10 +72,10 @@ describe('executeAiTool — calcular_recargos_fiscales (Monday contract)', () =>
     expect(res.success).toBe(true);
     const data = (res.data as any).result.details;
     expect(data.impuestoActualizado).toBe(46134);
-    expect(data.montoRecargos).toBe(5425.36);
-    expect(data.totalPagar).toBe(51559.36);
+    expect(data.montoRecargos).toBe(7639.79);
+    expect(data.totalPagar).toBe(53773.79);
     expect(data.mesesMora).toBe(8);
-    expect(data.tasaRecargosTotal).toBe(11.76);
+    expect(data.tasaRecargosTotal).toBe(16.56);
     expect(data.factorActualizacion).toBe(1.0252);
     expect(data.folioDeIntegridad).toMatch(/^REC-[0-9a-f]{8}$/);
     expect(data.folioDeIntegridad).not.toContain('e3b0c442');

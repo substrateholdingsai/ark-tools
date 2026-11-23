@@ -87,9 +87,9 @@ describe('Recargos — Fixes 1, 3, 5 y validación (light audit)', () => {
       expect(r.mesesMora).toBe(8);
       expect(r.mesesCobrados).toBe(8);
       expect(r.recargosCapped).toBe(false);
-      expect(r.tasaRecargosTotal).toBe(11.76);
-      expect(r.montoRecargos).toBe(5425.36);
-      expect(r.totalPagar).toBe(51559.36);
+      expect(r.tasaRecargosTotal).toBe(16.56);
+      expect(r.montoRecargos).toBe(7639.79);
+      expect(r.totalPagar).toBe(53773.79);
       expect(r.impuestoActualizado).toBe(46134);
       expect(r.desgloseMeses).toHaveLength(8);
       expect(r.advertencias).toEqual([]);
@@ -97,8 +97,8 @@ describe('Recargos — Fixes 1, 3, 5 y validación (light audit)', () => {
     });
   });
 
-  describe('Fix 3 — Tope de 60 meses / 88.2% (Art. 21 CFF)', () => {
-    it('60 meses → tasa 88.2%, sin tope activado, desglose de 60', () => {
+  describe('Fix 3 — Tope de 60 meses / 124.2% (Art. 21 CFF)', () => {
+    it('60 meses → tasa 124.2%, sin tope activado, desglose de 60', () => {
       const r = calcularRecargosYActualizacion({
         importeHistorico: 100000,
         fechaVencimiento: '2021-06-17',
@@ -107,15 +107,15 @@ describe('Recargos — Fixes 1, 3, 5 y validación (light audit)', () => {
       expect(r.mesesMora).toBe(60);
       expect(r.mesesCobrados).toBe(60);
       expect(r.recargosCapped).toBe(false);
-      expect(r.tasaRecargosTotal).toBe(88.2);
+      expect(r.tasaRecargosTotal).toBe(124.2);
       expect(r.desgloseMeses).toHaveLength(60);
       expect(r.advertencias.some((a) => a.includes('Tope de recargos'))).toBe(false);
       const ultimo = r.desgloseMeses[r.desgloseMeses.length - 1]!;
-      expect(ultimo.tasaAcumulada).toBe(88.2);
-      expect(ultimo.recargoAcumulado).toBeCloseTo(r.impuestoActualizado * 0.882, 2);
+      expect(ultimo.tasaAcumulada).toBe(124.2);
+      expect(ultimo.recargoAcumulado).toBeCloseTo(r.impuestoActualizado * 1.242, 2);
     });
 
-    it('61 meses → se queda en 88.2%, advertencia presente, desglose topeado a 60', () => {
+    it('61 meses → se queda en 124.2%, advertencia presente, desglose topeado a 60', () => {
       const r = calcularRecargosYActualizacion({
         importeHistorico: 100000,
         fechaVencimiento: '2021-06-17',
@@ -124,14 +124,14 @@ describe('Recargos — Fixes 1, 3, 5 y validación (light audit)', () => {
       expect(r.mesesMora).toBe(61);
       expect(r.mesesCobrados).toBe(60);
       expect(r.recargosCapped).toBe(true);
-      expect(r.tasaRecargosTotal).toBe(88.2);
+      expect(r.tasaRecargosTotal).toBe(124.2);
       expect(r.desgloseMeses).toHaveLength(60);
       expect(r.advertencias.some((a) => a.includes('Tope de recargos Art. 21 CFF'))).toBe(true);
       expect(r.advertencias.some((a) => a.includes('60 meses'))).toBe(true);
-      // El tope limita la tasa al 88.2% sobre la base actualizada de este caso
-      expect(r.tasaRecargosTotal).toBe(88.2);
-      expect(r.montoRecargos).toBeCloseTo(Math.round(r.impuestoActualizado * 0.882 * 100) / 100, 2);
-      expect(r.desgloseMeses[r.desgloseMeses.length - 1]!.tasaAcumulada).toBe(88.2);
+      // El tope limita la tasa al 124.2% sobre la base actualizada de este caso
+      expect(r.tasaRecargosTotal).toBe(124.2);
+      expect(r.montoRecargos).toBeCloseTo(Math.round(r.impuestoActualizado * 1.242 * 100) / 100, 2);
+      expect(r.desgloseMeses[r.desgloseMeses.length - 1]!.tasaAcumulada).toBe(124.2);
     });
   });
 

@@ -106,10 +106,10 @@ describe('StayPuft connector — Recargos preview contract (Monday fixes)', () =
     const result = body.result as Record<string, unknown>;
     expect(result).toBeDefined();
     expect((result as any).impuestoActualizado).toBe(46134);
-    expect((result as any).montoRecargos).toBe(5425.36);
-    expect((result as any).totalPagar).toBe(51559.36);
+    expect((result as any).montoRecargos).toBe(7639.79);
+    expect((result as any).totalPagar).toBe(53773.79);
     expect((result as any).mesesMora).toBe(8);
-    expect((result as any).tasaRecargosTotal).toBe(11.76);
+    expect((result as any).tasaRecargosTotal).toBe(16.56);
     expect((result as any).factorActualizacion).toBe(1.0252);
     const folio = (result as any).folioDeIntegridad;
     expect(typeof folio).toBe('string');

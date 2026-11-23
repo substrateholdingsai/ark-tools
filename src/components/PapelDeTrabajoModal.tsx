@@ -293,7 +293,7 @@ export function PapelDeTrabajoModal({ isOpen, onClose, despachoName, client, exp
         importe: Number(outputs.impuestoActualizado) || 0,
       },
       {
-        concepto: `Recargos por Mora (${mesesMora} meses al 1.47% mensual)`,
+        concepto: `Recargos por Mora (${mesesMora} meses al 2.07% mensual)`,
         formula: `Tasa acumulada ${tasaTotal}% sobre Base Actualizada`,
         fundamento: 'CFF Art. 21 y LIF Art. 8',
         importe: Number(outputs.montoRecargos) || 0,

@@ -174,11 +174,11 @@ describe('Motor Matemático de Actualización y Recargos (Art. 17-A y 21 CFF)', 
       };
       const resultado = calcularRecargosYActualizacion(entrada);
       expect(resultado.tasaRecargosMensual).toBe(TASA_RECARGOS_MORA_PCT);
-      expect(resultado.tasaRecargosTotal).toBe(1.47);
-      expect(resultado.montoRecargos).toBe(Math.round(10000 * (1.47 / 100) * 100) / 100);
+      expect(resultado.tasaRecargosTotal).toBe(2.07);
+      expect(resultado.montoRecargos).toBe(Math.round(10000 * (2.07 / 100) * 100) / 100);
     });
 
-    it('usa 1.47% mensual cuando el tipo es federal', () => {
+    it('usa 2.07% mensual cuando el tipo es federal', () => {
       const resultado = calcularRecargosYActualizacion(
         {
           importeHistorico: 10000,
@@ -189,7 +189,7 @@ describe('Motor Matemático de Actualización y Recargos (Art. 17-A y 21 CFF)', 
       );
 
       expect(resultado.tipoRecargo).toBe('federal');
-      expect(resultado.tasaRecargosMensual).toBe(1.47);
+      expect(resultado.tasaRecargosMensual).toBe(2.07);
     });
 
     it('usa 2.07% mensual cuando el tipo es estatal Yucatán', () => {
@@ -207,7 +207,7 @@ describe('Motor Matemático de Actualización y Recargos (Art. 17-A y 21 CFF)', 
       expect(resultado.montoRecargos).toBe(207);
     });
 
-    it('produce un resultado estatal distinto al federal para el mismo escenario', () => {
+    it('federal y estatal Yucatán coinciden en 2.07% tras la actualización 2026', () => {
       const entrada = {
         importeHistorico: 10000,
         fechaVencimiento: '2024-05-17',
@@ -216,8 +216,8 @@ describe('Motor Matemático de Actualización y Recargos (Art. 17-A y 21 CFF)', 
       const federal = calcularRecargosYActualizacion(entrada, 'federal');
       const estatal = calcularRecargosYActualizacion(entrada, 'estatal_yucatan');
 
-      expect(estatal.tasaRecargosMensual).toBeGreaterThan(federal.tasaRecargosMensual);
-      expect(estatal.montoRecargos).not.toBe(federal.montoRecargos);
+      expect(estatal.tasaRecargosMensual).toBe(federal.tasaRecargosMensual);
+      expect(estatal.tasaRecargosMensual).toBe(2.07);
     });
   });
 });

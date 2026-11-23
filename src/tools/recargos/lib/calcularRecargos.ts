@@ -271,7 +271,7 @@ export function calcularRecargosYActualizacion(
   const impuestoActualizado = Math.round(importeHistorico * factorActualizacion * 100) / 100;
   const montoActualizacion = Math.round((impuestoActualizado - importeHistorico) * 100) / 100;
 
-  // Meses de mora (Art. 21 CFF) con tope legal de 60 meses (88.2%)
+  // Meses de mora (Art. 21 CFF) con tope legal de 60 meses (124.2%)
   const mesesMoraBruto = calcularMesesMora(entrada.fechaVencimiento, entrada.fechaPago);
   const TOPE_MESES_RECARGOS = 60;
   const mesesCobrados = Math.min(mesesMoraBruto, TOPE_MESES_RECARGOS);

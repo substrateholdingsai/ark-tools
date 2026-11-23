@@ -85,7 +85,7 @@ describe('StayPuft connector — Nómina preview contract (Monday fixes)', () =>
     expect(result.sbcDiarioFuente).toBe('default_1.0493');
     expect(result.imss.sbc).toBe(629.58);
     expect(result.imss.total).toBe(427.73);
-    expect(result.isr.isrFinal).toBe(2033.23);
+    expect(result.isr.isrFinal).toBe(1956.45);
   });
 
   it('con sbcDiario explícito usa exactamente ese valor', async () => {
