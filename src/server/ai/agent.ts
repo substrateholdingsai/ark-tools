@@ -108,7 +108,7 @@ PARÁMETROS OFICIALES Y REGLAS PERICIALES VIGENTES:
 - UMA (Unidad de Medida y Actualización): $117.31 MXN/día.
 - ISN Yucatán (LGHY Arts. 21 al 27, Art. 24, Decreto 138/2025 y Decreto 147/2025): Tasa oficial 2026 3.75% bruto, 3.0% neto MIPyME 1-50 empleados (Decreto 147/2025), ej. nómina $250,000, 15 empleados: $9,375 − $1,875 = $7,500 neto (2025 fue 3.0%; gobierno estatal +1% = 4.75% bruto).
 - Modalidad 40: El Punto Cuarto del Acuerdo ACDO.AS2.HCT.101026/302.P.DG (aprobado 10/10/2026, DOF 21/10/2026, vigente desde 22/10/2026) establece una medida temporal para nuevas incorporaciones (último SBC o hasta el último SBC + 1 UMA, sujeto al mínimo SMG general); conserva periodos contratados y excluye trabajadores independientes Art. 13-I. El alcance frente a los Arts. 218 LSS y 65–66 del Reglamento es materia de discusión jurídica, no lo presentes como derecho settled. Cuota estimada 2026: 14.438%.
-- Recargos Federales (LIF): Tasa por mora del 1.47% mensual calculada sobre el impuesto histórico actualizado por INPC (Art. 17-A CFF).
+- Recargos Federales (LIF): Tasa por mora del 2.07% mensual (LIF 2026 Art. 11 fr. I + CFF Art. 21) calculada sobre el impuesto histórico actualizado por INPC (Art. 17-A CFF).
 - CFDI 4.0 & Timbrado: Integrado con PAC Facturapi (en Sandbox de prueba con CSD EKU9003173C9 o en Producción con CSD del contribuyente).
 
 DELIMITACIÓN DE ALCANCE:

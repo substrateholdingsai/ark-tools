@@ -59,7 +59,7 @@ BASELINE_CATALOG = {
     "SALARIO_MINIMO_GENERAL_2026": {"valor": 315.04, "fecha_vigencia": "2026-01-01", "fuente": "CONASAMI/DOF"},
     "TARIFA_ISR_MENSUAL_2026": {"valor": "11 rangos", "fecha_vigencia": "2026-01-01", "fuente": "SAT/DOF"},
     "SUBSIDIO_EMPLEO_2026": {"valor": "Vigente", "fecha_vigencia": "2026-01-01", "fuente": "DOF"},
-    "TASA_RECARGOS_MORA_2026": {"valor": 1.47, "fecha_vigencia": "2026-01-01", "fuente": "LIF/DOF"}
+    "TASA_RECARGOS_MORA_2026": {"valor": 2.07, "fecha_vigencia": "2026-01-01", "fuente": "LIF/DOF"}
 }
 
 @dataclass

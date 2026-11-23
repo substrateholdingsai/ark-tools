@@ -27,6 +27,7 @@ const UMA_MENSUAL = obtenerValor('UMA_MENSUAL_2026', 3566.22);
 const SMG = obtenerValor('SALARIO_MINIMO_GENERAL_2026', 315.04);
 const SMZLFN = obtenerValor('SALARIO_MINIMO_FRONTERA_2026', 440.87);
 const TOPE_SBC_25_UMA = obtenerValor('TOPE_SBC_25_UMA_2026', 2932.75);
+const TASA_RECARGOS_MORA = obtenerValor('TASA_RECARGOS_MORA_2026', 2.07);
 
 /**
  * Renderiza el catálogo agrupado por categoría conservando el orden de aparición.
@@ -245,8 +246,8 @@ Factor = 1 + (Días_Aguinaldo / 365) + (Días_Vacaciones * Prima_Vacacional_Pct 
    - Efecto Inflacionario = \`Impuesto Actualizado - Impuesto Histórico\`.
 2. **Recargos por Mora (Art. 21 CFF):**
    - Causación por cada mes o fracción de mes que transcurra desde la fecha de vencimiento hasta la fecha de pago.
-   - Tasa oficial: 1.47% mensual según la Ley de Ingresos de la Federación (0.98% prórroga + 50% incremento por mora).
-   - Tasa acumulada = \`Meses Mora * 1.47%\`.
+   - Tasa oficial: ${fmt(TASA_RECARGOS_MORA)}% mensual según la Ley de Ingresos de la Federación (LIF 2026 Art. 11 fr. I + CFF Art. 21).
+   - Tasa acumulada = \`Meses Mora * ${fmt(TASA_RECARGOS_MORA)}%\`.
    - Monto de Recargos = \`Impuesto Actualizado * (Tasa Acumulada / 100)\`.
 3. **Total Deuda a Liquidar:** \`Impuesto Actualizado + Recargos por Mora\`.
 

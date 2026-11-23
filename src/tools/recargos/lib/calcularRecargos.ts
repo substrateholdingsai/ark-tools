@@ -10,7 +10,7 @@
  * 2. Artículo 21 del Código Fiscal de la Federación y Artículo 8 LIF:
  *    - Recargos por mora en concepto de indemnización al fisco federal.
  *    - Cómputo por cada mes o fracción de mes que transcurra.
- *    - Tasa oficial de 1.47% mensual según la Ley de Ingresos de la Federación.
+ *    - Tasa oficial de 2.07% mensual seg�n la Ley de Ingresos de la Federaci�n (LIF 2026).
  */
 
 import {

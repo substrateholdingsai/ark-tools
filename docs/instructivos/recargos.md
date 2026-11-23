@@ -2,7 +2,7 @@
 
 ## ¿Qué es?
 
-Herramienta #18. Calcula efecto inflacionario (INPC, Art. 17-A CFF) y recargos por mora en concepto de indemnización (Art. 21 CFF + Art. 8 LIF, tasa 1.47% mensual). Genera papel de trabajo y cédula oficial imprimible.
+Herramienta #18. Calcula efecto inflacionario (INPC, Art. 17-A CFF) y recargos por mora en concepto de indemnización (Art. 21 CFF + Art. 8 LIF, tasa 2.07% mensual). Genera papel de trabajo y cédula oficial imprimible.
 
 ## ¿Cómo lo hace?
 

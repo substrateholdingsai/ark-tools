@@ -353,7 +353,7 @@ Catálogo en `src/data/valores-vigentes/catalogo.ts` — **22 entradas oficiales
 5. `TOPE_SBC_25_UMA_2026` — Tope SBC 25 UMAs 2026
 6. `TARIFA_ISR_MENSUAL_2026` — Tarifa ISR mensual 2026 (11 rangos internos)
 7. `CUOTA_MODALIDAD_40_2026` — Cuota Modalidad 40 2026 (14.438%)
-8. `TASA_RECARGOS_MORA_2026` — Tasa recargos por mora 2026 (1.47% mensual)
+8. `TASA_RECARGOS_MORA_2026` — Tasa recargos por mora 2026 (2.07% mensual)
 9. `CUOTA_IMSS_PATRONAL_ENFERMEDADES_MATERNIDAD_FIJA_2026`
 10. `CUOTA_IMSS_PATRONAL_ENFERMEDADES_MATERNIDAD_ADICIONAL_2026`
 11. `CUOTA_IMSS_PATRONAL_GASTOS_MEDICOS_PENSIONADOS_2026`

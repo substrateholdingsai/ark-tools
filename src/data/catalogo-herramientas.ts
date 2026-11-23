@@ -165,7 +165,7 @@ export const CATALOGO_HERRAMIENTAS: HerramientaSuite[] = [
     nombre: 'Calculadora de Actualización y Recargos Fiscales (CFF)',
     categoria: 'Fiscal y Laboral (Expediente Único + Cédula Oficial PDF/QR)',
     descripcion:
-      'Determinación de actualización por inflación (Art. 17-A CFF) y recargos por mora (Art. 21 CFF y LIF al 1.47% mensual). Motor cloud-native conectado a la serie de INPC del DOF, factor truncado a 4 decimales, desglose analítico mes a mes y emisión de Papel de Trabajo Oficial con Folio de Integridad (CSV con BOM UTF-8 y resumen para WhatsApp).',
+      'Determinación de actualización por inflación (Art. 17-A CFF) y recargos por mora (Art. 21 CFF y LIF; tasa vigente en el catálogo). Motor cloud-native conectado a la serie de INPC del DOF, factor truncado a 4 decimales, desglose analítico mes a mes y emisión de Papel de Trabajo Oficial con Folio de Integridad (CSV con BOM UTF-8 y resumen para WhatsApp).',
   },
   {
     id: 'modalidad40',

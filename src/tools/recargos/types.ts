@@ -4,7 +4,7 @@
  * Fundamentos legales:
  * - Art. 17-A del Código Fiscal de la Federación (Actualización por Inflación)
  * - Art. 21 del Código Fiscal de la Federación (Recargos por Indemnización)
- * - Art. 8 de la Ley de Ingresos de la Federación (Tasa de prórroga + 50% = 1.47% mensual)
+ * - Art. 8 de la Ley de Ingresos de la Federación (Tasa de prórroga + 50% = 2.07% mensual en 2026)
  */
 
 export type TipoRecargo = 'federal' | 'estatal_yucatan';
@@ -16,7 +16,7 @@ export interface EntradaRecargos {
   fechaVencimiento: string;
   /** Fecha efectiva en que se realiza el pago (ISO YYYY-MM-DD) */
   fechaPago: string;
-  /** Tasa mensual de recargos (opcional, por defecto 1.47% conforme a la LIF vigente) */
+  /** Tasa mensual de recargos (opcional, por defecto 2.07% conforme a la LIF vigente) */
   tasaRecargosMensual?: number;
   /** Ámbito legal del recargo; el default federal preserva el contrato histórico */
   tipoRecargo?: TipoRecargo;
@@ -54,7 +54,7 @@ export interface DesgloseMesRecargo {
   numero: number;
   /** Etiqueta del mes o periodo de cómputo (ej. "Mayo 2024") */
   periodo: string;
-  /** Tasa mensual aplicada (1.47%) */
+  /** Tasa mensual aplicada (2.07%) */
   tasaMensual: number;
   /** Tasa acumulada hasta este mes */
   tasaAcumulada: number;
@@ -85,7 +85,7 @@ export interface ResultadoRecargos {
   montoActualizacion: number;
   /** Número total de meses o fracción de mes de mora (bruto, antes del tope) */
   mesesMora: number;
-  /** Tasa mensual de recargos aplicada (1.47%) */
+  /** Tasa mensual de recargos aplicada (2.07%) */
   tasaRecargosMensual: number;
   /** Tasa total acumulada de recargos (mesesCobrados × tasaRecargosMensual, tope 124.2% a 60 meses) */
   tasaRecargosTotal: number;
