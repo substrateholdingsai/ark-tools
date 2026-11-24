@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { executeAiTool, AI_TOOLS_CATALOG } from './tools';
+import { ESTADOS } from '../../tools/isn/data/estados';
 import type { Env } from '../../index';
 
 describe('Workers AI — Tools Catalog & Executor', () => {
@@ -298,5 +299,56 @@ describe('Workers AI — Tools Catalog & Executor', () => {
       (valid.data as { result: { details: { limites: { sbcEfectivo: number } } } }).result.details
         .limites.sbcEfectivo
     ).toBe(717.31);
+  });
+
+  describe('calc_isn estadoId validation', () => {
+    it('rejects "Narnia" with no result', async () => {
+      const res = await executeAiTool(
+        'calc_isn',
+        { baseGravable: 500000, tasa: 3.75, estadoId: 'Narnia', ejercicio: 2026 },
+        {} as Env,
+        'tenant_test'
+      );
+      expect(res.success).toBe(false);
+      expect(res.data).toBeUndefined();
+      expect(res.error).toContain('Narnia');
+      expect(res.mcpError?.field).toBe('estadoId');
+    });
+
+    it('accepts each of the 32 Mexican states', async () => {
+      for (const estado of ESTADOS) {
+        const res = await executeAiTool(
+          'calc_isn',
+          { baseGravable: 1000, tasa: estado.tasa, estadoId: estado.id, ejercicio: 2026 },
+          {} as Env,
+          'tenant_test'
+        );
+        expect(res.success).toBe(true);
+      }
+    });
+
+    it('rejects empty, null and whitespace estadoId', async () => {
+      for (const value of ['', '   ', null]) {
+        const res = await executeAiTool(
+          'calc_isn',
+          { baseGravable: 1000, tasa: 3, estadoId: value, ejercicio: 2026 },
+          {} as Env,
+          'tenant_test'
+        );
+        expect(res.success).toBe(false);
+      }
+    });
+
+    it('rejects misspelled and foreign codes', async () => {
+      for (const value of ['Yucatan', 'YUCATÁN', 'Yuc', 'CA', 'TX']) {
+        const res = await executeAiTool(
+          'calc_isn',
+          { baseGravable: 1000, tasa: 3, estadoId: value, ejercicio: 2026 },
+          {} as Env,
+          'tenant_test'
+        );
+        expect(res.success).toBe(false);
+      }
+    });
   });
 });

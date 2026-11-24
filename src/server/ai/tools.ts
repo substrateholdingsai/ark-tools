@@ -27,7 +27,7 @@ import { calcularResultadoSBC } from '../../tools/sbc/lib/calcularSBC';
 import { calcularNomina } from '../../tools/nomina/lib/calcularNomina';
 import { PERIODOS } from '../../tools/nomina/data/periodos';
 import { FACTOR_INTEGRACION_SBC_DEFAULT } from '../../tools/nomina/data/defaults';
-import type { ConceptoPercepcion, Estado } from '../../tools/isn/types';
+import type { ConceptoPercepcion } from '../../tools/isn/types';
 import type { ParametrosSBC } from '../../tools/sbc/types';
 import type { ParametrosNomina } from '../../tools/nomina/types';
 import { TASA_IVA_GENERAL } from '../../data/valores-vigentes/catalogo';
@@ -634,21 +634,28 @@ export async function executeAiTool(
 
     if (canonicalToolName === 'calc_isn') {
       const baseGravable = Number(args.baseGravable || 0);
-      const tasa = Number(args.tasa || 0);
       const conceptos: ConceptoPercepcion[] = [
         { id: 1, concepto: 'Base gravable', gravado: baseGravable, exento: 0 },
       ];
-      const estadoId = String(args.estadoId || 'AI').toUpperCase();
-      const estado: Estado =
-        ESTADOS.find((item) => item.id === estadoId) ??
-        ({
-          id: estadoId,
-          nombre: estadoId,
-          corto: estadoId,
-          tasa,
-          vigencia: '2026',
-          articulo: 'N/A',
-        } satisfies Estado);
+      const rawEstadoId = args.estadoId;
+      if (typeof rawEstadoId !== 'string' || rawEstadoId.trim() === '') {
+        const message = `estadoId inválido: ${JSON.stringify(rawEstadoId)}. Debe ser uno de los 32 estados de la República Mexicana.`;
+        return {
+          success: false,
+          error: message,
+          mcpError: makeMcpToolError('VALIDATION_ERROR', message, 'estadoId'),
+        };
+      }
+      const estadoId = rawEstadoId;
+      if (!ESTADOS.some((item) => item.id === estadoId)) {
+        const message = `estadoId inválido: "${estadoId}". No es uno de los 32 estados de la República Mexicana.`;
+        return {
+          success: false,
+          error: message,
+          mcpError: makeMcpToolError('VALIDATION_ERROR', message, 'estadoId'),
+        };
+      }
+      const estado = ESTADOS.find((item) => item.id === estadoId)!;
       const rawNumEmpleados =
         args.numEmpleados !== undefined ? Number(args.numEmpleados) : undefined;
       const resultado = calcularResultadoISN(conceptos, estado, {
