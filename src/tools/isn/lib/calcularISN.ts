@@ -98,7 +98,7 @@ export function resolverConfigTasaISN(
         tasaBruta: mp.tasaBruta,
         estimuloTasa: mp.estimuloTasa,
         estimuloConfirmado: mp.estimuloConfirmado ?? true,
-        decretoAplicado: mp.decreto,
+        decretoAplicado: `Decreto 138/2025 (tasa, Art. 24 LGHY) y ${mp.decreto}`,
         articuloAplicado: mp.articulo,
       };
     }
@@ -157,6 +157,15 @@ export function calcularResultadoISN(
   const tasaEfectiva =
     baseGravable > 0 ? Math.round((isnNeto / baseGravable) * 100 * 10000) / 10000 : cfg.tasaBruta;
 
+  const estimuloAplicado = cfg.regimen === 'micro_pequena' && (cfg.estimuloTasa ?? 0) > 0;
+  const condiciones = estimuloAplicado
+    ? [
+        'Art. 4: El estímulo se aplica en la declaración definitiva mensual ante la AAFY.',
+        'Art. 4: Requiere reportar el número de trabajadores ante la AAFY.',
+        'Art. 5: No genera devolución, compensación, crédito ni saldo a favor; no procede para otros ejercicios fiscales.',
+      ]
+    : undefined;
+
   return {
     baseGravable,
     totalExento,
@@ -173,6 +182,7 @@ export function calcularResultadoISN(
     estimuloConfirmado: cfg.estimuloConfirmado,
     decretoAplicado: cfg.decretoAplicado,
     articuloAplicado: cfg.articuloAplicado,
+    condiciones,
   };
 }
 

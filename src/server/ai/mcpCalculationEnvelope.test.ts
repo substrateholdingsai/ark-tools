@@ -225,3 +225,87 @@ describe('MCP calculation envelope', () => {
     expect(names).not.toContain('calcular_recargos_fiscales');
   });
 });
+
+describe('calc_isn — estímulo Decreto 147/2025 (TC-ISN-ESTIMULO-ADV-01 a 06)', () => {
+  const avisoPosible =
+    'La empresa podría aplicar el estímulo del Decreto 147/2025 (0.75% sobre la base, micro/pequeña empresa de 1 a 50 trabajadores, ejercicio 2026). Para aplicarlo, pase esMicroPequena2026: true. La decisión final es del usuario.';
+  const aviso27A =
+    'El estímulo del Decreto 147/2025 no es acumulable con el estímulo del Art. 27-A LGHY (Art. 6).';
+
+  const baseInput = (overrides: Record<string, unknown> = {}) => ({
+    estadoId: 'YUC',
+    baseGravable: 1200000,
+    tasa: 3.75,
+    ejercicio: 2026,
+    ...overrides,
+  });
+
+  const exec = async (input: Record<string, unknown>): Promise<Envelope> => {
+    const response = await executeAiTool('calc_isn', input, mockEnv, 'tenant_test');
+    expect(response.success).toBe(true);
+    return response.data as Envelope;
+  };
+
+  it('TC-ISN-ESTIMULO-ADV-01: sin flag, 30 empleados → general $45,000, sin auto-aplicar, avisa del estímulo', async () => {
+    const envelope = await exec(baseInput({ numEmpleados: 30 }));
+    expect(envelope.result.total).toBe(45000);
+    expect(envelope.result.details.isnBruto).toBe(45000);
+    expect(envelope.result.details.estimulo).toBe(0);
+    expect(envelope.result.details.isnNeto).toBe(45000);
+    expect(envelope.result.details.regimen).toBe('general');
+    expect(envelope.warnings).toEqual(expect.arrayContaining([avisoPosible]));
+  });
+
+  it('TC-ISN-ESTIMULO-ADV-02: flag true → $45,000 / $9,000 / $36,000, ambos decretos, condiciones y Art. 27-A', async () => {
+    const envelope = await exec(baseInput({ numEmpleados: 30, esMicroPequena2026: true }));
+    expect(envelope.result.total).toBe(36000);
+    expect(envelope.result.details.isnBruto).toBe(45000);
+    expect(envelope.result.details.estimulo).toBe(9000);
+    expect(envelope.result.details.isnNeto).toBe(36000);
+    expect(envelope.result.details.regimen).toBe('micro_pequena');
+
+    const decreto = String(envelope.result.details.decretoAplicado);
+    expect(decreto).toContain('Decreto 138/2025');
+    expect(decreto).toContain('Decreto 147/2025');
+
+    const condiciones = envelope.result.details.condiciones as string[] | undefined;
+    expect(condiciones).toBeDefined();
+    expect(condiciones!.some((c) => c.includes('declaración definitiva mensual'))).toBe(true);
+    expect(condiciones!.some((c) => c.includes('número de trabajadores'))).toBe(true);
+    expect(condiciones!.some((c) => c.includes('devolución'))).toBe(true);
+
+    expect(envelope.warnings).toEqual(expect.arrayContaining([aviso27A]));
+    expect(envelope.warnings.some((w) => w.includes('podría aplicar el estímulo'))).toBe(false);
+  });
+
+  it('TC-ISN-ESTIMULO-ADV-03: 55 empleados sin flag → general, sin aviso de estímulo (fuera de banda 1-50)', async () => {
+    const envelope = await exec(baseInput({ numEmpleados: 55 }));
+    expect(envelope.result.total).toBe(45000);
+    expect(envelope.result.details.regimen).toBe('general');
+    expect(envelope.warnings).toEqual([]);
+  });
+
+  it('TC-ISN-ESTIMULO-ADV-04: ejercicio 2025 sin flag → cálculo 2025, sin aviso de estímulo', async () => {
+    const envelope = await exec(baseInput({ ejercicio: 2025, numEmpleados: 30 }));
+    expect(envelope.result.total).toBe(36000);
+    expect(envelope.result.details.isnBruto).toBe(36000);
+    expect(envelope.result.details.estimulo).toBe(0);
+    expect(envelope.result.details.isnNeto).toBe(36000);
+    expect(envelope.warnings).toEqual([]);
+  });
+
+  it('TC-ISN-ESTIMULO-ADV-05: flag explícito false → igual que TC-01: general $45,000 y aviso', async () => {
+    const envelope = await exec(baseInput({ numEmpleados: 30, esMicroPequena2026: false }));
+    expect(envelope.result.total).toBe(45000);
+    expect(envelope.result.details.regimen).toBe('general');
+    expect(envelope.result.details.isnNeto).toBe(45000);
+    expect(envelope.warnings).toEqual(expect.arrayContaining([avisoPosible]));
+  });
+
+  it('TC-ISN-ESTIMULO-ADV-06: sin numEmpleados y sin flag → general $45,000, sin aviso', async () => {
+    const envelope = await exec(baseInput({}));
+    expect(envelope.result.total).toBe(45000);
+    expect(envelope.result.details.regimen).toBe('general');
+    expect(envelope.warnings).toEqual([]);
+  });
+});

@@ -2,6 +2,7 @@ import { CATALOGO_2026, TABLA_INPC, TASA_IVA_GENERAL } from '../../data/valores-
 import type { ValorFiscal } from '../../data/valores-vigentes/tipos';
 import { ESTADOS } from '../../tools/isn/data/estados';
 import type { ResultadoISN } from '../../tools/isn/types';
+import { parseStrictBoolean } from '../../lib/parseBoolean';
 import type { ResultadoSBC } from '../../tools/sbc/types';
 import type { ResultadoNomina } from '../../tools/nomina/types';
 import type { ResultadoFiniquito } from '../../tools/finiquitos/types';
@@ -205,6 +206,33 @@ export function wrapCalcIsn(
   estadoId: string,
   result: ResultadoISN
 ): McpCalculationEnvelope<ResultadoISN> {
+  const ejercicio = Number(inputs.ejercicio) === 2025 ? 2025 : 2026;
+  const numEmpleados = Number(inputs.numEmpleados);
+  const esMicroPequena2026 = parseStrictBoolean(inputs.esMicroPequena2026);
+
+  const warnings: string[] = [];
+
+  // Fix A: advertir que el estímulo del Decreto 147/2025 podría aplicarse,
+  // sin auto-aplicarlo. La decisión final es del usuario.
+  if (
+    ejercicio === 2026 &&
+    Number.isFinite(numEmpleados) &&
+    numEmpleados >= 1 &&
+    numEmpleados <= 50 &&
+    esMicroPequena2026 !== true
+  ) {
+    warnings.push(
+      'La empresa podría aplicar el estímulo del Decreto 147/2025 (0.75% sobre la base, micro/pequeña empresa de 1 a 50 trabajadores, ejercicio 2026). Para aplicarlo, pase esMicroPequena2026: true. La decisión final es del usuario.'
+    );
+  }
+
+  // Fix C: Art. 6 — el estímulo no es acumulable con el del Art. 27-A LGHY.
+  if (result.regimen === 'micro_pequena') {
+    warnings.push(
+      'El estímulo del Decreto 147/2025 no es acumulable con el estímulo del Art. 27-A LGHY (Art. 6).'
+    );
+  }
+
   return createEnvelope({
     tool: 'calc_isn',
     inputs,
@@ -218,6 +246,7 @@ export function wrapCalcIsn(
     ],
     legalBasis: isnLegalBasis(estadoId, result.articuloAplicado),
     catalogVersions: isnCatalogVersions(estadoId, result.ejercicio, result.regimen),
+    warnings,
   });
 }
 

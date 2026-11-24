@@ -119,4 +119,6 @@ export interface ResultadoISN {
   decretoAplicado?: string;
   /** Fundamento legal específico aplicado */
   articuloAplicado: string;
+  /** Condiciones del estímulo aplicado (solo cuando el estímulo se confirma) */
+  condiciones?: string[];
 }
