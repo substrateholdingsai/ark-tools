@@ -470,6 +470,25 @@ export function wrapCalcRecargos(
     );
   });
 
+  // Construir base legal por año a partir del desglose mes a mes
+  const aniosUnicos = Array.from(new Set(result.desgloseMeses.map((d) => d.anioTasa))).sort(
+    (a, b) => a - b
+  );
+
+  const legalBasisLIF = aniosUnicos.map((anio) => {
+    const muestra = result.desgloseMeses.find((d) => d.anioTasa === anio);
+    return {
+      ordenamiento:
+        result.tipoRecargo === 'federal'
+          ? 'Ley de Ingresos de la Federación'
+          : 'Ley de Ingresos del Estado de Yucatán',
+      articulo:
+        muestra?.articuloLIF ??
+        (result.tipoRecargo === 'federal' ? 'Artículo 11, fracción I' : 'Artículo 56'),
+      vigencia: String(anio),
+    };
+  });
+
   return createEnvelope({
     tool: 'calc_recargos',
     inputs,
@@ -488,14 +507,7 @@ export function wrapCalcRecargos(
         articulo: 'Artículos 17-A y 21',
         vigencia: 'Vigente 2026',
       },
-      {
-        ordenamiento:
-          result.tipoRecargo === 'federal'
-            ? 'Ley de Ingresos de la Federación'
-            : 'Ley de Ingresos del Estado de Yucatán',
-        articulo: result.tipoRecargo === 'federal' ? 'Artículo 8, fracción I' : 'Artículo 56',
-        vigencia: '2026',
-      },
+      ...legalBasisLIF,
     ],
     catalogVersions: [...versions, ...inpcVersions],
     warnings: result.advertencias,

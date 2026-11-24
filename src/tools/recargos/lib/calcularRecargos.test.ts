@@ -169,21 +169,23 @@ describe('Motor Matemático de Actualización y Recargos (Art. 17-A y 21 CFF)', 
     it('usa TASA_RECARGOS_MORA_PCT de la constante local (no un literal suelto, alcance pendiente)', () => {
       const entrada = {
         importeHistorico: 10000,
-        fechaVencimiento: '2024-05-17',
-        fechaPago: '2024-06-17', // 1 mes de mora
+        fechaVencimiento: '2026-05-17',
+        fechaPago: '2026-06-17', // 1 mes de mora en 2026
       };
       const resultado = calcularRecargosYActualizacion(entrada);
       expect(resultado.tasaRecargosMensual).toBe(TASA_RECARGOS_MORA_PCT);
       expect(resultado.tasaRecargosTotal).toBe(2.07);
-      expect(resultado.montoRecargos).toBe(Math.round(10000 * (2.07 / 100) * 100) / 100);
+      // Factor de actualización mayo-junio 2026: INPC abr 2026 (145.594) / INPC may 2026 (146.176) -> factor ~1.0039
+      // impuestoActualizado = 10000 * 1.0039 = 10039, recargos = 10039 * 2.07% = 207.81
+      expect(resultado.montoRecargos).toBe(207.81);
     });
 
     it('usa 2.07% mensual cuando el tipo es federal', () => {
       const resultado = calcularRecargosYActualizacion(
         {
           importeHistorico: 10000,
-          fechaVencimiento: '2024-05-17',
-          fechaPago: '2024-06-17',
+          fechaVencimiento: '2026-05-17',
+          fechaPago: '2026-06-17',
         },
         'federal'
       );
@@ -196,22 +198,22 @@ describe('Motor Matemático de Actualización y Recargos (Art. 17-A y 21 CFF)', 
       const resultado = calcularRecargosYActualizacion(
         {
           importeHistorico: 10000,
-          fechaVencimiento: '2024-05-17',
-          fechaPago: '2024-06-17',
+          fechaVencimiento: '2026-05-17',
+          fechaPago: '2026-06-17',
         },
         'estatal_yucatan'
       );
 
       expect(resultado.tipoRecargo).toBe('estatal_yucatan');
       expect(resultado.tasaRecargosMensual).toBe(2.07);
-      expect(resultado.montoRecargos).toBe(207);
+      expect(resultado.montoRecargos).toBe(207.81);
     });
 
     it('federal y estatal Yucatán coinciden en 2.07% tras la actualización 2026', () => {
       const entrada = {
         importeHistorico: 10000,
-        fechaVencimiento: '2024-05-17',
-        fechaPago: '2024-06-17',
+        fechaVencimiento: '2026-05-17',
+        fechaPago: '2026-06-17',
       };
       const federal = calcularRecargosYActualizacion(entrada, 'federal');
       const estatal = calcularRecargosYActualizacion(entrada, 'estatal_yucatan');

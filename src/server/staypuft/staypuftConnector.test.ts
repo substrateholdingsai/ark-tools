@@ -782,10 +782,13 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
         if (tool.id === 'recargos') {
           // Vector dorado verificado: no silent defaults, importes exactos
           expect(body.result.impuestoActualizado).toBe(46134);
-          expect(body.result.montoRecargos).toBe(7639.79);
-          expect(body.result.totalPagar).toBe(53773.79);
+          // Nueva lógica: tasa por año (Convention A). Mora jul 2025-feb 2026 = 6 meses 1.47% + 2 meses 2.07% = 12.96%
+          // Antes (flat 2.07%): 8 * 2.07 = 16.56% -> 7639.79
+          // Ahora: 46134 * 12.96% = 5978.97
+          expect(body.result.montoRecargos).toBe(5978.97);
+          expect(body.result.totalPagar).toBe(52112.97);
           expect(body.result.mesesMora).toBe(8);
-          expect(body.result.tasaRecargosTotal).toBe(16.56);
+          expect(body.result.tasaRecargosTotal).toBe(12.96);
           expect(body.result.factorActualizacion).toBe(1.0252);
           expect(body.result.folioDeIntegridad).toMatch(/^REC-[0-9a-f]{8}$/);
           expect(body.result.folioDeIntegridad).not.toContain('e3b0c442');

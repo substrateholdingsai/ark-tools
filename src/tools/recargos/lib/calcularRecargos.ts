@@ -7,10 +7,12 @@
  *      entre el INPC del mes anterior al más antiguo del periodo.
  *    - Factor truncado al diezmilésimo (4 decimales) sin redondeo.
  *    - Regla de no-deflación: Si el factor resultante es menor a 1, se aplica 1.0000.
- * 2. Artículo 21 del Código Fiscal de la Federación y Artículo 8 LIF:
+ * 2. Artículo 21 del Código Fiscal de la Federación y Ley de Ingresos de la Federación:
  *    - Recargos por mora en concepto de indemnización al fisco federal.
  *    - Cómputo por cada mes o fracción de mes que transcurra.
- *    - Tasa oficial de 2.07% mensual seg�n la Ley de Ingresos de la Federaci�n (LIF 2026).
+ *    - Tasa por año conforme a la LIF de cada ejercicio: prórroga × 1.5 (Art. 21 CFF).
+ *    - Convención de frontera de año (Convention A): el mes que cruza el 31-dic toma la tasa
+ *      del año en que TERMINA el periodo de mora (ej. 18-dic-2025 a 17-ene-2026 usa tasa 2026).
  */
 
 import {
@@ -47,6 +49,72 @@ interface FechaPartes {
   anio: number;
   mes: number; // 1 - 12
   dia: number; // 1 - 31
+}
+
+/**
+ * Tabla de tasas históricas de recargos por mora (federal).
+ * Cada entrada contiene: año, tasa mensual de mora (prórroga × 1.5), artículo LIF, fuente DOF.
+ * Si un periodo de mora incluye un año sin tasa verificada en esta tabla, el cálculo falla (fail-closed).
+ */
+export interface TasaRecargosAnual {
+  anio: number;
+  tasaMoraMensualPct: number; // p. ej. 1.47 para 2024-2025, 2.07 para 2026
+  articuloLIF: string; // p. ej. "Artículo 8, fracción I" (LIF 2024-2025) o "Artículo 11, fracción I" (LIF 2026)
+  fuenteDOF: string;
+}
+
+export const TASAS_RECARGOS_HISTORICAS: readonly TasaRecargosAnual[] = [
+  {
+    anio: 2024,
+    tasaMoraMensualPct: 1.47,
+    articuloLIF: 'Artículo 8, fracción I',
+    fuenteDOF: 'DOF 13/11/2023 (LIF 2024); RMF 2024 regla 2.1.20',
+  },
+  {
+    anio: 2025,
+    tasaMoraMensualPct: 1.47,
+    articuloLIF: 'Artículo 8, fracción I',
+    fuenteDOF: 'DOF 19/12/2024 (LIF 2025); RMF 2025 regla 2.1.20',
+  },
+  {
+    anio: 2026,
+    tasaMoraMensualPct: 2.07,
+    articuloLIF: 'Artículo 11, fracción I',
+    fuenteDOF: 'DOF 07/11/2025 (LIF 2026); RMF 2026 regla 2.1.20',
+  },
+] as const;
+
+/**
+ * Convención de frontera de año para el mes que cruza el 31 de diciembre.
+ * Convention A: el mes toma la tasa del año en que TERMINA el periodo de mora.
+ *   Ejemplo: periodo 18-dic-2025 a 17-ene-2026 -> usa tasa 2026 (2.07%).
+ * Convention B: el mes toma la tasa del año en que COMIENZA el periodo de mora.
+ *   Ejemplo: periodo 18-dic-2025 a 17-ene-2026 -> usa tasa 2025 (1.47%).
+ *
+ * Este motor usa Convention A (declarada explícitamente).
+ */
+export const CONVENCION_FRONTERA_ANO: 'A' | 'B' = 'A';
+
+export function obtenerTasaRecargosAnual(anio: number): TasaRecargosAnual | undefined {
+  return TASAS_RECARGOS_HISTORICAS.find((t) => t.anio === anio);
+}
+
+export function obtenerTasaMoraMensual(anio: number): number {
+  const tasa = obtenerTasaRecargosAnual(anio);
+  if (!tasa) {
+    throw new Error(
+      `No hay tasa de recargos verificada para el año ${anio}. El cálculo no puede continuar (fail-closed).`
+    );
+  }
+  return tasa.tasaMoraMensualPct;
+}
+
+export function obtenerArticuloLIF(anio: number): string {
+  const tasa = obtenerTasaRecargosAnual(anio);
+  if (!tasa) {
+    throw new Error(`No hay artículo LIF verificado para el año ${anio}.`);
+  }
+  return tasa.articuloLIF;
 }
 
 /**
@@ -204,19 +272,20 @@ export function calcularMesesMora(fechaVencimiento: string, fechaPago: string): 
 }
 
 /**
- * Genera la tabla analítica mes a mes de los recargos acumulados.
+ * Genera la tabla analítica mes a mes de los recargos acumulados,
+ * aplicando la tasa correspondiente a cada año (Convention A).
  */
 export function generarDesgloseMesesRecargo(
   fVenc: FechaPartes,
   mesesMora: number,
-  baseCalculo: number,
-  tasaMensual: number
+  baseCalculo: number
 ): DesgloseMesRecargo[] {
   const desglose: DesgloseMesRecargo[] = [];
   if (mesesMora <= 0) return desglose;
 
   let mesActual = fVenc.mes;
   let anioActual = fVenc.anio;
+  let tasaAcumulada = 0;
 
   for (let i = 1; i <= mesesMora; i++) {
     // Avanzar mes a mes en el periodo de mora
@@ -226,19 +295,40 @@ export function generarDesgloseMesesRecargo(
       anioActual += 1;
     }
 
-    const periodo = `${NOMBRES_MESES[mesActual - 1]} ${anioActual}`;
-    const tasaAcumulada = Number((i * tasaMensual).toFixed(2));
+    // Determinar la tasa para este mes según la convención de frontera de año
+    let anioTasa = anioActual;
+    if (CONVENCION_FRONTERA_ANO === 'A') {
+      // Convention A: el mes toma la tasa del año en que TERMINA
+      // El periodo de mora va del día siguiente al vencimiento hasta el día de pago del mes siguiente
+      // Para el mes que cruza el 31-dic (ej. 18-dic a 17-ene), anioActual ya es el año siguiente
+      // así que no hay ajuste adicional necesario.
+    } else {
+      // Convention B: el mes toma la tasa del año en que COMIENZA
+      // El mes que cruza el 31-dic (ej. 18-dic a 17-ene) tiene anioActual = año siguiente,
+      // pero la tasa debe ser del año anterior.
+      if (mesActual === 1) {
+        // El periodo 18-dic a 17-ene se etiqueta como "Enero {anioActual}" pero empezó en dic del año anterior
+        anioTasa = anioActual - 1;
+      }
+    }
+
+    const tasaMensual = obtenerTasaMoraMensual(anioTasa);
+    const articuloLIF = obtenerArticuloLIF(anioTasa);
+
+    tasaAcumulada = Number((tasaAcumulada + tasaMensual).toFixed(2));
     const recargoMes = Math.round(baseCalculo * (tasaMensual / 100) * 100) / 100;
     const recargoAcumulado = Math.round(baseCalculo * (tasaAcumulada / 100) * 100) / 100;
 
     desglose.push({
       numero: i,
-      periodo,
+      periodo: `${NOMBRES_MESES[mesActual - 1]} ${anioActual}`,
       tasaMensual,
       tasaAcumulada,
       baseCalculo,
       recargoMes,
       recargoAcumulado,
+      anioTasa,
+      articuloLIF,
     });
   }
 
@@ -246,8 +336,35 @@ export function generarDesgloseMesesRecargo(
 }
 
 /**
+ * Calcula la tasa total de recargos sumando la tasa mensual de cada mes cobrado.
+ */
+export function calcularTasaRecargosTotal(mesesCobrados: number, fVenc: FechaPartes): number {
+  let tasaTotal = 0;
+  let mesActual = fVenc.mes;
+  let anioActual = fVenc.anio;
+
+  for (let i = 1; i <= mesesCobrados; i++) {
+    mesActual += 1;
+    if (mesActual > 12) {
+      mesActual = 1;
+      anioActual += 1;
+    }
+
+    let anioTasa = anioActual;
+    if (CONVENCION_FRONTERA_ANO === 'B' && mesActual === 1) {
+      anioTasa = anioActual - 1;
+    }
+
+    const tasaMensual = obtenerTasaMoraMensual(anioTasa);
+    tasaTotal += tasaMensual;
+  }
+
+  return Number(tasaTotal.toFixed(2));
+}
+
+/**
  * Realiza el cálculo integral de Actualización por Inflación (Art. 17-A CFF)
- * y Recargos por Mora (Art. 21 CFF + LIF Art. 8).
+ * y Recargos por Mora (Art. 21 CFF + LIF por año).
  */
 export function obtenerTasaRecargosMensual(tipoRecargo: TipoRecargo): number {
   if (tipoRecargo === 'federal') return TASA_RECARGOS_MORA_MENSUAL;
@@ -276,7 +393,10 @@ export function calcularRecargosYActualizacion(
   const TOPE_MESES_RECARGOS = 60;
   const mesesCobrados = Math.min(mesesMoraBruto, TOPE_MESES_RECARGOS);
   const recargosCapped = mesesMoraBruto > TOPE_MESES_RECARGOS;
-  const tasaRecargosTotal = Number((mesesCobrados * tasaRecargosMensual).toFixed(2));
+
+  // Calcular tasa total mes a mes según el año de cada periodo
+  const fVenc = parseFechaISO(entrada.fechaVencimiento);
+  const tasaRecargosTotal = calcularTasaRecargosTotal(mesesCobrados, fVenc);
 
   // Monto de recargos: Se calcula sobre el monto actualizado de las contribuciones (Art. 21 CFF), plano, no compuesto
   const montoRecargos = Math.round(impuestoActualizado * (tasaRecargosTotal / 100) * 100) / 100;
@@ -297,13 +417,7 @@ export function calcularRecargosYActualizacion(
   }
 
   // Desglose analítico (sobre los meses efectivamente cobrados, respetando el tope)
-  const fVenc = parseFechaISO(entrada.fechaVencimiento);
-  const desgloseMeses = generarDesgloseMesesRecargo(
-    fVenc,
-    mesesCobrados,
-    impuestoActualizado,
-    tasaRecargosMensual
-  );
+  const desgloseMeses = generarDesgloseMesesRecargo(fVenc, mesesCobrados, impuestoActualizado);
 
   // Folio de Integridad (token determinista derivado del payload; no constituye sellado fiscal ante SAT)
   const folioDeIntegridad = generarFolioDeIntegridad({
@@ -337,6 +451,7 @@ export function calcularRecargosYActualizacion(
     folioDeIntegridad,
     advertencias,
     desgloseMeses,
+    convencionFronteraAnio: CONVENCION_FRONTERA_ANO,
   };
 }
 

@@ -268,7 +268,7 @@ export const AI_TOOLS_CATALOG: AiToolFunction[] = [
   {
     name: 'calc_recargos',
     description:
-      'Calcula la actualización inflacionaria con el INPC (Art. 17-A CFF) y los recargos por mora (Art. 21 CFF; Ley de Ingresos de la Federación, Art. 8) sobre contribuciones federales omitidas. Úsalo para calcular actualización y recargos de impuestos federales en mora. No lo uses para impuestos estatales salvo Yucatán (tipoRecargo "estatal_yucatan"), ni como cédula oficial de recargos. Las cantidades están en MXN (pesos mexicanos); las fechas usan el formato YYYY-MM-DD; tipoRecargo es "federal" o "estatal_yucatan". El resultado es una referencia de cálculo, NO es un dictamen ni una cédula oficial; la decisión final corresponde al profesional.',
+      'Calcula la actualización inflacionaria con el INPC (Art. 17-A CFF) y los recargos por mora (Art. 21 CFF; Ley de Ingresos de la Federación: 2024–2025 Art. 8o. fr. I, 2026 Art. 11 fr. I) sobre contribuciones federales omitidas. Úsalo para calcular actualización y recargos de impuestos federales en mora. No lo uses para impuestos estatales salvo Yucatán (tipoRecargo "estatal_yucatan"), ni como cédula oficial de recargos. Las cantidades están en MXN (pesos mexicanos); las fechas usan el formato YYYY-MM-DD; tipoRecargo es "federal" o "estatal_yucatan". El resultado es una referencia de cálculo, NO es un dictamen ni una cédula oficial; la decisión final corresponde al profesional.',
     parameters: {
       type: 'object',
       properties: {

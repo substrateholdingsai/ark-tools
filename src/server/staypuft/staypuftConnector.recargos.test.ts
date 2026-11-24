@@ -106,10 +106,13 @@ describe('StayPuft connector — Recargos preview contract (Monday fixes)', () =
     const result = body.result as Record<string, unknown>;
     expect(result).toBeDefined();
     expect((result as any).impuestoActualizado).toBe(46134);
-    expect((result as any).montoRecargos).toBe(7639.79);
-    expect((result as any).totalPagar).toBe(53773.79);
+    // Nueva lógica: tasa por año (Convention A). Mora jul 2025-feb 2026 = 6 meses 1.47% + 2 meses 2.07% = 12.96%
+    // Antes (flat 2.07%): 8 * 2.07 = 16.56% -> 7639.79
+    // Ahora: 46134 * 12.96% = 5978.97
+    expect((result as any).montoRecargos).toBe(5978.97);
+    expect((result as any).totalPagar).toBe(52112.97);
     expect((result as any).mesesMora).toBe(8);
-    expect((result as any).tasaRecargosTotal).toBe(16.56);
+    expect((result as any).tasaRecargosTotal).toBe(12.96);
     expect((result as any).factorActualizacion).toBe(1.0252);
     const folio = (result as any).folioDeIntegridad;
     expect(typeof folio).toBe('string');

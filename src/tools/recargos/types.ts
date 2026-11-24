@@ -54,7 +54,7 @@ export interface DesgloseMesRecargo {
   numero: number;
   /** Etiqueta del mes o periodo de cómputo (ej. "Mayo 2024") */
   periodo: string;
-  /** Tasa mensual aplicada (2.07%) */
+  /** Tasa mensual aplicada (1.47% para 2025, 2.07% para 2026) */
   tasaMensual: number;
   /** Tasa acumulada hasta este mes */
   tasaAcumulada: number;
@@ -64,6 +64,10 @@ export interface DesgloseMesRecargo {
   recargoMes: number;
   /** Monto de recargos acumulados hasta este mes */
   recargoAcumulado: number;
+  /** Año cuya tasa se aplicó a este mes (para trazabilidad) */
+  anioTasa: number;
+  /** Artículo LIF citado para la tasa de este mes (ej. "Artículo 8, fracción I" o "Artículo 11, fracción I") */
+  articuloLIF: string;
 }
 
 export interface ResultadoRecargos {
@@ -85,9 +89,9 @@ export interface ResultadoRecargos {
   montoActualizacion: number;
   /** Número total de meses o fracción de mes de mora (bruto, antes del tope) */
   mesesMora: number;
-  /** Tasa mensual de recargos aplicada (2.07%) */
+  /** Tasa mensual de recargos aplicada (valor de referencia, no necesariamente la usada mes a mes) */
   tasaRecargosMensual: number;
-  /** Tasa total acumulada de recargos (mesesCobrados × tasaRecargosMensual, tope 124.2% a 60 meses) */
+  /** Tasa total acumulada de recargos (suma de tasas mensuales por año, tope 124.2% a 60 meses) */
   tasaRecargosTotal: number;
   /** Mesese efectivamente cobrados tras aplicar el tope de 60 meses (Art. 21 CFF) */
   mesesCobrados: number;
@@ -105,4 +109,6 @@ export interface ResultadoRecargos {
   advertencias: string[];
   /** Tabla analítica mes a mes de los recargos causados */
   desgloseMeses: DesgloseMesRecargo[];
+  /** Convención de frontera de año usada: 'A' (tasa del año en que termina el mes) o 'B' (tasa del año en que empieza) */
+  convencionFronteraAnio: 'A' | 'B';
 }

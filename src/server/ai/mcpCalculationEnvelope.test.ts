@@ -143,8 +143,11 @@ const cases: Array<{
     },
     expected: (envelope) => {
       expect(envelope.result.details.impuestoActualizado).toBe(46134);
-      expect(envelope.result.details.montoRecargos).toBe(7639.79);
-      expect(envelope.result.total).toBe(53773.79);
+      // Nueva lógica: tasa por año (Convention A). Mora jul 2025-feb 2026 = 6 meses 1.47% + 2 meses 2.07% = 12.96%
+      // Antes (flat 2.07%): 8 * 2.07 = 16.56% -> 7639.79
+      // Ahora: 46134 * 12.96% = 5978.97
+      expect(envelope.result.details.montoRecargos).toBe(5978.97);
+      expect(envelope.result.total).toBe(52112.97);
       expect(envelope.integrity.value).toMatch(/^REC-[0-9a-f]{8}$/);
     },
   },
