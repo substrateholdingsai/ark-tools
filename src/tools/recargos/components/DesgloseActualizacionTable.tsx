@@ -165,7 +165,9 @@ export function DesgloseActualizacionTable({ resultado }: Props) {
                   <td colSpan={2} className="px-3 py-3 uppercase tracking-wider">
                     Total Recargos por Mora ({resultado.mesesMora} meses)
                   </td>
-                  <td className="px-3 py-3 text-right font-mono">2.07%</td>
+                  <td className="px-3 py-3 text-right font-mono">
+                    {resultado.tasaRecargosMensual}%
+                  </td>
                   <td className="px-3 py-3 text-right font-mono text-gold-dark">
                     {resultado.tasaRecargosTotal}%
                   </td>

@@ -216,8 +216,8 @@ if (erroresRecargosYucatan.length > 0) {
 console.log('\n✅ Recargos Yucatán 2026 — Artículo 56, Decreto 140/2025: tasa mensual verificada.');
 
 // ════════════════════════════════════════════════════════════════════════════
-// NUEVA VALIDACIÓN: detectar literales de tasa ISN (3.75 / 3.0 / 0.75 / 4.75)
-// fuera de los archivos permitidos.
+// NUEVA VALIDACIÓN: detectar literales de tasas fiscales
+// (3.75 / 3.0 / 0.75 / 4.75 / 2.07) fuera de los archivos permitidos.
 // ════════════════════════════════════════════════════════════════════════════
 export interface HardcodeMatch {
   archivo: string;
@@ -226,9 +226,9 @@ export interface HardcodeMatch {
 }
 
 /**
- * Archivos donde los literales 3.75 / 3.0 / 0.75 / 4.75 son intencionales y NO son
- * tasas de cálculo de ISN (documentación de formato, factores de pensión, constantes
- * locales con fuente citada). Se excluyen del escaneo para evitar falsos positivos.
+ * Archivos donde los literales fiscales son intencionales (factores de pensión,
+ * constantes locales con fuente citada o definiciones del catálogo). Se excluyen
+ * del escaneo para evitar falsos positivos.
  *
  * El directorio src/tools/isn/ queda excluido porque:
  * - estados.ts YA NO define las tasas ISN de Yucatán: las importa de catalogo.ts
@@ -277,7 +277,7 @@ function esLineaComentario(linea: string): boolean {
 }
 
 /**
- * Escanea un directorio (recursivo) buscando literales de tasa ISN fuera de los
+ * Escanea un directorio (recursivo) buscando literales de tasas fiscales fuera de los
  * archivos permitidos. Retorna los matches encontrados (archivo:línea).
  * No lanza process.exit: el llamante decide qué hacer con el resultado.
  */
@@ -329,12 +329,14 @@ export function escaneearHardcodesIsn(dir: string): HardcodeMatch[] {
 const raizHerramientas = path.resolve(process.cwd(), 'src/tools');
 const hardcodes = escaneearHardcodesIsn(raizHerramientas);
 if (hardcodes.length > 0) {
-  console.log('\n🚨 Hardcodes de tasa ISN (3.75 / 3.0 / 0.75 / 4.75) fuera de estados.ts y tests:');
+  console.log(
+    '\n🚨 Hardcodes de tasas fiscales (3.75 / 3.0 / 0.75 / 4.75 / 2.07) fuera de archivos permitidos:'
+  );
   for (const h of hardcodes) {
     console.log(`   ${h.archivo}:${h.linea} — ${h.coincidencia}`);
   }
   process.exit(1);
 }
-console.log('\n✅ Sin hardcodes de tasa ISN fuera de estados.ts y pruebas.\n');
+console.log('\n✅ Sin hardcodes de tasas fiscales fuera de archivos permitidos.\n');
 
 console.log('\n✅ Catálogo completamente verificado y vigente.\n');

@@ -114,7 +114,7 @@ export function CedulaRecargosModal({
                   {
                     concepto: 'Recargos por Mora',
                     dias: `${(resultado.tasaRecargosTotal * 100).toFixed(2)}%`,
-                    formula: `Tasa acumulada ${resultado.mesesMora} meses al 2.07%`,
+                    formula: `Tasa acumulada ${resultado.mesesMora} meses al ${resultado.tasaRecargosMensual}%`,
                     fundamento: 'LIF Art. 8 / CFF Art. 21',
                     importe: resultado.montoRecargos,
                   },
@@ -171,7 +171,7 @@ export function CedulaRecargosModal({
                 Fecha de Emisión: {new Date().toISOString().split('T')[0]}
               </span>
               <span className="block font-mono text-[10px] font-bold text-emerald-700">
-                ● Tasa LIF: 2.07% Mensual
+                ● Tasa LIF: {resultado.tasaRecargosMensual}% Mensual
               </span>
             </div>
           </div>
@@ -294,8 +294,8 @@ export function CedulaRecargosModal({
                 <tr>
                   <td className="px-3 py-2 font-semibold text-navy">(+) Recargos por Mora</td>
                   <td className="px-3 py-2 font-mono text-muted">
-                    {resultado.mesesMora} meses × 2.07% = {resultado.tasaRecargosTotal}% sobre base
-                    act.
+                    {resultado.mesesMora} meses × {resultado.tasaRecargosMensual}% ={' '}
+                    {resultado.tasaRecargosTotal}% sobre base act.
                   </td>
                   <td className="px-3 py-2 text-muted">CFF Art. 21 & LIF Art. 8</td>
                   <td className="px-3 py-2 text-right font-mono font-semibold text-amber-700">

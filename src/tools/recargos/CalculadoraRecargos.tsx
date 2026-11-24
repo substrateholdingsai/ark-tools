@@ -98,7 +98,7 @@ export function CalculadoraRecargos({ onBack, brand = currentBrand }: Calculador
           <span>
             {tipoRecargo === 'estatal_yucatan'
               ? 'INPC Oficial DOF · Ley de Ingresos Yucatán 2026 · Decreto 140/2025'
-              : 'INPC Oficial DOF · Tasa LIF 2.07% Mensual · Cero Mantenimiento'}
+              : `INPC Oficial DOF · Tasa LIF ${TASA_RECARGOS_MORA_PCT}% Mensual · Cero Mantenimiento`}
           </span>
         </div>
       </div>
