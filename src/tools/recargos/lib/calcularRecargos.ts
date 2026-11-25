@@ -58,7 +58,7 @@ interface FechaPartes {
  */
 export interface TasaRecargosAnual {
   anio: number;
-  tasaMoraMensualPct: number; // p. ej. 1.47 para 2024-2025, 2.07 para 2026
+  tasaMoraMensualPct: number; // p. ej. 1.47 para 2024-2025, tasa vigente para 2026
   articuloLIF: string; // p. ej. "Artículo 8, fracción I" (LIF 2024-2025) o "Artículo 11, fracción I" (LIF 2026)
   fuenteDOF: string;
 }
@@ -78,7 +78,7 @@ export const TASAS_RECARGOS_HISTORICAS: readonly TasaRecargosAnual[] = [
   },
   {
     anio: 2026,
-    tasaMoraMensualPct: 2.07,
+    tasaMoraMensualPct: TASA_RECARGOS_MORA_MENSUAL,
     articuloLIF: 'Artículo 11, fracción I',
     fuenteDOF: 'DOF 07/11/2025 (LIF 2026); RMF 2026 regla 2.1.20',
   },
