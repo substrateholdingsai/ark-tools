@@ -1977,6 +1977,77 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(parsed.ok).toBe(false);
       expect(parsed.error).toContain('Yucatán');
     });
+
+    it('TC-PROD-VAL-EJERCICIO-2024: preview ejercicio 2024 → HTTP 400, no number/breakdown/Folio', async () => {
+      const res = await previewIsn({ estadoId: 'YUC', baseGravable: 250000, ejercicio: 2024 });
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('El campo ejercicio tiene un valor no permitido.');
+      expect((body as Record<string, unknown>).result).toBeUndefined();
+      expect((body as Record<string, unknown>).breakdown).toBeUndefined();
+      expect((body as Record<string, unknown>).folio).toBeUndefined();
+      expect((body as Record<string, unknown>).total).toBeUndefined();
+    });
+
+    it('TC-PROD-VAL-EJERCICIO-2027: preview ejercicio 2027 → HTTP 400, no number/breakdown/Folio', async () => {
+      const res = await previewIsn({ estadoId: 'YUC', baseGravable: 250000, ejercicio: 2027 });
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('El campo ejercicio tiene un valor no permitido.');
+      expect((body as Record<string, unknown>).result).toBeUndefined();
+    });
+
+    it('TC-PROD-VAL-EJERCICIO-2025: preview ejercicio 2025 → HTTP 200 (regression, valid year still works)', async () => {
+      const res = await previewIsn({ estadoId: 'YUC', baseGravable: 250000, ejercicio: 2025 });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { ok: boolean };
+      expect(body.ok).toBe(true);
+    });
+
+    it('TC-PROD-VAL-EJERCICIO-2026: preview ejercicio 2026 → HTTP 200 (regression)', async () => {
+      const res = await previewIsn({ estadoId: 'YUC', baseGravable: 250000, ejercicio: 2026 });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { ok: boolean };
+      expect(body.ok).toBe(true);
+    });
+
+    it('TC-PROD-VAL-NOBASE: preview missing baseGravable → HTTP 400, no number/breakdown/Folio', async () => {
+      const res = await previewIsn({ estadoId: 'YUC', tasa: 3.75, ejercicio: 2026 });
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('Falta el campo requerido: baseGravable.');
+      expect((body as Record<string, unknown>).result).toBeUndefined();
+      expect((body as Record<string, unknown>).breakdown).toBeUndefined();
+      expect((body as Record<string, unknown>).folio).toBeUndefined();
+      expect((body as Record<string, unknown>).total).toBeUndefined();
+    });
+
+    it('TC-PROD-VAL-BASE-VALID: preview with a valid baseGravable → HTTP 200 (regression)', async () => {
+      const res = await previewIsn({ estadoId: 'YUC', baseGravable: 250000, ejercicio: 2026 });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { ok: boolean };
+      expect(body.ok).toBe(true);
+    });
+
+    it('TC-PROD-VAL-NEGBASE: preview negative baseGravable → HTTP 400 (regression, already passing)', async () => {
+      const res = await previewIsn({ estadoId: 'YUC', baseGravable: -5, ejercicio: 2026 });
+      expect(res.status).toBe(400);
+      const parsed = (await res.json()) as { ok: boolean; error: string };
+      expect(parsed.ok).toBe(false);
+      expect(parsed.error).toContain('baseGravable debe ser un número mayor o igual a 0.');
+    });
+
+    it('TC-PROD-VAL-ESTADOID-MISSING-MSG: preview missing estadoId → HTTP 400 and the error message does NOT contain "undefined"', async () => {
+      const res = await previewIsn({ baseGravable: 500000, ejercicio: 2026 });
+      expect(res.status).toBe(400);
+      const parsed = (await res.json()) as { ok: boolean; error: string };
+      expect(parsed.ok).toBe(false);
+      expect(parsed.error).not.toContain('undefined');
+      expect(parsed.error).toContain('estadoId inválido');
+    });
   });
 
   describe('AI ask — coerción estricta de booleanos (string vs boolean)', () => {

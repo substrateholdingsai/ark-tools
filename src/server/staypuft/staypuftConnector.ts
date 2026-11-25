@@ -1532,7 +1532,7 @@ export async function executeToolPreview(
           return {
             ok: false,
             statusCode: 400,
-            error: `estadoId inválido: ${JSON.stringify(rawEstadoId)}. Debe ser uno de los 32 estados de la República Mexicana.`,
+            error: `estadoId inválido: (vacío). Debe ser uno de los 32 estados de la República Mexicana.`,
           };
         }
         const estadoId = rawEstadoId;
@@ -1549,8 +1549,14 @@ export async function executeToolPreview(
           payload.nominaBruta ??
           payload.nomina ??
           payload.monto ??
-          payload.sueldos ??
-          350000;
+          payload.sueldos;
+        if (rawBase === undefined || rawBase === null) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: 'Falta el campo requerido: baseGravable.',
+          };
+        }
         const baseGravable =
           typeof rawBase === 'string'
             ? Number(rawBase.replace(/[$,\sMXNmxn]/g, ''))
@@ -1575,8 +1581,21 @@ export async function executeToolPreview(
             exento: Number.isNaN(exento) ? 0 : exento,
           },
         ];
-        const rawEjercicio = payload.ejercicio !== undefined ? Number(payload.ejercicio) : 2026;
-        const ejercicio = rawEjercicio === 2025 ? 2025 : 2026;
+        const rawEjercicioInput = payload.ejercicio;
+        if (rawEjercicioInput !== undefined && rawEjercicioInput !== null) {
+          const n = Number(rawEjercicioInput);
+          if (n !== 2025 && n !== 2026) {
+            return {
+              ok: false,
+              statusCode: 400,
+              error: 'El campo ejercicio tiene un valor no permitido.',
+            };
+          }
+        }
+        const ejercicio =
+          rawEjercicioInput === undefined || rawEjercicioInput === null
+            ? 2026
+            : (Number(rawEjercicioInput) as 2025 | 2026);
         const rawNumEmpleados =
           payload.numEmpleados !== undefined ? Number(payload.numEmpleados) : undefined;
         const numEmpleados =

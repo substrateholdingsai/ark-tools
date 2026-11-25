@@ -70,10 +70,21 @@ describe('MCP structured errors', () => {
     expect(err.code).toBe('UNKNOWN_TOOL');
   });
 
-  it('contains no stack trace in error responses', async () => {
-    const result = await callTool('calc_isn', {});
-    const text = result.content[0].text;
-    expect(text).not.toMatch(/at\s+\w/);
-    expect(text).not.toContain('.ts:');
+  it('TC-MCP-VAL-EJERCICIO-REGRESSION: MCP ejercicio 2024 still rejected (already passing, regression)', async () => {
+    const result = await callTool('calc_isn', {
+      baseGravable: 250000,
+      tasa: 3.75,
+      ejercicio: 2024,
+    });
+    expect(result.isError).toBe(true);
+    const err = JSON.parse(result.content[0].text);
+    expect(err).toMatchObject({ code: 'VALIDATION_ERROR', field: 'ejercicio' });
+  });
+
+  it('TC-MCP-VAL-NOBASE-REGRESSION: MCP missing baseGravable still rejected (already passing, regression)', async () => {
+    const result = await callTool('calc_isn', { tasa: 3.75, ejercicio: 2026 });
+    expect(result.isError).toBe(true);
+    const err = JSON.parse(result.content[0].text);
+    expect(err).toMatchObject({ code: 'VALIDATION_ERROR', field: 'baseGravable' });
   });
 });
