@@ -1527,21 +1527,23 @@ export async function executeToolPreview(
 
     switch (toolId) {
       case 'isn': {
-        const rawEstado = String(payload.estadoId ?? payload.estado ?? 'YUC')
-          .trim()
-          .toUpperCase();
-        const estadoObj =
-          ESTADOS.find(
-            (e) =>
-              e.id.toUpperCase() === rawEstado ||
-              e.nombre.toLowerCase() === rawEstado.toLowerCase() ||
-              e.nombre
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .toUpperCase() === rawEstado.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-          ) ??
-          (rawEstado === '31' ? ESTADOS.find((e) => e.id === 'YUC') : undefined) ??
-          ESTADOS[0]!;
+        const rawEstadoId = payload.estadoId;
+        if (typeof rawEstadoId !== 'string' || rawEstadoId.trim() === '') {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: `estadoId inválido: ${JSON.stringify(rawEstadoId)}. Debe ser uno de los 32 estados de la República Mexicana.`,
+          };
+        }
+        const estadoId = rawEstadoId;
+        if (!ESTADOS.some((item) => item.id === estadoId)) {
+          return {
+            ok: false,
+            statusCode: 400,
+            error: `estadoId inválido: "${estadoId}". No es uno de los 32 estados de la República Mexicana.`,
+          };
+        }
+        const estadoObj = ESTADOS.find((item) => item.id === estadoId)!;
         const rawBase =
           payload.baseGravable ??
           payload.nominaBruta ??

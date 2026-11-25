@@ -290,7 +290,7 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       {
         method: 'POST',
         path: '/api/internal/tools/isn/preview',
-        body: JSON.stringify({ estadoId: '31', nominaBruta: 200000, numEmpleados: 10 }),
+        body: JSON.stringify({ estadoId: 'YUC', nominaBruta: 200000, numEmpleados: 10 }),
       },
       { method: 'GET', path: '/api/internal/expediente?tenant_id=tenant-alpha' },
       { method: 'GET', path: '/api/internal/expediente/exp-alpha-1?tenant_id=tenant-alpha' },
@@ -1854,6 +1854,128 @@ describe('StayPuft Internal Connector for Ark Ledger (v3.1)', () => {
       expect(walkBody.suite_breakdown.total_tools).toBe(23);
       expect(walkBody.suite_breakdown.canaco_pyme_core_count).toBe(12);
       expect(walkBody.suite_breakdown.specialized_corporate_pld_count).toBe(11);
+    });
+  });
+
+  describe('Product preview — calc_isn estadoId fail-closed (/api/internal/tools/isn/preview)', () => {
+    const previewIsn = async (body: Record<string, unknown>) => {
+      const { env } = createIsolatedMockEnv(true);
+      return worker.fetch(
+        new Request('https://ledger.arksystems.site/api/internal/tools/isn/preview', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-StayPuft-Key': TEST_STAYPUFT_KEY,
+          },
+          body: JSON.stringify(body),
+        }),
+        env,
+        mockCtx
+      );
+    };
+
+    it('TC-PROD-NARNIA-01: rejects estadoId "Narnia" with error, no number, no breakdown, no Folio', async () => {
+      const res = await previewIsn({
+        estadoId: 'Narnia',
+        baseGravable: 500000,
+        ejercicio: 2026,
+      });
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { ok: boolean; error: string };
+      expect(body.ok).toBe(false);
+      expect(body.error).toContain('estadoId inválido');
+      expect(body.error).toContain('Narnia');
+      expect(body.error).toContain('No es uno de los 32 estados de la República Mexicana.');
+      expect((body as Record<string, unknown>).result).toBeUndefined();
+      expect((body as Record<string, unknown>).breakdown).toBeUndefined();
+      expect((body as Record<string, unknown>).folio).toBeUndefined();
+      expect((body as Record<string, unknown>).total).toBeUndefined();
+    });
+
+    it('TC-PROD-YUC-01: YUC esMicroPequena2026 true → $45,000 / $9,000 / $36,000', async () => {
+      const res = await previewIsn({
+        estadoId: 'YUC',
+        baseGravable: 1200000,
+        ejercicio: 2026,
+        numEmpleados: 30,
+        esMicroPequena2026: true,
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        ok: boolean;
+        result: {
+          tasa: number;
+          isnBruto: number;
+          estimulo: number;
+          isn: number;
+          isnNeto: number;
+          regimen: string;
+        };
+      };
+      expect(body.ok).toBe(true);
+      expect(body.result.tasa).toBe(3.75);
+      expect(body.result.isnBruto).toBe(45000);
+      expect(body.result.estimulo).toBe(9000);
+      expect(body.result.isnNeto).toBe(36000);
+      expect(body.result.isn).toBe(36000);
+      expect(body.result.regimen).toBe('micro_pequena');
+    });
+
+    it('TC-PROD-YUC-NOFLAG-01: YUC flag off → $45,000 net, general', async () => {
+      const res = await previewIsn({
+        estadoId: 'YUC',
+        baseGravable: 1200000,
+        ejercicio: 2026,
+        numEmpleados: 30,
+        esMicroPequena2026: false,
+      });
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        ok: boolean;
+        result: { isnNeto: number; regimen: string; tasa: number; estimulo: number };
+      };
+      expect(body.ok).toBe(true);
+      expect(body.result.regimen).toBe('general');
+      expect(body.result.tasa).toBe(3.75);
+      expect(body.result.estimulo).toBe(0);
+      expect(body.result.isnNeto).toBe(45000);
+    });
+
+    it.each([
+      ['empty string', ''],
+      ['null', null],
+    ])('TC-PROD-EMPTY-01: estadoId %s → error, no number', async (_name, estadoId) => {
+      const res = await previewIsn({ estadoId, baseGravable: 500000, ejercicio: 2026 });
+      expect(res.status).toBe(400);
+      const parsed = (await res.json()) as { ok: boolean; error: string };
+      expect(parsed.ok).toBe(false);
+      expect(parsed.error).toContain('estadoId inválido');
+      expect((parsed as Record<string, unknown>).result).toBeUndefined();
+    });
+
+    it('TC-PROD-EMPTY-01: missing estadoId → error, no number', async () => {
+      const res = await previewIsn({ baseGravable: 500000, ejercicio: 2026 });
+      expect(res.status).toBe(400);
+      const parsed = (await res.json()) as { ok: boolean; error: string };
+      expect(parsed.ok).toBe(false);
+      expect(parsed.error).toContain('estadoId inválido');
+      expect((parsed as Record<string, unknown>).result).toBeUndefined();
+    });
+
+    it('TC-PROD-CASE-01: lowercase "yuc" → error (canonical codes only)', async () => {
+      const res = await previewIsn({ estadoId: 'yuc', baseGravable: 1000, ejercicio: 2026 });
+      expect(res.status).toBe(400);
+      const parsed = (await res.json()) as { ok: boolean; error: string };
+      expect(parsed.ok).toBe(false);
+      expect(parsed.error).toContain('yuc');
+    });
+
+    it('TC-PROD-NAME-01: full name "Yucatán" → error (codes only, no normalization)', async () => {
+      const res = await previewIsn({ estadoId: 'Yucatán', baseGravable: 1000, ejercicio: 2026 });
+      expect(res.status).toBe(400);
+      const parsed = (await res.json()) as { ok: boolean; error: string };
+      expect(parsed.ok).toBe(false);
+      expect(parsed.error).toContain('Yucatán');
     });
   });
 
